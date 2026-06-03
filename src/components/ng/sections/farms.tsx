@@ -9,9 +9,9 @@ import { FARMS } from "../data";
 import { cn } from "@/lib/utils";
 
 const FARM_IMAGES = [
-  "/images/anveshan/hero-multigrain.webp",
-  "/images/anveshan/product-oil-3.jpg",
-  "/images/anveshan/product-oil-4.jpg",
+  "/images/placeholder.svg",
+  "/images/placeholder.svg",
+  "/images/placeholder.svg",
 ];
 
 export function Farms() {
@@ -41,7 +41,7 @@ export function Farms() {
               className={cn(
                 "group relative rounded-3xl overflow-hidden bg-ng-paper border border-ng-line-soft",
                 "shadow-[var(--shadow-ng-card)] hover:shadow-[var(--shadow-ng-float)]",
-                "[transform:rotateX(3deg)] hover:[transform:translateY(-6px)]",
+                "hover:-translate-y-1.5",
                 "will-change-transform transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
               )}
             >

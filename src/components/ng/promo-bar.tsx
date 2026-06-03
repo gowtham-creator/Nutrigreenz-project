@@ -9,7 +9,9 @@ export function PromoBar() {
       <div className="mx-auto max-w-7xl px-5 flex items-center justify-center gap-4">
         <div className="announcement-rotate">
           <div className="announcement-rotate__track font-display tracking-wide">
-            {messages.map((m, i) => (
+            {/* Duplicate the first message at the end so the loop lands back on
+                it seamlessly (the keyframes end at the 4th slot = message 1). */}
+            {[...messages, messages[0]].map((m, i) => (
               <span key={i} className="block leading-[1.6em]">{m}</span>
             ))}
           </div>

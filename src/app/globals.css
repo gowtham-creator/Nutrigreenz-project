@@ -309,9 +309,10 @@
 
 /* Announce ticker (kept for promo bar) */
 @keyframes announceScroll {
-  0%, 40%   { transform: translateY(0); }
-  50%, 90%  { transform: translateY(-100%); }
-  100%      { transform: translateY(-200%); }
+  0%, 28%   { transform: translateY(0); }       /* message 1 */
+  33%, 61%  { transform: translateY(-1.6em); }  /* message 2 */
+  66%, 94%  { transform: translateY(-3.2em); }  /* message 3 */
+  100%      { transform: translateY(-4.8em); }  /* duplicate message 1 → seamless loop */
 }
 .announcement-rotate { position: relative; height: 1.6em; overflow: hidden; text-align: center; width: 100%; }
 .announcement-rotate__track { display: flex; flex-direction: column; animation: announceScroll 10s ease-in-out infinite; }
