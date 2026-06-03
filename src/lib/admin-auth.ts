@@ -1,45 +1,48 @@
 /**
- * Demo admin session — cookie-based, dependency-free.
+ * Admin portal session — cookie names and client-side helpers.
  *
  * This is the ADMIN portal session and is intentionally separate from the
- * storefront/customer auth in `@/lib/auth`. There is no backend and Firebase
- * is unconfigured, so this is a lightweight demo gate: a single cookie
- * (`ng_admin`) holds the signed-in admin's email. The `proxy.ts` route guard
- * reads this cookie server-side to protect `/admin/*`.
+ * storefront/customer auth in `@/lib/auth`. The session is now validated
+ * server-side: `/api/admin/login` mints a signed, httpOnly cookie (`ng_admin`)
+ * that the Edge proxy (`proxy.ts`) verifies on every `/admin/*` request. Client
+ * JS can no longer read or forge that cookie.
  *
- * Credential validation lives in the login page (`/admin/login`).
+ * For UI display only, login also sets a readable (non-httpOnly) cookie
+ * (`ng_admin_email`) holding just the email string — it carries no auth power.
  */
 
-/** Name of the cookie that marks an authenticated admin session. */
+/** httpOnly signed session token — the real gate. Read server-side only. */
 export const ADMIN_COOKIE = "ng_admin";
 
-/** Session lifetime: 12 hours (seconds). */
-const MAX_AGE = 60 * 60 * 12;
+/** Readable email cookie for UI display only (NOT httpOnly, no auth power). */
+export const ADMIN_EMAIL_COOKIE = "ng_admin_email";
 
 /**
- * Persist an admin session by writing the `ng_admin` cookie (client-side).
- * The email is URI-encoded so it round-trips safely through the cookie value.
+ * Sign out the current admin: clears both cookies server-side (the httpOnly
+ * gate can only be cleared by the server), then redirects to the login screen.
+ * Kept as `signOutAdmin` so existing callers (e.g. the admin shell) keep working.
  */
-export function signInAdmin(email: string): void {
-  if (typeof document === "undefined") return;
-  const value = encodeURIComponent(email);
-  document.cookie = `${ADMIN_COOKIE}=${value}; path=/; max-age=${MAX_AGE}; samesite=lax`;
+export async function signOutAdmin(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    await fetch("/api/admin/logout", { method: "POST" });
+  } catch {
+    // Ignore network errors — we still redirect to the login screen.
+  }
+  window.location.href = "/admin/login";
 }
 
-/** Clear the admin session by expiring the cookie. */
-export function signOutAdmin(): void {
-  if (typeof document === "undefined") return;
-  document.cookie = `${ADMIN_COOKIE}=; path=/; max-age=0; samesite=lax`;
-}
-
-/** Read the signed-in admin's email from the cookie (client-side), or null. */
+/**
+ * Read the signed-in admin's email from the readable `ng_admin_email` cookie
+ * (client-side), or null. This is display-only and confers no authorisation.
+ */
 export function getAdminEmail(): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie
     .split("; ")
-    .find((row) => row.startsWith(`${ADMIN_COOKIE}=`));
+    .find((row) => row.startsWith(`${ADMIN_EMAIL_COOKIE}=`));
   if (!match) return null;
-  const raw = match.slice(ADMIN_COOKIE.length + 1);
+  const raw = match.slice(ADMIN_EMAIL_COOKIE.length + 1);
   if (!raw) return null;
   try {
     return decodeURIComponent(raw);

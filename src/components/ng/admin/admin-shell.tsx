@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
@@ -21,7 +20,6 @@ const NAV = [
 
 /** Top-right admin identity chip with a sign-out dropdown. */
 function AdminIdentity() {
-  const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -42,8 +40,8 @@ function AdminIdentity() {
   const initial = (email?.trim()?.[0] ?? "A").toUpperCase();
 
   function handleSignOut() {
-    signOutAdmin();
-    router.push("/admin/login");
+    // signOutAdmin clears the server cookies, then redirects to /admin/login.
+    void signOutAdmin();
   }
 
   return (

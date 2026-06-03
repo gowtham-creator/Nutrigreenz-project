@@ -8,11 +8,6 @@ import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
-import { signInAdmin } from "@/lib/admin-auth";
-
-/** Demo credentials — surfaced on the page so the gate is usable. */
-const DEMO_EMAIL = "admin@nutrigreenz.in";
-const DEMO_PASSCODE = "nutri@2026";
 
 function LoginForm() {
   const router = useRouter();
@@ -24,24 +19,34 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSubmitting(true);
 
-    const ok =
-      email.trim().toLowerCase() === DEMO_EMAIL && passcode === DEMO_PASSCODE;
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, passcode }),
+      });
 
-    if (!ok) {
-      const msg = "Invalid email or passcode.";
+      if (res.ok) {
+        toast.success("Welcome back", { description: "Signed in to Admin." });
+        router.push(next);
+        return;
+      }
+
+      const msg = "Invalid credentials.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
-      return;
+    } catch {
+      const msg = "Could not reach the server. Try again.";
+      setError(msg);
+      toast.error("Sign in failed", { description: msg });
+    } finally {
+      setSubmitting(false);
     }
-
-    setSubmitting(true);
-    signInAdmin(DEMO_EMAIL);
-    toast.success("Welcome back", { description: "Signed in to Admin." });
-    router.push(next);
   }
 
   return (
@@ -114,17 +119,9 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-ng-line-soft bg-ng-paper p-4">
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono">
-              <Icon name="info-circle-bold" size={13} />
-              Demo credentials
-            </div>
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12.5px]">
-              <dt className="text-ng-ink-soft">Email</dt>
-              <dd className="font-mono text-ng-forest-deep">{DEMO_EMAIL}</dd>
-              <dt className="text-ng-ink-soft">Passcode</dt>
-              <dd className="font-mono text-ng-forest-deep">{DEMO_PASSCODE}</dd>
-            </dl>
+          <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono">
+            <Icon name="shield-keyhole-bold" size={13} />
+            Authorised operators only
           </div>
         </div>
       </main>
