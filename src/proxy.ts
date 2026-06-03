@@ -14,13 +14,22 @@ import { verifyToken } from "@/lib/admin-session";
  * Either way the route is protected by the SIGNED, httpOnly session cookie
  * (`ng_admin`), verified with Web Crypto HMAC (`verifyToken`) so a forged or
  * presence-only cookie cannot grant access. `verifyToken` is pure Web Crypto
- * (no `next/headers` / `node:crypto`), safe on the Edge runtime.
+ * (no `next/headers` / `node:crypto`), safe on the Edge runtime. It now returns
+ * the decoded `{ email, role }` session (or null), so the role is enforced from
+ * the tamper-proof signed token, never from the readable role cookie.
+ *
+ * Role gate: the global config / control center at `/admin/config` (and any
+ * sub-path) is SUPER-ADMIN ONLY. Authenticated non-superadmins are redirected
+ * to the dashboard (`/admin`, or `/` on the admin subdomain).
  *
  * `/api/*`, `/_next/*` and any path with a file extension are excluded by the
  * matcher, so API routes (incl. `/api/admin/login`) and static assets are
  * served directly on every host.
  */
 const ADMIN_HOST_PREFIX = "admin.";
+
+/** Super-admin-only route prefix (the global config / control center). */
+const SUPERADMIN_ROUTE_PREFIX = "/admin/config";
 
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -40,17 +49,28 @@ export default async function proxy(req: NextRequest) {
   if (!adminRoute) return NextResponse.next();
 
   const isLogin = adminRoute === "/admin/login";
-  const email = await verifyToken(req.cookies.get(ADMIN_COOKIE)?.value);
+  const session = await verifyToken(req.cookies.get(ADMIN_COOKIE)?.value);
 
   // Unauthenticated → bounce to login on the SAME host, remembering the target.
-  if (!isLogin && !email) {
+  if (!isLogin && !session) {
     const url = new URL(isAdminHost ? "/login" : "/admin/login", req.nextUrl);
     url.searchParams.set("next", isAdminHost ? path : adminRoute);
     return NextResponse.redirect(url);
   }
 
   // Already authed and sitting on the login page → send to the dashboard.
-  if (isLogin && email) {
+  if (isLogin && session) {
+    return NextResponse.redirect(new URL(isAdminHost ? "/" : "/admin", req.nextUrl));
+  }
+
+  // Role gate: the config / control center is super-admin only. An authenticated
+  // non-superadmin hitting /admin/config (or a sub-path) is sent to the dashboard.
+  if (
+    session &&
+    session.role !== "superadmin" &&
+    (adminRoute === SUPERADMIN_ROUTE_PREFIX ||
+      adminRoute.startsWith(`${SUPERADMIN_ROUTE_PREFIX}/`))
+  ) {
     return NextResponse.redirect(new URL(isAdminHost ? "/" : "/admin", req.nextUrl));
   }
 

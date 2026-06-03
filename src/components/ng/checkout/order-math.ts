@@ -6,7 +6,13 @@
 
 import type { Coupon, CommerceRules, LoyaltyLedgerEntry } from "@/types/nutrigreenz";
 
-/** 10 loyalty points = ₹1. */
+/**
+ * Default loyalty conversion: 10 points = ₹1.
+ *
+ * This is the *fallback* ratio. The live value is configured by the Super Admin
+ * (`useLoyaltyConfig().config.redeemPointsPerRupee`) and passed into the helpers
+ * below; this constant is used when no override is supplied.
+ */
 export const POINTS_PER_RUPEE = 10;
 
 /** Current loyalty balance = the latest ledger entry's running balance. */
@@ -15,9 +21,18 @@ export function loyaltyBalance(ledger: LoyaltyLedgerEntry[]): number {
   return ledger[ledger.length - 1].balanceAfter;
 }
 
-/** Max ₹ value redeemable from a points balance (floored to whole rupees). */
-export function maxRedeemableRupees(points: number): number {
-  return Math.floor(points / POINTS_PER_RUPEE);
+/**
+ * Max ₹ value redeemable from a points balance (floored to whole rupees).
+ *
+ * `pointsPerRupee` defaults to {@link POINTS_PER_RUPEE} so existing callers keep
+ * working; checkout passes the Super-Admin-configured ratio.
+ */
+export function maxRedeemableRupees(
+  points: number,
+  pointsPerRupee: number = POINTS_PER_RUPEE,
+): number {
+  const ratio = pointsPerRupee > 0 ? pointsPerRupee : POINTS_PER_RUPEE;
+  return Math.floor(points / ratio);
 }
 
 export type CouponError =

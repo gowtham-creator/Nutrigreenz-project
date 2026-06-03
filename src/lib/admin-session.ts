@@ -8,12 +8,25 @@
  * It must NOT import `next/headers` or `node:crypto` so it can be imported
  * cleanly into the Edge proxy. Cookie reading/writing is handled by callers.
  *
- * Token format: `${base64url(email)}.${base64url(HMAC_SHA256(email, secret))}`
+ * The token now encodes BOTH the operator email AND their role. The signed
+ * payload is the string `${email}|${role}`, so the role is tamper-proof (it is
+ * covered by the HMAC alongside the email).
+ *
+ * Token format: `${base64url(`${email}|${role}`)}.${base64url(HMAC_SHA256(`${email}|${role}`, secret))}`
  *
  * The signing secret comes from `process.env.ADMIN_SESSION_SECRET`. The module
  * fails closed: if the secret is unset, `createToken` throws and `verifyToken`
  * returns null, so no session can ever be minted or accepted without a secret.
  */
+
+/** Roles an admin session can hold. */
+export type AdminRole = "admin" | "superadmin";
+
+/** Decoded, verified session payload. */
+export interface AdminSession {
+  email: string;
+  role: AdminRole;
+}
 
 const encoder = new TextEncoder();
 
@@ -57,11 +70,16 @@ async function importKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-/** Compute HMAC-SHA256(email, secret) as raw bytes. */
-async function sign(email: string, secret: string): Promise<Uint8Array> {
+/** Compute HMAC-SHA256(payload, secret) as raw bytes. */
+async function sign(payload: string, secret: string): Promise<Uint8Array> {
   const key = await importKey(secret);
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(email));
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
   return new Uint8Array(sig);
+}
+
+/** Validate that an arbitrary string is a known role. */
+function isAdminRole(value: string): value is AdminRole {
+  return value === "admin" || value === "superadmin";
 }
 
 /** Length-safe constant-time comparison of two byte arrays. */
@@ -73,28 +91,34 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
- * Mint a signed session token for the given email.
+ * Mint a signed session token binding the given email AND role.
+ * The signed payload is `${email}|${role}`, so the role cannot be tampered
+ * with without invalidating the signature.
  * Throws if `ADMIN_SESSION_SECRET` is not configured (fail closed).
  */
-export async function createToken(email: string): Promise<string> {
+export async function createToken(
+  email: string,
+  role: AdminRole,
+): Promise<string> {
   const secret = getSecret();
   if (!secret) {
     throw new Error("ADMIN_SESSION_SECRET is not configured");
   }
-  const mac = await sign(email, secret);
-  const payload = toBase64Url(encoder.encode(email));
+  const claims = `${email}|${role}`;
+  const mac = await sign(claims, secret);
+  const payload = toBase64Url(encoder.encode(claims));
   const signature = toBase64Url(mac);
   return `${payload}.${signature}`;
 }
 
 /**
- * Verify a session token and return the embedded email, or null if the token
- * is missing, malformed, or has an invalid signature. Returns null when the
- * secret is unconfigured (fail closed).
+ * Verify a session token and return the embedded `{ email, role }`, or null if
+ * the token is missing, malformed, carries an unknown role, or has an invalid
+ * signature. Returns null when the secret is unconfigured (fail closed).
  */
 export async function verifyToken(
   token: string | undefined,
-): Promise<string | null> {
+): Promise<AdminSession | null> {
   const secret = getSecret();
   if (!secret || !token) return null;
 
@@ -104,13 +128,22 @@ export async function verifyToken(
   const payloadPart = token.slice(0, dot);
   const signaturePart = token.slice(dot + 1);
 
-  const emailBytes = fromBase64Url(payloadPart);
+  const claimsBytes = fromBase64Url(payloadPart);
   const providedSig = fromBase64Url(signaturePart);
-  if (!emailBytes || !providedSig) return null;
+  if (!claimsBytes || !providedSig) return null;
 
-  const email = new TextDecoder().decode(emailBytes);
-  const expectedSig = await sign(email, secret);
+  const claims = new TextDecoder().decode(claimsBytes);
+  const expectedSig = await sign(claims, secret);
 
+  // Verify the signature over the raw claims BEFORE trusting any field.
   if (!timingSafeEqual(providedSig, expectedSig)) return null;
-  return email;
+
+  // Split `${email}|${role}` from the right so emails containing "|" are safe.
+  const sep = claims.lastIndexOf("|");
+  if (sep <= 0 || sep === claims.length - 1) return null;
+  const email = claims.slice(0, sep);
+  const role = claims.slice(sep + 1);
+  if (!email || !isAdminRole(role)) return null;
+
+  return { email, role };
 }

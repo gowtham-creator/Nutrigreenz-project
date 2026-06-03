@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useCommerceRules } from "@/lib/commerce";
+import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
 import { COUPONS, LOYALTY_LEDGER } from "@/components/ng/data";
 import type { Coupon } from "@/types/nutrigreenz";
@@ -30,7 +31,6 @@ import {
   INR,
   loyaltyBalance,
   maxRedeemableRupees,
-  POINTS_PER_RUPEE,
   pointsEarned,
 } from "@/components/ng/checkout/order-math";
 import { saveReceipt } from "@/components/ng/checkout/order-receipt";
@@ -72,6 +72,7 @@ export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { isAuthed } = useAuth();
   const rules = useCommerceRules();
+  const { config: loyalty } = useLoyaltyConfig();
   const { addresses, defaultAddress } = useAddresses();
 
   const loyaltyAvailable = useMemo(() => loyaltyBalance(LOYALTY_LEDGER), []);
@@ -100,10 +101,21 @@ export default function CheckoutPage() {
     rules.deliverySlots.find((s) => s.id === resolvedSlotId) ?? null;
 
   const couponDiscount = applied?.discount ?? 0;
-  const loyaltyRupees = maxRedeemableRupees(loyaltyAvailable);
+  // Loyalty redemption uses the Super-Admin-configured ratio + limits.
+  const meetsMinRedeem = loyaltyAvailable >= loyalty.minRedeemPoints;
+  const maxRedeemFromBalance = maxRedeemableRupees(
+    loyaltyAvailable,
+    loyalty.redeemPointsPerRupee,
+  );
+  const maxRedeemFromCap = Math.floor(
+    (subtotal * loyalty.maxRedeemPercent) / 100,
+  );
+  const loyaltyRupees = meetsMinRedeem
+    ? Math.min(maxRedeemFromBalance, maxRedeemFromCap)
+    : 0;
   const loyaltyDiscount = redeemLoyalty ? loyaltyRupees : 0;
   const loyaltyPointsUsed = redeemLoyalty
-    ? loyaltyRupees * POINTS_PER_RUPEE
+    ? loyaltyRupees * loyalty.redeemPointsPerRupee
     : 0;
 
   const totals = useMemo(

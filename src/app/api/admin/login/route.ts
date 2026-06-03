@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
-import { ADMIN_COOKIE, ADMIN_EMAIL_COOKIE } from "@/lib/admin-auth";
-import { createToken } from "@/lib/admin-session";
+import {
+  ADMIN_COOKIE,
+  ADMIN_EMAIL_COOKIE,
+  ADMIN_ROLE_COOKIE,
+} from "@/lib/admin-auth";
+import { createToken, type AdminRole } from "@/lib/admin-session";
 
 /** Session lifetime: 12 hours (seconds). */
 const MAX_AGE = 60 * 60 * 12;
@@ -23,11 +27,20 @@ function timingSafeEqual(a: string, b: string): boolean {
 /**
  * POST /api/admin/login
  *
- * Server-side credential validation for the admin portal. The passcode is
- * checked against `process.env.ADMIN_PASSCODE` (no fallback — if unset, login
- * always fails). On success we set two cookies:
- *   - `ng_admin`       — httpOnly, signed session token (the real gate)
- *   - `ng_admin_email` — readable email string, for UI display only
+ * Server-side credential validation for the admin portal. Two roles are
+ * supported:
+ *   - `superadmin` — the EXISTING `ADMIN_EMAIL` (default `admin@nutrigreenz.in`)
+ *     / `ADMIN_PASSCODE` credentials. Always available (no new env required).
+ *   - `admin`      — the OPTIONAL `STAFF_ADMIN_EMAIL` / `STAFF_ADMIN_PASSCODE`
+ *     credentials. Only honoured when BOTH env vars are set; otherwise staff
+ *     login simply fails closed (no auth hole).
+ *
+ * On success we set three cookies:
+ *   - `ng_admin`       — httpOnly, signed session token binding email+role (the
+ *                        real gate; role is tamper-proof inside the HMAC).
+ *   - `ng_admin_email` — readable email string, for UI display only.
+ *   - `ng_admin_role`  — readable role string, for UI gating only (no auth
+ *                        power; the proxy enforces real access via the token).
  *
  * This route lives under `/api/...`, NOT `/admin/...`, so the proxy matcher
  * (`/admin/:path*`) does not block it.
@@ -47,24 +60,45 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  const expectedEmail = process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
-  const expectedPasscode = process.env.ADMIN_PASSCODE;
+  const inputEmail = email.trim().toLowerCase();
 
-  // No passcode configured → always fail (fail closed).
-  if (!expectedPasscode) {
+  // --- Super Admin: existing ADMIN_* credentials (always available) ---
+  const superEmail = process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
+  const superPasscode = process.env.ADMIN_PASSCODE;
+
+  // --- Staff Admin: optional STAFF_ADMIN_* credentials (both must be set) ---
+  const staffEmail = process.env.STAFF_ADMIN_EMAIL;
+  const staffPasscode = process.env.STAFF_ADMIN_PASSCODE;
+
+  let normalizedEmail: string | null = null;
+  let role: AdminRole | null = null;
+
+  // Try super admin first. Guard on a configured passcode (fail closed).
+  if (superPasscode) {
+    const emailOk = inputEmail === superEmail.trim().toLowerCase();
+    const passOk = timingSafeEqual(passcode, superPasscode);
+    if (emailOk && passOk) {
+      normalizedEmail = superEmail;
+      role = "superadmin";
+    }
+  }
+
+  // Otherwise try staff admin, only when BOTH staff env vars are present.
+  if (!role && staffEmail && staffPasscode) {
+    const emailOk = inputEmail === staffEmail.trim().toLowerCase();
+    const passOk = timingSafeEqual(passcode, staffPasscode);
+    if (emailOk && passOk) {
+      normalizedEmail = staffEmail;
+      role = "admin";
+    }
+  }
+
+  // No credential set matched → fail closed.
+  if (!role || !normalizedEmail) {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  const emailOk =
-    email.trim().toLowerCase() === expectedEmail.trim().toLowerCase();
-  const passOk = timingSafeEqual(passcode, expectedPasscode);
-
-  if (!emailOk || !passOk) {
-    return Response.json({ ok: false }, { status: 401 });
-  }
-
-  const normalizedEmail = expectedEmail;
-  const token = await createToken(normalizedEmail);
+  const token = await createToken(normalizedEmail, role);
   const secure = process.env.NODE_ENV === "production";
   const c = await cookies();
 
@@ -81,6 +115,18 @@ export async function POST(request: Request): Promise<Response> {
   c.set({
     name: ADMIN_EMAIL_COOKIE,
     value: normalizedEmail,
+    httpOnly: false,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: MAX_AGE,
+  });
+
+  // Readable role cookie — UI gating only, NO auth power. The proxy enforces
+  // real access via the signed `ng_admin` token (which also carries the role).
+  c.set({
+    name: ADMIN_ROLE_COOKIE,
+    value: role,
     httpOnly: false,
     secure,
     sameSite: "lax",

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
 import { CommerceProvider } from "@/lib/commerce";
+import { LoyaltyConfigProvider } from "@/lib/loyalty-config";
 import { LocationProvider } from "@/lib/location";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
@@ -55,13 +56,15 @@ export default function RootLayout({
       <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
         <AuthProvider>
           <CommerceProvider>
-            <LocationProvider>
-              <CartProvider>
-                <WishlistProvider>
-                  <AddressProvider>{children}</AddressProvider>
-                </WishlistProvider>
-              </CartProvider>
-            </LocationProvider>
+            <LoyaltyConfigProvider>
+              <LocationProvider>
+                <CartProvider>
+                  <WishlistProvider>
+                    <AddressProvider>{children}</AddressProvider>
+                  </WishlistProvider>
+                </CartProvider>
+              </LocationProvider>
+            </LoyaltyConfigProvider>
           </CommerceProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors closeButton />

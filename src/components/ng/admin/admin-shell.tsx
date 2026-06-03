@@ -6,26 +6,38 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
-import { getAdminEmail, signOutAdmin } from "@/lib/admin-auth";
+import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 
-const NAV = [
+type NavItem = { href: string; label: string; icon: string; superadminOnly?: boolean };
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: "widget-5-bold" },
   { href: "/admin/catalog", label: "Catalog", icon: "bag-4-bold" },
   { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold" },
   { href: "/admin/inventory", label: "Inventory", icon: "box-minimalistic-bold" },
   { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold" },
-  { href: "/admin/config", label: "Config", icon: "settings-bold" },
+  // Super Admin control center — gated below; only superadmins see this item.
+  { href: "/admin/config", label: "Config", icon: "settings-bold", superadminOnly: true },
 ];
+
+/** Human-friendly label for an admin role, shown under the identity chip. */
+function roleLabel(role: AdminRole | null): string {
+  if (role === "superadmin") return "Super Admin";
+  if (role === "admin") return "Admin";
+  return "Admin";
+}
 
 /** Top-right admin identity chip with a sign-out dropdown. */
 function AdminIdentity() {
   const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<AdminRole | null>(null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setEmail(getAdminEmail());
+    setRole(getAdminRole());
   }, []);
 
   useEffect(() => {
@@ -51,10 +63,18 @@ function AdminIdentity() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full pl-1 pr-2 py-1 hover:bg-ng-line-soft transition-colors"
+        className="flex items-center gap-2.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-ng-line-soft transition-colors cursor-pointer"
       >
         <span className="size-9 rounded-full bg-ng-forest-deep text-ng-cream flex items-center justify-center font-display text-[14px]">
           {initial}
+        </span>
+        <span className="hidden sm:flex flex-col items-start leading-tight min-w-0">
+          <span className="font-mono text-[12px] text-ng-forest-deep truncate max-w-[140px]">
+            {email ?? "admin"}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-ng-ink-soft">
+            {roleLabel(role)}
+          </span>
         </span>
         <Icon name="alt-arrow-down-bold" size={14} className="text-ng-ink-soft" />
       </button>
@@ -65,12 +85,21 @@ function AdminIdentity() {
           className="absolute right-0 mt-2 w-60 rounded-2xl bg-ng-paper border border-ng-line-soft shadow-[0_12px_32px_rgba(31,77,46,0.12)] p-2 z-20"
         >
           <div className="px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft font-mono">
-              Signed in as
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft font-mono">
+                Signed in as
+              </div>
+              {role === "superadmin" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
+                  <Icon name="crown-bold" size={10} />
+                  Super
+                </span>
+              ) : null}
             </div>
             <div className="font-mono text-[12.5px] text-ng-forest-deep truncate mt-0.5">
               {email ?? "admin"}
             </div>
+            <div className="text-[11px] text-ng-ink-soft mt-0.5">{roleLabel(role)}</div>
           </div>
           <div className="h-px bg-ng-line-soft my-1" />
           <Link
@@ -108,6 +137,15 @@ export function AdminShell({
   subtitle?: ReactNode;
   actions?: ReactNode;
 }) {
+  // Role gates the nav: the Config (Super Admin) item is shown only to
+  // superadmins; the edge proxy enforces the actual route protection.
+  const [role, setRole] = useState<AdminRole | null>(null);
+  useEffect(() => {
+    setRole(getAdminRole());
+  }, []);
+  const isSuper = role === "superadmin";
+  const navItems = NAV.filter((n) => !n.superadminOnly || isSuper);
+
   return (
     <div className="min-h-screen bg-ng-cream text-ng-ink flex">
       {/* Sidebar */}
@@ -117,10 +155,18 @@ export function AdminShell({
             <Logo variant="mark" tone="white" className="h-9" />
             <span className="font-display text-[17px] text-ng-cream">Nutri Greenz</span>
           </Link>
-          <div className="text-[10px] uppercase tracking-wider text-ng-clay mt-3 font-mono">Admin · v0.4.1</div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
+            {isSuper ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay font-bold px-2 py-0.5 text-[9px] uppercase tracking-wider">
+                <Icon name="crown-bold" size={10} />
+                Super Admin
+              </span>
+            ) : null}
+          </div>
         </div>
         <nav className="px-3 pb-6">
-          {NAV.map((n) => {
+          {navItems.map((n) => {
             const isActive = active === n.href;
             return (
               <Link

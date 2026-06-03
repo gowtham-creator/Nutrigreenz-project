@@ -1,30 +1,29 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import {
+  NumberField,
+  Toggle,
+  SegToggle,
+  TextField,
+  SaveBar,
+} from "@/components/ng/admin/super/controls";
+import {
+  CommandCenterHero,
+  SectionHeader,
+  PrimarySection,
+  type Kpi,
+} from "@/components/ng/admin/super/command-center";
+import { useCommerceConfig } from "@/lib/commerce";
+import { useLoyaltyConfig, type LoyaltyConfig } from "@/lib/loyalty-config";
+import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
+import { COUPONS } from "@/components/ng/data";
+import type { CommerceRules, DeliverySlot } from "@/types/nutrigreenz";
 
-/* ---- Global commerce rules (current configured values) ----------- */
-const COMMERCE_RULES: { icon: string; label: string; value: string; hint: string }[] = [
-  { icon: "cart-large-minimalistic-bold", label: "Minimum order value", value: "₹499", hint: "Cart must reach this to checkout" },
-  { icon: "delivery-bold", label: "Free-delivery threshold", value: "₹599", hint: "Free above · else flat fee" },
-  { icon: "tag-price-bold", label: "Flat delivery fee", value: "₹49", hint: "Charged below threshold" },
-  { icon: "bill-list-bold", label: "Tax mode", value: "Inclusive", hint: "Prices shown include GST" },
-  { icon: "clock-circle-bold", label: "Delivery slots", value: "2 / day", hint: "Morning 7–10 · Evening 5–8" },
-  { icon: "calendar-bold", label: "Dispatch days", value: "Tue · Fri", hint: "Twice-weekly fulfilment" },
-];
-
-const LOYALTY = [
-  { label: "Earn rate", value: "10 pts = ₹1", hint: "1 point per ₹10 spent" },
-  { label: "Redemption cap", value: "20% of order", hint: "Max points applied per order" },
-  { label: "Points expiry", value: "12 months", hint: "From last activity" },
-  { label: "Tier ladder", value: "Seed → Sapling → Banyan", hint: "Spend-based progression" },
-];
-
-const COUPON_RULES = [
-  { label: "Stacking", value: "Single coupon", hint: "One coupon per order" },
-  { label: "First-order codes", value: "Enabled", hint: "FIRST100 · new customers" },
-  { label: "Max % discount", value: "25%", hint: "Hard cap across all codes" },
-  { label: "Loyalty + coupon", value: "Allowed", hint: "Can combine with points" },
-];
-
+/* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
   { city: "Hyderabad", pin: "500001–500098", days: "Same/next day", surcharge: "Free above ₹599", on: true },
   { city: "Bengaluru", pin: "560001–560078", days: "2–3 days", surcharge: "₹49 flat", on: true },
@@ -43,166 +42,674 @@ const PAYMENT = [
   { method: "COD", on: false, fee: "—", note: "Disabled · pilferage rate too high" },
 ];
 
-const FLAGS = [
-  { name: "subscription_v2", on: true, audience: "100%", desc: "New subscription engine with pause/skip" },
-  { name: "captain_pwa_beta", on: true, audience: "Captains only", desc: "Field-pickup PWA — read access for captains" },
-  { name: "checkout_fast_lane", on: true, audience: "Sapling+", desc: "One-tap checkout for tier members" },
-  { name: "ai_recipe_assist", on: false, audience: "—", desc: "Recipe generator using purchase history" },
+/* ---- Feature toggles (UI state only; demo) ----------------------------- */
+const INITIAL_FEATURES: { key: string; label: string; desc: string; on: boolean }[] = [
+  { key: "subscriptions", label: "Subscriptions", desc: "Recurring boxes with pause / skip", on: true },
+  { key: "referrals", label: "Referrals", desc: "Refer-a-friend rewards programme", on: true },
+  { key: "community_bundles", label: "Community bundles", desc: "Captain-led group orders", on: true },
+  { key: "captain_network", label: "Captain network", desc: "Field-pickup captain PWA", on: false },
 ];
 
-function SettingRow({ label, value, hint }: { label: string; value: string; hint: string }) {
+const SUB_NAV = ["Rules", "Loyalty", "Coupons", "Features", "Shipping", "Payment"];
+
+/** ₹ formatter for figures shown read-only. */
+const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+export default function AdminConfig() {
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    setRole(getAdminRole());
+  }, []);
+
+  // The edge proxy already redirects non-superadmins away from this route; this
+  // guard is a graceful client-side fallback before that proxy is in place.
+  if (role !== null && role !== "superadmin") {
+    return <AccessRequired />;
+  }
+
+  return <ConfigContent />;
+}
+
+/** Graceful "not allowed" state for non-superadmins. */
+function AccessRequired() {
   return (
-    <div className="flex items-start justify-between gap-4 py-3 border-b border-ng-line-soft last:border-0">
-      <div className="min-w-0">
-        <div className="text-[13px] font-medium text-ng-ink">{label}</div>
-        <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{hint}</div>
+    <AdminShell active="/admin/config" title="Super Admin">
+      <div className="max-w-md mx-auto text-center py-20">
+        <span className="relative inline-flex size-16 items-center justify-center rounded-2xl bg-ng-forest-deep ring-1 ring-ng-clay/40 mb-5 shadow-[0_8px_24px_rgba(31,77,46,0.18)]">
+          <Icon name="lock-keyhole-bold" size={28} className="text-ng-clay" />
+        </span>
+        <h2 className="font-display text-[22px] text-ng-forest-deep">Super Admin access required</h2>
+        <p className="text-[13.5px] text-ng-ink-muted mt-2">
+          The control center is restricted to Super Admins. Ask an owner to upgrade your
+          role, or head back to the admin overview.
+        </p>
+        <a
+          href="/admin"
+          className="inline-flex items-center gap-1.5 mt-6 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-forest transition-colors cursor-pointer"
+        >
+          <Icon name="arrow-left-bold" size={15} />
+          Back to overview
+        </a>
       </div>
-      <span className="font-mono text-[12.5px] text-ng-forest-deep font-semibold shrink-0 tabular-nums">{value}</span>
-    </div>
+    </AdminShell>
   );
 }
 
-export default function AdminConfig() {
+function ConfigContent() {
+  const { rules, updateRules, resetRules } = useCommerceConfig();
+  const { config: loyalty, updateConfig: updateLoyalty, resetConfig: resetLoyalty } =
+    useLoyaltyConfig();
+
+  // The operator identity for the hero — resolved client-side from the session
+  // cookie (same source the guard uses). Null on the server pass.
+  const [operator, setOperator] = useState<string | null>(null);
+  useEffect(() => setOperator(getAdminEmail()), []);
+
+  // Live KPI strip — every figure reads straight from the stores so the hero
+  // mirrors exactly what's driving the storefront right now.
+  const activeCoupons = COUPONS.filter((c) => c.active).length;
+  const kpis: Kpi[] = [
+    { icon: "cart-large-2-bold", label: "Min order", value: INR(rules.minOrderValue), accent: true },
+    { icon: "delivery-bold", label: "Free delivery ≥", value: INR(rules.freeDeliveryThreshold) },
+    {
+      icon: "wad-of-money-bold",
+      label: "Shipping",
+      value: rules.shippingFlat === 0 ? "Free" : INR(rules.shippingFlat),
+    },
+    { icon: "star-bold", label: "Points ratio", value: `${loyalty.earnPointsPerRupee} pt/₹`, accent: true },
+    { icon: "ticket-sale-bold", label: "Active coupons", value: String(activeCoupons) },
+    { icon: "clock-circle-bold", label: "Delivery slots", value: String(rules.deliverySlots.length) },
+  ];
+
   return (
     <AdminShell
       active="/admin/config"
       title={
         <span>
-          Commerce <em className="italic text-ng-clay font-display">config</em>
+          Super <em className="italic text-ng-clay font-display">Admin</em>
         </span>
       }
-      subtitle="Global commerce rules, loyalty & coupons, shipping, payments, flags"
+      subtitle="The live storefront control center"
       actions={
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/15 text-ng-clay-deep font-semibold px-4 py-2 text-[12px]">
-          <Icon name="lock-keyhole-bold" size={14} />
-          Read-only · editing in Phase 7
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-4 py-2 text-[12px] uppercase tracking-wider">
+          <Icon name="crown-bold" size={14} />
+          Super Admin
         </span>
       }
     >
-      {/* Sticky sub-nav */}
-      <div className="sticky top-[68px] z-[1] bg-ng-cream/85 backdrop-blur -mx-8 px-8 py-3 mb-6 border-b border-ng-line-soft">
-        <div className="flex gap-1 text-[12.5px] flex-wrap">
-          {["Rules", "Loyalty", "Shipping", "Payment", "Flags"].map((t, i) => (
-            <a
-              key={t}
-              href={`#${t.toLowerCase()}`}
-              className={`px-3.5 py-1.5 rounded-full transition-colors ${
-                i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:bg-ng-paper"
-              }`}
-            >
-              {t}
-            </a>
-          ))}
+      {/* Distinguished command-center hero with live KPI strip. */}
+      <CommandCenterHero operator={operator} kpis={kpis} />
+
+      {/* Sticky in-page section nav. */}
+      <div className="sticky top-[68px] z-[1] bg-ng-cream/85 backdrop-blur -mx-8 px-8 py-3 mb-7 border-b border-ng-line-soft">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-ng-ink-soft font-mono mr-1 hidden sm:inline">
+            Jump to
+          </span>
+          <div className="flex gap-1 text-[12.5px] flex-wrap">
+            {SUB_NAV.map((t, i) => (
+              <a
+                key={t}
+                href={`#${t.toLowerCase()}`}
+                className={`px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
+                  i === 0
+                    ? "bg-ng-forest-deep text-ng-cream font-semibold"
+                    : "text-ng-ink-muted hover:bg-ng-paper"
+                }`}
+              >
+                {t}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Global commerce rules — hero grid */}
-      <section id="rules" className="mb-6 scroll-mt-32">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="ng-eyebrow">Global commerce rules</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {COMMERCE_RULES.map((r) => (
-            <div key={r.label} className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="size-9 rounded-xl bg-ng-forest/8 flex items-center justify-center">
-                  <Icon name={r.icon} size={18} className="text-ng-forest" />
-                </span>
-                <span className="font-display text-[22px] text-ng-forest-deep tabular-nums">{r.value}</span>
-              </div>
-              <div className="text-[12.5px] font-medium text-ng-ink mt-3.5">{r.label}</div>
-              <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{r.hint}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Headline controls — Commerce + Loyalty, visually primary. */}
+      <div className="flex items-center gap-2.5 mb-3.5">
+        <span className="ng-eyebrow text-ng-clay-deep">Headline controls</span>
+        <span className="h-px flex-1 bg-gradient-to-r from-ng-clay/40 to-transparent" />
+      </div>
 
-      {/* Loyalty + coupon settings */}
-      <section id="loyalty" className="grid lg:grid-cols-2 gap-6 mb-6 scroll-mt-32">
-        <Card title="Loyalty programme">
-          <div className="-mt-1">
-            {LOYALTY.map((l) => (
-              <SettingRow key={l.label} {...l} />
-            ))}
-          </div>
-        </Card>
-        <Card title="Coupon rules">
-          <div className="-mt-1">
-            {COUPON_RULES.map((c) => (
-              <SettingRow key={c.label} {...c} />
-            ))}
-          </div>
-        </Card>
-      </section>
+      <CommerceRulesSection rules={rules} updateRules={updateRules} resetRules={resetRules} />
+      <LoyaltySection
+        loyalty={loyalty}
+        updateLoyalty={updateLoyalty}
+        resetLoyalty={resetLoyalty}
+      />
 
-      {/* Shipping zones */}
+      {/* Secondary controls. */}
+      <div className="flex items-center gap-2.5 mt-9 mb-3.5">
+        <span className="ng-eyebrow text-ng-ink-soft">Programmes &amp; platform</span>
+        <span className="h-px flex-1 bg-ng-line-soft" />
+      </div>
+
+      <CouponsSection />
+      <FeatureTogglesSection />
+
+      {/* Read-only reference: shipping zones + payment methods */}
       <Card
-        title="Shipping zones"
-        action={<span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{ZONES.filter((z) => z.on).length} live</span>}
+        title={
+          <span className="flex items-center gap-2">
+            <Icon name="map-point-wave-bold" size={17} className="text-ng-forest" />
+            Shipping zones
+          </span>
+        }
+        action={<span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{ZONES.filter((z) => z.on).length} live · read-only</span>}
         className="!p-0 overflow-hidden mb-6"
       >
         <div id="shipping" className="scroll-mt-32" />
-        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
           <span>City</span>
           <span>PIN range</span>
           <span>SLA</span>
           <span>Pricing</span>
           <span>Status</span>
-          <span></span>
         </div>
         <ul>
           {ZONES.map((z) => (
             <li
               key={z.city}
-              className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr_0.5fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+              className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
             >
               <span className="font-medium">{z.city}</span>
-              <span className="font-mono text-[11.5px] text-ng-ink-muted">{z.pin}</span>
+              <span className="font-mono text-[11.5px] text-ng-ink-muted tabular-nums">{z.pin}</span>
               <span className="text-[12.5px]">{z.days}</span>
               <span className="text-[12.5px]">{z.surcharge}</span>
               <span><Pill tone={z.on ? "success" : "neutral"}>{z.on ? "Live" : "Off"}</Pill></span>
-              <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">View →</button>
             </li>
           ))}
         </ul>
       </Card>
 
-      {/* Payment + flags */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card title="Payment methods">
-          <div id="payment" className="scroll-mt-32" />
-          <ul className="divide-y divide-ng-line-soft -mt-1">
-            {PAYMENT.map((p) => (
-              <li key={p.method} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13.5px] font-medium">{p.method}</div>
-                  <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{p.note || `Fee: ${p.fee}`}</div>
-                </div>
-                <span className="font-mono text-[12px] text-ng-ink-muted tabular-nums">{p.fee}</span>
-                <Pill tone={p.on ? "success" : "neutral"}>{p.on ? "On" : "Off"}</Pill>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card title="Feature flags">
-          <div id="flags" className="scroll-mt-32" />
-          <ul className="divide-y divide-ng-line-soft -mt-1">
-            {FLAGS.map((f) => (
-              <li key={f.name} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[12.5px] text-ng-forest-deep">{f.name}</span>
-                    <Pill tone={f.on ? "success" : "neutral"}>{f.on ? "Live" : "Off"}</Pill>
-                  </div>
-                  <div className="text-[12px] text-ng-ink-muted mt-1">{f.desc}</div>
-                </div>
-                <span className="text-[11.5px] text-ng-ink-soft shrink-0">{f.audience}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+      <Card
+        title={
+          <span className="flex items-center gap-2">
+            <Icon name="card-bold" size={17} className="text-ng-forest" />
+            Payment methods
+          </span>
+        }
+        className="mb-2"
+      >
+        <div id="payment" className="scroll-mt-32" />
+        <ul className="divide-y divide-ng-line-soft -mt-1">
+          {PAYMENT.map((p) => (
+            <li key={p.method} className="py-3 flex items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="text-[13.5px] font-medium">{p.method}</div>
+                <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{p.note || `Fee: ${p.fee}`}</div>
+              </div>
+              <span className="font-mono text-[12px] text-ng-ink-muted tabular-nums">{p.fee}</span>
+              <Pill tone={p.on ? "success" : "neutral"}>{p.on ? "On" : "Off"}</Pill>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </AdminShell>
+  );
+}
+
+/* =======================================================================
+ * Global Commerce Rules (§3.8)
+ * ===================================================================== */
+function CommerceRulesSection({
+  rules,
+  updateRules,
+  resetRules,
+}: {
+  rules: CommerceRules;
+  updateRules: (patch: Partial<CommerceRules>) => void;
+  resetRules: () => void;
+}) {
+  const [draft, setDraft] = useState<CommerceRules>(rules);
+  // Re-sync when the store resets/changes underneath us.
+  useEffect(() => setDraft(rules), [rules]);
+
+  const freeShipping = draft.shippingFlat === 0;
+  const dirty = useMemo(
+    () => JSON.stringify(draft) !== JSON.stringify(rules),
+    [draft, rules],
+  );
+
+  function patchSlot(id: string, patch: Partial<DeliverySlot>) {
+    setDraft((d) => ({
+      ...d,
+      deliverySlots: d.deliverySlots.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+    }));
+  }
+  function addSlot() {
+    const id = `slot-${Date.now()}`;
+    setDraft((d) => ({
+      ...d,
+      deliverySlots: [...d.deliverySlots, { id, label: "New slot", cutoff: "22:00" }],
+    }));
+  }
+  function removeSlot(id: string) {
+    setDraft((d) => ({ ...d, deliverySlots: d.deliverySlots.filter((s) => s.id !== id) }));
+  }
+
+  function save() {
+    updateRules(draft);
+    toast.success("Commerce rules saved", {
+      description: "Applied to the live storefront — cart & checkout.",
+    });
+  }
+  function reset() {
+    resetRules();
+    toast.info("Commerce rules reset to defaults");
+  }
+
+  return (
+    <PrimarySection id="rules">
+      <Card>
+        <SectionHeader
+          icon="settings-bold"
+          tone="forest"
+          title="Global commerce rules"
+          caption="Order minimums, delivery pricing, tax display & slots — applied to cart and checkout."
+          badge={dirty ? <Pill tone="warn">Unsaved</Pill> : <span className="ng-eyebrow">§3.8</span>}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <NumberField
+            label="Minimum order value"
+            value={draft.minOrderValue}
+            onChange={(v) => setDraft((d) => ({ ...d, minOrderValue: v }))}
+            prefix="₹"
+            step={10}
+            hint="Cart must reach this to checkout"
+          />
+          <NumberField
+            label="Free-delivery threshold"
+            value={draft.freeDeliveryThreshold}
+            onChange={(v) => setDraft((d) => ({ ...d, freeDeliveryThreshold: v }))}
+            prefix="₹"
+            step={10}
+            hint="Free at/above this subtotal"
+          />
+          <NumberField
+            label="Flat delivery fee"
+            value={draft.shippingFlat}
+            onChange={(v) => setDraft((d) => ({ ...d, shippingFlat: v }))}
+            prefix="₹"
+            step={5}
+            hint={freeShipping ? "Currently free for all orders" : "Charged below the threshold"}
+          />
+          <SegToggle
+            label="Tax display mode"
+            value={draft.taxMode}
+            onChange={(v) => setDraft((d) => ({ ...d, taxMode: v }))}
+            options={[
+              { value: "inclusive", label: "Inclusive" },
+              { value: "exclusive", label: "Exclusive" },
+            ]}
+            hint={draft.taxMode === "inclusive" ? "Shown prices include GST" : "GST added at checkout"}
+          />
+          <div className="sm:col-span-2 lg:col-span-2 flex items-center">
+            <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
+              <Toggle
+                label="Free delivery for all orders"
+                description="When on, the flat delivery fee is set to ₹0"
+                checked={freeShipping}
+                onChange={(on) =>
+                  setDraft((d) => ({ ...d, shippingFlat: on ? 0 : d.shippingFlat || 49 }))
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery slots */}
+        <div className="mt-6 pt-5 border-t border-ng-line-soft">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="text-[12.5px] font-medium text-ng-ink-muted">Delivery slots</span>
+            <button
+              type="button"
+              onClick={addSlot}
+              className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-semibold hover:text-ng-leaf transition-colors cursor-pointer"
+            >
+              <Icon name="add-circle-bold" size={15} />
+              Add slot
+            </button>
+          </div>
+          <ul className="space-y-2.5">
+            {draft.deliverySlots.map((slot) => (
+              <li
+                key={slot.id}
+                className="grid grid-cols-[1.8fr_1fr_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
+              >
+                <TextField
+                  label="Label"
+                  value={slot.label}
+                  onChange={(v) => patchSlot(slot.id, { label: v })}
+                  placeholder="Morning · 7–10 AM"
+                />
+                <TextField
+                  label="Cutoff"
+                  value={slot.cutoff}
+                  onChange={(v) => patchSlot(slot.id, { cutoff: v })}
+                  placeholder="22:00"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSlot(slot.id)}
+                  aria-label={`Remove slot ${slot.label}`}
+                  className="h-11 px-3 rounded-xl border border-ng-line text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors cursor-pointer"
+                >
+                  <Icon name="trash-bin-trash-bold" size={16} />
+                </button>
+              </li>
+            ))}
+            {draft.deliverySlots.length === 0 ? (
+              <li className="text-[12px] text-ng-ink-soft py-2">No slots — add one above.</li>
+            ) : null}
+          </ul>
+        </div>
+
+        <SaveBar
+          note="Changes apply to the live storefront (cart & checkout)."
+          onSave={save}
+          onReset={reset}
+          dirty={dirty}
+        />
+      </Card>
+    </PrimarySection>
+  );
+}
+
+/* =======================================================================
+ * Loyalty (§3.5.1)
+ * ===================================================================== */
+function LoyaltySection({
+  loyalty,
+  updateLoyalty,
+  resetLoyalty,
+}: {
+  loyalty: LoyaltyConfig;
+  updateLoyalty: (patch: Partial<LoyaltyConfig>) => void;
+  resetLoyalty: () => void;
+}) {
+  const [draft, setDraft] = useState<LoyaltyConfig>(loyalty);
+  useEffect(() => setDraft(loyalty), [loyalty]);
+
+  const dirty = useMemo(
+    () => JSON.stringify(draft) !== JSON.stringify(loyalty),
+    [draft, loyalty],
+  );
+
+  function save() {
+    updateLoyalty(draft);
+    toast.success("Loyalty programme saved", {
+      description: "Drives points earned & checkout redemption.",
+    });
+  }
+  function reset() {
+    resetLoyalty();
+    toast.info("Loyalty config reset to defaults");
+  }
+
+  return (
+    <PrimarySection id="loyalty">
+      <Card>
+        <SectionHeader
+          icon="star-bold"
+          tone="clay"
+          title="Loyalty programme"
+          caption="Earn & redemption ratios, floors and caps — drives points on orders and checkout redemption."
+          badge={dirty ? <Pill tone="warn">Unsaved</Pill> : <span className="ng-eyebrow">§3.5.1</span>}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <NumberField
+            label="Earn points per ₹1"
+            value={draft.earnPointsPerRupee}
+            onChange={(v) => setDraft((d) => ({ ...d, earnPointsPerRupee: v }))}
+            suffix="pts"
+            step={0.1}
+            hint="Points credited per rupee spent"
+          />
+          <NumberField
+            label="Redeem points per ₹1"
+            value={draft.redeemPointsPerRupee}
+            onChange={(v) => setDraft((d) => ({ ...d, redeemPointsPerRupee: v }))}
+            suffix="pts"
+            step={1}
+            hint="Points needed for ₹1 off"
+          />
+          <NumberField
+            label="Min points to redeem"
+            value={draft.minRedeemPoints}
+            onChange={(v) => setDraft((d) => ({ ...d, minRedeemPoints: v }))}
+            suffix="pts"
+            step={10}
+            hint="Floor before points can be used"
+          />
+          <NumberField
+            label="Max redeem % of order"
+            value={draft.maxRedeemPercent}
+            onChange={(v) => setDraft((d) => ({ ...d, maxRedeemPercent: v }))}
+            suffix="%"
+            step={1}
+            hint="Cap on points applied per order"
+          />
+          <NumberField
+            label="Points expiry"
+            value={draft.expiryMonths}
+            onChange={(v) => setDraft((d) => ({ ...d, expiryMonths: v }))}
+            suffix="months"
+            step={1}
+            hint="From last activity"
+          />
+          <div className="flex items-center">
+            <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
+              <Toggle
+                label="Earning enabled"
+                description="Turn off to pause all points accrual"
+                checked={draft.earnEnabled}
+                onChange={(on) => setDraft((d) => ({ ...d, earnEnabled: on }))}
+              />
+            </div>
+          </div>
+        </div>
+
+        <SaveBar
+          note="Drives points earned on orders and redemption at checkout."
+          onSave={save}
+          onReset={reset}
+          dirty={dirty}
+        />
+      </Card>
+    </PrimarySection>
+  );
+}
+
+/* =======================================================================
+ * Coupons (§3.5) — local active/inactive demo view + add affordance
+ * ===================================================================== */
+type CouponView = {
+  code: string;
+  description: string;
+  label: string; // "10% · min ₹599" etc.
+  minOrderValue?: number;
+  active: boolean;
+};
+
+function couponLabel(c: (typeof COUPONS)[number]): string {
+  const base = c.type === "percent" ? `${c.value}%` : INR(c.value);
+  const cap = c.type === "percent" && c.maxDiscount ? ` (max ${INR(c.maxDiscount)})` : "";
+  return `${base}${cap}`;
+}
+
+function CouponsSection() {
+  const [coupons, setCoupons] = useState<CouponView[]>(() =>
+    COUPONS.map((c) => ({
+      code: c.code,
+      description: c.description,
+      label: couponLabel(c),
+      minOrderValue: c.minOrderValue,
+      active: c.active,
+    })),
+  );
+  const [showAdd, setShowAdd] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+
+  function toggle(code: string) {
+    setCoupons((cs) => cs.map((c) => (c.code === code ? { ...c, active: !c.active } : c)));
+    const next = coupons.find((c) => c.code === code);
+    toast.success(`${code} ${next && !next.active ? "activated" : "deactivated"}`);
+  }
+
+  function addCoupon() {
+    const code = newCode.trim().toUpperCase();
+    if (!code) {
+      toast.error("Enter a coupon code");
+      return;
+    }
+    if (coupons.some((c) => c.code === code)) {
+      toast.error(`${code} already exists`);
+      return;
+    }
+    setCoupons((cs) => [
+      { code, description: newDesc.trim() || "New coupon", label: "—", active: true },
+      ...cs,
+    ]);
+    setNewCode("");
+    setNewDesc("");
+    setShowAdd(false);
+    toast.success(`Coupon ${code} added`, { description: "Demo only — not yet persisted." });
+  }
+
+  return (
+    <section id="coupons" className="mb-6 scroll-mt-32">
+      <Card>
+        <SectionHeader
+          icon="ticket-sale-bold"
+          tone="forest"
+          title="Coupons"
+          caption="Discount codes redeemable at checkout — toggle live or stage a new code."
+          action={
+            <button
+              type="button"
+              onClick={() => setShowAdd((v) => !v)}
+              className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-semibold hover:text-ng-leaf transition-colors cursor-pointer"
+            >
+              <Icon name="add-circle-bold" size={15} />
+              Add coupon
+            </button>
+          }
+        />
+        {showAdd ? (
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.6fr_auto] gap-3 items-end mb-4 rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3.5">
+            <TextField
+              label="Code"
+              value={newCode}
+              onChange={setNewCode}
+              placeholder="FRESH50"
+            />
+            <TextField
+              label="Description"
+              value={newDesc}
+              onChange={setNewDesc}
+              placeholder="₹50 off your first order"
+            />
+            <button
+              type="button"
+              onClick={addCoupon}
+              className="h-11 px-4 rounded-xl bg-ng-forest-deep text-ng-cream font-semibold text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
+            >
+              Add
+            </button>
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-[1.2fr_2fr_1fr_0.9fr_auto] gap-4 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+          <span>Code</span>
+          <span>Description</span>
+          <span>Value</span>
+          <span>Min order</span>
+          <span className="text-right">Active</span>
+        </div>
+        <ul>
+          {coupons.map((c) => (
+            <li
+              key={c.code}
+              className="grid grid-cols-[1.2fr_2fr_1fr_0.9fr_auto] gap-4 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
+            >
+              <span className="font-mono text-[13px] text-ng-forest-deep font-semibold">{c.code}</span>
+              <span className="text-[12.5px] text-ng-ink-muted truncate">{c.description}</span>
+              <span className="font-medium tabular-nums">{c.label}</span>
+              <span className="tabular-nums text-ng-ink-muted">
+                {c.minOrderValue ? INR(c.minOrderValue) : "—"}
+              </span>
+              <span className="flex justify-end">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={c.active}
+                  aria-label={`Toggle ${c.code}`}
+                  onClick={() => toggle(c.code)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper ${
+                    c.active ? "bg-ng-forest" : "bg-ng-line"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-ng-paper shadow-sm transition-transform ${
+                      c.active ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-[11.5px] text-ng-ink-soft mt-4 flex items-center gap-1.5">
+          <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
+          Active toggles are a demo view — coupon persistence ships with the catalogue store.
+        </p>
+      </Card>
+    </section>
+  );
+}
+
+/* =======================================================================
+ * Feature toggles (performance) — UI state + toast
+ * ===================================================================== */
+function FeatureTogglesSection() {
+  const [features, setFeatures] = useState(INITIAL_FEATURES);
+
+  function toggle(key: string) {
+    setFeatures((fs) =>
+      fs.map((f) => (f.key === key ? { ...f, on: !f.on } : f)),
+    );
+    const f = features.find((x) => x.key === key);
+    if (f) toast.success(`${f.label} ${f.on ? "disabled" : "enabled"}`);
+  }
+
+  return (
+    <section id="features" className="mb-6 scroll-mt-32">
+      <Card>
+        <SectionHeader
+          icon="bolt-bold"
+          tone="clay"
+          title="Feature toggles"
+          caption="Switch storefront capabilities on or off across the platform."
+          badge={
+            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">
+              {features.filter((f) => f.on).length} / {features.length} on
+            </span>
+          }
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 -my-1">
+          {features.map((f) => (
+            <div key={f.key} className="border-b border-ng-line-soft sm:[&:nth-last-child(-n+2)]:border-0 last:border-0">
+              <Toggle
+                label={f.label}
+                description={f.desc}
+                checked={f.on}
+                onChange={() => toggle(f.key)}
+              />
+            </div>
+          ))}
+        </div>
+      </Card>
+    </section>
   );
 }
