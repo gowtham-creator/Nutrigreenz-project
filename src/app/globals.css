@@ -1,0 +1,401 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
+  --font-serif: var(--font-lora), Lora, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Nutrigreenz palette — exposed to Tailwind as ng-* utility colors */
+  --color-ng-forest: var(--ng-forest);
+  --color-ng-forest-deep: var(--ng-forest-deep);
+  --color-ng-forest-soft: var(--ng-forest-soft);
+  --color-ng-leaf: var(--ng-leaf);
+  --color-ng-leaf-soft: var(--ng-leaf-soft);
+  --color-ng-sage: var(--ng-sage);
+  --color-ng-cream: var(--ng-cream);
+  --color-ng-cream-deep: var(--ng-cream-deep);
+  --color-ng-paper: var(--ng-paper);
+  --color-ng-clay: var(--ng-clay);
+  --color-ng-clay-deep: var(--ng-clay-deep);
+  --color-ng-terracotta: var(--ng-terracotta);
+  --color-ng-soil: var(--ng-soil);
+  --color-ng-ink: var(--ng-ink);
+  --color-ng-ink-muted: var(--ng-ink-muted);
+  --color-ng-ink-soft: var(--ng-ink-soft);
+  --color-ng-line: var(--ng-line);
+  --color-ng-line-soft: var(--ng-line-soft);
+  --color-ng-danger: var(--ng-danger);
+  --color-ng-success: var(--ng-success);
+  --color-ng-green-bright: var(--ng-green-bright);
+  --color-ng-white: var(--ng-white);
+  --color-ng-amber: var(--ng-amber);
+  --color-ng-blue: var(--ng-blue);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+}
+
+:root {
+  /* Font stacks — declared on :root (not only in @theme inline) so the
+     base-layer var(--font-*) references resolve to the next/font families. */
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
+  --font-serif: var(--font-lora), Lora, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Nutri Greenz brand — Figma source-of-truth palette */
+  --ng-forest: #14331F;          /* primary dark green */
+  --ng-forest-deep: #0A1F12;     /* darkest */
+  --ng-forest-soft: #1F4D2E;     /* medium green */
+  --ng-leaf: #66BF73;            /* primary accent green */
+  --ng-leaf-soft: #B2C7B2;       /* pale sage-green */
+  --ng-sage: #B2C7B2;            /* soft sage */
+  --ng-green-bright: #4CAF50;    /* bright / success green */
+  --ng-cream: #F5F2E0;           /* cream */
+  --ng-cream-deep: #ECE7D2;      /* warm beige */
+  --ng-paper: #FAFAF5;           /* warm-white surface */
+  --ng-white: #FFFFFF;
+  --ng-clay: #B5862F;            /* gold accent */
+  --ng-clay-deep: #8A6420;       /* darker gold */
+  --ng-amber: #F29E12;           /* amber / warning */
+  --ng-terracotta: #C74D33;      /* warm clay */
+  --ng-soil: #3C2F1F;
+  --ng-ink: #14331F;             /* primary text (forest near-black) */
+  --ng-ink-muted: #5C6A60;       /* secondary text */
+  --ng-ink-soft: #6B7064;        /* tertiary text — darkened for WCAG AA (4.86:1 on --ng-paper) */
+  --ng-line: #E5E5DD;            /* borders */
+  --ng-line-soft: #EFEFE8;       /* soft borders */
+  --ng-danger: #C74D33;          /* error */
+  --ng-success: #4CAF50;         /* success */
+  --ng-blue: #2962A3;            /* info */
+
+  /* Shadcn-bridged base tokens */
+  --background: var(--ng-paper);
+  --foreground: var(--ng-ink);
+  --border: var(--ng-line);
+  --ring: var(--ng-forest);
+
+  /* Antigravity layered shadows */
+  --shadow-ng-soft: 0 1px 2px rgba(31,77,46,.04), 0 2px 8px rgba(31,77,46,.06);
+  --shadow-ng-card: 0 1px 2px rgba(31,77,46,.04), 0 12px 28px rgba(31,77,46,.10);
+  --shadow-ng-float: 0 1px 2px rgba(31,77,46,.04), 0 20px 50px rgba(31,77,46,.14), 0 40px 80px rgba(31,77,46,.08);
+  --shadow-ng-glow: 0 0 0 1px rgba(184, 212, 154, 0.25), 0 20px 60px rgba(31,77,46,.20);
+
+  /* Glass surfaces */
+  --glass-bg: rgba(255, 253, 247, 0.65);
+  --glass-bg-strong: rgba(255, 253, 247, 0.85);
+  --glass-bg-dark: rgba(20, 52, 32, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-border-dark: rgba(184, 212, 154, 0.20);
+  --glass-blur: 14px;
+
+  /* Motion timing */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft-fast: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 220ms;
+  --dur-base: 380ms;
+  --dur-slow: 720ms;
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { font-family: var(--font-sans); scroll-behavior: smooth; }
+  body {
+    background: var(--ng-paper);
+    color: var(--ng-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv01", "cv11";
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  ::selection { background: var(--ng-leaf-soft); color: var(--ng-forest-deep); }
+
+  /* ----------------------------------------------------------------
+     Global keyboard focus ring — keyboard focus only (:focus-visible),
+     never on mouse click. Uses outline so it is NOT clipped by
+     overflow-hidden ancestors. !important + offset guarantees it wins
+     over Tailwind's `outline-none` utility (outline: 2px solid transparent).
+     ---------------------------------------------------------------- */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: 2px solid var(--ng-forest) !important;
+    outline-offset: 2px !important;
+    border-radius: 2px;
+  }
+  /* On dark/forest surfaces use the bright leaf so the ring stays visible. */
+  .dark a:focus-visible,
+  .dark button:focus-visible,
+  .dark [role="button"]:focus-visible,
+  .dark input:focus-visible,
+  .dark select:focus-visible,
+  .dark textarea:focus-visible,
+  .dark summary:focus-visible,
+  .dark [tabindex]:not([tabindex="-1"]):focus-visible,
+  .bg-forest-radial a:focus-visible,
+  .bg-forest-radial button:focus-visible,
+  .bg-forest-radial [role="button"]:focus-visible,
+  .glass-dark a:focus-visible,
+  .glass-dark button:focus-visible,
+  .glass-dark [role="button"]:focus-visible {
+    outline-color: var(--ng-leaf) !important;
+  }
+
+  /* ----------------------------------------------------------------
+     Global cursor affordances. Tailwind v4 preflight does NOT set a
+     pointer cursor on buttons, so do it globally here.
+     ---------------------------------------------------------------- */
+  button:not(:disabled),
+  [role="button"],
+  a[href],
+  label[for],
+  summary,
+  select {
+    cursor: pointer;
+  }
+  :disabled { cursor: not-allowed; }
+}
+
+/* ============================================================
+   Antigravity utilities — glassmorphism, perspective, motion
+   ============================================================ */
+
+/* Glass surfaces */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-ng-soft);
+}
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-ng-card);
+}
+.glass-dark {
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-border-dark);
+  color: var(--ng-cream);
+}
+
+/* Float / lift cards */
+.ng-float {
+  box-shadow: var(--shadow-ng-card);
+  transition: transform var(--dur-base) var(--ease-out-soft),
+              box-shadow var(--dur-base) var(--ease-out-soft);
+  will-change: transform;
+}
+.ng-float:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-ng-float);
+}
+.ng-magnetic {
+  transition: transform var(--dur-fast) var(--ease-out-soft-fast);
+  will-change: transform;
+}
+.ng-magnetic:hover { transform: translateY(-2px) scale(1.02); }
+.ng-magnetic:active { transform: translateY(0) scale(0.98); }
+
+/* Perspective stage */
+.persp-1000 { perspective: 1000px; perspective-origin: center 60%; }
+.persp-1400 { perspective: 1400px; perspective-origin: center 50%; }
+.tilt-iso { transform: rotateX(38deg) rotateZ(-18deg) translateZ(0); transform-style: preserve-3d; }
+.tilt-soft { transform: rotateX(8deg) rotateY(-4deg) translateZ(0); transform-style: preserve-3d; }
+
+/* Gradient washes */
+.bg-forest-radial {
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%, rgba(111, 170, 62, 0.18), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 80%, rgba(200, 166, 104, 0.10), transparent 65%),
+    var(--ng-forest-deep);
+}
+.bg-cream-mesh {
+  background:
+    radial-gradient(ellipse 60% 50% at 10% 0%,  rgba(184, 212, 154, 0.40), transparent 65%),
+    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(200, 166, 104, 0.30), transparent 65%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255, 253, 247, 1) 30%, var(--ng-cream) 65%);
+}
+.bg-sage-mesh {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(213, 226, 194, 0.6), transparent 70%),
+    var(--ng-paper);
+}
+.text-gradient-forest {
+  background: linear-gradient(135deg, var(--ng-forest-deep) 0%, var(--ng-forest-soft) 60%, var(--ng-leaf) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--ng-clay-deep) 0%, var(--ng-clay) 50%, #E7CD8C 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* Aurora background — soft drifting blobs */
+.aurora { position: relative; overflow: hidden; }
+.aurora::before, .aurora::after {
+  content: ""; position: absolute; inset: -20%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(111,170,62,0.22), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(200,166,104,0.18), transparent 45%),
+    radial-gradient(circle at 60% 20%, rgba(184,212,154,0.20), transparent 50%);
+  filter: blur(60px);
+  z-index: 0;
+  animation: auroraDrift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.aurora::after { animation-duration: 24s; animation-direction: alternate-reverse; opacity: 0.7; }
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0,0,0) scale(1);   }
+  50%  { transform: translate3d(2%, -3%, 0) scale(1.05); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+}
+
+/* Sheet / modal entrance (location layer) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Reveal helpers */
+.reveal-init { opacity: 0; transform: translateY(24px); }
+.reveal-in   { opacity: 1; transform: translateY(0); transition: opacity 0.7s var(--ease-out-soft), transform 0.7s var(--ease-out-soft); }
+
+/* Reduced motion — standard global reset: kill all animation/transition/
+   scroll-linked motion so nothing animates, drifts, or bobs. Kept alongside
+   the existing aurora/float/magnetic overrides. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto !important; }
+  .aurora::before, .aurora::after { animation: none !important; }
+  .ng-float:hover, .ng-magnetic:hover { transform: none; }
+}
+
+/* Announce ticker (kept for promo bar) */
+@keyframes announceScroll {
+  0%, 40%   { transform: translateY(0); }
+  50%, 90%  { transform: translateY(-100%); }
+  100%      { transform: translateY(-200%); }
+}
+.announcement-rotate { position: relative; height: 1.6em; overflow: hidden; text-align: center; width: 100%; }
+.announcement-rotate__track { display: flex; flex-direction: column; animation: announceScroll 10s ease-in-out infinite; }
+.announcement-rotate__track > * { flex: 0 0 1.6em; }
+
+/* Hide scrollbar for horizontal scrollers */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Pill / category chip */
+.ng-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 999px;
+  background: var(--ng-paper); border: 1px solid var(--ng-line);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--ng-ink);
+  transition: background var(--dur-fast) var(--ease-out-soft),
+              transform var(--dur-fast) var(--ease-out-soft),
+              border-color var(--dur-fast) var(--ease-out-soft);
+}
+.ng-chip:hover {
+  background: var(--ng-sage); transform: translateY(-1px);
+  border-color: var(--ng-leaf-soft);
+}
+.ng-chip[data-active="true"] {
+  background: var(--ng-forest); color: var(--ng-paper); border-color: var(--ng-forest);
+}
+
+/* Section labels (small caps eyebrow) */
+.ng-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ng-clay-deep);
+}
+
+/* Decorative line frame (corners) */
+.ng-corners { position: relative; }
+.ng-corners::before, .ng-corners::after {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  border: 1.5px solid var(--ng-clay); pointer-events: none;
+}
+.ng-corners::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.ng-corners::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+/* Article body typography */
+.prose-article > p {
+  font-family: var(--font-serif);
+  font-size: 18px; line-height: 1.7;
+  color: var(--ng-ink-muted);
+  margin-top: 1.4em;
+}
+.prose-article > h2 {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.2; color: var(--ng-forest-deep);
+  margin-top: 2.4em; margin-bottom: 0.3em;
+  letter-spacing: -0.005em;
+}
+.prose-article > blockquote {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 1.35; color: var(--ng-forest-deep);
+  border-left: 3px solid var(--ng-clay);
+  padding-left: 1.4em; margin-top: 2em; margin-bottom: 2em;
+  font-style: italic;
+}
+.prose-article > blockquote > footer {
+  font-family: var(--font-sans);
+  font-style: normal; font-size: 13px;
+  color: var(--ng-ink-soft);
+  margin-top: 0.8em;
+}
+
+/* Image placeholder (used until product photos land) */
+.ng-img-fallback {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(111,170,62,0.18), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(200,166,104,0.18), transparent 50%),
+    linear-gradient(135deg, var(--ng-sage), var(--ng-cream));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ng-forest); font-family: var(--font-display);
+}
+
+/* Lofi grayscale mode (for wireframes route) */
+.lofi { filter: grayscale(1) contrast(0.92); }
+.lofi .ng-img-fallback { background: repeating-linear-gradient(45deg, #efefef 0 8px, #e3e3e3 8px 16px); color: #888; }
+.lofi .glass, .lofi .glass-strong { background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); }

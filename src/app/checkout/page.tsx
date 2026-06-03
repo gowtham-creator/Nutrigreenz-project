@@ -1,0 +1,388 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { PageShell } from "@/components/ng/page-shell";
+import { Section } from "@/components/ng/section";
+import { Button } from "@/components/ng/button";
+import { Icon } from "@/components/ui/icon";
+import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
+import { useCommerceRules } from "@/lib/commerce";
+import { useAddresses } from "@/lib/addresses";
+import { COUPONS, LOYALTY_LEDGER } from "@/components/ng/data";
+import type { Coupon } from "@/types/nutrigreenz";
+import { FloatIn, MagneticHover, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
+import { AddressPicker } from "@/components/ng/checkout/address-picker";
+import { SlotPicker } from "@/components/ng/checkout/slot-picker";
+import { RewardsPanel } from "@/components/ng/checkout/rewards-panel";
+import {
+  PaymentPicker,
+  type PaymentSelection,
+} from "@/components/ng/checkout/payment-picker";
+import { NoCancellationAck } from "@/components/ng/checkout/no-cancellation";
+import { OrderSummary } from "@/components/ng/checkout/order-summary";
+import {
+  computeTotals,
+  generateOrderId,
+  INR,
+  loyaltyBalance,
+  maxRedeemableRupees,
+  POINTS_PER_RUPEE,
+  pointsEarned,
+} from "@/components/ng/checkout/order-math";
+import { saveReceipt } from "@/components/ng/checkout/order-receipt";
+
+const CHECKOUT_STEPS = [
+  { label: "Address", icon: "map-point-bold" },
+  { label: "Slot", icon: "clock-circle-bold" },
+  { label: "Rewards", icon: "ticket-bold" },
+  { label: "Payment", icon: "wallet-money-bold" },
+  { label: "Review", icon: "shield-check-bold" },
+] as const;
+
+/** Horizontal step indicator giving the checkout a guided, premium feel. */
+function CheckoutStepper() {
+  return (
+    <Reveal>
+      <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-ng-line-soft bg-ng-paper/70 p-2.5 backdrop-blur sm:gap-2 sm:p-3">
+        {CHECKOUT_STEPS.map((step, i) => (
+          <li key={step.label} className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-ng-sage/40 px-3 py-1.5 text-[12px] font-semibold text-ng-forest sm:px-3.5">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-ng-forest text-[10px] font-bold text-ng-cream tabular-nums">
+                {i + 1}
+              </span>
+              <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
+              {step.label}
+            </span>
+            {i < CHECKOUT_STEPS.length - 1 ? (
+              <span aria-hidden className="h-px w-3 bg-ng-line sm:w-5" />
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </Reveal>
+  );
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, clear } = useCart();
+  const { isAuthed } = useAuth();
+  const rules = useCommerceRules();
+  const { addresses, defaultAddress } = useAddresses();
+
+  const loyaltyAvailable = useMemo(() => loyaltyBalance(LOYALTY_LEDGER), []);
+
+  const [addressId, setAddressId] = useState<string | null>(
+    defaultAddress?.id ?? null,
+  );
+  const [slotId, setSlotId] = useState<string | null>(
+    rules.deliverySlots[0]?.id ?? null,
+  );
+  const [payment, setPayment] = useState<PaymentSelection | null>(null);
+  const [applied, setApplied] = useState<{
+    coupon: Coupon;
+    discount: number;
+  } | null>(null);
+  const [redeemLoyalty, setRedeemLoyalty] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  // Keep the selected address in sync with the (async-hydrated) default.
+  const resolvedAddressId =
+    addressId ?? defaultAddress?.id ?? addresses[0]?.id ?? null;
+  const selectedAddress =
+    addresses.find((a) => a.id === resolvedAddressId) ?? null;
+  const resolvedSlotId = slotId ?? rules.deliverySlots[0]?.id ?? null;
+  const selectedSlot =
+    rules.deliverySlots.find((s) => s.id === resolvedSlotId) ?? null;
+
+  const couponDiscount = applied?.discount ?? 0;
+  const loyaltyRupees = maxRedeemableRupees(loyaltyAvailable);
+  const loyaltyDiscount = redeemLoyalty ? loyaltyRupees : 0;
+  const loyaltyPointsUsed = redeemLoyalty
+    ? loyaltyRupees * POINTS_PER_RUPEE
+    : 0;
+
+  const totals = useMemo(
+    () =>
+      computeTotals({
+        subtotal,
+        couponDiscount,
+        loyaltyDiscount,
+        rules,
+      }),
+    [subtotal, couponDiscount, loyaltyDiscount, rules],
+  );
+
+  const belowMinimum = subtotal > 0 && subtotal < rules.minOrderValue;
+  const canPlace =
+    items.length > 0 &&
+    !!selectedAddress &&
+    !!selectedSlot &&
+    !!payment &&
+    acknowledged &&
+    !belowMinimum;
+
+  function handlePlaceOrder() {
+    if (!canPlace || !selectedAddress || !selectedSlot || !payment) {
+      if (belowMinimum) {
+        toast.error(`Minimum order value is ${INR(rules.minOrderValue)}.`);
+      } else if (!selectedAddress) {
+        toast.error("Please select a delivery address.");
+      } else if (!payment) {
+        toast.error("Please choose a payment method.");
+      } else if (!acknowledged) {
+        toast.error("Please acknowledge the no-cancellation policy.");
+      }
+      return;
+    }
+
+    const id = generateOrderId();
+    saveReceipt({
+      id,
+      placedAt: new Date().toISOString(),
+      items,
+      subtotal,
+      couponCode: applied?.coupon.code,
+      couponDiscount,
+      loyaltyPoints: loyaltyPointsUsed,
+      loyaltyDiscount,
+      shipping: totals.shipping,
+      total: totals.total,
+      taxInclusive: totals.taxInclusive,
+      payment,
+      slotLabel: selectedSlot.label,
+      address: selectedAddress,
+      pointsToEarn: pointsEarned(totals.total),
+    });
+
+    clear();
+    router.push(`/checkout/success?order=${id}`);
+  }
+
+  /* ── Empty state ─────────────────────────────────────────────── */
+  if (items.length === 0) {
+    return (
+      <PageShell hidePromo>
+        <Section className="!py-28">
+          <Reveal className="mx-auto max-w-lg">
+            <div className="relative overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-paper px-6 py-16 text-center shadow-[var(--shadow-ng-card)]">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -top-16 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-ng-leaf/15 blur-3xl"
+              />
+              <div className="relative z-10 flex flex-col items-center">
+                <FloatIn>
+                  <span className="grid h-24 w-24 place-items-center rounded-full bg-ng-sage/40 text-ng-forest-deep ring-8 ring-ng-sage/20">
+                    <Icon name="bag-smile-bold" size={42} />
+                  </span>
+                </FloatIn>
+                <h1 className="mt-7 font-display text-[32px] text-ng-forest-deep">
+                  Nothing to check out yet
+                </h1>
+                <p className="mt-3 max-w-sm text-[16px] leading-relaxed text-ng-ink-muted">
+                  Your bag is empty. Fill it with cold-pressed oils, A2 ghee and
+                  farm-fresh staples, then come back to complete your order.
+                </p>
+                <Button variant="primary" size="lg" className="mt-7" asChild>
+                  <Link href="/shop">
+                    <Icon name="bag-4-bold" size={18} />
+                    Start shopping
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </Reveal>
+        </Section>
+      </PageShell>
+    );
+  }
+
+  /* ── Full checkout ───────────────────────────────────────────── */
+  return (
+    <PageShell hidePromo>
+      <Section
+        className="!pt-12 !pb-24"
+        eyebrow="Secure checkout"
+        heading="Complete your order"
+        description="Review your delivery details, apply rewards and pay securely. Everything is freshly packed from farm lots once you confirm."
+      >
+        <CheckoutStepper />
+
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_400px]">
+          {/* Soft background blooms behind the columns */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -left-24 top-10 -z-10 h-72 w-72 rounded-full bg-ng-leaf/10 blur-3xl"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-20 bottom-20 -z-10 h-72 w-72 rounded-full bg-ng-clay/10 blur-3xl"
+          />
+
+          {/* Left column — selections */}
+          <Stagger className="space-y-6">
+            {belowMinimum ? (
+              <StaggerItem>
+                <div className="flex items-center gap-3 rounded-2xl border border-ng-danger/40 bg-ng-danger/10 p-4 text-[14px] text-ng-danger">
+                  <Icon name="danger-triangle-bold" size={20} />
+                  <span>
+                    Add {INR(rules.minOrderValue - subtotal)} more to reach the{" "}
+                    {INR(rules.minOrderValue)} minimum order value.
+                  </span>
+                </div>
+              </StaggerItem>
+            ) : null}
+
+            <StaggerItem>
+              <AddressPicker
+                addresses={addresses}
+                selectedId={resolvedAddressId}
+                onSelect={setAddressId}
+              />
+            </StaggerItem>
+
+            <StaggerItem>
+              <SlotPicker
+                slots={rules.deliverySlots}
+                selectedId={resolvedSlotId}
+                onSelect={setSlotId}
+              />
+            </StaggerItem>
+
+            <StaggerItem>
+              <RewardsPanel
+                subtotal={subtotal}
+                coupons={COUPONS}
+                appliedCoupon={applied}
+                onApplyCoupon={(coupon, discount) =>
+                  setApplied({ coupon, discount })
+                }
+                onRemoveCoupon={() => setApplied(null)}
+                loyaltyAvailable={loyaltyAvailable}
+                loyaltyRedeemed={loyaltyPointsUsed}
+                onToggleLoyalty={setRedeemLoyalty}
+              />
+            </StaggerItem>
+
+            <StaggerItem>
+              <PaymentPicker selected={payment} onSelect={setPayment} />
+            </StaggerItem>
+
+            <StaggerItem>
+              <NoCancellationAck
+                checked={acknowledged}
+                onChange={setAcknowledged}
+              />
+            </StaggerItem>
+          </Stagger>
+
+          {/* Right column — summary + CTA */}
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-float)]">
+              <OrderSummary
+                items={items}
+                totals={totals}
+                loyaltyPoints={loyaltyPointsUsed || undefined}
+              />
+
+              {!isAuthed ? (
+                <MagneticHover className="mt-6 block w-full">
+                  <Button variant="primary" size="lg" fullWidth asChild>
+                    <Link href="/auth?next=/checkout">
+                      <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                      Sign in to place order
+                    </Link>
+                  </Button>
+                </MagneticHover>
+              ) : canPlace ? (
+                <MagneticHover className="mt-6 block w-full">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    onClick={handlePlaceOrder}
+                  >
+                    <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                    {payment
+                      ? `Pay ${INR(totals.total)} · ${payment.label}`
+                      : `Place order · ${INR(totals.total)}`}
+                  </Button>
+                </MagneticHover>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="mt-6"
+                  disabled
+                  onClick={handlePlaceOrder}
+                >
+                  <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                  {payment
+                    ? `Pay ${INR(totals.total)} · ${payment.label}`
+                    : `Place order · ${INR(totals.total)}`}
+                </Button>
+              )}
+
+              {!isAuthed ? (
+                <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
+                  Sign in or create an account to complete your purchase.
+                </p>
+              ) : !acknowledged ? (
+                <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
+                  Acknowledge the no-cancellation policy to continue.
+                </p>
+              ) : (
+                <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
+                  You&apos;ll earn{" "}
+                  <span className="font-semibold text-ng-forest">
+                    {pointsEarned(totals.total)} points
+                  </span>{" "}
+                  on this order.
+                </p>
+              )}
+
+              <ul className="mt-6 space-y-1.5 border-t border-ng-line-soft pt-5 text-[12px] text-ng-ink-muted">
+                <li className="flex items-center gap-2">
+                  <Icon
+                    name="check-circle-bold"
+                    size={14}
+                    className="text-ng-leaf"
+                  />
+                  Lot codes printed on every label
+                </li>
+                <li className="flex items-center gap-2">
+                  <Icon
+                    name="check-circle-bold"
+                    size={14}
+                    className="text-ng-leaf"
+                  />
+                  Plastic-free, recyclable packaging
+                </li>
+                <li className="flex items-center gap-2">
+                  <Icon
+                    name="check-circle-bold"
+                    size={14}
+                    className="text-ng-leaf"
+                  />
+                  Secure payments via {payment?.categoryLabel ?? "UPI, cards & wallets"}
+                </li>
+              </ul>
+            </div>
+
+            <Button variant="ghost" size="md" fullWidth asChild>
+              <Link href="/cart">
+                <Icon name="arrow-left-linear" size={16} />
+                Back to bag
+              </Link>
+            </Button>
+          </aside>
+        </div>
+      </Section>
+    </PageShell>
+  );
+}

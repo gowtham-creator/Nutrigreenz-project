@@ -1,0 +1,90 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Local settings (not project config)
+.claude/settings.local.json
+
+# User-specific skills (not part of the template)
+.claude/skills/customize/
+.claude/skills/release/
+
+# Local temp files
+temp/
+*.tmp
+_*.mjs
+node-compile-cache/
+
+# Assistant & tooling configs (local only — not shipped)
+.claude/
+.cursor/
+.windsurf/
+.windsurfrules
+.gemini/
+.codex/
+.continue/
+.clinerules
+.aider*
+.aidesigner/
+.amazonq/
+.augment/
+.opencode/
+.agents/
+.playwright-mcp/
+.mcp.json
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+CHANGELOG.md
+scripts/sync-agent-rules.sh
+scripts/sync-skills.mjs
+
+# Internal docs & references (local only)
+docs/
+shot-list.png
+
+# Working design mockups (local only)
+ng-*.png
+
+# Source-reference assets & leftover clone artifacts (local only)
+public/images/anveshan/
+public/seo/anveshan-favicon.png
+src/components/anveshan/
+src/types/anveshan.ts
+scripts/download-anveshan-assets.mjs
