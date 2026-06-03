@@ -1,8 +1,13 @@
+"use client";
+
 import Image from "next/image";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { toast } from "sonner";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { PRODUCTS } from "@/components/ng/data";
 import { HBars } from "@/components/ng/admin/viz";
+import { cn } from "@/lib/utils";
 
 const STATUS_TONE: Record<string, "success" | "warn" | "danger" | "neutral"> = {
   Published: "success",
@@ -65,6 +70,41 @@ export default function AdminCatalog() {
     .slice(0, 6);
 
   const avgRating = (ROWS.reduce((s, r) => s + (r.rating ?? 0), 0) / ROWS.length).toFixed(2);
+
+  // ── row selection ───────────────────────────────────────────────
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  const allIds = useMemo(() => ROWS.map((r) => r.id ?? "").filter(Boolean), []);
+  const allSelected = selected.size > 0 && selected.size === allIds.length;
+  const someSelected = selected.size > 0 && selected.size < allIds.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(allIds));
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  function bulkAction(label: string) {
+    toast.success(label, { description: `${selected.size} product${selected.size === 1 ? "" : "s"} affected.` });
+    if (label === "Export selected") return; // export keeps selection
+    clearSelection();
+  }
 
   return (
     <AdminShell
@@ -132,8 +172,52 @@ export default function AdminCatalog() {
       </div>
 
       <Card className="!p-0 overflow-hidden">
+        {selected.size > 0 ? (
+          <div className="flex items-center justify-between gap-4 px-6 py-2.5 bg-ng-forest-deep text-ng-cream">
+            <span className="text-[12.5px] font-medium">{selected.size} selected</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => bulkAction("Set active")}
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+              >
+                Set active
+              </button>
+              <button
+                type="button"
+                onClick={() => bulkAction("Mark draft")}
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+              >
+                Mark draft
+              </button>
+              <button
+                type="button"
+                onClick={() => bulkAction("Export selected")}
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+              >
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-full px-3 py-1 text-[12px] font-medium text-ng-cream/70 hover:text-ng-cream transition-colors cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="grid grid-cols-[auto_2.6fr_1fr_0.9fr_1.1fr_0.8fr_0.7fr_1fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
-          <span className="w-4"><input type="checkbox" aria-label="Select all" /></span>
+          <span className="w-4">
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              aria-label="Select all"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="cursor-pointer accent-ng-forest-deep"
+            />
+          </span>
           <span>Product</span>
           <span>SKU</span>
           <span>Category</span>
@@ -144,12 +228,25 @@ export default function AdminCatalog() {
           <span></span>
         </div>
         <ul>
-          {ROWS.map((r) => (
+          {ROWS.map((r) => {
+            const isSelected = selected.has(r.id ?? "");
+            return (
             <li
               key={r.id}
-              className="grid grid-cols-[auto_2.6fr_1fr_0.9fr_1.1fr_0.8fr_0.7fr_1fr_0.5fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+              className={cn(
+                "grid grid-cols-[auto_2.6fr_1fr_0.9fr_1.1fr_0.8fr_0.7fr_1fr_0.5fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 transition-colors",
+                isSelected ? "bg-ng-sage/20" : "hover:bg-ng-cream/40",
+              )}
             >
-              <span className="w-4"><input type="checkbox" aria-label={`Select ${r.title}`} /></span>
+              <span className="w-4">
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${r.title}`}
+                  checked={isSelected}
+                  onChange={() => toggleRow(r.id ?? "")}
+                  className="cursor-pointer accent-ng-forest-deep"
+                />
+              </span>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative size-11 rounded-lg overflow-hidden bg-ng-sage shrink-0">
                   <Image src={r.image} alt={r.title} fill className="object-cover" sizes="44px" />
@@ -184,7 +281,8 @@ export default function AdminCatalog() {
               <span><Pill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</Pill></span>
               <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Edit →</button>
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         <div className="px-6 py-3 flex items-center justify-between text-[12px] text-ng-ink-soft border-t border-ng-line-soft bg-ng-cream/40">

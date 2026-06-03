@@ -215,10 +215,23 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
+  // Edge-to-edge cards opt out of the section's own padding via `!p-0` so their
+  // table rows can run flush to the rounded border (each row supplies its own
+  // px-*). In that case the title header must carry its OWN px/pt so the first
+  // letter is never clipped by `overflow-hidden`, and the children must stay
+  // unpadded. Plain cards keep their original `p-6` look — the header sits flush
+  // inside that padding (no extra px/pt), so nothing double-pads.
+  const edgeToEdge = /(^|\s)!p-0(\s|$)/.test(className ?? "");
+  const hasHeader = Boolean(title || action);
   return (
     <section className={cn("rounded-2xl bg-ng-paper border border-ng-line-soft p-6", className)}>
-      {(title || action) && (
-        <header className="flex items-center justify-between gap-4 mb-5">
+      {hasHeader && (
+        <header
+          className={cn(
+            "flex items-center justify-between gap-4 mb-5",
+            edgeToEdge && "px-6 pt-6",
+          )}
+        >
           {title ? <h2 className="font-display text-[18px] text-ng-forest-deep">{title}</h2> : <span />}
           {action}
         </header>
