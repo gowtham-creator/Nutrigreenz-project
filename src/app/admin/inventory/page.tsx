@@ -1,9 +1,15 @@
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { StockMeter, MiniBars, type VizTone } from "@/components/ng/admin/viz";
+import { StockAdjustDialog, type StockTarget } from "@/components/ng/admin/catalog/stock-adjust-dialog";
+import { downloadCsv, toCsv } from "@/components/ng/admin/catalog/csv";
 
 /* ---- product stock (SKU level) ----------------------------------- */
-const STOCK: {
+interface StockRow {
   sku: string;
   product: string;
   category: string;
@@ -12,7 +18,9 @@ const STOCK: {
   lot: string;
   movement: number[];
   reorder: boolean;
-}[] = [
+}
+
+const SEED_STOCK: StockRow[] = [
   { sku: "OIL-GN-1L", product: "Cold-Pressed Groundnut Oil", category: "Oils", stock: 982, threshold: 200, lot: "ANT-24-051", movement: [42, 38, 51, 44, 60, 55, 66], reorder: false },
   { sku: "GHE-A2-500", product: "A2 Gir Cow Bilona Ghee", category: "Ghee", stock: 318, threshold: 120, lot: "ANT-24-049", movement: [22, 28, 24, 31, 29, 34, 38], reorder: false },
   { sku: "OIL-SF-1L", product: "Cold-Pressed Sunflower Oil", category: "Oils", stock: 12, threshold: 40, lot: "ANT-24-046", movement: [18, 14, 20, 11, 9, 7, 5], reorder: true },
@@ -50,7 +58,54 @@ function stockState(stock: number, threshold: number) {
 }
 
 export default function AdminInventory() {
-  const reorderCount = STOCK.filter((s) => s.reorder).length;
+  // ── editable SKU stock (demo persistence — real write = M2) ──────
+  const [stock, setStock] = useState<StockRow[]>(() => SEED_STOCK.map((s) => ({ ...s })));
+  const reorderCount = stock.filter((s) => s.reorder).length;
+
+  // ── stock-adjust dialog state ────────────────────────────────────
+  const [adjustTarget, setAdjustTarget] = useState<StockTarget | null>(null);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+
+  const openAdjust = useCallback((s: StockRow, prefillReorder?: boolean) => {
+    setAdjustTarget({
+      sku: s.sku,
+      product: s.product,
+      stock: s.stock,
+      threshold: s.threshold,
+      lot: s.lot,
+      reorder: prefillReorder ?? s.reorder,
+    });
+    setAdjustOpen(true);
+  }, []);
+
+  const handleSaveStock = useCallback((sku: string, nextStock: number, reorder: boolean) => {
+    setStock((prev) => prev.map((s) => (s.sku === sku ? { ...s, stock: nextStock, reorder } : s)));
+    setAdjustOpen(false);
+    toast.success("Stock updated", {
+      description: `${sku} → ${nextStock} units${reorder ? " · flagged for reorder" : ""}.`,
+    });
+  }, []);
+
+  const handleExportStock = useCallback(() => {
+    const csv = toCsv(
+      ["sku", "product", "stock", "status", "lot"],
+      stock.map((s) => [s.sku, s.product, s.stock, stockState(s.stock, s.threshold).label, s.lot]),
+    );
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`nutrigreenz-stock-${stamp}.csv`, csv);
+    toast.success("Export started", { description: `${stock.length} SKUs → CSV download.` });
+  }, [stock]);
+
+  // Low-stock list derived from live stock state (keeps existing visual).
+  const lowStock = useMemo(
+    () =>
+      stock
+        .filter((s) => s.stock <= s.threshold)
+        .sort((a, b) => a.stock / a.threshold - b.stock / b.threshold)
+        .slice(0, 4),
+    [stock],
+  );
+
   return (
     <AdminShell
       active="/admin/inventory"
@@ -62,11 +117,18 @@ export default function AdminInventory() {
       subtitle="Every jar traces back to a lot. Every lot traces back to a farmer."
       actions={
         <>
-          <button className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer">
-            <Icon name="document-text-bold" size={15} className="text-ng-forest" />
-            Stock report
+          <button
+            type="button"
+            onClick={handleExportStock}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="export-bold" size={15} className="text-ng-forest" />
+            Export CSV
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
+          >
             <Icon name="box-bold" size={15} />
             Receive lot
           </button>
@@ -78,7 +140,7 @@ export default function AdminInventory() {
         <StatTile label="Lots active" value="86" delta="3 received this week" trend="up" />
         <StatTile label="Inventory value" value="₹38.4L" delta="+₹2.1L vs last wk" trend="up" />
         <StatTile label="QC pending" value="4" delta="all in-lab" trend="flat" />
-        <StatTile label="Low-stock SKUs" value="12" delta="auto-PO drafted" trend="down" />
+        <StatTile label="Low-stock SKUs" value={String(reorderCount)} delta="auto-PO drafted" trend="down" />
       </div>
 
       {/* Reorder banner */}
@@ -100,13 +162,19 @@ export default function AdminInventory() {
       {/* Product stock table */}
       <Card
         title="Product stock"
-        action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">Export →</button>}
+        action={
+          <button type="button" onClick={handleExportStock} className="inline-flex items-center gap-1.5 text-[12px] text-ng-forest hover:underline cursor-pointer">
+            <Icon name="export-bold" size={14} />
+            Export →
+          </button>
+        }
         className="!p-0 overflow-hidden mb-6"
       >
         <div className="px-6 pt-6 pb-4 flex items-center gap-2 flex-wrap border-b border-ng-line-soft">
           {FILTERS.map((t, i) => (
             <button
               key={t}
+              type="button"
               className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors cursor-pointer ${
                 i === 0
                   ? "bg-ng-forest-deep text-ng-cream font-semibold"
@@ -126,7 +194,7 @@ export default function AdminInventory() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.6fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
           <span>SKU</span>
           <span>Product</span>
           <span>Category</span>
@@ -136,13 +204,13 @@ export default function AdminInventory() {
           <span></span>
         </div>
         <ul>
-          {STOCK.map((s) => {
+          {stock.map((s) => {
             const st = stockState(s.stock, s.threshold);
             const tone: VizTone = st.tone === "danger" ? "terracotta" : st.tone === "neutral" ? "ink" : "leaf";
             return (
               <li
                 key={s.sku}
-                className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.6fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
               >
                 <span className="font-mono text-[11.5px] text-ng-forest-deep">{s.sku}</span>
                 <span className="truncate font-medium">{s.product}</span>
@@ -153,15 +221,26 @@ export default function AdminInventory() {
                 </div>
                 <span className="font-mono text-[11.5px] text-ng-ink-muted">{s.lot}</span>
                 <MiniBars data={s.movement} tone={tone} width={56} height={26} />
-                {s.reorder ? (
-                  <button className="text-[12px] font-bold text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer">
-                    Reorder
+                <div className="flex items-center justify-end gap-2">
+                  {s.reorder ? (
+                    <button
+                      type="button"
+                      onClick={() => openAdjust(s, true)}
+                      className="text-[12px] font-bold text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer"
+                    >
+                      Reorder
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => openAdjust(s)}
+                    aria-label={`Adjust stock for ${s.product}`}
+                    className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
+                  >
+                    <Icon name="pen-2-bold" size={13} />
+                    Adjust
                   </button>
-                ) : (
-                  <button className="text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer">
-                    Open →
-                  </button>
-                )}
+                </div>
               </li>
             );
           })}
@@ -171,7 +250,7 @@ export default function AdminInventory() {
       {/* Lots table */}
       <Card
         title="Lot register"
-        action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All lots →</button>}
+        action={<button type="button" className="text-[12px] text-ng-forest hover:underline cursor-pointer">All lots →</button>}
         className="!p-0 overflow-hidden mb-6"
       >
         <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
@@ -199,7 +278,7 @@ export default function AdminInventory() {
                 {l.available.toLocaleString()}
               </span>
               <span><Pill tone={l.tone}>{l.status}</Pill></span>
-              <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Open →</button>
+              <button type="button" className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Open →</button>
             </li>
           ))}
         </ul>
@@ -208,31 +287,36 @@ export default function AdminInventory() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Low stock */}
         <Card title="Low stock — replenish this week">
-          <ul className="space-y-4">
-            {[
-              { sku: "Cold-pressed sesame · 500ml", stock: 12, threshold: 40, daysLeft: 1.4 },
-              { sku: "Moringa powder · 200g", stock: 28, threshold: 60, daysLeft: 3.1 },
-              { sku: "Cultured buffalo ghee · 250ml", stock: 31, threshold: 80, daysLeft: 4.7 },
-              { sku: "Turmeric latte blend · 150g", stock: 44, threshold: 100, daysLeft: 5.2 },
-            ].map((s) => {
-              const pct = Math.min(100, (s.stock / s.threshold) * 100);
-              return (
-                <li key={s.sku}>
-                  <div className="flex justify-between text-[13px] mb-1.5 items-baseline">
-                    <span>{s.sku}</span>
-                    <span className="text-ng-terracotta font-semibold font-mono text-[11.5px] tabular-nums">{s.stock} left · {s.daysLeft}d</span>
-                  </div>
-                  <div className="h-2 bg-ng-line-soft rounded-full overflow-hidden">
-                    <div className="h-full bg-ng-terracotta rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          {lowStock.length > 0 ? (
+            <ul className="space-y-4">
+              {lowStock.map((s) => {
+                const pct = Math.min(100, s.threshold > 0 ? (s.stock / s.threshold) * 100 : 0);
+                return (
+                  <li key={s.sku}>
+                    <div className="flex justify-between text-[13px] mb-1.5 items-baseline">
+                      <span className="truncate pr-2">{s.product}</span>
+                      <button
+                        type="button"
+                        onClick={() => openAdjust(s)}
+                        className="text-ng-terracotta font-semibold font-mono text-[11.5px] tabular-nums hover:underline cursor-pointer shrink-0"
+                      >
+                        {s.stock} left · adjust
+                      </button>
+                    </div>
+                    <div className="h-2 bg-ng-line-soft rounded-full overflow-hidden">
+                      <div className="h-full bg-ng-terracotta rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-[13px] text-ng-ink-soft">All SKUs above reorder threshold.</p>
+          )}
         </Card>
 
         {/* Open POs */}
-        <Card title="Open purchase orders" action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">Create PO →</button>}>
+        <Card title="Open purchase orders" action={<button type="button" className="text-[12px] text-ng-forest hover:underline cursor-pointer">Create PO →</button>}>
           <ul className="space-y-3 text-[13px]">
             {PO_OPEN.map((p) => (
               <li key={p.id} className="border-b border-ng-line-soft pb-3 last:border-0">
@@ -252,6 +336,14 @@ export default function AdminInventory() {
           </ul>
         </Card>
       </div>
+
+      {/* Stock adjust / reorder dialog (demo persistence) */}
+      <StockAdjustDialog
+        open={adjustOpen}
+        target={adjustTarget}
+        onClose={() => setAdjustOpen(false)}
+        onSave={handleSaveStock}
+      />
     </AdminShell>
   );
 }

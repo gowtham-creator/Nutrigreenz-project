@@ -16,6 +16,8 @@ const NAV: NavItem[] = [
   { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold" },
   { href: "/admin/inventory", label: "Inventory", icon: "box-minimalistic-bold" },
   { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold" },
+  // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
+  { href: "/admin/reports", label: "Reports", icon: "chart-2-bold" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold" },
   // Super Admin control center — gated below; only superadmins see this item.
   { href: "/admin/config", label: "Config", icon: "settings-bold", superadminOnly: true },

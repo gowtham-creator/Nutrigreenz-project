@@ -1,20 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { PRODUCTS } from "@/components/ng/data";
 import { HBars } from "@/components/ng/admin/viz";
 import { cn } from "@/lib/utils";
-
-const STATUS_TONE: Record<string, "success" | "warn" | "danger" | "neutral"> = {
-  Published: "success",
-  Draft: "warn",
-  "Out of stock": "danger",
-  Archived: "neutral",
-};
+import { ProductFormDrawer } from "@/components/ng/admin/catalog/product-form-drawer";
+import { CsvImportDialog } from "@/components/ng/admin/catalog/csv-import-dialog";
+import { downloadCsv, productsToCsv } from "@/components/ng/admin/catalog/csv";
+import { STATUS_TONE, type AdminProduct, type ProductStatus } from "@/components/ng/admin/catalog/types";
 
 const TAG_CATEGORY: Record<string, string> = {
   oil: "Oils",
@@ -30,52 +27,107 @@ const TAG_CATEGORY: Record<string, string> = {
 };
 
 const STOCKS = [142, 89, 12, 31, 218, 76, 4, 56, 9, 187, 134, 24, 67, 41];
-const STATUSES = [
+const STATUSES: ProductStatus[] = [
   "Published", "Published", "Out of stock", "Published", "Published", "Published",
   "Draft", "Published", "Published", "Published", "Published", "Draft", "Published", "Archived",
 ];
 
-const ROWS = PRODUCTS.map((p, i) => {
-  const tag = p.tags?.[0] ?? "";
-  const mrp = p.mrp ?? p.price ?? 0;
-  const price = p.price ?? 0;
-  const margin = mrp > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0;
-  return {
-    ...p,
-    sku: `NG-${(p.id ?? "").replace("p-", "")}-01`,
-    category: TAG_CATEGORY[tag] ?? "Other",
-    stock: STOCKS[i] ?? 50,
-    status: STATUSES[i] ?? "Published",
-    margin,
-    mrp,
-    price,
-  };
-});
+/** Seed the editable product list from the storefront catalog data. */
+function seedProducts(): AdminProduct[] {
+  return PRODUCTS.map((p, i) => {
+    const tag = p.tags?.[0] ?? "";
+    const mrp = p.mrp ?? p.price ?? 0;
+    const price = p.price ?? 0;
+    return {
+      id: p.id ?? `p-${i}`,
+      title: p.title,
+      sku: `NG-${(p.id ?? "").replace("p-", "")}-01`,
+      category: TAG_CATEGORY[tag] ?? "Other",
+      price,
+      mrp,
+      stock: STOCKS[i] ?? 50,
+      status: STATUSES[i] ?? "Published",
+      lot: "",
+      description: p.unit ?? "",
+      rating: p.rating ?? 0,
+      image: p.image,
+      badge: p.badge,
+    };
+  });
+}
 
 const TABS = ["All products", "Published", "Drafts", "Out of stock", "Archived"];
 
 export default function AdminCatalog() {
-  const live = ROWS.filter((r) => r.status === "Published").length;
-  const blocked = ROWS.filter((r) => r.status === "Out of stock").length;
-  const drafts = ROWS.filter((r) => r.status === "Draft").length;
+  // ── editable product list (demo persistence — real save = M2) ────
+  const [products, setProducts] = useState<AdminProduct[]>(() => seedProducts());
+
+  const live = products.filter((r) => r.status === "Published").length;
+  const blocked = products.filter((r) => r.status === "Out of stock").length;
+  const drafts = products.filter((r) => r.status === "Draft").length;
 
   // category counts for the mix bar
-  const catCounts = ROWS.reduce<Record<string, number>>((acc, r) => {
-    acc[r.category] = (acc[r.category] ?? 0) + 1;
-    return acc;
-  }, {});
-  const catRows = Object.entries(catCounts)
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6);
+  const catRows = useMemo(() => {
+    const counts = products.reduce<Record<string, number>>((acc, r) => {
+      acc[r.category] = (acc[r.category] ?? 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(counts)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [products]);
 
-  const avgRating = (ROWS.reduce((s, r) => s + (r.rating ?? 0), 0) / ROWS.length).toFixed(2);
+  const avgRating = products.length
+    ? (products.reduce((s, r) => s + (r.rating ?? 0), 0) / products.length).toFixed(2)
+    : "0.00";
+
+  // ── form drawer + import dialog state ────────────────────────────
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminProduct | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const openNew = useCallback(() => {
+    setEditing(null);
+    setFormOpen(true);
+  }, []);
+
+  const openEdit = useCallback((p: AdminProduct) => {
+    setEditing(p);
+    setFormOpen(true);
+  }, []);
+
+  const handleSave = useCallback((next: AdminProduct, mode: "create" | "edit") => {
+    setProducts((prev) => {
+      if (mode === "edit") return prev.map((p) => (p.id === next.id ? next : p));
+      return [next, ...prev];
+    });
+    setFormOpen(false);
+    toast.success("Product saved", {
+      description: mode === "edit" ? `${next.title} updated.` : `${next.title} added to catalog.`,
+    });
+  }, []);
+
+  const handleImport = useCallback((rows: AdminProduct[]) => {
+    setProducts((prev) => [...rows, ...prev]);
+    setImportOpen(false);
+    toast.success("Products imported", {
+      description: `${rows.length} row${rows.length === 1 ? "" : "s"} appended to the catalog.`,
+    });
+  }, []);
+
+  const handleExport = useCallback(() => {
+    const csv = productsToCsv(products);
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`nutrigreenz-catalog-${stamp}.csv`, csv);
+    toast.success("Export started", { description: `${products.length} products → CSV download.` });
+  }, [products]);
 
   // ── row selection ───────────────────────────────────────────────
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  const allIds = useMemo(() => ROWS.map((r) => r.id ?? "").filter(Boolean), []);
+  const allIds = useMemo(() => products.map((r) => r.id).filter(Boolean), [products]);
   const allSelected = selected.size > 0 && selected.size === allIds.length;
   const someSelected = selected.size > 0 && selected.size < allIds.length;
 
@@ -100,9 +152,18 @@ export default function AdminCatalog() {
     setSelected(new Set());
   }
 
+  /** Bulk set active/draft updates the local list; export keeps selection. */
   function bulkAction(label: string) {
+    if (label === "Export selected") {
+      const rows = products.filter((p) => selected.has(p.id));
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadCsv(`nutrigreenz-catalog-selected-${stamp}.csv`, productsToCsv(rows));
+      toast.success("Export started", { description: `${rows.length} selected → CSV download.` });
+      return; // keep selection
+    }
+    const nextStatus: ProductStatus = label === "Set active" ? "Published" : "Draft";
+    setProducts((prev) => prev.map((p) => (selected.has(p.id) ? { ...p, status: nextStatus } : p)));
     toast.success(label, { description: `${selected.size} product${selected.size === 1 ? "" : "s"} affected.` });
-    if (label === "Export selected") return; // export keeps selection
     clearSelection();
   }
 
@@ -114,14 +175,30 @@ export default function AdminCatalog() {
           Product <em className="italic text-ng-clay font-display">catalog</em>
         </span>
       }
-      subtitle={`${PRODUCTS.length} SKUs · ${live} live · ${blocked} stock-blocked · ${drafts} in draft`}
+      subtitle={`${products.length} SKUs · ${live} live · ${blocked} stock-blocked · ${drafts} in draft`}
       actions={
         <>
-          <button className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="export-bold" size={15} className="text-ng-forest" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
             <Icon name="import-bold" size={15} className="text-ng-forest" />
             Import CSV
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={openNew}
+            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
+          >
             <Icon name="add-circle-bold" size={15} />
             New product
           </button>
@@ -131,7 +208,7 @@ export default function AdminCatalog() {
       {/* Stat tiles + category mix */}
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 mb-6">
         <div className="grid grid-cols-2 gap-4">
-          <StatTile label="Live SKUs" value={String(live)} delta={`${Math.round((live / ROWS.length) * 100)}% of catalog`} trend="up" />
+          <StatTile label="Live SKUs" value={String(live)} delta={`${products.length ? Math.round((live / products.length) * 100) : 0}% of catalog`} trend="up" />
           <StatTile label="Avg rating" value={`${avgRating}★`} delta="across all SKUs" trend="flat" />
           <StatTile label="Stock-blocked" value={String(blocked)} delta="needs restock" trend="down" />
           <StatTile label="Drafts" value={String(drafts)} delta="awaiting copy + photos" trend="flat" />
@@ -147,6 +224,7 @@ export default function AdminCatalog() {
           {TABS.map((t, i) => (
             <button
               key={t}
+              type="button"
               className={`px-4 py-1.5 rounded-full text-[12.5px] transition-colors cursor-pointer ${
                 i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:text-ng-forest"
               }`}
@@ -164,7 +242,7 @@ export default function AdminCatalog() {
               className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-2 text-[13px] w-72 focus:border-ng-forest outline-none"
             />
           </div>
-          <button className="inline-flex items-center gap-1.5 rounded-full border border-ng-line-soft px-3.5 py-2 text-[13px] bg-ng-paper hover:bg-ng-cream transition-colors cursor-pointer">
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-ng-line-soft px-3.5 py-2 text-[13px] bg-ng-paper hover:bg-ng-cream transition-colors cursor-pointer">
             <Icon name="filter-bold" size={15} className="text-ng-ink-soft" />
             Filters
           </button>
@@ -228,8 +306,9 @@ export default function AdminCatalog() {
           <span></span>
         </div>
         <ul>
-          {ROWS.map((r) => {
-            const isSelected = selected.has(r.id ?? "");
+          {products.map((r) => {
+            const isSelected = selected.has(r.id);
+            const margin = r.mrp > 0 && r.mrp > r.price ? Math.round(((r.mrp - r.price) / r.mrp) * 100) : 0;
             return (
             <li
               key={r.id}
@@ -243,7 +322,7 @@ export default function AdminCatalog() {
                   type="checkbox"
                   aria-label={`Select ${r.title}`}
                   checked={isSelected}
-                  onChange={() => toggleRow(r.id ?? "")}
+                  onChange={() => toggleRow(r.id)}
                   className="cursor-pointer accent-ng-forest-deep"
                 />
               </span>
@@ -260,39 +339,57 @@ export default function AdminCatalog() {
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-[11px] text-ng-ink-soft mt-0.5">{r.unit}</div>
+                  <div className="text-[11px] text-ng-ink-soft mt-0.5">{r.description}</div>
                 </div>
               </div>
               <span className="font-mono text-[11.5px] text-ng-ink-muted">{r.sku}</span>
               <span className="text-[12px] text-ng-ink-muted">{r.category}</span>
               <span>
                 <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">₹{r.price.toLocaleString("en-IN")}</span>
-                {r.margin > 0 ? (
+                {margin > 0 ? (
                   <span className="block text-[10.5px] text-ng-ink-soft">
-                    <span className="line-through">₹{r.mrp.toLocaleString("en-IN")}</span> · {r.margin}% off
+                    <span className="line-through">₹{r.mrp.toLocaleString("en-IN")}</span> · {margin}% off
                   </span>
                 ) : null}
               </span>
               <span className="flex items-center gap-1 font-mono text-[12px] tabular-nums">
                 <Icon name="star-bold" size={12} className="text-ng-clay" />
-                {r.rating?.toFixed(1)}
+                {r.rating.toFixed(1)}
               </span>
               <span className={`font-mono text-[12px] tabular-nums ${r.stock < 20 ? "text-ng-terracotta font-semibold" : ""}`}>{r.stock}</span>
               <span><Pill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</Pill></span>
-              <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Edit →</button>
+              <button
+                type="button"
+                onClick={() => openEdit(r)}
+                aria-label={`Edit ${r.title}`}
+                className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer"
+              >
+                Edit →
+              </button>
             </li>
             );
           })}
         </ul>
 
         <div className="px-6 py-3 flex items-center justify-between text-[12px] text-ng-ink-soft border-t border-ng-line-soft bg-ng-cream/40">
-          <span>Showing 1–{ROWS.length} of {ROWS.length}</span>
+          <span>Showing 1–{products.length} of {products.length}</span>
           <div className="flex gap-2">
-            <button className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">← Prev</button>
-            <button className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">Next →</button>
+            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">← Prev</button>
+            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">Next →</button>
           </div>
         </div>
       </Card>
+
+      {/* Add / edit product form drawer (demo persistence) */}
+      <ProductFormDrawer
+        open={formOpen}
+        product={editing}
+        onClose={() => setFormOpen(false)}
+        onSave={handleSave}
+      />
+
+      {/* CSV import dialog (demo persistence) */}
+      <CsvImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={handleImport} />
     </AdminShell>
   );
 }
