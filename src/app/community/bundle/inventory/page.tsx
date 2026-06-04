@@ -21,7 +21,7 @@ export default function CommunityBundleInventory() {
           <div>
             <Link href="/community/bundle" className="text-[12px] text-ng-clay hover:underline">← All pods</Link>
             <div className="mt-1 flex flex-wrap items-baseline gap-3">
-              <h1 className="font-display text-[26px] leading-tight">Indiranagar pod · May cycle</h1>
+              <h1 className="font-display text-[26px] leading-tight">Madhapur pod · May cycle</h1>
               <span className="text-[12px] text-ng-cream/60">Captain Sneha Kumar · 1.2 km from you</span>
             </div>
           </div>
@@ -60,7 +60,7 @@ export default function CommunityBundleInventory() {
 
             <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
               <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Your pickup</div>
-              <div className="font-display text-[16px] text-ng-forest-deep mt-2">14 Defence Colony, 100 Ft Rd</div>
+              <div className="font-display text-[16px] text-ng-forest-deep mt-2">14 Jubilee Hills Road No. 36</div>
               <div className="text-[12px] text-ng-ink-muted mt-1">23 May, 17:00–20:00</div>
             </div>
           </aside>

@@ -193,9 +193,9 @@ export interface Coupon {
 
 /** A serviceable delivery zone derived from a pincode/area. */
 export interface LocationZone {
-  area: string; // e.g. "Indiranagar"
-  pincode: string; // e.g. "560038"
-  city?: string; // defaults to "Bengaluru"
+  area: string; // e.g. "Madhapur"
+  pincode: string; // e.g. "500081"
+  city?: string; // defaults to "Hyderabad"
   lat?: number;
   lng?: number;
 }

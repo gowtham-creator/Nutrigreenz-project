@@ -4,8 +4,8 @@ import { Section } from "@/components/ng/section";
 
 const ACTIVE_BUNDLES = [
   {
-    slug: "indiranagar-may-26",
-    name: "Indiranagar pod · May cycle",
+    slug: "madhapur-may-26",
+    name: "Madhapur pod · May cycle",
     captain: "Sneha Kumar",
     cutoff: "22 May, 22:00",
     members: 28,
@@ -14,8 +14,8 @@ const ACTIVE_BUNDLES = [
     distance: "1.2 km from you",
   },
   {
-    slug: "hsr-may-30",
-    name: "HSR Layout pod · May cycle",
+    slug: "gachibowli-may-30",
+    name: "Gachibowli pod · May cycle",
     captain: "Arjun D.",
     cutoff: "30 May, 22:00",
     members: 18,

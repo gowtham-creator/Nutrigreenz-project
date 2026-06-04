@@ -37,7 +37,7 @@ const PILLARS: Pillar[] = [
     num: "03",
     eyebrow: "Lab-tested every lot",
     title: "Heavy metals · aflatoxin · adulterants.",
-    body: "Every batch goes through our Bengaluru lab before it ships. Test reports are public — scan the lot code.",
+    body: "Every batch goes through our Hyderabad lab before it ships. Test reports are public — scan the lot code.",
     icon: "shield-check-bold",
     variant: "leaf",
   },

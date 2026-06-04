@@ -12,7 +12,7 @@ const SAMPLE_LOT = {
   product: "Cold-Pressed Groundnut Oil — 1L",
   farm: "Mallika & Subbaiah Farm, Anantapur",
   pressed: "2026-04-18",
-  tested: "2026-04-21 · Bengaluru lab",
+  tested: "2026-04-21 · Hyderabad lab",
   result: "All-clear: 0 adulterants · heavy metals within FSSAI limits",
 };
 

@@ -324,9 +324,9 @@ export default function OrderDetail({
                   <>
                     Anjali Rao
                     <br />
-                    42 Banyan Street, Indiranagar
+                    42 Banyan Street, Madhapur
                     <br />
-                    Bengaluru, KA 560038
+                    Hyderabad, Telangana 500081
                     <br />
                     +91 98xxx xxxxx
                   </>

@@ -151,7 +151,7 @@ const SAMPLE_REVIEWS: Review[] = [
   {
     id: "r1",
     name: "Anjali R.",
-    location: "Bengaluru",
+    location: "Hyderabad",
     rating: 5,
     date: "12 May 2026",
     title: "The traceability is real",

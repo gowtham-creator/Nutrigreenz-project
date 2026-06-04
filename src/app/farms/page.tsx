@@ -11,7 +11,7 @@ const FARM_IMAGES = [
   "/images/placeholder.svg",
 ];
 
-const REGIONS = ["All regions", "Andhra Pradesh", "Karnataka", "Tamil Nadu", "Kerala", "Gujarat", "Maharashtra"];
+const REGIONS = ["All regions", "Andhra Pradesh", "Telangana", "Tamil Nadu", "Kerala", "Gujarat", "Maharashtra"];
 const PRACTICES = ["All practices", "Organic", "A2 dairy", "Cooperative", "Biodynamic", "Rainwater harvesting"];
 
 export default function FarmsPage() {

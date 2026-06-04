@@ -1,155 +1,359 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { CaptainShell, CaptainCard } from "@/components/ng/captain/captain-shell";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { CaptainShell, CaptainCard, CaptainSectionHead } from "@/components/ng/captain/captain-shell";
+import { Icon } from "@/components/ui/icon";
+import {
+  useCaptain,
+  STALL_CATALOG,
+  COMMUNITIES,
+  type PayMode,
+  type CapturedLineItem,
+} from "@/components/ng/captain/captain-store";
 
-const STEPS = [
-  { n: 1, label: "Scan lot" },
-  { n: 2, label: "Weigh & photo" },
-  { n: 3, label: "Sensory" },
-  { n: 4, label: "Sign-off" },
-];
+type Cart = Record<string, number>;
 
 export default function CaptainIntake() {
-  const [step, setStep] = useState(2);
+  const { addCustomer, todayCustomers } = useCaptain();
+
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [community, setCommunity] = useState(COMMUNITIES[0]);
+  const [cart, setCart] = useState<Cart>({});
+  const [payMode, setPayMode] = useState<PayMode>("Cash");
+  const [notes, setNotes] = useState("");
+  const [touched, setTouched] = useState(false);
+
+  const lineItems = useMemo<CapturedLineItem[]>(
+    () =>
+      STALL_CATALOG.filter((p) => (cart[p.sku] ?? 0) > 0).map((p) => ({
+        ...p,
+        qty: cart[p.sku],
+      })),
+    [cart],
+  );
+  const total = useMemo(() => lineItems.reduce((s, i) => s + i.price * i.qty, 0), [lineItems]);
+  const cartCount = useMemo(() => lineItems.reduce((s, i) => s + i.qty, 0), [lineItems]);
+
+  const mobileValid = /^[6-9]\d{9}$/.test(mobile);
+  const nameValid = name.trim().length >= 2;
+  const canSubmit = nameValid && mobileValid && lineItems.length > 0;
+
+  function setQty(sku: string, delta: number) {
+    setCart((prev) => {
+      const next = Math.max(0, (prev[sku] ?? 0) + delta);
+      const copy = { ...prev };
+      if (next === 0) delete copy[sku];
+      else copy[sku] = next;
+      return copy;
+    });
+  }
+
+  function reset() {
+    setName("");
+    setMobile("");
+    setCommunity(COMMUNITIES[0]);
+    setCart({});
+    setPayMode("Cash");
+    setNotes("");
+    setTouched(false);
+  }
+
+  function handleCapture() {
+    setTouched(true);
+    if (!canSubmit) {
+      toast.error("Add a name, valid mobile, and at least one product.");
+      return;
+    }
+    addCustomer({
+      name: name.trim(),
+      mobile,
+      community,
+      items: lineItems,
+      total,
+      payMode,
+      notes: notes.trim() || undefined,
+    });
+    toast.success(`${name.trim()} captured`, {
+      description: `₹${total.toLocaleString("en-IN")} · ${payMode} · +91 ${mobile}`,
+    });
+    reset();
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <CaptainShell active="/captain/intake" title="Receive lot" subtitle="PK-2026-218 · Anantapur · K. Subbaiah">
-      {/* Stepper */}
-      <div className="flex items-center gap-2 mb-6">
-        {STEPS.map((s, i) => (
-          <div key={s.n} className="flex items-center gap-2 flex-1">
-            <div className={`size-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-              step >= s.n ? "bg-ng-forest-deep text-ng-cream" : "bg-ng-line-soft text-ng-ink-soft"
-            }`}>
-              {step > s.n ? "✓" : s.n}
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 ${step > s.n ? "bg-ng-forest" : "bg-ng-line-soft"}`} />
-            )}
-          </div>
-        ))}
+    <CaptainShell
+      eyebrow="Stall capture"
+      title="New customer"
+      subtitle="Log a walk-up sale. Mobile is the key — it auto-links on online signup."
+    >
+      {/* M2 cross-match note */}
+      <div className="flex gap-2.5 rounded-2xl bg-ng-clay/15 border border-ng-clay/35 px-3.5 py-3 mb-5">
+        <Icon name="link-round-bold" size={18} className="text-ng-clay-deep mt-0.5 shrink-0" />
+        <p className="text-[12px] leading-snug text-ng-soil">
+          On online signup, this mobile <span className="font-semibold">auto-links &amp; imports</span>{" "}
+          stall purchases — marking the customer “Onboarded”.{" "}
+          <span className="text-ng-ink-soft">(OTP cross-match · Milestone 2)</span>
+        </p>
       </div>
-      <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-4">Step {step} of 4 · {STEPS[step - 1]?.label}</div>
 
-      {/* Step 2 content shown */}
-      {step === 1 && (
-        <CaptainCard tone="sage">
-          <div className="text-center py-8">
-            <div className="size-20 rounded-full bg-ng-cream mx-auto flex items-center justify-center text-[40px]">▢</div>
-            <h2 className="font-display text-[20px] text-ng-forest-deep mt-5">Point camera at lot QR</h2>
-            <p className="text-[12.5px] text-ng-ink-muted mt-2 max-w-xs mx-auto">QR sticker is on the lot card on top of every drum</p>
-            <button onClick={() => setStep(2)} className="mt-7 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-6 py-2.5 text-[13px]">
-              Simulate scan ANT-24-052
-            </button>
-          </div>
-        </CaptainCard>
-      )}
+      {/* Customer details */}
+      <CaptainSectionHead className="mt-0">Customer</CaptainSectionHead>
+      <CaptainCard className="space-y-3.5">
+        <Field label="Full name" required>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Lakshmi Narayan"
+            autoComplete="name"
+            className={inputCls(touched && !nameValid)}
+          />
+          {touched && !nameValid ? <FieldError>Enter the customer&apos;s name.</FieldError> : null}
+        </Field>
 
-      {step === 2 && (
-        <>
-          <CaptainCard className="mb-4">
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Scanned lot</div>
-            <div className="font-mono text-[15px] text-ng-forest-deep mt-1">ANT-24-052 · Groundnut · cold-press grade</div>
-            <div className="text-[12px] text-ng-ink-muted mt-2">Expected: 1,500 kg · 30 drums of 50kg each</div>
-          </CaptainCard>
-
-          <h3 className="font-display text-[14px] text-ng-forest-deep mb-2 mt-2">Actual weight</h3>
-          <div className="flex gap-2 mb-4">
+        <Field label="Mobile number" required hint="10-digit Indian mobile — used for M2 onboarding match">
+          <div className={inputWrapCls(touched && !mobileValid)}>
+            <span className="text-[14px] text-ng-ink-soft font-mono pl-0.5">+91</span>
             <input
-              type="number"
-              defaultValue={1488}
-              className="flex-1 rounded-2xl bg-ng-paper border border-ng-line-soft px-4 py-3 text-[18px] font-display text-ng-forest-deep outline-none focus:border-ng-forest"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="98XXXXXXXX"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
             />
-            <span className="px-4 py-3 rounded-2xl bg-ng-cream border border-ng-line-soft text-[13px] text-ng-ink-muted self-stretch flex items-center">kg</span>
+            {mobileValid ? <Icon name="check-circle-bold" size={18} className="text-ng-success" /> : null}
           </div>
-          <div className="text-[11.5px] text-ng-terracotta mb-5">
-            Variance: −12 kg (−0.8%). Within tolerance (±2%). Note: 1 drum was 48kg, others 49.2–50.4kg.
-          </div>
+          {touched && !mobileValid ? <FieldError>Enter a valid 10-digit mobile.</FieldError> : null}
+        </Field>
 
-          <h3 className="font-display text-[14px] text-ng-forest-deep mb-2">Photos</h3>
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            <div className="aspect-square rounded-2xl bg-ng-sage/40 border-2 border-dashed border-ng-line flex items-center justify-center text-[24px] text-ng-forest">+</div>
-            <div className="aspect-square rounded-2xl bg-gradient-to-br from-ng-forest to-ng-leaf relative overflow-hidden">
-              <div className="absolute bottom-1 left-2 text-ng-cream text-[10px]">Top of drum</div>
-            </div>
-            <div className="aspect-square rounded-2xl bg-gradient-to-br from-ng-clay to-ng-terracotta relative overflow-hidden">
-              <div className="absolute bottom-1 left-2 text-ng-cream text-[10px]">Seal intact</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button onClick={() => setStep(1)} className="rounded-2xl bg-ng-paper border border-ng-line-soft text-ng-ink py-3 text-[14px] font-semibold">← Back</button>
-            <button onClick={() => setStep(3)} className="rounded-2xl bg-ng-forest-deep text-ng-cream py-3 text-[14px] font-semibold">Sensory →</button>
-          </div>
-        </>
-      )}
-
-      {step === 3 && (
-        <>
-          <CaptainCard className="mb-4">
-            <h3 className="font-display text-[15px] text-ng-forest-deep">Quick sensory check</h3>
-            <p className="text-[12px] text-ng-ink-muted mt-1">Tap each that applies. Doesn't replace lab — first-line only.</p>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {["Smell normal", "No off-color", "No moisture clumps", "Visible foreign matter", "Insect damage", "Discolored grains"].map((c, i) => (
-                <button key={c} className={`text-[12.5px] py-2.5 rounded-xl border-2 transition-colors ${
-                  i < 3 ? "bg-ng-success/10 border-ng-success/40 text-ng-success" : "bg-ng-paper border-ng-line-soft text-ng-ink-muted"
-                }`}>{i < 3 ? "✓ " : ""}{c}</button>
+        <Field label="Gated community / area">
+          <div className="relative">
+            <select
+              value={community}
+              onChange={(e) => setCommunity(e.target.value)}
+              className={`${inputCls(false)} appearance-none pr-9`}
+            >
+              {COMMUNITIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
-            </div>
-          </CaptainCard>
-
-          <CaptainCard tone="clay" className="mb-4">
-            <div className="text-[11px] uppercase tracking-wider text-ng-forest-deep">Notes for QC lab</div>
-            <textarea
-              className="w-full mt-2 rounded-xl bg-ng-cream/80 border border-ng-clay/40 px-3 py-2.5 text-[13px] outline-none min-h-[80px]"
-              defaultValue="One drum slightly underweight — checked seal, intact. Recommend re-weigh at facility."
+            </select>
+            <Icon
+              name="alt-arrow-down-linear"
+              size={16}
+              className="text-ng-ink-soft absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
             />
-          </CaptainCard>
-
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button onClick={() => setStep(2)} className="rounded-2xl bg-ng-paper border border-ng-line-soft text-ng-ink py-3 text-[14px] font-semibold">← Back</button>
-            <button onClick={() => setStep(4)} className="rounded-2xl bg-ng-forest-deep text-ng-cream py-3 text-[14px] font-semibold">Sign-off →</button>
           </div>
-        </>
-      )}
+        </Field>
+      </CaptainCard>
 
-      {step === 4 && (
-        <>
-          <CaptainCard tone="sage" className="mb-4">
-            <h3 className="font-display text-[18px] text-ng-forest-deep">Farmer sign-off</h3>
-            <dl className="mt-4 space-y-2 text-[13px]">
-              <Row label="Lot" value="ANT-24-052" />
-              <Row label="Expected" value="1,500 kg" />
-              <Row label="Received" value="1,488 kg" />
-              <Row label="Rate" value="₹125 / kg" />
-              <Row label="Payable" value="₹1,86,000" emphasis />
-            </dl>
-          </CaptainCard>
+      {/* Products / cart */}
+      <CaptainSectionHead
+        action={
+          cartCount > 0 ? (
+            <span className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-medium">
+              <Icon name="cart-large-2-bold" size={15} />
+              {cartCount} item{cartCount > 1 ? "s" : ""}
+            </span>
+          ) : undefined
+        }
+      >
+        Products
+      </CaptainSectionHead>
+      <div className="space-y-2">
+        {STALL_CATALOG.map((p) => {
+          const qty = cart[p.sku] ?? 0;
+          return (
+            <CaptainCard
+              key={p.sku}
+              className={`flex items-center gap-3 ${qty > 0 ? "border-ng-leaf bg-ng-sage/25" : ""}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-[13.5px] text-ng-forest-deep leading-tight">{p.title}</div>
+                <div className="text-[12px] text-ng-ink-muted mt-0.5">
+                  {p.unit} · ₹{p.price}
+                </div>
+              </div>
+              {qty === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setQty(p.sku, 1)}
+                  className="inline-flex items-center gap-1 rounded-full border border-ng-line text-ng-forest px-3 py-1.5 text-[12.5px] font-semibold hover:border-ng-leaf hover:bg-ng-white transition-colors"
+                >
+                  <Icon name="add-circle-linear" size={16} />
+                  Add
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-2.5 rounded-full bg-ng-forest text-ng-cream px-1.5 py-1">
+                  <button
+                    type="button"
+                    onClick={() => setQty(p.sku, -1)}
+                    aria-label={`Reduce ${p.title}`}
+                    className="size-7 rounded-full hover:bg-ng-forest-soft flex items-center justify-center"
+                  >
+                    <Icon name="minus-square-linear" size={18} />
+                  </button>
+                  <span className="font-display text-[15px] tabular-nums w-4 text-center">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQty(p.sku, 1)}
+                    aria-label={`Add ${p.title}`}
+                    className="size-7 rounded-full hover:bg-ng-forest-soft flex items-center justify-center"
+                  >
+                    <Icon name="add-square-linear" size={18} />
+                  </button>
+                </div>
+              )}
+            </CaptainCard>
+          );
+        })}
+      </div>
 
-          <CaptainCard className="mb-4">
-            <div className="text-[12px] text-ng-ink-muted">Signed by K. Subbaiah</div>
-            <div className="mt-3 h-32 rounded-xl bg-ng-cream border-2 border-dashed border-ng-line flex items-center justify-center">
-              <div className="font-display text-[28px] text-ng-forest-deep italic">K. Subbaiah</div>
-            </div>
-            <div className="text-[11px] text-ng-ink-soft mt-2 font-mono">Captured 19 May 2026 · 14:42 IST · GPS verified</div>
-          </CaptainCard>
+      {/* Payment + notes */}
+      <CaptainSectionHead>Payment</CaptainSectionHead>
+      <CaptainCard className="space-y-3.5">
+        <div className="grid grid-cols-2 gap-2.5">
+          {(["Cash", "UPI"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setPayMode(m)}
+              aria-pressed={payMode === m}
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 py-2.5 text-[13.5px] font-semibold transition-colors ${
+                payMode === m
+                  ? "border-ng-forest bg-ng-forest text-ng-cream"
+                  : "border-ng-line bg-ng-white text-ng-ink-muted hover:border-ng-leaf"
+              }`}
+            >
+              <Icon name={m === "Cash" ? "banknote-2-bold" : "smartphone-2-bold"} size={17} />
+              {m}
+            </button>
+          ))}
+        </div>
+        <Field label="Notes (optional)">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Preferences, restock requests, follow-ups…"
+            rows={2}
+            className={`${inputCls(false)} resize-none min-h-[64px] leading-snug`}
+          />
+        </Field>
+      </CaptainCard>
 
-          <Link href="/captain" className="block rounded-2xl bg-ng-forest-deep text-ng-cream text-center py-4 text-[15px] font-semibold mt-6">
-            ✓ Confirm & submit to HQ
-          </Link>
-        </>
+      {/* Sticky summary + submit */}
+      <div className="mt-5 rounded-2xl bg-ng-forest-deep text-ng-cream p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] uppercase tracking-wider text-ng-leaf-soft">Order total</span>
+          <span className="font-display text-[24px] text-ng-cream leading-none">
+            ₹{total.toLocaleString("en-IN")}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCapture}
+          disabled={!canSubmit}
+          className="mt-3.5 w-full flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-semibold py-3 text-[14.5px] hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf"
+        >
+          <Icon name="user-plus-bold" size={18} />
+          Capture customer
+        </button>
+        {!canSubmit ? (
+          <p className="text-[11px] text-ng-cream/55 text-center mt-2">
+            Name, valid mobile &amp; at least one product required.
+          </p>
+        ) : null}
+      </div>
+
+      {/* Captured today */}
+      <CaptainSectionHead
+        action={<span className="text-[12px] text-ng-ink-soft">{todayCustomers.length} captured</span>}
+      >
+        Captured today
+      </CaptainSectionHead>
+      {todayCustomers.length === 0 ? (
+        <CaptainCard tone="sage" className="text-center py-6 text-[13px] text-ng-ink-muted">
+          Captures you log appear here instantly.
+        </CaptainCard>
+      ) : (
+        <div className="space-y-2.5">
+          {todayCustomers.map((c) => (
+            <CaptainCard key={c.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-medium text-[14px] text-ng-forest-deep truncate">{c.name}</div>
+                  <div className="text-[11.5px] text-ng-ink-soft font-mono mt-0.5">+91 {c.mobile}</div>
+                  <div className="text-[11.5px] text-ng-ink-muted mt-1 truncate">{c.community}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-display text-[16px] text-ng-forest-deep">
+                    ₹{c.total.toLocaleString("en-IN")}
+                  </div>
+                  <span
+                    className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[9.5px] uppercase tracking-wider font-bold ${
+                      c.payMode === "UPI" ? "bg-ng-leaf/25 text-ng-forest" : "bg-ng-clay/25 text-ng-clay-deep"
+                    }`}
+                  >
+                    {c.payMode}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2.5 pt-2.5 border-t border-ng-line-soft flex items-center gap-1.5 text-[11.5px] text-ng-ink-muted">
+                <Icon name="bag-3-linear" size={13} className="text-ng-ink-soft" />
+                {c.items.map((i) => `${i.title.split(" ").slice(0, 2).join(" ")} ×${i.qty}`).join(" · ")}
+              </div>
+            </CaptainCard>
+          ))}
+        </div>
       )}
     </CaptainShell>
   );
 }
 
-function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+/* ---- form primitives (local, mobile-tuned) ---- */
+
+function Field({
+  label,
+  required,
+  hint,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex justify-between gap-3 py-1.5 border-b border-ng-line-soft last:border-0">
-      <dt className="text-ng-ink-soft">{label}</dt>
-      <dd className={emphasis ? "font-display text-[18px] text-ng-forest-deep" : "text-ng-ink"}>{value}</dd>
-    </div>
+    <label className="block">
+      <span className="text-[12.5px] font-medium text-ng-ink-muted">
+        {label}
+        {required ? <span className="text-ng-terracotta"> *</span> : null}
+      </span>
+      <div className="mt-1.5">{children}</div>
+      {hint ? <span className="block text-[11px] text-ng-ink-soft mt-1">{hint}</span> : null}
+    </label>
   );
+}
+
+function FieldError({ children }: { children: React.ReactNode }) {
+  return <span className="block text-[11.5px] text-ng-danger mt-1">{children}</span>;
+}
+
+function inputCls(error: boolean): string {
+  return [
+    "w-full rounded-xl bg-ng-white border px-3.5 py-2.5 text-[15px] text-ng-ink outline-none transition-all",
+    "placeholder:text-ng-ink-soft focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)]",
+    error ? "border-ng-danger focus:border-ng-danger" : "border-ng-line focus:border-ng-forest",
+  ].join(" ");
+}
+
+function inputWrapCls(error: boolean): string {
+  return [
+    "flex items-center gap-2 w-full rounded-xl bg-ng-white border px-3.5 py-2.5 transition-all",
+    "focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)]",
+    error ? "border-ng-danger focus-within:border-ng-danger" : "border-ng-line focus-within:border-ng-forest",
+  ].join(" ");
 }

@@ -81,8 +81,8 @@ export default function TraceabilityPage() {
                 {[
                   { label: "Harvested", date: SAMPLE.harvestedOn, place: "Anantapur · 14ha · partner farm" },
                   { label: "Pressed", date: SAMPLE.pressedOn, place: "Hyderabad · cold-press · single pass" },
-                  { label: "Lab tested", date: SAMPLE.testedOn, place: "Bengaluru · 12-panel certified lab" },
-                  { label: "Shipped", date: SAMPLE.shippedOn, place: "Bengaluru hub → customer" },
+                  { label: "Lab tested", date: SAMPLE.testedOn, place: "Hyderabad · 12-panel certified lab" },
+                  { label: "Shipped", date: SAMPLE.shippedOn, place: "Hyderabad hub → customer" },
                 ].map((step, i) => (
                   <li key={step.label} className="relative">
                     <div className="flex md:block items-center gap-4 md:gap-0">
@@ -121,7 +121,7 @@ export default function TraceabilityPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-display text-[20px] text-ng-forest-deep">Lab report — all twelve panels</h3>
-                  <span className="text-[12px] text-ng-ink-soft">Tested by Bengaluru Analytics Lab · NABL-accredited</span>
+                  <span className="text-[12px] text-ng-ink-soft">Tested by Hyderabad Analytics Lab · NABL-accredited</span>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {SAMPLE.tests.map((t) => (

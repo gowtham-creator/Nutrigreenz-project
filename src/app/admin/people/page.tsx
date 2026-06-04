@@ -39,7 +39,7 @@ const TEAM = [
   { name: "Gowtham Reddy", role: "Founder · CDO", access: "Owner", last: "Active now", avatar: "G" },
   { name: "Hetal Pateel", role: "Farmer partner · Junagadh", access: "Farm portal", last: "2 days ago", avatar: "H" },
   { name: "K. Subbaiah", role: "Farmer partner · Anantapur", access: "Farm portal", last: "Today, 08:12", avatar: "K" },
-  { name: "Sneha Kumar", role: "Captain · Bengaluru South", access: "Captain PWA", last: "12 min ago", avatar: "S" },
+  { name: "Sneha Kumar", role: "Captain · Hyderabad West", access: "Captain PWA", last: "12 min ago", avatar: "S" },
   { name: "Priya M.", role: "Lab desk · QA", access: "Admin · QC only", last: "Today, 10:42", avatar: "P" },
   { name: "Rahul Sharma", role: "Ops manager", access: "Admin · full", last: "Today, 09:30", avatar: "R" },
 ];

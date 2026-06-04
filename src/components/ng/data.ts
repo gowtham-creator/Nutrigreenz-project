@@ -27,7 +27,7 @@ export const CATEGORIES: Category[] = [
 export const PRODUCTS: ProductCard[] = [
   // Oils
   { id: "p-001", slug: "cold-pressed-groundnut-oil-1l", title: "Cold-Pressed Groundnut Oil — 1L Glass", image: "/images/placeholder.svg", rating: 4.7, reviewCount: 1284, price: 645, mrp: 720, unit: "1L · Anantapur lot", badge: "Best seller", badgeTone: "forest", tags: ["oil"] },
-  { id: "p-002", slug: "wood-pressed-sunflower-oil-1l", title: "Wood-Pressed Sunflower Oil — 1L", image: "/images/placeholder.svg", rating: 4.6, reviewCount: 642, price: 489, mrp: 580, unit: "1L · Karnataka lot", badge: "16% OFF", badgeTone: "terracotta", tags: ["oil"] },
+  { id: "p-002", slug: "wood-pressed-sunflower-oil-1l", title: "Wood-Pressed Sunflower Oil — 1L", image: "/images/placeholder.svg", rating: 4.6, reviewCount: 642, price: 489, mrp: 580, unit: "1L · Telangana lot", badge: "16% OFF", badgeTone: "terracotta", tags: ["oil"] },
   { id: "p-003", slug: "cold-pressed-coconut-oil-500ml", title: "Cold-Pressed Coconut Oil — 500ml", image: "/images/placeholder.svg", rating: 4.8, reviewCount: 2104, price: 425, mrp: 525, unit: "500ml · Kerala lot", badge: "Subscribe & save 8%", badgeTone: "leaf", tags: ["oil"] },
   { id: "p-004", slug: "cold-pressed-sesame-oil-500ml", title: "Cold-Pressed Sesame Oil — 500ml", image: "/images/placeholder.svg", rating: 4.5, reviewCount: 348, price: 365, mrp: 410, unit: "500ml · Tamil Nadu lot", tags: ["oil"] },
   // Ghee
@@ -56,7 +56,7 @@ export const PRODUCTS: ProductCard[] = [
   { id: "p-204", slug: "jamun-blossom-honey-350g", title: "Jamun Blossom Honey — 350g", image: "/images/placeholder.svg", rating: 4.8, reviewCount: 196, price: 540, unit: "350g · single-origin", badge: "Lab-tested", badgeTone: "leaf", tags: ["honey"] },
   // Millets (more)
   { id: "p-303", slug: "pearl-millet-bajra-1kg", title: "Pearl Millet (Bajra) — 1kg", image: "/images/placeholder.svg", rating: 4.5, reviewCount: 321, price: 160, unit: "1kg · Rajasthan", tags: ["millet"] },
-  { id: "p-304", slug: "little-millet-500g", title: "Little Millet — 500g", image: "/images/placeholder.svg", rating: 4.6, reviewCount: 188, price: 190, unit: "500g · Karnataka", tags: ["millet"] },
+  { id: "p-304", slug: "little-millet-500g", title: "Little Millet — 500g", image: "/images/placeholder.svg", rating: 4.6, reviewCount: 188, price: 190, unit: "500g · Telangana", tags: ["millet"] },
   // Spices & masalas
   { id: "p-601", slug: "lakadong-turmeric-powder-250g", title: "Lakadong Turmeric Powder — 250g", image: "/images/placeholder.svg", rating: 4.9, reviewCount: 1472, price: 280, mrp: 320, unit: "250g · Meghalaya · 7% curcumin", badge: "High curcumin", badgeTone: "forest", tags: ["spice"] },
   { id: "p-602", slug: "stone-ground-red-chilli-powder-200g", title: "Stone-Ground Red Chilli Powder — 200g", image: "/images/placeholder.svg", rating: 4.6, reviewCount: 537, price: 180, unit: "200g · Guntur", tags: ["spice"] },
@@ -112,12 +112,12 @@ export const FARMS: Farm[] = [
     practices: ["wild honey", "co-operative", "forest-adjacent"],
     partneredSince: "2021-01-15",
     farmerName: "23-member co-op",
-    story: "Honey harvested without smoke or queen-killing. Each lot tested for purity at our Bengaluru lab.",
+    story: "Honey harvested without smoke or queen-killing. Each lot tested for purity at our Hyderabad lab.",
   },
 ];
 
 export const TESTIMONIALS: Testimonial[] = [
-  { id: "t1", name: "Anjali R.", location: "Bengaluru", rating: 5, quote: "The traceability is real — I scanned the lot code on my ghee jar and saw the actual cow it came from. That's wild.", productSlug: "a2-gir-cow-ghee-500ml" },
+  { id: "t1", name: "Anjali R.", location: "Hyderabad", rating: 5, quote: "The traceability is real — I scanned the lot code on my ghee jar and saw the actual cow it came from. That's wild.", productSlug: "a2-gir-cow-ghee-500ml" },
   { id: "t2", name: "Rahul M.", location: "Mumbai", rating: 5, quote: "Switched our entire pantry. Six months in, my mom can taste the difference in chapati made from their ragi flour.", productSlug: "finger-millet-flour-1kg" },
   { id: "t3", name: "Priya K.", location: "Hyderabad", rating: 5, quote: "I love that the price they charge actually reaches the farmer. The story on the back of every pack is grounding.", productSlug: "cold-pressed-groundnut-oil-1l" },
 ];
@@ -208,12 +208,12 @@ export const SAMPLE_ORDER: Order = {
     id: "addr-1",
     fullName: "Anjali Rao",
     phone: "+919812345678",
-    line1: "402, Brigade Gardenia",
-    line2: "100 Feet Road",
-    landmark: "Near Indiranagar Metro",
-    city: "Bengaluru",
-    state: "Karnataka",
-    pincode: "560038",
+    line1: "402, My Home Avatar",
+    line2: "Hitech City Main Road",
+    landmark: "Near Madhapur Metro",
+    city: "Hyderabad",
+    state: "Telangana",
+    pincode: "500081",
     type: "home",
     isDefault: true,
   },

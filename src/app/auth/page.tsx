@@ -242,7 +242,7 @@ function AuthScreen() {
               <blockquote className="font-display mt-3 text-[19px] italic leading-snug text-ng-cream/95">
                 &ldquo;Six months in, my whole pantry is Nutri Greenz. The lot codes turned us into believers.&rdquo;
               </blockquote>
-              <footer className="mt-3 text-[12px] text-ng-cream/60">— Anjali · member since Aug 2025 · Bengaluru</footer>
+              <footer className="mt-3 text-[12px] text-ng-cream/60">— Anjali · member since Aug 2025 · Hyderabad</footer>
             </div>
           </div>
         </div>

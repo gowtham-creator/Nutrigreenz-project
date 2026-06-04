@@ -38,14 +38,14 @@ const LOTS = [
   { id: "ANT-24-052", product: "Cold-Pressed Groundnut Oil 1L", farm: "Anantapur · K. Subbaiah", received: "19 May 2026", units: 1180, available: 1180, status: "QC pending", tone: "warn" as const, qc: "In lab" },
   { id: "ANT-24-044", product: "Foxtail Millet 500g", farm: "Bellary · R. Eshwarappa", received: "01 May 2026", units: 820, available: 412, status: "Active", tone: "success" as const, qc: "Passed" },
   { id: "ANT-24-038", product: "Multifloral Forest Honey 500g", farm: "Nilgiri · Kani co-op", received: "24 Apr 2026", units: 380, available: 142, status: "Active", tone: "success" as const, qc: "Passed" },
-  { id: "ANT-24-046", product: "Cold-Pressed Sunflower Oil 1L", farm: "Karnataka · M. Devraj", received: "04 May 2026", units: 920, available: 12, status: "Low stock", tone: "danger" as const, qc: "Passed" },
+  { id: "ANT-24-046", product: "Cold-Pressed Sunflower Oil 1L", farm: "Telangana · M. Devraj", received: "04 May 2026", units: 920, available: 12, status: "Low stock", tone: "danger" as const, qc: "Passed" },
   { id: "ANT-24-041", product: "Stone-Ground Bajra Flour 1kg", farm: "Bikaner · B. Choudhary", received: "28 Apr 2026", units: 640, available: 0, status: "Depleted", tone: "neutral" as const, qc: "Passed" },
   { id: "ANT-24-050", product: "Kashmiri Acacia Honey 350g", farm: "Pulwama · co-op", received: "10 May 2026", units: 220, available: 64, status: "Active", tone: "success" as const, qc: "Passed" },
 ];
 
 const PO_OPEN = [
   { id: "PO-2026-018", farm: "Anantapur · K. Subbaiah", product: "Groundnut · cold-press grade", qty: "1,500 kg", expected: "24 May 2026", value: 187500 },
-  { id: "PO-2026-019", farm: "Karnataka · M. Devraj", product: "Sunflower seed", qty: "900 kg", expected: "26 May 2026", value: 99000 },
+  { id: "PO-2026-019", farm: "Telangana · M. Devraj", product: "Sunflower seed", qty: "900 kg", expected: "26 May 2026", value: 99000 },
   { id: "PO-2026-020", farm: "Bellary · R. Eshwarappa", product: "Foxtail millet", qty: "1,200 kg", expected: "28 May 2026", value: 96000 },
 ];
 

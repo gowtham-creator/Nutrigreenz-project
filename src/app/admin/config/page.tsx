@@ -17,6 +17,9 @@ import {
   PrimarySection,
   type Kpi,
 } from "@/components/ng/admin/super/command-center";
+import { CouponCampaignBuilder } from "@/components/ng/admin/super/coupon-campaign-builder";
+import { ReferralConfigSection } from "@/components/ng/admin/super/referral-config";
+import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
 import { useCommerceConfig } from "@/lib/commerce";
 import { useLoyaltyConfig, type LoyaltyConfig } from "@/lib/loyalty-config";
 import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
@@ -26,7 +29,7 @@ import type { CommerceRules, DeliverySlot } from "@/types/nutrigreenz";
 /* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
   { city: "Hyderabad", pin: "500001–500098", days: "Same/next day", surcharge: "Free above ₹599", on: true },
-  { city: "Bengaluru", pin: "560001–560078", days: "2–3 days", surcharge: "₹49 flat", on: true },
+  { city: "Secunderabad", pin: "500003–500094", days: "Same/next day", surcharge: "Free above ₹599", on: true },
   { city: "Mumbai", pin: "400001–400107", days: "3 days", surcharge: "₹49 flat", on: true },
   { city: "Chennai", pin: "600001–600099", days: "3 days", surcharge: "₹49 flat", on: true },
   { city: "Delhi NCR", pin: "110001–110099", days: "3–4 days", surcharge: "₹79 flat", on: true },
@@ -50,7 +53,16 @@ const INITIAL_FEATURES: { key: string; label: string; desc: string; on: boolean 
   { key: "captain_network", label: "Captain network", desc: "Field-pickup captain PWA", on: false },
 ];
 
-const SUB_NAV = ["Rules", "Loyalty", "Coupons", "Features", "Shipping", "Payment"];
+const SUB_NAV = [
+  "Rules",
+  "Loyalty",
+  "Referrals",
+  "Coupons",
+  "Features",
+  "Access",
+  "Shipping",
+  "Payment",
+];
 
 /** ₹ formatter for figures shown read-only. */
 const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -176,6 +188,7 @@ function ConfigContent() {
         updateLoyalty={updateLoyalty}
         resetLoyalty={resetLoyalty}
       />
+      <ReferralConfigSection />
 
       {/* Secondary controls. */}
       <div className="flex items-center gap-2.5 mt-9 mb-3.5">
@@ -183,8 +196,9 @@ function ConfigContent() {
         <span className="h-px flex-1 bg-ng-line-soft" />
       </div>
 
-      <CouponsSection />
+      <CouponCampaignBuilder />
       <FeatureTogglesSection />
+      <RolesAndLogs />
 
       {/* Read-only reference: shipping zones + payment methods */}
       <Card
@@ -208,7 +222,7 @@ function ConfigContent() {
         <ul>
           {ZONES.map((z) => (
             <li
-              key={z.city}
+              key={`${z.city}-${z.pin}`}
               className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
             >
               <span className="font-medium">{z.city}</span>
@@ -517,155 +531,6 @@ function LoyaltySection({
         />
       </Card>
     </PrimarySection>
-  );
-}
-
-/* =======================================================================
- * Coupons (§3.5) — local active/inactive demo view + add affordance
- * ===================================================================== */
-type CouponView = {
-  code: string;
-  description: string;
-  label: string; // "10% · min ₹599" etc.
-  minOrderValue?: number;
-  active: boolean;
-};
-
-function couponLabel(c: (typeof COUPONS)[number]): string {
-  const base = c.type === "percent" ? `${c.value}%` : INR(c.value);
-  const cap = c.type === "percent" && c.maxDiscount ? ` (max ${INR(c.maxDiscount)})` : "";
-  return `${base}${cap}`;
-}
-
-function CouponsSection() {
-  const [coupons, setCoupons] = useState<CouponView[]>(() =>
-    COUPONS.map((c) => ({
-      code: c.code,
-      description: c.description,
-      label: couponLabel(c),
-      minOrderValue: c.minOrderValue,
-      active: c.active,
-    })),
-  );
-  const [showAdd, setShowAdd] = useState(false);
-  const [newCode, setNewCode] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-
-  function toggle(code: string) {
-    setCoupons((cs) => cs.map((c) => (c.code === code ? { ...c, active: !c.active } : c)));
-    const next = coupons.find((c) => c.code === code);
-    toast.success(`${code} ${next && !next.active ? "activated" : "deactivated"}`);
-  }
-
-  function addCoupon() {
-    const code = newCode.trim().toUpperCase();
-    if (!code) {
-      toast.error("Enter a coupon code");
-      return;
-    }
-    if (coupons.some((c) => c.code === code)) {
-      toast.error(`${code} already exists`);
-      return;
-    }
-    setCoupons((cs) => [
-      { code, description: newDesc.trim() || "New coupon", label: "—", active: true },
-      ...cs,
-    ]);
-    setNewCode("");
-    setNewDesc("");
-    setShowAdd(false);
-    toast.success(`Coupon ${code} added`, { description: "Demo only — not yet persisted." });
-  }
-
-  return (
-    <section id="coupons" className="mb-6 scroll-mt-32">
-      <Card>
-        <SectionHeader
-          icon="ticket-sale-bold"
-          tone="forest"
-          title="Coupons"
-          caption="Discount codes redeemable at checkout — toggle live or stage a new code."
-          action={
-            <button
-              type="button"
-              onClick={() => setShowAdd((v) => !v)}
-              className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-semibold hover:text-ng-leaf transition-colors cursor-pointer"
-            >
-              <Icon name="add-circle-bold" size={15} />
-              Add coupon
-            </button>
-          }
-        />
-        {showAdd ? (
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.6fr_auto] gap-3 items-end mb-4 rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3.5">
-            <TextField
-              label="Code"
-              value={newCode}
-              onChange={setNewCode}
-              placeholder="FRESH50"
-            />
-            <TextField
-              label="Description"
-              value={newDesc}
-              onChange={setNewDesc}
-              placeholder="₹50 off your first order"
-            />
-            <button
-              type="button"
-              onClick={addCoupon}
-              className="h-11 px-4 rounded-xl bg-ng-forest-deep text-ng-cream font-semibold text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
-            >
-              Add
-            </button>
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-[1.2fr_2fr_1fr_0.9fr_auto] gap-4 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
-          <span>Code</span>
-          <span>Description</span>
-          <span>Value</span>
-          <span>Min order</span>
-          <span className="text-right">Active</span>
-        </div>
-        <ul>
-          {coupons.map((c) => (
-            <li
-              key={c.code}
-              className="grid grid-cols-[1.2fr_2fr_1fr_0.9fr_auto] gap-4 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
-            >
-              <span className="font-mono text-[13px] text-ng-forest-deep font-semibold">{c.code}</span>
-              <span className="text-[12.5px] text-ng-ink-muted truncate">{c.description}</span>
-              <span className="font-medium tabular-nums">{c.label}</span>
-              <span className="tabular-nums text-ng-ink-muted">
-                {c.minOrderValue ? INR(c.minOrderValue) : "—"}
-              </span>
-              <span className="flex justify-end">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={c.active}
-                  aria-label={`Toggle ${c.code}`}
-                  onClick={() => toggle(c.code)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper ${
-                    c.active ? "bg-ng-forest" : "bg-ng-line"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-ng-paper shadow-sm transition-transform ${
-                      c.active ? "translate-x-5" : ""
-                    }`}
-                  />
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="text-[11.5px] text-ng-ink-soft mt-4 flex items-center gap-1.5">
-          <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-          Active toggles are a demo view — coupon persistence ships with the catalogue store.
-        </p>
-      </Card>
-    </section>
   );
 }
 

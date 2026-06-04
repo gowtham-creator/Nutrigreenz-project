@@ -23,7 +23,7 @@ export default function CommunityBundleCheckout() {
         <div className="mx-auto max-w-7xl px-5 md:px-8 py-5">
           <Link href="/community/bundle/inventory" className="text-[12px] text-ng-clay hover:underline">← Back to inventory</Link>
           <h1 className="font-display text-[28px] leading-tight mt-2">Confirm your pod order</h1>
-          <p className="text-[13px] text-ng-cream/70 mt-1">Indiranagar pod · May cycle · pickup 23 May, 17:00–20:00</p>
+          <p className="text-[13px] text-ng-cream/70 mt-1">Madhapur pod · May cycle · pickup 23 May, 17:00–20:00</p>
         </div>
       </div>
 
@@ -57,10 +57,10 @@ export default function CommunityBundleCheckout() {
             <div className="rounded-3xl bg-ng-sage/30 border border-ng-line p-7">
               <span className="ng-eyebrow">Pickup point</span>
               <h2 className="font-display text-[22px] text-ng-forest-deep mt-2 leading-tight">
-                Captain Sneha's home, Indiranagar
+                Captain Sneha's home, Madhapur
               </h2>
               <p className="text-[14px] text-ng-ink-muted mt-3 leading-relaxed">
-                14 Defence Colony, 100 Ft Rd, Indiranagar, Bengaluru 560038. Sneha will message you 24h before pickup with apartment + parking details.
+                14 Jubilee Hills Road No. 36, Madhapur, Hyderabad 500081. Sneha will message you 24h before pickup with apartment + parking details.
               </p>
               <div className="mt-5 grid grid-cols-2 gap-3 text-[12.5px]">
                 <Tile label="Cycle closes" value="22 May, 22:00" />
