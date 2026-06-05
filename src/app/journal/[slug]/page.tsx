@@ -79,15 +79,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <Section className="bg-ng-cream-mesh bg-ng-cream" eyebrow="Keep reading" heading="More from the Journal">
         <div className="grid md:grid-cols-3 gap-6">
           {related.map((r) => (
-            <Link key={r.id} href={`/journal/${r.slug}`} className="group rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden">
+            <Link key={r.id} href={`/journal/${r.slug}`} className="group flex h-full flex-col rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden">
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image src={r.cover} alt={r.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" sizes="(max-width: 768px) 100vw, 33vw" />
               </div>
-              <div className="p-5">
+              <div className="flex flex-1 flex-col p-5">
                 <h3 className="font-display text-[18px] text-ng-forest-deep group-hover:text-ng-leaf transition-colors leading-tight">
                   {r.title}
                 </h3>
-                <div className="text-[12px] text-ng-ink-soft mt-3">{r.readMinutes} min read</div>
+                <div className="mt-auto pt-3 text-[12px] text-ng-ink-soft">{r.readMinutes} min read</div>
               </div>
             </Link>
           ))}

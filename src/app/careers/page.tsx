@@ -80,7 +80,7 @@ export default function CareersPage() {
       <Section eyebrow="How we work" heading="A team that sweats the details">
         <div className="grid sm:grid-cols-2 gap-5">
           {VALUES.map((v, i) => (
-            <Reveal key={v.title} delay={i * 0.05} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={v.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={v.icon} size={24} />
               </div>
@@ -98,7 +98,7 @@ export default function CareersPage() {
       <Section className="bg-ng-sage/25 !py-16" eyebrow="What we offer" heading="The good stuff">
         <div className="grid sm:grid-cols-2 gap-4 max-w-3xl">
           {PERKS.map((p) => (
-            <Reveal key={p} className="flex items-center gap-3 rounded-xl bg-ng-paper border border-ng-line-soft px-5 py-4">
+            <Reveal key={p} className="flex h-full items-center gap-3 rounded-xl bg-ng-paper border border-ng-line-soft px-5 py-4">
               <span className="h-7 w-7 shrink-0 rounded-full bg-ng-forest text-ng-cream inline-flex items-center justify-center">
                 <Icon name="check-circle-bold" size={16} />
               </span>

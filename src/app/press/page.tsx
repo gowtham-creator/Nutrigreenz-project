@@ -71,7 +71,7 @@ export default function PressPage() {
       <Section className="!py-14">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-3xl overflow-hidden border border-ng-line-soft bg-ng-line-soft">
           {FACTS.map((f) => (
-            <Reveal key={f.label} className="bg-ng-paper p-7">
+            <Reveal key={f.label} className="h-full bg-ng-paper p-7">
               <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted">{f.label}</div>
               <div className="mt-1.5 font-display text-[20px] leading-snug text-ng-forest-deep">{f.value}</div>
             </Reveal>
@@ -105,7 +105,7 @@ export default function PressPage() {
       <Section className="bg-ng-sage/25" eyebrow="In the press" heading="Recent mentions">
         <div className="grid md:grid-cols-3 gap-5">
           {MENTIONS.map((m, i) => (
-            <Reveal key={m.title} delay={i * 0.05} className="flex flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={m.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[13px] font-semibold text-ng-forest">{m.outlet}</span>
                 <span className="text-[12px] text-ng-ink-soft">{m.date}</span>
@@ -132,7 +132,7 @@ export default function PressPage() {
       <Section eyebrow="Media kit" heading="Assets for your story">
         <div className="grid md:grid-cols-3 gap-5">
           {KIT.map((k, i) => (
-            <Reveal key={k.title} delay={i * 0.05} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={k.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={k.icon} size={24} />
               </div>

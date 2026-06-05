@@ -156,11 +156,11 @@ export default function ReferralPage() {
         {/* How it works */}
         <div className="mb-20">
           <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mb-10">How it works.</h2>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid items-stretch md:grid-cols-3 gap-5">
             {STEPS.map((s) => (
               <article
                 key={s.n}
-                className={`rounded-2xl border p-7 ${s.block} transition-shadow hover:shadow-[0_18px_40px_-26px_rgba(10,31,18,0.4)]`}
+                className={`flex h-full flex-col rounded-2xl border p-7 ${s.block} transition-shadow hover:shadow-[0_18px_40px_-26px_rgba(10,31,18,0.4)]`}
               >
                 <div className="flex items-center justify-between">
                   <div className={`font-display text-[44px] leading-none ${s.num}`}>{s.n}</div>
@@ -221,7 +221,7 @@ export default function ReferralPage() {
         {/* FAQ */}
         <div className="mt-20">
           <h2 className="font-display text-[clamp(24px,3vw,32px)] text-ng-forest-deep mb-7">Common questions.</h2>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid items-stretch md:grid-cols-2 gap-5">
             <Faq tint="sage" q="Is there a cap on referrals?" a="No. Invite as many friends as you like. We've had members earn over ₹15,000 in wallet credit through referrals alone." />
             <Faq tint="paper" q="When does my credit appear?" a="The moment your friend's first order is marked 'shipped' in our system. Usually within 48 hours of their order." />
             <Faq tint="paper" q="Can I refer existing customers?" a="The ₹100 bonus is for new customers only. But if you refer a lapsed customer (no order in 12+ months), they qualify." />
@@ -248,7 +248,7 @@ function Faq({ q, a, tint }: { q: string; a: string; tint: "sage" | "paper" }) {
       ? "bg-ng-sage/25 border-ng-leaf/25"
       : "bg-ng-paper border-ng-line-soft";
   return (
-    <div className={`rounded-2xl border p-6 ${block}`}>
+    <div className={`flex h-full flex-col rounded-2xl border p-6 ${block}`}>
       <h3 className="font-display text-[18px] text-ng-forest-deep flex items-start gap-2.5">
         <Icon name="question-circle-bold" size={18} className="text-ng-clay mt-0.5" />
         {q}

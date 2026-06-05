@@ -125,7 +125,7 @@ export default function TraceabilityPage() {
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {SAMPLE.tests.map((t) => (
-                    <div key={t.name} className="rounded-xl border border-ng-line-soft p-4 flex items-start gap-3">
+                    <div key={t.name} className="h-full rounded-xl border border-ng-line-soft p-4 flex items-start gap-3">
                       <div className={`h-7 w-7 rounded-full grid place-items-center text-[12px] shrink-0 ${
                         t.pass ? "bg-ng-success/15 text-ng-success" : "bg-ng-danger/15 text-ng-danger"
                       }`}>
@@ -159,7 +159,7 @@ export default function TraceabilityPage() {
             { n: "02", title: "Stamped on every label", body: "The code is printed on the back label and encoded in the QR sticker. It's machine-readable and human-readable." },
             { n: "03", title: "Tied to a public ledger", body: "Each event in the lot's life (harvest, press, test, ship) is anchored to a tamper-evident ledger. We can't quietly change history." },
           ].map((s) => (
-            <article key={s.n} className="rounded-3xl bg-ng-paper border border-ng-line-soft p-7">
+            <article key={s.n} className="h-full rounded-3xl bg-ng-paper border border-ng-line-soft p-7">
               <div className="font-display text-[40px] leading-none text-ng-clay/60">{s.n}</div>
               <h3 className="font-display text-[20px] text-ng-forest-deep mt-3">{s.title}</h3>
               <p className="text-[14px] text-ng-ink-muted mt-2 leading-relaxed">{s.body}</p>

@@ -123,7 +123,7 @@ export function Why() {
         {PILLARS.map((p) => {
           const t = TREATMENTS[p.variant];
           return (
-            <StaggerItem key={p.title}>
+            <StaggerItem key={p.title} className="h-full">
               <article
                 className={cn(
                   "group relative h-full rounded-3xl border p-7 md:p-9 overflow-hidden",

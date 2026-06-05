@@ -72,9 +72,9 @@ export function ProductRail({ eyebrow, heading, description, products, ctaLabel 
           {products.map((p) => (
             <StaggerItem
               key={p.id}
-              className="snap-start shrink-0 w-[280px] md:w-[300px] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:[transform:perspective(1000px)_rotateX(2deg)_translateY(-6px)]"
+              className="snap-start shrink-0 w-[280px] md:w-[300px] h-full will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:[transform:perspective(1000px)_rotateX(2deg)_translateY(-6px)]"
             >
-              <ProductCard product={p} />
+              <ProductCard product={p} className="h-full" />
             </StaggerItem>
           ))}
         </Stagger>

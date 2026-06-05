@@ -48,7 +48,7 @@ export function AddressPicker({
           </Link>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-stretch gap-3 sm:grid-cols-2">
           {addresses.map((address) => {
             const meta = TYPE_META[address.type];
             const heading =
@@ -63,7 +63,7 @@ export function AddressPicker({
                 onClick={() => onSelect(address.id)}
                 aria-pressed={selected}
                 className={cn(
-                  "relative flex flex-col gap-2 rounded-2xl border p-4 text-left transition-all",
+                  "relative flex h-full flex-col gap-2 rounded-2xl border p-4 text-left transition-all",
                   selected
                     ? "border-ng-forest bg-ng-sage/30 shadow-[0_4px_18px_rgba(102,191,115,0.16)]"
                     : "border-ng-line-soft bg-ng-paper hover:border-ng-leaf",

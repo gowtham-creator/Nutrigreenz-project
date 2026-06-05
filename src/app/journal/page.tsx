@@ -63,7 +63,7 @@ export default function JournalIndex() {
             <Link
               key={a.id}
               href={`/journal/${a.slug}`}
-              className="group flex flex-col rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden"
+              className="group flex h-full flex-col rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image src={a.cover} alt={a.title} fill className="object-cover transition-transform duration-700 group-hover:scale-105" sizes="(max-width: 768px) 100vw, 33vw" />

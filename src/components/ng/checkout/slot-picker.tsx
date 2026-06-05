@@ -27,7 +27,7 @@ export function SlotPicker({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid items-stretch gap-3 sm:grid-cols-3">
         {slots.map((slot) => {
           const selected = slot.id === selectedId;
           const [name, time] = slot.label.split(" · ");
@@ -38,7 +38,7 @@ export function SlotPicker({
               onClick={() => onSelect(slot.id)}
               aria-pressed={selected}
               className={cn(
-                "relative rounded-2xl border p-4 text-left transition-all duration-200",
+                "relative h-full rounded-2xl border p-4 text-left transition-all duration-200",
                 selected
                   ? "border-ng-forest bg-ng-sage/30 shadow-[0_4px_18px_rgba(102,191,115,0.16)]"
                   : "border-ng-line-soft bg-ng-paper hover:-translate-y-0.5 hover:border-ng-leaf hover:shadow-[var(--shadow-ng-card)]",

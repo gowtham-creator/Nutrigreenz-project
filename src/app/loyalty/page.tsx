@@ -99,14 +99,14 @@ export default function LoyaltyPage() {
         </Reveal>
 
         {/* Stat strip */}
-        <Stagger className="grid sm:grid-cols-3 gap-4 mb-12">
-          <StaggerItem>
+        <Stagger className="grid items-stretch sm:grid-cols-3 gap-4 mb-12">
+          <StaggerItem className="h-full">
             <Tile icon="wallet-money-bold" big={`₹${balance.toLocaleString()}`} small="Current balance" tone="forest" />
           </StaggerItem>
-          <StaggerItem>
+          <StaggerItem className="h-full">
             <Tile icon="medal-ribbon-star-bold" big="Sapling" small="Current tier · 5% back" tone="clay" />
           </StaggerItem>
-          <StaggerItem>
+          <StaggerItem className="h-full">
             <Tile icon="graph-up-bold" big="₹3,560" small="Earned this year" tone="sage" />
           </StaggerItem>
         </Stagger>
@@ -286,7 +286,7 @@ function Tile({ icon, big, small, tone }: { icon: string; big: string; small: st
     sage: "bg-ng-sage/60 text-ng-forest-deep border border-ng-line",
   };
   return (
-    <div className={`ng-float rounded-2xl p-6 ${map[tone]}`}>
+    <div className={`ng-float flex h-full flex-col rounded-2xl p-6 ${map[tone]}`}>
       <Icon name={icon} size={22} className="opacity-80" />
       <div className="font-display text-[36px] leading-none mt-3 tabular-nums">{big}</div>
       <div className="text-[12px] uppercase tracking-wider opacity-70 mt-2.5">{small}</div>

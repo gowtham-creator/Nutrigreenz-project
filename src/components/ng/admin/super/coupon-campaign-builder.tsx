@@ -434,7 +434,7 @@ export function CouponCampaignBuilder() {
                     aria-checked={active}
                     onClick={() => patch("target", m.value)}
                     className={cn(
-                      "flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
+                      "flex flex-col items-start gap-1.5 h-full rounded-xl border p-3 text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       active
                         ? "border-ng-forest bg-ng-forest/[0.06] shadow-[0_2px_10px_rgba(31,77,46,0.10)]"
                         : "border-ng-line bg-ng-paper hover:border-ng-forest/40",
@@ -656,7 +656,7 @@ function TrackTile({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-ng-line-soft bg-ng-cream/50 px-3.5 py-3">
+    <div className="h-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-3.5 py-3">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.1em] text-ng-ink-soft font-mono">
         <Icon name={icon} size={13} className={accent ? "text-ng-clay-deep" : "text-ng-forest"} />
         {label}

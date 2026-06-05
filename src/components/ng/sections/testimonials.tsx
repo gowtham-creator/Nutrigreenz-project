@@ -48,8 +48,8 @@ export function Testimonials() {
 
       <Stagger className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 persp-1000">
         {TESTIMONIALS.map((t) => (
-          <StaggerItem key={t.id}>
-            <figure className="group/card relative h-full rounded-3xl glass ng-float p-7 md:p-8 tilt-soft transition-transform duration-500 ease-out [transform-style:preserve-3d] hover:[transform:rotateX(0deg)_rotateY(0deg)]">
+          <StaggerItem key={t.id} className="h-full">
+            <figure className="group/card relative flex h-full flex-col rounded-3xl glass ng-float p-7 md:p-8 tilt-soft transition-transform duration-500 ease-out [transform-style:preserve-3d] hover:[transform:rotateX(0deg)_rotateY(0deg)]">
               {/* Big quote mark */}
               <div
                 aria-hidden
@@ -57,12 +57,12 @@ export function Testimonials() {
               >
                 &ldquo;
               </div>
-              <div className="relative">
+              <div className="relative flex flex-1 flex-col">
                 <Stars rating={t.rating} size="sm" />
                 <blockquote className="font-display text-[20px] leading-[1.35] text-ng-forest-deep mt-4">
                   {t.quote}
                 </blockquote>
-                <figcaption className="mt-6 pt-5 border-t border-ng-line-soft flex items-center justify-between">
+                <figcaption className="mt-auto pt-5 border-t border-ng-line-soft flex items-center justify-between">
                   <div>
                     <div className="font-display text-[15px] text-ng-ink">{t.name}</div>
                     <div className="text-[12px] text-ng-ink-soft">{t.location}</div>

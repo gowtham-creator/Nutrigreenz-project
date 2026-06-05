@@ -36,10 +36,10 @@ export function Farms() {
 
       <Stagger className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 persp-1400">
         {FARMS.map((farm, i) => (
-          <StaggerItem key={farm.id}>
+          <StaggerItem key={farm.id} className="h-full">
             <article
               className={cn(
-                "group relative rounded-3xl overflow-hidden bg-ng-paper border border-ng-line-soft",
+                "group relative flex h-full flex-col rounded-3xl overflow-hidden bg-ng-paper border border-ng-line-soft",
                 "shadow-[var(--shadow-ng-card)] hover:shadow-[var(--shadow-ng-float)]",
                 "hover:-translate-y-1.5",
                 "will-change-transform transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -67,7 +67,7 @@ export function Farms() {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="flex flex-1 flex-col p-6">
                 <h3 className="font-display text-[22px] leading-tight text-ng-forest-deep">
                   {farm.name}
                 </h3>
@@ -88,7 +88,7 @@ export function Farms() {
                   ))}
                 </div>
 
-                <div className="mt-6 pt-5 border-t border-ng-line-soft flex items-center justify-between">
+                <div className="mt-auto pt-5 border-t border-ng-line-soft flex items-center justify-between">
                   <span className="text-[13px] text-ng-ink-soft">— {farm.farmerName}</span>
                   <Link
                     href={`/farms/${farm.id}`}

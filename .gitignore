@@ -88,3 +88,8 @@ public/seo/anveshan-favicon.png
 src/components/anveshan/
 src/types/anveshan.ts
 scripts/download-anveshan-assets.mjs
+
+# Stray temp verification artifacts
+*-tmp.mjs
+*-shots-tmp/
+*-tmp/

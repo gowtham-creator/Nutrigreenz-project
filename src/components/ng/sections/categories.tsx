@@ -118,11 +118,11 @@ export function Categories() {
           const Icon = PRODUCE_ICONS[cat.icon as keyof typeof PRODUCE_ICONS] ?? PRODUCE_ICONS.leaf;
           const theme = CATEGORY_THEMES[cat.id] ?? FALLBACK_THEME;
           return (
-            <StaggerItem key={cat.id} className="persp-1000">
+            <StaggerItem key={cat.id} className="persp-1000 h-full">
               <Link
                 href={`/shop/${cat.slug}`}
                 className={cn(
-                  "group ng-float relative flex flex-col items-center gap-3 rounded-2xl p-5 md:p-6",
+                  "group ng-float relative flex h-full flex-col items-center gap-3 rounded-2xl p-5 md:p-6",
                   "border transition-[transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                   "[transform-style:preserve-3d] hover:[transform:translateY(-6px)_rotateX(4deg)_rotateY(-3deg)]",
                   theme.card,

@@ -55,13 +55,13 @@ export default function AdminMarketing() {
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatTile label="Subscribers" value="28,412" delta="+412 this week" trend="up" />
-        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
+        <div className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
           <div className="flex items-start justify-between gap-2">
             <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Avg open rate</div>
             <TrendChip delta="+2.1 pt" direction="up" />
           </div>
           <div className="font-display text-[30px] text-ng-forest-deep leading-none mt-2.5 tabular-nums">48.6%</div>
-          <Sparkline data={OPEN_RATE} tone="leaf" width={200} height={32} className="w-full mt-3" />
+          <Sparkline data={OPEN_RATE} tone="leaf" width={200} height={32} className="w-full mt-auto pt-3" />
         </div>
         <StatTile label="Avg CTR" value="9.2%" delta="industry 2.1%" trend="up" />
         <StatTile label="Coupon ROAS" value="6.4×" delta="₹3.8L spend" trend="up" />
@@ -158,7 +158,7 @@ export default function AdminMarketing() {
       {/* Referral / loyalty / captain programs */}
       <div className="grid md:grid-cols-3 gap-4">
         {PROGRAMS.map((p) => (
-          <div key={p.title} className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
+          <div key={p.title} className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
             <div className="flex items-center gap-2.5">
               <span className="size-9 rounded-xl bg-ng-forest/8 flex items-center justify-center shrink-0">
                 <Icon name={p.icon} size={18} className="text-ng-forest" />
@@ -166,7 +166,7 @@ export default function AdminMarketing() {
               <span className="font-display text-[15px] text-ng-forest-deep">{p.title}</span>
             </div>
             <p className="text-[12px] text-ng-ink-muted mt-3 leading-relaxed">{p.detail}</p>
-            <div className="mt-4 pt-3 border-t border-ng-line-soft flex items-baseline gap-2">
+            <div className="mt-auto pt-3 border-t border-ng-line-soft flex items-baseline gap-2">
               <span className="font-display text-[22px] text-ng-forest-deep tabular-nums">{p.stat}</span>
               <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{p.statLabel}</span>
             </div>

@@ -105,7 +105,7 @@ export function RolesAndLogs() {
             <div
               key={r.key}
               className={cn(
-                "rounded-2xl border p-4",
+                "h-full rounded-2xl border p-4",
                 r.tone === "clay"
                   ? "border-ng-clay/30 bg-ng-clay/[0.05]"
                   : "border-ng-line-soft bg-ng-cream/40",

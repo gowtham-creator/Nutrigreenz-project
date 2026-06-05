@@ -136,7 +136,7 @@ export default function AdminOverview() {
         {KPI.map((k) => (
           <div
             key={k.label}
-            className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5 hover:shadow-[var(--shadow-ng-card)] transition-shadow"
+            className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5 hover:shadow-[var(--shadow-ng-card)] transition-shadow"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -148,7 +148,7 @@ export default function AdminOverview() {
               </div>
               <TrendChip delta={k.delta} direction={k.dir} />
             </div>
-            <div className="mt-4">
+            <div className="mt-auto pt-4">
               {k.kind === "spark" ? (
                 <Sparkline data={k.series} tone={k.tone} width={240} height={40} className="w-full" />
               ) : (
@@ -162,7 +162,7 @@ export default function AdminOverview() {
       {/* ── secondary metric strip ───────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {SECONDARY.map((s) => (
-          <div key={s.label} className="rounded-2xl bg-ng-paper border border-ng-line-soft px-5 py-4 flex items-center justify-between gap-3">
+          <div key={s.label} className="h-full rounded-2xl bg-ng-paper border border-ng-line-soft px-5 py-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{s.label}</div>
               <div className="font-display text-[22px] text-ng-forest-deep leading-none mt-1.5 tabular-nums">{s.value}</div>

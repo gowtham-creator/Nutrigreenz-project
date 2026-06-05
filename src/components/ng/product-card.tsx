@@ -73,7 +73,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
   return (
     <article
       className={cn(
-        "group relative flex flex-col rounded-3xl bg-ng-paper border border-ng-line-soft overflow-hidden ng-float transition-colors duration-300 hover:border-ng-leaf-soft",
+        "group relative flex h-full flex-col rounded-3xl bg-ng-paper border border-ng-line-soft overflow-hidden ng-float transition-colors duration-300 hover:border-ng-leaf-soft",
         className,
       )}
     >
@@ -106,7 +106,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
           </div>
 
           {/* Quick-view affordance on hover */}
-          <span className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 translate-y-3 rounded-full bg-ng-forest-deep/85 px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-ng-cream opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <span className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 translate-y-3 whitespace-nowrap rounded-full bg-ng-forest-deep/85 px-3.5 py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-ng-cream opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             View details
           </span>
         </div>

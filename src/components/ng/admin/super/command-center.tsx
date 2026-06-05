@@ -30,7 +30,7 @@ export function KpiChip({
   accent?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-ng-cream/[0.08] border border-ng-cream/15 px-3.5 py-2.5 min-w-0">
+    <div className="flex items-center gap-2.5 rounded-xl bg-ng-cream/[0.08] border border-ng-cream/15 px-3.5 py-2.5 min-w-0 h-full">
       <span className="grid place-items-center size-8 shrink-0 rounded-lg bg-ng-cream/10 text-ng-clay">
         <Icon name={icon} size={16} />
       </span>

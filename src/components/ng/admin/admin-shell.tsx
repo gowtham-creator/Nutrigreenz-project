@@ -238,11 +238,11 @@ export function StatTile({
     trend === "up" ? "text-ng-success" : trend === "down" ? "text-ng-terracotta" : "text-ng-ink-soft";
   const trendArrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
   return (
-    <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
+    <div className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
       <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{label}</div>
       <div className="font-display text-[34px] text-ng-forest-deep leading-none mt-3">{value}</div>
       {delta ? (
-        <div className={cn("text-[12px] mt-3 font-medium", trendColor)}>
+        <div className={cn("text-[12px] mt-auto pt-3 font-medium", trendColor)}>
           {trendArrow} {delta}
         </div>
       ) : null}
@@ -270,7 +270,7 @@ export function Card({
   const edgeToEdge = /(^|\s)!p-0(\s|$)/.test(className ?? "");
   const hasHeader = Boolean(title || action);
   return (
-    <section className={cn("rounded-2xl bg-ng-paper border border-ng-line-soft p-6", className)}>
+    <section className={cn("flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-6", className)}>
       {hasHeader && (
         <header
           className={cn(

@@ -93,7 +93,7 @@ export function AddressBook() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid items-stretch gap-5 sm:grid-cols-2">
           {addresses.map((address) => (
             <AddressCard
               key={address.id}

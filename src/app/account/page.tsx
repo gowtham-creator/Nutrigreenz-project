@@ -60,7 +60,7 @@ export default function AccountPage() {
                 Track deliveries, manage subscriptions and watch your wallet grow — all in one place.
               </p>
 
-              <Stagger className="mt-8 grid max-w-xl grid-cols-3 gap-3 md:gap-4">
+              <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">
                 {STATS.map((s) => {
                   const tint =
                     s.tint === "clay"
@@ -69,7 +69,7 @@ export default function AccountPage() {
                         ? "text-ng-leaf"
                         : "text-ng-blue";
                   const inner = (
-                    <div className="group relative overflow-hidden rounded-2xl border border-ng-cream/12 bg-ng-cream/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-ng-cream/[0.1]">
+                    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-ng-cream/12 bg-ng-cream/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-ng-cream/[0.1]">
                       <Icon name={s.icon} size={20} className={`${tint} opacity-90`} />
                       <div className="mt-3 font-display text-[clamp(22px,2.4vw,30px)] leading-none text-ng-cream tabular-nums">
                         {s.number}
@@ -87,8 +87,8 @@ export default function AccountPage() {
                     </div>
                   );
                   return (
-                    <StaggerItem key={s.label}>
-                      {s.href ? <Link href={s.href}>{inner}</Link> : inner}
+                    <StaggerItem key={s.label} className="h-full">
+                      {s.href ? <Link href={s.href} className="block h-full">{inner}</Link> : inner}
                     </StaggerItem>
                   );
                 })}
@@ -162,21 +162,21 @@ export default function AccountPage() {
             </span>
             <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid items-stretch gap-5 md:grid-cols-3">
             {[
               { name: "A2 Gir Cow Ghee — 500ml", next: "12 June", cadence: "6 weeks", price: "₹1,480" },
               { name: "Cold-Pressed Groundnut Oil — 1L", next: "22 May", cadence: "4 weeks", price: "₹645" },
               { name: "Multifloral Raw Honey — 500g", next: "08 July", cadence: "8 weeks", price: "₹540" },
             ].map((s) => (
-              <article key={s.name} className="ng-float group rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50">
+              <article key={s.name} className="ng-float group flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="font-display text-[15px] leading-tight text-ng-forest-deep">{s.name}</div>
+                  <div className="line-clamp-2 font-display text-[15px] leading-tight text-ng-forest-deep">{s.name}</div>
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-forest transition-colors group-hover:bg-ng-leaf/20">
                     <Icon name="refresh-linear" size={15} />
                   </span>
                 </div>
                 <div className="mt-1.5 text-[12px] text-ng-ink-muted">Every {s.cadence} · {s.price}</div>
-                <div className="mt-4 flex items-center justify-between border-t border-ng-line-soft pt-4 text-[12px]">
+                <div className="mt-auto flex items-center justify-between border-t border-ng-line-soft pt-4 text-[12px]">
                   <span className="text-ng-ink-soft">Next: <span className="font-medium text-ng-forest-deep">{s.next}</span></span>
                   <button className="font-medium text-ng-forest hover:underline">Manage</button>
                 </div>

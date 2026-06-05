@@ -38,7 +38,7 @@ export function Journal() {
 
       <Stagger className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 persp-1400">
         {JOURNAL.map((article) => (
-          <StaggerItem key={article.id}>
+          <StaggerItem key={article.id} className="h-full">
             <Link
               href={`/journal/${article.slug}`}
               className="group flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden ng-float tilt-soft transition-transform duration-500 ease-out [transform-style:preserve-3d] hover:[transform:rotateX(0deg)_rotateY(0deg)]"

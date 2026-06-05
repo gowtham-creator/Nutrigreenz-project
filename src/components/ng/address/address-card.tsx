@@ -34,7 +34,7 @@ export function AddressCard({
   return (
     <article
       className={cn(
-        "ng-float relative flex flex-col gap-4 rounded-2xl bg-ng-paper border p-5 transition-all",
+        "ng-float relative flex h-full flex-col gap-4 rounded-2xl bg-ng-paper border p-5 transition-all",
         isDefault
           ? "border-ng-leaf/70 shadow-[0_6px_22px_-8px_rgba(102,191,115,0.4)] ring-1 ring-ng-leaf/20"
           : "border-ng-line-soft hover:border-ng-leaf/50",
@@ -78,7 +78,7 @@ export function AddressCard({
         </p>
       </div>
 
-      <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ng-line-soft pt-4 text-[13px] font-medium">
+      <footer className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ng-line-soft pt-4 text-[13px] font-medium">
         <button
           type="button"
           onClick={() => onEdit(address)}

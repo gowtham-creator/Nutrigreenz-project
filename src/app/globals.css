@@ -131,12 +131,12 @@
      overflow-hidden ancestors. !important + offset guarantees it wins
      over Tailwind's `outline-none` utility (outline: 2px solid transparent).
      ---------------------------------------------------------------- */
+  /* Text fields are intentionally excluded — they show focus via their own
+     border-colour + soft glow (see the Input component / focus-within styles),
+     so the hard outline isn't drawn on inputs/selects/textareas. */
   a:focus-visible,
   button:focus-visible,
   [role="button"]:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
   summary:focus-visible,
   [tabindex]:not([tabindex="-1"]):focus-visible {
     outline: 2px solid var(--ng-forest) !important;
@@ -147,9 +147,6 @@
   .dark a:focus-visible,
   .dark button:focus-visible,
   .dark [role="button"]:focus-visible,
-  .dark input:focus-visible,
-  .dark select:focus-visible,
-  .dark textarea:focus-visible,
   .dark summary:focus-visible,
   .dark [tabindex]:not([tabindex="-1"]):focus-visible,
   .bg-forest-radial a:focus-visible,
@@ -308,15 +305,23 @@
 }
 
 /* Announce ticker (kept for promo bar) */
-@keyframes announceScroll {
-  0%, 28%   { transform: translateY(0); }       /* message 1 */
-  33%, 61%  { transform: translateY(-1.6em); }  /* message 2 */
-  66%, 94%  { transform: translateY(-3.2em); }  /* message 3 */
-  100%      { transform: translateY(-4.8em); }  /* duplicate message 1 → seamless loop */
+/* Offers ticker — continuous horizontal marquee (scrolls right → left). The
+   track holds two identical copies of the messages, so translating by -50%
+   loops seamlessly. */
+.marquee { width: 100%; overflow: hidden; }
+.marquee__track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marqueeX 34s linear infinite;
+  will-change: transform;
 }
-.announcement-rotate { position: relative; height: 1.6em; overflow: hidden; text-align: center; width: 100%; }
-.announcement-rotate__track { display: flex; flex-direction: column; animation: announceScroll 10s ease-in-out infinite; }
-.announcement-rotate__track > * { flex: 0 0 1.6em; }
+.marquee:hover .marquee__track { animation-play-state: paused; }
+.marquee__item { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0 1.6rem; }
+@keyframes marqueeX {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
 
 /* Hide scrollbar for horizontal scrollers */
 .scrollbar-none::-webkit-scrollbar { display: none; }

@@ -177,13 +177,13 @@ export default function OrderHistoryPage() {
             Every harvest you&apos;ve ordered, freshest first. Open any order for live tracking,
             lot traces and a GST invoice.
           </p>
-          <div className="mt-6 grid grid-cols-3 gap-3 sm:max-w-md">
+          <div className="mt-6 grid grid-cols-3 items-stretch gap-3 sm:max-w-md">
             {[
               { icon: "box-bold", n: ORDERS.length, l: "Orders" },
               { icon: "delivery-bold", n: ORDERS.filter((o) => o.status === "delivered").length, l: "Delivered" },
               { icon: "scooter-bold", n: ORDERS.filter((o) => o.status !== "delivered").length, l: "In progress" },
             ].map((s) => (
-              <div key={s.l} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-4 shadow-[var(--shadow-ng-card)]">
+              <div key={s.l} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-4 shadow-[var(--shadow-ng-card)]">
                 <Icon name={s.icon} size={18} className="text-ng-forest" />
                 <div className="mt-2 font-display text-[24px] leading-none tabular-nums text-ng-forest-deep">{s.n}</div>
                 <div className="mt-1 text-[11px] uppercase tracking-wider text-ng-ink-soft">{s.l}</div>

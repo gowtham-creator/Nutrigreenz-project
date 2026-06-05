@@ -38,7 +38,12 @@ export default function CaptainIntake() {
 
   const mobileValid = /^[6-9]\d{9}$/.test(mobile);
   const nameValid = name.trim().length >= 2;
-  const canSubmit = nameValid && mobileValid && lineItems.length > 0;
+  const hasItems = lineItems.length > 0;
+  const canSubmit = nameValid && mobileValid && hasItems;
+
+  // Capture-progress steps for the field-rep "how far am I" chip.
+  const stepWho = nameValid && mobileValid;
+  const doneSteps = [stepWho, hasItems, true].filter(Boolean).length; // pay always chosen
 
   function setQty(sku: string, delta: number) {
     setCart((prev) => {
@@ -88,18 +93,38 @@ export default function CaptainIntake() {
       title="New customer"
       subtitle="Log a walk-up sale. Mobile is the key — it auto-links on online signup."
     >
+      {/* Capture progress */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i < doneSteps ? "w-7 bg-ng-leaf" : "w-3.5 bg-ng-line"
+              }`}
+              aria-hidden
+            />
+          ))}
+        </div>
+        <span className="text-[11px] text-ng-ink-soft">
+          {canSubmit ? "Ready to capture" : stepWho ? "Add products" : "Customer details"}
+        </span>
+      </div>
+
       {/* M2 cross-match note */}
       <div className="flex gap-2.5 rounded-2xl bg-ng-clay/15 border border-ng-clay/35 px-3.5 py-3 mb-5">
-        <Icon name="link-round-bold" size={18} className="text-ng-clay-deep mt-0.5 shrink-0" />
+        <div className="size-7 rounded-lg bg-ng-clay/20 ring-1 ring-ng-clay/30 flex items-center justify-center shrink-0">
+          <Icon name="link-round-bold" size={16} className="text-ng-clay-deep" />
+        </div>
         <p className="text-[12px] leading-snug text-ng-soil">
-          On online signup, this mobile <span className="font-semibold">auto-links &amp; imports</span>{" "}
-          stall purchases — marking the customer “Onboarded”.{" "}
+          On online signup, this mobile <span className="font-semibold">auto-links &amp; imports</span> stall purchases
+          — marking the customer “Onboarded”.{" "}
           <span className="text-ng-ink-soft">(OTP cross-match · Milestone 2)</span>
         </p>
       </div>
 
       {/* Customer details */}
-      <CaptainSectionHead className="mt-0">Customer</CaptainSectionHead>
+      <CaptainSectionHead className="mt-0">Who</CaptainSectionHead>
       <CaptainCard className="space-y-3.5">
         <Field label="Full name" required>
           <input
@@ -133,7 +158,7 @@ export default function CaptainIntake() {
             <select
               value={community}
               onChange={(e) => setCommunity(e.target.value)}
-              className={`${inputCls(false)} appearance-none pr-9`}
+              className={`${inputCls(false)} appearance-none pr-9 cursor-pointer`}
             >
               {COMMUNITIES.map((c) => (
                 <option key={c} value={c}>
@@ -154,56 +179,67 @@ export default function CaptainIntake() {
       <CaptainSectionHead
         action={
           cartCount > 0 ? (
-            <span className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-medium">
-              <Icon name="cart-large-2-bold" size={15} />
+            <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/20 text-ng-forest font-bold px-2.5 py-1 text-[11.5px]">
+              <Icon name="cart-large-2-bold" size={14} />
               {cartCount} item{cartCount > 1 ? "s" : ""}
             </span>
           ) : undefined
         }
       >
-        Products
+        What
       </CaptainSectionHead>
       <div className="space-y-2">
         {STALL_CATALOG.map((p) => {
           const qty = cart[p.sku] ?? 0;
+          const active = qty > 0;
           return (
             <CaptainCard
               key={p.sku}
-              className={`flex items-center gap-3 ${qty > 0 ? "border-ng-leaf bg-ng-sage/25" : ""}`}
+              className={`flex items-center gap-3 !py-3 transition-colors ${
+                active ? "border-ng-leaf bg-ng-sage/25 shadow-[0_2px_10px_-4px_rgba(102,191,115,0.4)]" : ""
+              }`}
             >
+              <div
+                className={`size-10 rounded-xl flex items-center justify-center shrink-0 font-display text-[13px] transition-colors ${
+                  active ? "bg-ng-forest text-ng-leaf" : "bg-ng-sage/50 text-ng-forest"
+                }`}
+                aria-hidden
+              >
+                {p.sku.split("-")[0]}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-[13.5px] text-ng-forest-deep leading-tight">{p.title}</div>
                 <div className="text-[12px] text-ng-ink-muted mt-0.5">
-                  {p.unit} · ₹{p.price}
+                  {p.unit} · <span className="font-semibold text-ng-forest">₹{p.price}</span>
                 </div>
               </div>
               {qty === 0 ? (
                 <button
                   type="button"
                   onClick={() => setQty(p.sku, 1)}
-                  className="inline-flex items-center gap-1 rounded-full border border-ng-line text-ng-forest px-3 py-1.5 text-[12.5px] font-semibold hover:border-ng-leaf hover:bg-ng-white transition-colors"
+                  className="inline-flex items-center gap-1 rounded-full border border-ng-line text-ng-forest px-3.5 py-2 text-[12.5px] font-bold cursor-pointer hover:border-ng-leaf hover:bg-ng-white transition-colors active:scale-[0.97]"
                 >
-                  <Icon name="add-circle-linear" size={16} />
+                  <Icon name="add-circle-bold" size={16} />
                   Add
                 </button>
               ) : (
-                <div className="inline-flex items-center gap-2.5 rounded-full bg-ng-forest text-ng-cream px-1.5 py-1">
+                <div className="inline-flex items-center gap-1 rounded-full bg-ng-forest text-ng-cream px-1.5 py-1">
                   <button
                     type="button"
                     onClick={() => setQty(p.sku, -1)}
                     aria-label={`Reduce ${p.title}`}
-                    className="size-7 rounded-full hover:bg-ng-forest-soft flex items-center justify-center"
+                    className="size-8 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   >
-                    <Icon name="minus-square-linear" size={18} />
+                    <Icon name="minus-square-linear" size={19} />
                   </button>
-                  <span className="font-display text-[15px] tabular-nums w-4 text-center">{qty}</span>
+                  <span className="font-display text-[16px] tabular-nums w-5 text-center">{qty}</span>
                   <button
                     type="button"
                     onClick={() => setQty(p.sku, 1)}
                     aria-label={`Add ${p.title}`}
-                    className="size-7 rounded-full hover:bg-ng-forest-soft flex items-center justify-center"
+                    className="size-8 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   >
-                    <Icon name="add-square-linear" size={18} />
+                    <Icon name="add-square-linear" size={19} />
                   </button>
                 </div>
               )}
@@ -213,7 +249,7 @@ export default function CaptainIntake() {
       </div>
 
       {/* Payment + notes */}
-      <CaptainSectionHead>Payment</CaptainSectionHead>
+      <CaptainSectionHead>How paid</CaptainSectionHead>
       <CaptainCard className="space-y-3.5">
         <div className="grid grid-cols-2 gap-2.5">
           {(["Cash", "UPI"] as const).map((m) => (
@@ -222,13 +258,13 @@ export default function CaptainIntake() {
               type="button"
               onClick={() => setPayMode(m)}
               aria-pressed={payMode === m}
-              className={`flex items-center justify-center gap-2 rounded-xl border-2 py-2.5 text-[13.5px] font-semibold transition-colors ${
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 py-3 text-[13.5px] font-bold cursor-pointer transition-all active:scale-[0.98] ${
                 payMode === m
-                  ? "border-ng-forest bg-ng-forest text-ng-cream"
+                  ? "border-ng-forest bg-ng-forest text-ng-cream shadow-[0_6px_16px_-8px_rgba(20,51,31,0.6)]"
                   : "border-ng-line bg-ng-white text-ng-ink-muted hover:border-ng-leaf"
               }`}
             >
-              <Icon name={m === "Cash" ? "banknote-2-bold" : "smartphone-2-bold"} size={17} />
+              <Icon name={m === "Cash" ? "banknote-2-bold" : "smartphone-2-bold"} size={18} />
               {m}
             </button>
           ))}
@@ -243,30 +279,6 @@ export default function CaptainIntake() {
           />
         </Field>
       </CaptainCard>
-
-      {/* Sticky summary + submit */}
-      <div className="mt-5 rounded-2xl bg-ng-forest-deep text-ng-cream p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] uppercase tracking-wider text-ng-leaf-soft">Order total</span>
-          <span className="font-display text-[24px] text-ng-cream leading-none">
-            ₹{total.toLocaleString("en-IN")}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleCapture}
-          disabled={!canSubmit}
-          className="mt-3.5 w-full flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-semibold py-3 text-[14.5px] hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf"
-        >
-          <Icon name="user-plus-bold" size={18} />
-          Capture customer
-        </button>
-        {!canSubmit ? (
-          <p className="text-[11px] text-ng-cream/55 text-center mt-2">
-            Name, valid mobile &amp; at least one product required.
-          </p>
-        ) : null}
-      </div>
 
       {/* Captured today */}
       <CaptainSectionHead
@@ -309,6 +321,36 @@ export default function CaptainIntake() {
           ))}
         </div>
       )}
+
+      {/* ===== Sticky capture bar (floats above tab nav) ===== */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(5.25rem,calc(4.5rem+env(safe-area-inset-bottom)))]">
+        <div className="pointer-events-auto w-full max-w-[428px] rounded-2xl bg-ng-forest-deep text-ng-cream p-3 shadow-[0_18px_40px_-12px_rgba(10,31,18,0.7)] ring-1 ring-ng-leaf/15">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 pl-1">
+              <div className="text-[10px] uppercase tracking-wider text-ng-leaf-soft">
+                {cartCount > 0 ? `${cartCount} item${cartCount > 1 ? "s" : ""} · ${payMode}` : "Order total"}
+              </div>
+              <div className="font-display text-[22px] text-ng-cream leading-none mt-0.5">
+                ₹{total.toLocaleString("en-IN")}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCapture}
+              disabled={!canSubmit}
+              className="flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold px-5 py-3 text-[14px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf active:scale-[0.98] shadow-[0_8px_20px_-8px_rgba(102,191,115,0.8)]"
+            >
+              <Icon name="user-plus-bold" size={18} />
+              Capture
+            </button>
+          </div>
+          {!canSubmit ? (
+            <p className="text-[10.5px] text-ng-cream/55 text-center mt-2">
+              Name, valid mobile &amp; at least one product required.
+            </p>
+          ) : null}
+        </div>
+      </div>
     </CaptainShell>
   );
 }
@@ -344,7 +386,7 @@ function FieldError({ children }: { children: React.ReactNode }) {
 
 function inputCls(error: boolean): string {
   return [
-    "w-full rounded-xl bg-ng-white border px-3.5 py-2.5 text-[15px] text-ng-ink outline-none transition-all",
+    "w-full rounded-xl bg-ng-white border px-3.5 py-3 text-[15px] text-ng-ink outline-none transition-all",
     "placeholder:text-ng-ink-soft focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)]",
     error ? "border-ng-danger focus:border-ng-danger" : "border-ng-line focus:border-ng-forest",
   ].join(" ");
@@ -352,7 +394,7 @@ function inputCls(error: boolean): string {
 
 function inputWrapCls(error: boolean): string {
   return [
-    "flex items-center gap-2 w-full rounded-xl bg-ng-white border px-3.5 py-2.5 transition-all",
+    "flex items-center gap-2 w-full rounded-xl bg-ng-white border px-3.5 py-3 transition-all",
     "focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)]",
     error ? "border-ng-danger focus-within:border-ng-danger" : "border-ng-line focus-within:border-ng-forest",
   ].join(" ");

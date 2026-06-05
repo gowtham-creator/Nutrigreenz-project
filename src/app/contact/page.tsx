@@ -59,7 +59,7 @@ export default function ContactPage() {
         {/* Channels */}
         <div className="grid md:grid-cols-3 gap-5 mb-16">
           {CHANNELS.map((c, i) => (
-            <Reveal key={c.title} delay={i * 0.05}>
+            <Reveal key={c.title} delay={i * 0.05} className="h-full">
               <a
                 href={c.href}
                 className="group block h-full rounded-2xl border border-ng-line-soft bg-ng-paper p-7 hover:border-ng-leaf hover:-translate-y-0.5 transition-all duration-200"

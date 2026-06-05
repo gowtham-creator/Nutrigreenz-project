@@ -75,7 +75,7 @@ export default function AboutPage() {
       <Section className="!py-14">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-3xl overflow-hidden border border-ng-line-soft bg-ng-line-soft">
           {STATS.map((s) => (
-            <Reveal key={s.label} className="bg-ng-paper p-7 text-center">
+            <Reveal key={s.label} className="h-full bg-ng-paper p-7 text-center">
               <div className="font-display text-[clamp(34px,5vw,52px)] leading-none text-ng-forest-deep">{s.value}</div>
               <div className="mt-2 text-[13px] uppercase tracking-wider text-ng-ink-muted">{s.label}</div>
             </Reveal>
@@ -91,7 +91,7 @@ export default function AboutPage() {
       >
         <div className="grid md:grid-cols-2 gap-5">
           {PILLARS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.05} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={p.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={p.icon} size={24} />
               </div>
@@ -181,7 +181,7 @@ export default function AboutPage() {
       <Section className="bg-ng-cream/50" eyebrow="How we grew" heading="From one farm to forty-two">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {TIMELINE.map((t, i) => (
-            <Reveal key={t.year} delay={i * 0.06} className="relative rounded-2xl border border-ng-line-soft bg-ng-paper p-6">
+            <Reveal key={t.year} delay={i * 0.06} className="relative h-full rounded-2xl border border-ng-line-soft bg-ng-paper p-6">
               <div className="font-display text-[28px] text-ng-clay leading-none">{t.year}</div>
               <h3 className="mt-3 font-display text-[18px] text-ng-forest-deep leading-snug">{t.title}</h3>
               <p className="mt-2 text-[14px] leading-relaxed text-ng-ink-muted">{t.body}</p>

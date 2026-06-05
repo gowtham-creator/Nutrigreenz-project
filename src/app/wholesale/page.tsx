@@ -66,7 +66,7 @@ export default function WholesalePage() {
       <Section eyebrow="Who it's for" heading="Built for cafés, offices and gifting">
         <div className="grid md:grid-cols-3 gap-5">
           {USE_CASES.map((u, i) => (
-            <Reveal key={u.title} delay={i * 0.05} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={u.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={u.icon} size={24} />
               </div>
@@ -81,7 +81,7 @@ export default function WholesalePage() {
       <Section className="bg-ng-sage/25 !py-16" eyebrow="Why buy bulk from us" heading="Volume, without cutting corners">
         <div className="grid md:grid-cols-3 gap-5">
           {PROOF.map((p, i) => (
-            <Reveal key={p.t} delay={i * 0.05} className="flex gap-4 rounded-2xl bg-ng-paper border border-ng-line-soft p-6">
+            <Reveal key={p.t} delay={i * 0.05} className="flex h-full gap-4 rounded-2xl bg-ng-paper border border-ng-line-soft p-6">
               <span className="h-11 w-11 shrink-0 rounded-xl bg-ng-forest text-ng-cream inline-flex items-center justify-center">
                 <Icon name={p.icon} size={22} />
               </span>
@@ -98,7 +98,7 @@ export default function WholesalePage() {
       <Section eyebrow="How it works" heading="From enquiry to delivery in three steps">
         <div className="grid md:grid-cols-3 gap-6">
           {STEPS.map((s, i) => (
-            <Reveal key={s.t} delay={i * 0.06} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
+            <Reveal key={s.t} delay={i * 0.06} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
               <span className="h-9 w-9 rounded-full bg-ng-forest text-ng-cream text-[14px] font-semibold inline-flex items-center justify-center">{i + 1}</span>
               <h3 className="mt-4 font-display text-[19px] text-ng-forest-deep leading-snug">{s.t}</h3>
               <p className="mt-2 text-[14.5px] leading-relaxed text-ng-ink-muted">{s.d}</p>

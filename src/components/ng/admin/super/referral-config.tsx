@@ -180,7 +180,7 @@ export function ReferralConfigSection() {
               return (
                 <div
                   key={g.key}
-                  className="rounded-xl border border-ng-line-soft bg-ng-cream/40 px-4 py-1"
+                  className="h-full rounded-xl border border-ng-line-soft bg-ng-cream/40 px-4 py-1"
                 >
                   <Toggle
                     label={

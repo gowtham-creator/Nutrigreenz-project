@@ -507,19 +507,19 @@ export default function AdminReports() {
         className="mb-6"
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
+          <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
             <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Avg order value</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{INR(data.aov)}</div>
           </div>
-          <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
+          <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
             <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Total revenue</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{INR(data.gmv)}</div>
           </div>
-          <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
+          <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
             <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Active SKUs</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{data.skus.length}</div>
           </div>
-          <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
+          <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
             <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Partner farms</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{data.farms}</div>
           </div>

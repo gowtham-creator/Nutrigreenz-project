@@ -53,7 +53,7 @@ export default function LabPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {TESTS.map((t, i) => (
-              <article key={t.name} className="rounded-2xl bg-ng-paper border border-ng-line-soft p-6 flex gap-5">
+              <article key={t.name} className="h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-6 flex gap-5">
                 <div className="font-display text-[28px] text-ng-clay leading-none shrink-0 w-10">
                   {String(i + 1).padStart(2, "0")}
                 </div>
@@ -76,10 +76,10 @@ export default function LabPage() {
 
           <div className="grid md:grid-cols-3 gap-5 mt-10">
             {PARTNERS.map((p) => (
-              <div key={p.name} className="rounded-2xl bg-ng-paper border border-ng-line-soft p-6">
+              <div key={p.name} className="flex h-full flex-col rounded-2xl bg-ng-paper border border-ng-line-soft p-6">
                 <h3 className="font-display text-[18px] text-ng-forest-deep leading-tight">{p.name}</h3>
                 <p className="text-[13px] text-ng-ink-muted mt-3">{p.role}</p>
-                <div className="mt-5 pt-4 border-t border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-forest font-mono">
+                <div className="mt-auto pt-4 border-t border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-forest font-mono">
                   {p.accred}
                 </div>
               </div>

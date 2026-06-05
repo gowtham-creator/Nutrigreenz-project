@@ -36,9 +36,9 @@ export default function WishlistPage() {
       {items.length === 0 ? (
         <EmptyState />
       ) : (
-        <Stagger className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-3">
+        <Stagger className="grid items-stretch grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-3">
           {items.map((product) => (
-            <StaggerItem key={product.id}>
+            <StaggerItem key={product.id} className="h-full">
               <WishlistCard
                 product={product}
                 onAdd={() => {

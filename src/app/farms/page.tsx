@@ -43,7 +43,7 @@ export default function FarmsPage() {
             <Link
               key={`${f.id}-${i}`}
               href={`/farms/${f.id}`}
-              className="group rounded-3xl overflow-hidden bg-ng-paper border border-ng-line-soft hover:-translate-y-0.5 hover:shadow-[var(--shadow-ng-card)] transition-all"
+              className="group flex h-full flex-col rounded-3xl overflow-hidden bg-ng-paper border border-ng-line-soft hover:-translate-y-0.5 hover:shadow-[var(--shadow-ng-card)] transition-all"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
@@ -61,10 +61,10 @@ export default function FarmsPage() {
                   {f.name}
                 </span>
               </div>
-              <div className="p-6">
+              <div className="flex flex-1 flex-col p-6">
                 <p className="text-[13px] text-ng-ink-soft">{f.region}{f.hectares ? ` · ${f.hectares} ha` : ""}</p>
                 <p className="text-[14px] text-ng-ink-muted mt-3 leading-relaxed line-clamp-3">{f.story}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-auto pt-4 flex flex-wrap gap-2">
                   {f.practices.slice(0, 3).map((p) => (
                     <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-sage/60 text-ng-forest-deep capitalize">{p}</span>
                   ))}
