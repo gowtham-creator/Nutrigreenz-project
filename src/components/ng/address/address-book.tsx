@@ -107,20 +107,28 @@ export function AddressBook() {
       )}
 
       {open ? (
+        // Scroll lives on the OUTER overlay; centring on an inner `min-h-full`
+        // wrapper. Keeping the two separate means a form taller than the screen
+        // grows the wrapper and the whole modal scrolls — so the top (heading)
+        // and bottom (Save/Cancel) are always reachable, on mobile and desktop.
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ng-soil/40 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-ng-soil/40 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setEditor({ mode: "closed" });
-          }}
         >
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-3xl bg-ng-paper p-6 shadow-[0_24px_60px_rgba(20,51,31,0.28)] sm:p-8">
-            <AddressForm
-              initial={editor.mode === "edit" ? editor.address : undefined}
-              onSubmit={handleSubmit}
-              onCancel={() => setEditor({ mode: "closed" })}
-            />
+          <div
+            className="flex min-h-full items-start justify-center p-4 sm:items-center"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setEditor({ mode: "closed" });
+            }}
+          >
+            <div className="w-full max-w-xl rounded-3xl bg-ng-paper p-6 shadow-[0_24px_60px_rgba(20,51,31,0.28)] sm:p-8">
+              <AddressForm
+                initial={editor.mode === "edit" ? editor.address : undefined}
+                onSubmit={handleSubmit}
+                onCancel={() => setEditor({ mode: "closed" })}
+              />
+            </div>
           </div>
         </div>
       ) : null}

@@ -9,9 +9,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/lib/auth";
 import type { CartItem, ProductCard } from "@/types/nutrigreenz";
 
-const STORAGE_KEY = "ng.cart.v1";
+/**
+ * The cart is scoped to the current identity so it behaves like a real store:
+ *  - a signed-out visitor uses the GUEST bucket;
+ *  - each signed-in account has its OWN saved cart (`…::u:<id>`);
+ *  - signing out empties the visible cart (back to the guest bucket);
+ *  - signing in restores that account's last-saved cart, and any items added
+ *    while browsing as a guest are merged in (so nothing is lost).
+ */
+const LEGACY_KEY = "ng.cart.v1"; // pre-identity single cart — migrated once into guest
+const GUEST_KEY = "ng.cart.v1::guest";
+const USER_PREFIX = "ng.cart.v1::u:";
 
 interface CartContextValue {
   items: CartItem[];
@@ -42,44 +53,103 @@ function toCartItem(product: ProductCard, qty: number): CartItem {
   };
 }
 
-function readStoredItems(): CartItem[] {
+function isCartItem(entry: unknown): entry is CartItem {
+  return (
+    typeof entry === "object" &&
+    entry !== null &&
+    typeof (entry as CartItem).productId === "string" &&
+    typeof (entry as CartItem).qty === "number"
+  );
+}
+
+function readStored(key: string): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (entry): entry is CartItem =>
-        typeof entry === "object" &&
-        entry !== null &&
-        typeof (entry as CartItem).productId === "string" &&
-        typeof (entry as CartItem).qty === "number",
-    );
+    return Array.isArray(parsed) ? parsed.filter(isCartItem) : [];
   } catch {
     return [];
   }
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+function writeStored(key: string, items: CartItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(items));
+  } catch {
+    /* quota / private-mode — fail silently */
+  }
+}
 
-  // Hydrate from localStorage after mount (avoids SSR mismatch).
-  useEffect(() => {
-    setItems(readStoredItems());
-    setHydrated(true);
-  }, []);
+/** Union two carts, summing quantities for the same product. */
+function mergeCarts(a: CartItem[], b: CartItem[]): CartItem[] {
+  const map = new Map<string, CartItem>();
+  for (const item of [...a, ...b]) {
+    const existing = map.get(item.productId);
+    map.set(
+      item.productId,
+      existing ? { ...existing, qty: existing.qty + item.qty } : { ...item },
+    );
+  }
+  return [...map.values()];
+}
 
-  // Persist whenever items change (only after initial hydration).
-  useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      /* quota / private-mode — fail silently */
+/** One-time migration of the legacy single-cart key into the guest bucket. */
+function migrateLegacy(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_KEY);
+    if (legacy != null && window.localStorage.getItem(GUEST_KEY) == null) {
+      window.localStorage.setItem(GUEST_KEY, legacy);
     }
-  }, [items, hydrated]);
+    if (legacy != null) window.localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const { account, loading: authLoading } = useAuth();
+  const [items, setItems] = useState<CartItem[]>([]);
+  // The storage key the current `items` were loaded from; null until first load.
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+
+  // Storage key for the active identity.
+  const storageKey = account
+    ? `${USER_PREFIX}${account.email || account.phone || "user"}`
+    : GUEST_KEY;
+
+  // Load the right cart whenever the identity changes (after auth settles).
+  useEffect(() => {
+    if (authLoading) return;
+    if (loadedKey === storageKey) return;
+
+    migrateLegacy();
+    let next = readStored(storageKey);
+
+    // Signing in: fold any guest-cart items into the account cart, then clear
+    // the guest bucket so they aren't double-counted or shown after sign-out.
+    if (storageKey.startsWith(USER_PREFIX)) {
+      const guestItems = readStored(GUEST_KEY);
+      if (guestItems.length > 0) {
+        next = mergeCarts(next, guestItems);
+        writeStored(storageKey, next);
+        writeStored(GUEST_KEY, []);
+      }
+    }
+
+    setItems(next);
+    setLoadedKey(storageKey);
+  }, [authLoading, storageKey, loadedKey]);
+
+  // Persist whenever items change — but only once they belong to the active
+  // identity (guards against writing the previous identity's items on switch).
+  useEffect(() => {
+    if (loadedKey === null || loadedKey !== storageKey) return;
+    writeStored(loadedKey, items);
+  }, [items, loadedKey, storageKey]);
 
   const addItem = useCallback((product: ProductCard, qty = 1) => {
     if (qty <= 0) return;

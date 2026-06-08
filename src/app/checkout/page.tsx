@@ -115,7 +115,8 @@ export default function CheckoutPage() {
       if (draft.payment !== undefined) setPayment(draft.payment ?? null);
       if (draft.applied !== undefined) setApplied(draft.applied ?? null);
       if (typeof draft.redeemLoyalty === "boolean") setRedeemLoyalty(draft.redeemLoyalty);
-      if (typeof draft.acknowledged === "boolean") setAcknowledged(draft.acknowledged);
+      // `acknowledged` is intentionally NOT restored — the no-cancellation box
+      // must always start checked (client request), never reopen unticked.
     }
     setDraftLoaded(true);
   }, []);
@@ -123,8 +124,8 @@ export default function CheckoutPage() {
   // Persist the draft on every change (after the initial restore).
   useEffect(() => {
     if (!draftLoaded) return;
-    writeCheckoutDraft({ addressId, slotId, payment, applied, redeemLoyalty, acknowledged });
-  }, [draftLoaded, addressId, slotId, payment, applied, redeemLoyalty, acknowledged]);
+    writeCheckoutDraft({ addressId, slotId, payment, applied, redeemLoyalty });
+  }, [draftLoaded, addressId, slotId, payment, applied, redeemLoyalty]);
 
   // Keep the selected address in sync with the (async-hydrated) default.
   const resolvedAddressId =
