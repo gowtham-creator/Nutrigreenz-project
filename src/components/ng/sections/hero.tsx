@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "../button";
 import { Stars } from "../stars";
 import { Logo } from "../logo";
-import { PRODUCE_ICONS, type ProduceIconName } from "../produce-icons";
+import { PRODUCE_ICONS } from "../produce-icons";
 import { Reveal, FloatIn, Parallax, MagneticHover } from "../motion";
 
 /**
@@ -14,29 +14,32 @@ import { Reveal, FloatIn, Parallax, MagneticHover } from "../motion";
  *  • LEFT  — deep forest-green copy panel: teardrop badge, huge serif headline,
  *            gold accent sub-headline, benefit lines, a cream/gold pill CTA, and
  *            a trust strip. A faint botanical leaf line-pattern textures it.
- *  • RIGHT — a complete brand showcase (no hero photo exists yet): a tonal
- *            farm-landscape backdrop, a "product spotlight" glass card (brand
- *            mark, drop-in slot for a future product shot) ringed by an orbit of
- *            the colourful produce icons, plus floating glass trust chips
- *            (trace/lot, rating, free-delivery).
+ *  • RIGHT — a clean product showcase: a tonal farm-landscape backdrop with a
+ *            single premium product card. The hero of the panel is a hand-authored
+ *            SVG illustration of the actual product — a cold-pressed groundnut oil
+ *            glass bottle (amber oil, front label, glass highlight, soft reflection)
+ *            — sitting above the buy details (name, rating, price, Add to bag).
+ *            Two restrained glass trust chips tuck just outside the card corners.
  *
  * Built entirely from real brand assets so it reads as designed, not placeholder.
  */
-
-/** Colourful produce icons that orbit the spotlight — accent colour matches the live Categories grid. */
-const ORBIT: { icon: ProduceIconName; tint: string }[] = [
-  { icon: "oil", tint: "text-ng-leaf" },
-  { icon: "ghee", tint: "text-ng-clay" },
-  { icon: "honey", tint: "text-ng-amber" },
-  { icon: "grain", tint: "text-ng-clay-deep" },
-  { icon: "nuts", tint: "text-ng-terracotta" },
-  { icon: "milk", tint: "text-ng-blue" },
-];
 
 const BENEFITS = [
   "Cold-pressed oils & bilona A2 ghee",
   "Single-origin from 42 partner farms",
   "Every lot lab-tested — zero adulterants",
+];
+
+/* Colourful produce icons orbiting the spotlight card — `icon` keys into
+   PRODUCE_ICONS, `tint` sets the glyph colour via currentColor. Six entries to
+   match the six arc positions in <OrbitIcons />. */
+const ORBIT: { icon: keyof typeof PRODUCE_ICONS; tint: string }[] = [
+  { icon: "oil", tint: "text-ng-leaf" },
+  { icon: "ghee", tint: "text-ng-clay" },
+  { icon: "honey", tint: "text-ng-amber" },
+  { icon: "spice", tint: "text-ng-terracotta" },
+  { icon: "seedling", tint: "text-ng-green-bright" },
+  { icon: "fruit", tint: "text-[#C75B7A]" },
 ];
 
 export function Hero() {
