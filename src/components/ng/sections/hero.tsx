@@ -1,28 +1,34 @@
 "use client";
 
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "../button";
 import { Stars } from "../stars";
 import { Logo } from "../logo";
+import { Icon } from "@/components/ui/icon";
 import { PRODUCE_ICONS } from "../produce-icons";
-import { Reveal, FloatIn, Parallax, MagneticHover } from "../motion";
+import { FloatIn, MagneticHover } from "../motion";
 
 /**
- * Hero — the singular homepage showpiece banner (Anveshan-style).
+ * Hero — a wide promotional **banner slideshow** (Anveshan-style format).
  *
- * A confident, full-bleed promotional banner split ~55/45:
- *  • LEFT  — deep forest-green copy panel: teardrop badge, huge serif headline,
- *            gold accent sub-headline, benefit lines, a cream/gold pill CTA, and
- *            a trust strip. A faint botanical leaf line-pattern textures it.
- *  • RIGHT — a clean product showcase: a tonal farm-landscape backdrop with a
- *            single premium product card. The hero of the panel is a hand-authored
- *            SVG illustration of the actual product — a cold-pressed groundnut oil
- *            glass bottle (amber oil, front label, glass highlight, soft reflection)
- *            — sitting above the buy details (name, rating, price, Add to bag).
- *            Two restrained glass trust chips tuck just outside the card corners.
+ * A first-section, full-width carousel of 3 wide promo slides. Each slide is a
+ * left copy panel + right illustrated product/brand composition, sized to a
+ * fixed banner height so there's zero layout shift between slides. Auto-advances
+ * (~6s), pauses on hover / focus-within / reduced-motion, and exposes clickable
+ * dots + prev/next arrows. Keyed crossfade via framer-motion, always
+ * reduced-motion safe (a slide is never left stuck hidden).
  *
- * Built entirely from real brand assets so it reads as designed, not placeholder.
+ * No real product photos: the right-side visuals are composed entirely from
+ * brand assets — the produce category icons (PRODUCE_ICONS), the brand mark
+ * (<Logo variant="mark"/>), a hand-authored SVG "splash/burst", glass product
+ * chips, gradients and gold accents — so a real photo can drop in later.
  */
+
+const COUPON = "HARVEST20";
+const AUTO_MS = 6000;
 
 const BENEFITS = [
   "Cold-pressed oils & bilona A2 ghee",
@@ -30,266 +36,586 @@ const BENEFITS = [
   "Every lot lab-tested — zero adulterants",
 ];
 
-/* Colourful produce icons orbiting the spotlight card — `icon` keys into
-   PRODUCE_ICONS, `tint` sets the glyph colour via currentColor. Six entries to
-   match the six arc positions in <OrbitIcons />. */
-const ORBIT: { icon: keyof typeof PRODUCE_ICONS; tint: string }[] = [
-  { icon: "oil", tint: "text-ng-leaf" },
-  { icon: "ghee", tint: "text-ng-clay" },
-  { icon: "honey", tint: "text-ng-amber" },
-  { icon: "spice", tint: "text-ng-terracotta" },
-  { icon: "seedling", tint: "text-ng-green-bright" },
-  { icon: "fruit", tint: "text-[#C75B7A]" },
+type SlideId = "sale" | "brand" | "harvest";
+
+const SLIDE_META: { id: SlideId; label: string }[] = [
+  { id: "sale", label: "Harvest Sale" },
+  { id: "brand", label: "Our promise" },
+  { id: "harvest", label: "New harvest" },
 ];
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Slideshow shell
+   ────────────────────────────────────────────────────────────────────────── */
 export function Hero() {
+  const reduce = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+  const labelId = useId();
+
+  const count = SLIDE_META.length;
+  const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
+  const next = useCallback(() => go(index + 1), [go, index]);
+  const prev = useCallback(() => go(index - 1), [go, index]);
+
+  // Auto-advance — paused on hover/focus, when the tab is hidden, or reduced motion.
+  useEffect(() => {
+    if (paused || reduce) return;
+    const t = window.setInterval(() => setIndex((i) => (i + 1) % count), AUTO_MS);
+    return () => window.clearInterval(t);
+  }, [paused, reduce, count]);
+
+  // Pause autoplay while the tab is backgrounded.
+  useEffect(() => {
+    const onVis = () => setPaused(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") { e.preventDefault(); next(); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
+  };
+
+  const current = SLIDE_META[index];
+
   return (
-    <section className="relative isolate overflow-hidden bg-ng-paper px-4 pb-10 pt-4 sm:px-6 md:px-8 md:pb-14 md:pt-6">
-      <Reveal>
-        <div className="relative grid min-h-[clamp(560px,80vh,760px)] overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px] lg:grid-cols-[1.18fr_1fr]">
-          {/* ─────────────────────────── LEFT — copy panel ─────────────────────────── */}
-          <div className="relative isolate flex flex-col justify-center overflow-hidden bg-ng-forest px-6 py-12 sm:px-10 md:px-12 md:py-16 lg:px-16">
-            {/* Faint botanical leaf line-pattern */}
-            <BotanicalPattern />
-
-            {/* Warm gold + leaf radial wash */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 opacity-80"
-              style={{
-                background:
-                  "radial-gradient(ellipse 75% 60% at 8% 4%, rgba(181,134,47,0.26), transparent 58%), radial-gradient(ellipse 65% 65% at 96% 100%, rgba(102,191,115,0.20), transparent 60%)",
-              }}
-            />
-            {/* Parallaxed depth blob — drifts slower behind the panel */}
-            <Parallax speed={0.28} className="pointer-events-none absolute inset-0 -z-10">
-              <div
-                aria-hidden
-                className="absolute -bottom-28 -left-20 h-[420px] w-[420px] rounded-full opacity-50 blur-3xl"
-                style={{ background: "radial-gradient(circle, rgba(102,191,115,0.30), transparent 70%)" }}
-              />
-            </Parallax>
-
-            <div className="relative z-10 max-w-xl">
-              {/* Teardrop badge */}
-              <Reveal delay={0.05}>
-                <span className="inline-flex items-center gap-2 rounded-full rounded-tl-sm bg-ng-clay px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_6px_18px_rgba(181,134,47,0.38)]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-ng-soil/70" />
-                  Single-origin · New harvest
-                </span>
-              </Reveal>
-
-              {/* Huge serif headline */}
-              <Reveal delay={0.1}>
-                <h1 className="mt-6 font-display text-[clamp(40px,6.4vw,82px)] font-semibold leading-[0.94] tracking-tight text-ng-cream">
-                  Real food,
-                  <br />
-                  grown the
-                  <br />
-                  <span className="text-ng-leaf">honest way.</span>
-                </h1>
-              </Reveal>
-
-              {/* Gold accent sub-headline */}
-              <Reveal delay={0.15}>
-                <p className="mt-5 font-display text-[clamp(17px,2.1vw,23px)] font-medium leading-snug text-ng-clay">
-                  Straight from the farm to your kitchen — nothing in between.
-                </p>
-              </Reveal>
-
-              {/* Benefit lines */}
-              <Reveal delay={0.2}>
-                <ul className="mt-6 space-y-2.5">
-                  {BENEFITS.map((line) => (
-                    <li key={line} className="flex items-start gap-2.5 text-[14px] leading-snug text-ng-cream/85 sm:text-[15px]">
-                      <LeafTick className="mt-0.5 h-4 w-4 shrink-0 text-ng-leaf" />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
-
-              {/* CTA + secondary link */}
-              <Reveal delay={0.25}>
-                <div className="mt-9 flex flex-wrap items-center gap-3">
-                  <MagneticHover>
-                    <Button variant="gold" size="lg" asChild className="rounded-full">
-                      <Link href="/shop">
-                        Shop the harvest
-                        <span aria-hidden className="ml-0.5">→</span>
-                      </Link>
-                    </Button>
-                  </MagneticHover>
-                  <MagneticHover>
-                    <Button
-                      variant="glass"
-                      size="lg"
-                      asChild
-                      className="rounded-full !bg-ng-cream/10 !text-ng-cream ring-1 ring-inset ring-ng-cream/25 backdrop-blur hover:!bg-ng-cream/15"
-                    >
-                      <Link href="/traceability">Trace a lot</Link>
-                    </Button>
-                  </MagneticHover>
-                </div>
-              </Reveal>
-
-              {/* Trust strip */}
-              <Reveal delay={0.3}>
-                <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ng-cream/15 pt-6">
-                  <div className="flex items-center gap-2">
-                    <Stars rating={4.8} size="sm" />
-                    <span className="text-[13px] text-ng-cream/75">4.8 · 12,400+ reviews</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px] text-ng-cream/75">
-                    <span className="h-1.5 w-1.5 rounded-full bg-ng-leaf" />
-                    FSSAI · ISO 22000 certified
-                  </div>
-                </div>
-              </Reveal>
-            </div>
+    <section
+      ref={rootRef}
+      aria-roledescription="carousel"
+      aria-label="Promotional banners"
+      className="relative isolate px-4 pb-10 pt-4 sm:px-6 md:px-8 md:pb-14 md:pt-6"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setPaused(false);
+      }}
+      onKeyDown={onKeyDown}
+    >
+      <div className="relative overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px]">
+        {/* Equal-height stage — the height is fixed by the banner clamp so slides
+            never shift layout. The active slide is absolutely overlaid via
+            AnimatePresence; a hidden sizer reserves the height. */}
+        <div className="relative min-h-[clamp(440px,62vh,580px)]">
+          {/* Invisible sizer: keeps the tallest reasonable banner height reserved. */}
+          <div aria-hidden className="invisible">
+            <SaleSlide reduce={reduce} />
           </div>
 
-          {/* ─────────────────────────── RIGHT — brand showcase ─────────────────────────── */}
-          <div className="relative isolate min-h-[380px] overflow-hidden bg-ng-cream-deep lg:min-h-0">
-            {/* Soft tonal gradient base (stands in for a farm-landscape photo) */}
-            <div
-              aria-hidden
-              className="absolute inset-0 -z-10"
-              style={{
-                background:
-                  "linear-gradient(168deg, #F5F2E0 0%, #ECE7D2 48%, #DCE3CF 100%)",
-              }}
-            />
-            {/* Tonal farm-landscape backdrop */}
-            <HeroScene />
-            {/* Warm light blooms for depth */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10"
-              style={{
-                background:
-                  "radial-gradient(ellipse 60% 50% at 70% 22%, rgba(181,134,47,0.16), transparent 62%), radial-gradient(ellipse 55% 55% at 18% 82%, rgba(102,191,115,0.18), transparent 64%)",
-              }}
-            />
+          <AnimatePresence initial={false} mode="sync">
+            <motion.div
+              key={current.id}
+              className="absolute inset-0"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.012 }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.992 }}
+              transition={{ duration: reduce ? 0.3 : 0.7, ease: [0.16, 1, 0.3, 1] }}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`${index + 1} of ${count}: ${current.label}`}
+              aria-labelledby={labelId}
+            >
+              {current.id === "sale" && <SaleSlide reduce={reduce} />}
+              {current.id === "brand" && <BrandSlide reduce={reduce} />}
+              {current.id === "harvest" && <HarvestSlide reduce={reduce} />}
+            </motion.div>
+          </AnimatePresence>
 
-            {/* Stage */}
-            <div className="relative z-10 grid h-full min-h-[380px] place-items-center px-8 py-14 sm:px-12 lg:items-center lg:px-10">
-              <div className="relative w-full max-w-[320px]">
-                {/* Orbiting colourful produce icons (decorative arc framing the card) */}
-                <OrbitIcons />
+          {/* Arrows */}
+          <button
+            type="button"
+            onClick={prev}
+            aria-label="Previous banner"
+            className="absolute left-3 top-1/2 z-30 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ng-paper/80 text-ng-forest shadow-[var(--shadow-ng-card)] ring-1 ring-ng-line backdrop-blur transition-transform hover:scale-105 active:scale-95 sm:left-5 md:h-11 md:w-11"
+          >
+            <Icon name="alt-arrow-left-linear" size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label="Next banner"
+            className="absolute right-3 top-1/2 z-30 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ng-paper/80 text-ng-forest shadow-[var(--shadow-ng-card)] ring-1 ring-ng-line backdrop-blur transition-transform hover:scale-105 active:scale-95 sm:right-5 md:h-11 md:w-11"
+          >
+            <Icon name="alt-arrow-right-linear" size={20} />
+          </button>
 
-                {/* Product spotlight glass card — drop a real product shot into this slot later */}
-                <FloatIn className="relative z-10">
-                  <div className="glass-strong relative overflow-hidden rounded-[28px] border border-white/50 px-7 pb-7 pt-8 text-center shadow-[var(--shadow-ng-float)]">
-                    {/* gold corner ribbon */}
-                    <span className="absolute right-4 top-4 rounded-full bg-ng-clay/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ng-soil shadow-sm">
-                      Bestseller
-                    </span>
-
-                    {/* brand mark medallion (photo slot) */}
-                    <div className="mx-auto grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-white to-ng-cream shadow-[var(--shadow-ng-card)] ring-1 ring-ng-clay/20">
-                      <Logo variant="mark" tone="forest" className="h-16 w-16" />
-                    </div>
-
-                    <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ng-clay-deep">
-                      This week&rsquo;s harvest
-                    </p>
-                    <h3 className="mt-1.5 font-display text-[22px] font-semibold leading-tight text-ng-forest-deep">
-                      Cold-Pressed
-                      <br />
-                      Groundnut Oil
-                    </h3>
-                    <p className="mt-2 text-[12.5px] text-ng-ink-muted">
-                      Anantapur · pressed fresh · glass-bottled
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <Stars rating={4.9} size="sm" />
-                      <span className="text-[12px] text-ng-ink-soft">(1,820)</span>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-ng-forest px-4 py-3 text-left">
-                      <div className="leading-tight">
-                        <div className="font-display text-[20px] font-semibold text-ng-cream">₹389</div>
-                        <div className="text-[11px] text-ng-cream/60 line-through">₹450</div>
-                      </div>
-                      <span className="rounded-full bg-ng-clay px-3.5 py-1.5 text-[12px] font-semibold text-ng-soil">
-                        Add to bag
-                      </span>
-                    </div>
-                  </div>
-                </FloatIn>
-
-                {/* Floating trust chips — offset clear of the card's edges & CTA row */}
-                <FloatIn delay={0.2} className="absolute -left-6 top-10 z-20 sm:-left-12 md:-left-16">
-                  <div className="glass-strong rounded-2xl px-3.5 py-2.5 shadow-[var(--shadow-ng-card)]">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-ng-forest">
-                      Lot · NG-24-051
-                    </div>
-                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ng-ink-muted">
-                      <span className="h-1.5 w-1.5 rounded-full bg-ng-success" />
-                      Lab-tested · traceable
-                    </div>
-                  </div>
-                </FloatIn>
-
-                <FloatIn delay={0.45} className="absolute -bottom-5 -left-4 z-20 sm:-left-10 md:-left-14">
-                  <div className="glass-strong flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 shadow-[var(--shadow-ng-card)]">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-leaf/20 text-ng-forest">
-                      <TruckGlyph className="h-4 w-4" />
-                    </span>
-                    <div className="leading-tight">
-                      <div className="text-[12.5px] font-semibold text-ng-forest-deep">Free delivery</div>
-                      <div className="text-[11px] text-ng-ink-muted">on orders ₹599+</div>
-                    </div>
-                  </div>
-                </FloatIn>
-              </div>
-            </div>
+          {/* Dots */}
+          <div
+            role="tablist"
+            aria-label="Choose banner"
+            className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5 rounded-full bg-ng-forest-deep/30 px-3 py-2 backdrop-blur-sm md:bottom-5"
+          >
+            {SLIDE_META.map((s, i) => {
+              const active = i === index;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={`Go to ${s.label} banner`}
+                  onClick={() => go(i)}
+                  className="group grid place-items-center p-1"
+                >
+                  <span
+                    className={`block h-2 rounded-full transition-all duration-300 ${
+                      active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/50 group-hover:bg-ng-cream/80"
+                    }`}
+                  />
+                </button>
+              );
+            })}
           </div>
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Orbiting colourful produce icons — a styled ring that implies the range.
+   Shared slide frame — left copy panel + right visual, equal height.
    ────────────────────────────────────────────────────────────────────────── */
-function OrbitIcons() {
-  // Arc framing the card — biased to the top and RIGHT so the icons stay clearly
-  // visible (the left side is reserved for the floating trust chips).
-  const positions = [
-    "-top-6 left-6 sm:left-2",
-    "-top-7 right-8 sm:right-4",
-    "top-14 -right-3 sm:-right-7 md:-right-10",
-    "bottom-24 -right-2 sm:-right-6 md:-right-9",
-    "-bottom-6 right-10 sm:right-6",
-    "-bottom-6 left-1/3",
-  ];
+function SlideFrame({
+  bgClass,
+  bgStyle,
+  left,
+  right,
+}: {
+  bgClass: string;
+  bgStyle?: React.CSSProperties;
+  left: ReactNode;
+  right: ReactNode;
+}) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-      {ORBIT.map((o, i) => {
-        const Icon = PRODUCE_ICONS[o.icon];
-        return (
-          <FloatIn key={o.icon} delay={0.15 + i * 0.12} className={`absolute ${positions[i]}`}>
-            <span
-              className={`grid h-[52px] w-[52px] place-items-center rounded-2xl border border-white/70 bg-white/85 ${o.tint} shadow-[var(--shadow-ng-card)] backdrop-blur-sm`}
-            >
-              <Icon size={26} />
-            </span>
-          </FloatIn>
-        );
-      })}
+    <div className={`grid h-full min-h-[clamp(440px,62vh,580px)] overflow-hidden lg:grid-cols-[1.12fr_1fr] ${bgClass}`} style={bgStyle}>
+      <div className="relative isolate flex flex-col justify-center px-6 py-10 sm:px-10 md:px-12 md:py-14 lg:px-16">
+        {left}
+      </div>
+      <div className="relative isolate min-h-[210px] overflow-hidden lg:min-h-0">{right}</div>
     </div>
   );
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   HeroScene — a compact tonal farm-landscape backdrop (rolling fields, trees,
-   sun) echoing FooterScene, sat in the lower band of the right panel.
-   Purely decorative; tonal so the spotlight card reads clearly on top.
+   SLIDE 1 — Sale / Offer (primary)
    ────────────────────────────────────────────────────────────────────────── */
+function SaleSlide({ reduce }: { reduce: boolean | null }) {
+  const [copied, setCopied] = useState(false);
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(COUPON);
+    } catch {
+      /* clipboard may be unavailable — still flag success for UX parity */
+    }
+    setCopied(true);
+    toast.success("Code copied", { description: `Use “${COUPON}” at checkout` });
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <SlideFrame
+      bgClass="bg-ng-cream"
+      bgStyle={{
+        background:
+          "radial-gradient(ellipse 90% 80% at 0% 0%, rgba(178,199,178,0.55), transparent 55%), radial-gradient(ellipse 80% 90% at 100% 100%, rgba(102,191,115,0.18), transparent 60%), linear-gradient(150deg, #F5F2E0 0%, #EAF0E2 52%, #DDE8D6 100%)",
+      }}
+      left={
+        <div className="relative z-10 max-w-xl">
+          <span className="inline-flex items-center gap-2 rounded-full bg-ng-clay px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_6px_18px_rgba(181,134,47,0.32)]">
+            <span className={`h-1.5 w-1.5 rounded-full bg-ng-soil/80 ${reduce ? "" : "animate-pulse"}`} />
+            Harvest Sale is Live
+          </span>
+
+          <h1 className="mt-5 font-display text-[clamp(34px,5.6vw,68px)] font-semibold leading-[0.96] tracking-tight text-ng-forest-deep">
+            Harvest Sale
+            <br />
+            <span className="text-ng-clay">is Live!</span>
+          </h1>
+
+          <p className="mt-4 text-[15px] leading-relaxed text-ng-ink-muted md:text-[16px]">
+            Beat the rush — stock the pantry with cold-pressed oils, bilona ghee &amp; raw
+            honey while the harvest lasts.
+          </p>
+
+          {/* Offer pill + dashed coupon chip */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full bg-ng-forest px-4 py-2.5 text-[14px] font-semibold text-ng-cream shadow-[var(--shadow-ng-card)]">
+              <Icon name="tag-price-bold" size={17} className="text-ng-leaf" />
+              Get Flat 20% Off
+            </span>
+
+            <button
+              type="button"
+              onClick={copyCode}
+              aria-label={`Copy coupon code ${COUPON}`}
+              className="group inline-flex items-center gap-2.5 rounded-full border border-dashed border-ng-clay/70 bg-ng-paper/70 px-4 py-2.5 text-ng-forest backdrop-blur-sm transition-colors hover:bg-ng-paper"
+            >
+              <span className="text-[12px] uppercase tracking-[0.14em] text-ng-ink-muted">Use code</span>
+              <span className="font-mono text-[15px] font-semibold tracking-wide text-ng-clay-deep">{COUPON}</span>
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-ng-forest text-ng-cream transition-transform group-active:scale-90">
+                <Icon name={copied ? "check-circle-bold" : "copy-linear"} size={14} />
+              </span>
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <MagneticHover>
+              <Button variant="gold" size="lg" asChild className="rounded-full">
+                <Link href="/shop">
+                  Shop the sale
+                  <Icon name="arrow-right-linear" size={18} />
+                </Link>
+              </Button>
+            </MagneticHover>
+            <div className="flex items-center gap-2">
+              <Stars rating={4.8} size="sm" showCount={false} />
+              <span className="text-[13px] text-ng-ink-soft">4.8 · 12,400+ reviews</span>
+            </div>
+          </div>
+        </div>
+      }
+      right={<ProductSplash reduce={reduce} />}
+    />
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SLIDE 2 — Brand (reuses the prior hero's left-panel message)
+   ────────────────────────────────────────────────────────────────────────── */
+function BrandSlide({ reduce }: { reduce: boolean | null }) {
+  return (
+    <SlideFrame
+      bgClass="bg-ng-forest"
+      left={
+        <>
+          <BotanicalPattern />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 opacity-80"
+            style={{
+              background:
+                "radial-gradient(ellipse 75% 60% at 8% 4%, rgba(181,134,47,0.26), transparent 58%), radial-gradient(ellipse 65% 65% at 96% 100%, rgba(102,191,115,0.20), transparent 60%)",
+            }}
+          />
+          <div className="relative z-10 max-w-xl">
+            <span className="inline-flex items-center gap-2 rounded-full rounded-tl-sm bg-ng-clay px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_6px_18px_rgba(181,134,47,0.38)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-ng-soil/70" />
+              Single-origin · New harvest
+            </span>
+
+            <h1 className="mt-5 font-display text-[clamp(34px,5.6vw,64px)] font-semibold leading-[0.96] tracking-tight text-ng-cream">
+              Real food,
+              <br />
+              grown the <span className="text-ng-leaf">honest way.</span>
+            </h1>
+
+            <p className="mt-4 font-display text-[clamp(16px,2vw,21px)] font-medium leading-snug text-ng-clay">
+              Straight from the farm to your kitchen — nothing in between.
+            </p>
+
+            <ul className="mt-5 space-y-2.5">
+              {BENEFITS.map((line) => (
+                <li key={line} className="flex items-start gap-2.5 text-[14px] leading-snug text-ng-cream/85 sm:text-[15px]">
+                  <LeafTick className="mt-0.5 h-4 w-4 shrink-0 text-ng-leaf" />
+                  {line}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <MagneticHover>
+                <Button variant="gold" size="lg" asChild className="rounded-full">
+                  <Link href="/shop">
+                    Shop the harvest
+                    <span aria-hidden className="ml-0.5">→</span>
+                  </Link>
+                </Button>
+              </MagneticHover>
+              <MagneticHover>
+                <Button
+                  variant="glass"
+                  size="lg"
+                  asChild
+                  className="rounded-full !bg-ng-cream/10 !text-ng-cream ring-1 ring-inset ring-ng-cream/25 backdrop-blur hover:!bg-ng-cream/15"
+                >
+                  <Link href="/traceability">Trace a lot</Link>
+                </Button>
+              </MagneticHover>
+            </div>
+          </div>
+        </>
+      }
+      right={<BrandComposition reduce={reduce} />}
+    />
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SLIDE 3 — Seasonal / new harvest
+   ────────────────────────────────────────────────────────────────────────── */
+function HarvestSlide({ reduce }: { reduce: boolean | null }) {
+  return (
+    <SlideFrame
+      bgClass="bg-ng-cream"
+      bgStyle={{
+        background:
+          "radial-gradient(ellipse 85% 80% at 100% 0%, rgba(242,158,18,0.16), transparent 55%), linear-gradient(150deg, #FAF6E8 0%, #F1ECD8 55%, #E7E2C9 100%)",
+      }}
+      left={
+        <div className="relative z-10 max-w-xl">
+          <span className="inline-flex items-center gap-2 rounded-full bg-ng-leaf/15 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-forest-soft ring-1 ring-ng-leaf/30">
+            <span className="h-1.5 w-1.5 rounded-full bg-ng-green-bright" />
+            Fresh off the fields
+          </span>
+
+          <h1 className="mt-5 font-display text-[clamp(34px,5.6vw,64px)] font-semibold leading-[0.96] tracking-tight text-ng-forest-deep">
+            This season&rsquo;s
+            <br />
+            <span className="text-ng-clay">new harvest</span>
+          </h1>
+
+          <p className="mt-4 text-[15px] leading-relaxed text-ng-ink-muted md:text-[16px]">
+            Just pressed, just churned, just bottled. Be first to taste the freshest
+            single-origin lots — added to the shop every week.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <MagneticHover>
+              <Button variant="primary" size="lg" asChild className="rounded-full">
+                <Link href="/shop">
+                  Explore new arrivals
+                  <Icon name="arrow-right-linear" size={18} />
+                </Link>
+              </Button>
+            </MagneticHover>
+            <div className="flex items-center gap-2 text-[13px] text-ng-ink-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-ng-leaf" />
+              FSSAI · ISO 22000 certified
+            </div>
+          </div>
+        </div>
+      }
+      right={<HarvestComposition reduce={reduce} />}
+    />
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   RIGHT-SIDE VISUALS — composed from brand assets only (no photos).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/** SALE badge — a starburst seal that tucks into the top-right corner. */
+function SaleBadge({ className }: { className?: string }) {
+  return (
+    <div className={`pointer-events-none absolute z-30 ${className ?? ""}`}>
+      <div className="relative grid h-[88px] w-[88px] place-items-center sm:h-[104px] sm:w-[104px]">
+        <Starburst className="absolute inset-0 h-full w-full text-ng-clay drop-shadow-[0_8px_18px_rgba(181,134,47,0.35)]" />
+        <div className="relative text-center leading-none text-ng-soil">
+          <span className="block font-display text-[19px] font-bold tracking-tight sm:text-[23px]">SALE</span>
+          <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.16em] sm:text-[10px]">up to 20% off</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Slide 1 visual — a produce-cluster bursting out of a hand-drawn splash. */
+function ProductSplash({ reduce }: { reduce: boolean | null }) {
+  return (
+    <div className="relative grid h-full min-h-[210px] place-items-center px-6 py-10 sm:px-10">
+      <SaleBadge className="right-5 top-5 sm:right-8 sm:top-8" />
+
+      {/* Soft light bloom behind the cluster */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 55% at 55% 45%, rgba(255,255,255,0.85), transparent 62%), radial-gradient(ellipse 50% 50% at 50% 80%, rgba(102,191,115,0.16), transparent 65%)",
+        }}
+      />
+
+      <div className="relative w-full max-w-[340px]">
+        {/* Hand-authored splash/burst */}
+        <SplashBurst className="absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 text-ng-leaf/35" />
+
+        {/* Central glass product card (real photo drops in later) */}
+        <FloatIn className="relative z-10">
+          <div className="glass-strong relative mx-auto w-[210px] overflow-hidden rounded-[26px] border border-white/55 px-6 pb-6 pt-7 text-center shadow-[var(--shadow-ng-float)]">
+            <span className="absolute right-3.5 top-3.5 rounded-full bg-ng-clay/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-ng-soil shadow-sm">
+              20% off
+            </span>
+            <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-white to-ng-cream shadow-[var(--shadow-ng-card)] ring-1 ring-ng-clay/20">
+              <Logo variant="mark" tone="forest" className="h-14 w-14" />
+            </div>
+            <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-ng-clay-deep">
+              This week&rsquo;s harvest
+            </p>
+            <h3 className="mt-1 font-display text-[19px] font-semibold leading-tight text-ng-forest-deep">
+              Cold-Pressed Oil
+            </h3>
+            <div className="mt-2.5 flex items-center justify-center gap-2">
+              <span className="font-display text-[20px] font-semibold text-ng-forest">₹389</span>
+              <span className="text-[12px] text-ng-ink-soft line-through">₹450</span>
+            </div>
+          </div>
+        </FloatIn>
+
+        {/* Produce chips bursting out of the splash */}
+        <BurstChip reduce={reduce} delay={0.15} icon="oil" tint="text-ng-leaf" className="-left-6 top-2 sm:-left-10" />
+        <BurstChip reduce={reduce} delay={0.3} icon="honey" tint="text-ng-amber" className="-right-5 top-6 sm:-right-9" />
+        <BurstChip reduce={reduce} delay={0.45} icon="ghee" tint="text-ng-clay" className="-left-4 bottom-6 sm:-left-8" />
+        <BurstChip reduce={reduce} delay={0.6} icon="spice" tint="text-ng-terracotta" className="-right-4 bottom-2 sm:-right-8" />
+        <BurstChip reduce={reduce} delay={0.75} icon="seedling" tint="text-ng-green-bright" className="left-1/2 -top-7 -translate-x-1/2" />
+      </div>
+    </div>
+  );
+}
+
+/** Slide 2 visual — the brand mark medallion + an orbit of produce chips. */
+function BrandComposition({ reduce }: { reduce: boolean | null }) {
+  const ORBIT: { icon: keyof typeof PRODUCE_ICONS; tint: string; pos: string; delay: number }[] = [
+    { icon: "oil", tint: "text-ng-leaf", pos: "-left-4 top-4 sm:-left-8", delay: 0.15 },
+    { icon: "ghee", tint: "text-ng-clay", pos: "right-2 top-1 sm:right-0", delay: 0.28 },
+    { icon: "honey", tint: "text-ng-amber", pos: "-right-5 top-1/2 -translate-y-1/2 sm:-right-9", delay: 0.41 },
+    { icon: "fruit", tint: "text-ng-terracotta", pos: "right-4 bottom-2 sm:right-2", delay: 0.54 },
+    { icon: "seedling", tint: "text-ng-green-bright", pos: "-left-3 bottom-6 sm:-left-7", delay: 0.67 },
+  ];
+  return (
+    <div className="relative grid h-full min-h-[210px] place-items-center overflow-hidden px-8 py-10">
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10"
+        style={{ background: "linear-gradient(168deg, #F5F2E0 0%, #ECE7D2 48%, #DCE3CF 100%)" }}
+      />
+      <HeroScene />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 60% 28%, rgba(181,134,47,0.16), transparent 62%), radial-gradient(ellipse 55% 55% at 22% 80%, rgba(102,191,115,0.18), transparent 64%)",
+        }}
+      />
+
+      <div className="relative w-full max-w-[300px]">
+        <FloatIn className="relative z-10">
+          <div className="glass-strong relative mx-auto grid h-[200px] w-[200px] place-items-center rounded-full border border-white/55 text-center shadow-[var(--shadow-ng-float)]">
+            <div aria-hidden className="absolute inset-3 rounded-full border border-dashed border-ng-clay/35" />
+            <div>
+              <Logo variant="mark" tone="forest" className="mx-auto h-16 w-16" />
+              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-ng-clay-deep">Nutri Greenz</p>
+              <p className="mt-0.5 text-[11px] text-ng-ink-muted">Farm to kitchen</p>
+            </div>
+          </div>
+        </FloatIn>
+
+        {ORBIT.map((o) => (
+          <BurstChip key={o.icon} reduce={reduce} delay={o.delay} icon={o.icon} tint={o.tint} className={o.pos} />
+        ))}
+
+        <FloatIn delay={0.5} className="absolute -bottom-3 left-1/2 z-20 -translate-x-1/2">
+          <div className="glass-strong flex items-center gap-2 rounded-full px-3.5 py-2 shadow-[var(--shadow-ng-card)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-ng-success" />
+            <span className="text-[11px] font-semibold text-ng-forest-deep">Lab-tested · traceable</span>
+          </div>
+        </FloatIn>
+      </div>
+    </div>
+  );
+}
+
+/** Slide 3 visual — a fresh seasonal trio of produce chips around a leaf burst. */
+function HarvestComposition({ reduce }: { reduce: boolean | null }) {
+  const items: { icon: keyof typeof PRODUCE_ICONS; tint: string; label: string }[] = [
+    { icon: "seedling", tint: "text-ng-green-bright", label: "Sun-dried superfoods" },
+    { icon: "honey", tint: "text-ng-amber", label: "Forest raw honey" },
+    { icon: "oil", tint: "text-ng-leaf", label: "Cold-pressed oils" },
+  ];
+  return (
+    <div className="relative grid h-full min-h-[210px] place-items-center px-6 py-10 sm:px-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 58% 55% at 55% 42%, rgba(255,255,255,0.8), transparent 62%), radial-gradient(ellipse 55% 55% at 50% 85%, rgba(242,158,18,0.14), transparent 65%)",
+        }}
+      />
+      <SplashBurst className="absolute left-1/2 top-1/2 h-[115%] w-[115%] -translate-x-1/2 -translate-y-1/2 text-ng-clay/25" />
+
+      <div className="relative z-10 grid w-full max-w-[320px] gap-3">
+        {items.map((it, i) => {
+          const Glyph = PRODUCE_ICONS[it.icon];
+          return (
+            <FloatIn key={it.icon} delay={reduce ? 0 : 0.15 + i * 0.12}>
+              <div className="glass-strong flex items-center gap-3.5 rounded-2xl border border-white/55 px-4 py-3.5 shadow-[var(--shadow-ng-card)]">
+                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/80 ${it.tint} ring-1 ring-ng-line`}>
+                  <Glyph size={26} />
+                </span>
+                <div className="leading-tight">
+                  <div className="font-display text-[15px] font-semibold text-ng-forest-deep">{it.label}</div>
+                  <div className="text-[11.5px] text-ng-ink-muted">Fresh lot · just added</div>
+                </div>
+                <span className="ml-auto rounded-full bg-ng-leaf/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ng-forest-soft">
+                  New
+                </span>
+              </div>
+            </FloatIn>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** A single floating produce chip used by the splash / brand compositions. */
+function BurstChip({
+  reduce,
+  delay,
+  icon,
+  tint,
+  className,
+}: {
+  reduce: boolean | null;
+  delay: number;
+  icon: keyof typeof PRODUCE_ICONS;
+  tint: string;
+  className?: string;
+}) {
+  const Glyph = PRODUCE_ICONS[icon];
+  return (
+    <FloatIn delay={reduce ? 0 : delay} className={`absolute z-20 ${className ?? ""}`}>
+      <span
+        className={`grid h-[52px] w-[52px] place-items-center rounded-2xl border border-white/70 bg-white/85 ${tint} shadow-[var(--shadow-ng-card)] backdrop-blur-sm`}
+      >
+        <Glyph size={26} />
+      </span>
+    </FloatIn>
+  );
+}
+
+/* ── Hand-authored SVG splash / burst ── */
+function SplashBurst({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 400 400" fill="none" className={`pointer-events-none ${className ?? ""}`} aria-hidden>
+      <g fill="currentColor">
+        <path d="M200 36c14 34 8 64 30 70s44-22 60-6-6 46 2 64 44 16 44 38-36 28-40 50 18 44 2 60-46-2-66 8-26 42-50 42-30-32-52-40-50 6-66-10 6-46-4-66-40-24-40-48 30-30 36-52-16-44 0-60 44 4 64-6 26-46 40-46Z" opacity="0.55" />
+      </g>
+      <g fill="currentColor" opacity="0.4">
+        <circle cx="60" cy="120" r="9" />
+        <circle cx="350" cy="150" r="11" />
+        <circle cx="320" cy="320" r="8" />
+        <circle cx="80" cy="320" r="10" />
+        <circle cx="200" cy="22" r="7" />
+      </g>
+    </svg>
+  );
+}
+
+/* ── Tonal farm-landscape backdrop (reused on the brand slide) ── */
 const SUN = "#B5862F";
 const FAR = "#C7CDB0";
 const MID = "#A9BE94";
@@ -300,29 +626,22 @@ function HeroScene() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-0 select-none">
       <svg
-        className="block h-[220px] w-full sm:h-[260px] md:h-[300px]"
+        className="block h-[180px] w-full sm:h-[220px] md:h-[260px]"
         viewBox="0 0 720 320"
         preserveAspectRatio="xMidYMax slice"
         role="presentation"
       >
-        {/* sun glow */}
         <circle cx="520" cy="120" r="46" fill={SUN} opacity="0.18" />
         <circle cx="520" cy="120" r="26" fill={SUN} opacity="0.30" />
-        {/* far rolling ridge */}
         <path d="M0 196 C140 156 250 188 360 174 C470 160 590 196 720 168 L720 320 L0 320 Z" fill={FAR} opacity="0.9" />
-        {/* mid hills */}
         <path d="M0 232 C120 200 240 232 360 216 C480 200 600 236 720 214 L720 320 L0 320 Z" fill={MID} opacity="0.92" />
-        {/* near field band */}
         <path d="M0 268 C160 246 320 270 480 258 C580 250 660 266 720 258 L720 320 L0 320 Z" fill={NEAR} />
-        {/* foreground furrow strip */}
         <path d="M0 296 C180 282 360 300 540 290 C620 286 680 296 720 292 L720 320 L0 320 Z" fill={HILL} />
-        {/* furrow ticks */}
         <g stroke="#5C8A50" strokeWidth="2" strokeLinecap="round" opacity="0.55">
           {Array.from({ length: 18 }).map((_, i) => (
             <line key={i} x1={20 + i * 40} y1="306" x2={28 + i * 40} y2="298" />
           ))}
         </g>
-        {/* stippled trees on the ridge */}
         {[120, 200, 470, 560, 630].map((x, i) => (
           <g key={x} transform={`translate(${x} ${182 - (i % 2) * 8})`}>
             <rect x="-2" y="0" width="4" height="22" fill={HILL} rx="2" />
@@ -336,7 +655,23 @@ function HeroScene() {
   );
 }
 
-/* ── Small inline glyphs (no external icon deps needed for these accents) ── */
+/* ── Starburst seal outline for the SALE badge ──
+   Points are precomputed to fixed precision (24-point alternating r=50/42 star)
+   so the SVG string is byte-identical on the server and client — generating them
+   with Math.cos/sin at render time produced subtly different floats and a
+   hydration mismatch. */
+const STARBURST_POINTS =
+  "100.00,50.00 90.57,60.87 93.30,75.00 79.70,79.70 75.00,93.30 60.87,90.57 50.00,100.00 39.13,90.57 25.00,93.30 20.30,79.70 6.70,75.00 9.43,60.87 0.00,50.00 9.43,39.13 6.70,25.00 20.30,20.30 25.00,6.70 39.13,9.43 50.00,0.00 60.87,9.43 75.00,6.70 79.70,20.30 93.30,25.00 90.57,39.13";
+
+function Starburst({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden>
+      <polygon points={STARBURST_POINTS} fill="currentColor" />
+    </svg>
+  );
+}
+
+/* ── Small inline glyphs ── */
 function LeafTick({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
@@ -352,22 +687,7 @@ function LeafTick({ className }: { className?: string }) {
   );
 }
 
-function TruckGlyph({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M3 6.5h9v8H3zM12 9h4l3 3v2.5h-7z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <circle cx="7" cy="16.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="16.5" cy="16.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-/* ── Faint repeating leaf-branch motif that textures the green panel ── */
+/* ── Faint repeating leaf-branch motif that textures the green brand slide ── */
 function BotanicalPattern() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-[0.07]">

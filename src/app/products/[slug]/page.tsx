@@ -4,180 +4,136 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { ProductCard } from "@/components/ng/product-card";
-import { Stars } from "@/components/ng/stars";
 import { Reveal, Parallax } from "@/components/ng/motion";
-import { Icon } from "@/components/ui/icon";
-import { PRODUCTS, FARMS, CATEGORIES } from "@/components/ng/data";
-import type { ProductCard as Product, Farm } from "@/types/nutrigreenz";
+import { PRODUCTS, CATEGORIES } from "@/components/ng/data";
+import type { ProductCard as Product } from "@/types/nutrigreenz";
 import { Gallery } from "@/components/ng/pdp/gallery";
-import { BuyBox } from "@/components/ng/pdp/buy-box";
-import { TraceabilityPanel } from "@/components/ng/pdp/traceability-panel";
-import { Reviews, type Review } from "@/components/ng/pdp/reviews";
+import { BuyPanel } from "@/components/ng/pdp/buy-panel";
+import { TrustRow } from "@/components/ng/pdp/trust-row";
+import { StorySection } from "@/components/ng/pdp/story-section";
+import { TheWay } from "@/components/ng/pdp/the-way";
+import { Uses } from "@/components/ng/pdp/uses";
+import { Faq } from "@/components/ng/pdp/faq";
+import { KnowYour } from "@/components/ng/pdp/know-your";
+import { ReviewsSummary } from "@/components/ng/pdp/reviews-summary";
+import { Certifications } from "@/components/ng/pdp/certifications";
+import { ImpactBand } from "@/components/ng/pdp/impact-band";
+import { StickyBar } from "@/components/ng/pdp/sticky-bar";
+import type { Review } from "@/components/ng/pdp/reviews";
+import type { PdpVariant } from "@/components/ng/pdp/variant-selector";
+import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 
 const SITE = "https://nutrigreenz.in";
 const PLACEHOLDER = "/images/placeholder.svg";
+/** Reuse the storefront's "harvest" coupon deal across PDP offer/best-price strips. */
+const COUPON_CODE = "HARVEST10";
+const COUPON_PERCENT = 10;
+const COUPON_MAX = 150;
 
 /* ---------------------------------- data helpers ---------------------------------- */
 
-const TAG_TO_CATEGORY: Record<string, string> = {
-  oil: "oils",
-  ghee: "ghee",
-  honey: "honey",
-  millet: "millets",
-  flour: "flours",
-  superfood: "superfoods",
-  spice: "spices",
-  pulse: "pulses",
-};
-
-function getCategory(p: Product) {
-  const tag = p.tags?.[0];
-  const slug = tag ? (TAG_TO_CATEGORY[tag] ?? tag) : "pantry";
-  const cat = CATEGORIES.find((c) => c.slug === slug);
-  return { slug, title: cat?.title ?? "Pantry" };
+function getCategoryMeta(p: Product, categoryId: string) {
+  const cat = CATEGORIES.find((c) => c.id === categoryId || c.slug === categoryId);
+  return { slug: cat?.slug ?? categoryId, title: cat?.title ?? "Pantry" };
 }
 
-/** Pick the most relevant partner farm for a product based on its category. */
-function getFarm(p: Product): Farm {
-  const tag = p.tags?.[0];
-  if (tag === "ghee") return FARMS.find((f) => f.id === "f-junagadh") ?? FARMS[0];
-  if (tag === "honey") return FARMS.find((f) => f.id === "f-nilgiri") ?? FARMS[0];
-  return FARMS.find((f) => f.id === "f-anantapur") ?? FARMS[0];
+/** Parse a numeric size + unit out of "500ml · Junagadh" → { qty: 500, unit: "ml" }. */
+function parseSize(unit?: string): { qty: number; unit: string } | null {
+  if (!unit) return null;
+  const m = unit.match(/(\d+(?:\.\d+)?)\s*(ml|l|g|kg)\b/i);
+  if (!m) return null;
+  return { qty: parseFloat(m[1]), unit: m[2].toLowerCase() };
 }
 
-/** Deterministic lot code derived from id so it is stable across renders. */
-function getLotCode(p: Product): string {
-  const digits = p.id.replace(/\D/g, "").padStart(4, "0");
-  const seed = p.slug.length + p.reviewCount;
-  return `NG-2605${digits.slice(-2)}-${String(seed % 10000).padStart(4, "0")}`;
-}
-
-function getHarvestDate(p: Product): string {
-  const tag = p.tags?.[0];
-  if (tag === "honey") return "Extracted 02 Mar 2026";
-  if (tag === "ghee") return "Churned 24 May 2026";
-  return "Pressed 18 Apr 2026";
-}
-
-function getDescription(p: Product): { intro: string; benefits: string[] } {
-  const tag = p.tags?.[0];
-  const benefitsByTag: Record<string, string[]> = {
-    oil: [
-      "Cold-pressed below 40°C — retains natural antioxidants and aroma",
-      "Single-source, single-pass — no blending, no refining, no hexane",
-      "Stored in UV-protected glass to preserve freshness",
-      "Rich in good fats for everyday Indian cooking",
-    ],
-    ghee: [
-      "Hand-churned Bilona method from A2 cultured curd",
-      "Grainy texture and nutty aroma — the mark of true desi ghee",
-      "High smoke point, ideal for tadka and deep frying",
-      "From grass-fed indigenous cows, no synthetic feed",
-    ],
-    honey: [
-      "Raw and unheated — enzymes and pollen left intact",
-      "Harvested without smoke or queen-killing",
-      "Lab-tested for purity, zero added sugar or syrup",
-      "Naturally crystallises in cooler months — a sign of authenticity",
-    ],
-    millet: [
-      "Naturally gluten-free, high in fibre and minerals",
-      "Low glycaemic index — gentle on blood sugar",
-      "Sun-dried and stone-cleaned, no polishing",
-      "Sourced direct from dryland smallholder farms",
-    ],
+/**
+ * Derive 2–3 size variants deterministically from the base product price/unit.
+ * Pricing scales linearly with size with a mild bulk discount on larger sizes.
+ * The product's real unit is always present; `baseIndex` points at it so the
+ * page can default-select the variant whose price matches the catalogue price.
+ */
+function deriveVariants(p: Product): { variants: PdpVariant[]; baseIndex: number } {
+  const parsed = parseSize(p.unit);
+  const perUnitLabel = (price: number, qty: number, unit: string) => {
+    const each = price / qty;
+    return `₹${each < 10 ? each.toFixed(2) : Math.round(each)} / ${unit}`;
   };
-  const introByTag: Record<string, string> = {
-    oil: "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the first tempering.",
-    ghee: "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee on the same day milk is collected. Nothing about it is hurried.",
-    honey: "Wild, raw and traceable to a single forest harvest. We never heat or filter beyond straining, so everything the bees made stays in the jar.",
-    millet: "An ancient grain, grown the way it always was — rain-fed, intercropped and minimally processed. A wholesome base for everyday meals.",
-  };
-  const fallback = [
-    "Single-origin and fully traceable to the farm lot",
-    "Minimally processed to retain natural nutrition",
-    "Lab-tested for purity before it ships",
-    "Sourced direct from our partner farmers",
-  ];
-  return {
-    intro:
-      introByTag[tag ?? ""] ??
-      "Single-origin, minimally processed and traceable from farm to your kitchen. Real food, sourced with respect for the people who grow it.",
-    benefits: benefitsByTag[tag ?? ""] ?? fallback,
-  };
-}
 
-function getSpecs(p: Product, farm: Farm): { label: string; value: string }[] {
-  const tag = p.tags?.[0];
-  return [
-    { label: "Net quantity", value: p.unit ?? "—" },
-    { label: "Source farm", value: `${farm.name}, ${farm.region}` },
-    { label: "Shelf life", value: tag === "honey" ? "24 months" : tag === "ghee" ? "12 months" : "9 months" },
-    { label: "Storage", value: tag === "ghee" ? "Cool, dry place — no refrigeration" : "Away from direct sunlight" },
-    { label: "FSSAI Lic.", value: "10024051000987" },
-  ];
-}
-
-function getNutrition(p: Product): { label: string; value: string }[] {
-  const tag = p.tags?.[0];
-  if (tag === "ghee" || tag === "oil") {
-    return [
-      { label: "Energy", value: "900 kcal" },
-      { label: "Total fat", value: "100 g" },
-      { label: "Saturated fat", value: tag === "ghee" ? "62 g" : "18 g" },
-      { label: "Trans fat", value: "0 g" },
-      { label: "Cholesterol", value: tag === "ghee" ? "256 mg" : "0 mg" },
-    ];
+  // Base variant always exists.
+  if (!parsed) {
+    return {
+      variants: [{ size: p.unit?.split("·")[0]?.trim() || "Standard", price: p.price, mrp: p.mrp, perUnit: "Best value" }],
+      baseIndex: 0,
+    };
   }
-  if (tag === "honey") {
-    return [
-      { label: "Energy", value: "304 kcal" },
-      { label: "Carbohydrate", value: "82 g" },
-      { label: "Total sugars", value: "80 g" },
-      { label: "Added sugar", value: "0 g" },
-      { label: "Protein", value: "0.3 g" },
-    ];
+
+  const { qty, unit } = parsed;
+  // Sensible step ladders per base unit type.
+  const ladders: Record<string, number[]> = {
+    ml: [250, 500, 1000],
+    l: [0.5, 1, 2],
+    g: [200, 500, 1000],
+    kg: [0.5, 1, 5],
+  };
+  const ladder = ladders[unit] ?? [qty];
+  // Keep the base size, plus up to two neighbouring sizes from the ladder.
+  const sizesSet = new Set<number>([qty]);
+  for (const s of ladder) {
+    if (sizesSet.size >= 3) break;
+    sizesSet.add(s);
   }
-  return [
-    { label: "Energy", value: "352 kcal" },
-    { label: "Carbohydrate", value: "66 g" },
-    { label: "Dietary fibre", value: "8 g" },
-    { label: "Protein", value: "11 g" },
-    { label: "Iron", value: "3.9 mg" },
-  ];
+  const sizes = Array.from(sizesSet).sort((a, b) => a - b);
+  const baseIndex = Math.max(0, sizes.indexOf(qty));
+
+  const pretty = (n: number) => {
+    if (unit === "l") return n < 1 ? `${n * 1000}ml` : `${n}L`;
+    if (unit === "kg") return n < 1 ? `${n * 1000}g` : `${n}kg`;
+    return `${n}${unit}`;
+  };
+
+  const variants = sizes.map((s) => {
+    const ratio = s / qty;
+    // The product's own size keeps its exact catalogue price; other sizes scale
+    // linearly with a gentle per-unit discount on the larger packs.
+    const bulk = ratio > 1 ? 1 - Math.min(0.12, (ratio - 1) * 0.05) : 1;
+    const price = s === qty ? p.price : Math.round(p.price * ratio * bulk);
+    const mrp = p.mrp ? Math.round(p.mrp * ratio) : undefined;
+    return {
+      size: pretty(s),
+      price,
+      mrp,
+      perUnit: perUnitLabel(price, unit === "l" || unit === "kg" ? s * 1000 : s, unit === "l" ? "ml" : unit === "kg" ? "g" : unit),
+    };
+  });
+
+  return { variants, baseIndex };
+}
+
+function getIntro(p: Product, categoryId: string): string {
+  const byCat: Record<string, string> = {
+    oils: "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
+    ghee: "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
+    honey: "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs — in the jar.",
+    millets: "An ancient grain grown the way it always was — rain-fed, intercropped and minimally processed. A wholesome, gluten-free base for everyday meals.",
+    spices: "Single-origin whole spice, stone-ground in small batches so the aroma oils survive. Colour and fragrance you can smell the moment you open the pack.",
+    superfoods: "Grown on partner farms, harvested at peak potency and gently milled so the goodness survives the journey to powder. A small spoon that does real work.",
+    pulses: "Honest, unpolished dal from a single-origin farm — no water-polish, no oil coating. It cooks creamy and tastes of the pulse itself.",
+    flours: "Stone-ground slowly on a traditional chakki so the grain stays cool and whole. Flour with the wheatgerm still in it — more flavour, more fibre.",
+    fruits: "Ripened on the tree, picked to order and never gassed with carbide. Seasonal fruit that actually tastes the way it should.",
+    gifting: "A curated hamper of our most-loved single-origin staples, in plastic-free packaging — a way to gift wellness you can stand behind, down to the farm.",
+  };
+  return (
+    byCat[categoryId] ??
+    "Single-origin, minimally processed and traceable from farm to your kitchen. Real food, sourced with respect for the people who grow it."
+  );
 }
 
 const SAMPLE_REVIEWS: Review[] = [
-  {
-    id: "r1",
-    name: "Anjali R.",
-    location: "Hyderabad",
-    rating: 5,
-    date: "12 May 2026",
-    title: "The traceability is real",
-    body: "I scanned the lot code on the label and actually saw the farm it came from. The quality is exceptional — this is now a pantry staple for us.",
-    verified: true,
-  },
-  {
-    id: "r2",
-    name: "Rahul M.",
-    location: "Mumbai",
-    rating: 5,
-    date: "28 Apr 2026",
-    title: "Tastes like my grandmother's kitchen",
-    body: "Switched our entire household over. The aroma when you open it tells you everything. Worth every rupee.",
-    verified: true,
-  },
-  {
-    id: "r3",
-    name: "Priya K.",
-    location: "Hyderabad",
-    rating: 4,
-    date: "15 Apr 2026",
-    title: "Lovely product, heavy bottle",
-    body: "Five stars on the contents. The glass packaging is premium but a little heavy and the cap is slightly fiddly. Minor gripe.",
-    verified: true,
-  },
+  { id: "r1", name: "Anjali R.", location: "Hyderabad", rating: 5, date: "12 May 2026", title: "The traceability is real", body: "I scanned the lot code on the label and actually saw the farm it came from. The quality is exceptional — this is now a permanent pantry staple for us.", verified: true },
+  { id: "r2", name: "Rahul M.", location: "Mumbai", rating: 5, date: "28 Apr 2026", title: "Tastes like my grandmother's kitchen", body: "Switched our entire household over. The aroma when you open it tells you everything you need to know. Worth every rupee.", verified: true },
+  { id: "r3", name: "Priya K.", location: "Bengaluru", rating: 4, date: "15 Apr 2026", title: "Lovely product, premium packaging", body: "Five stars on the contents. The packaging is genuinely premium, a little heavy to handle but that's a minor gripe for this quality.", verified: true },
+  { id: "r4", name: "Vikram S.", location: "Pune", rating: 5, date: "02 Apr 2026", title: "You can taste the freshness", body: "There's a freshness here you just don't get from supermarket brands. The difference was obvious from the first use.", verified: true },
+  { id: "r5", name: "Meera D.", location: "Chennai", rating: 5, date: "21 Mar 2026", title: "Finally, food I trust", body: "Knowing exactly which farm my food came from changed how I shop. The whole family has switched over. Delivery was prompt too.", verified: true },
+  { id: "r6", name: "Karan T.", location: "Delhi", rating: 4, date: "08 Mar 2026", title: "Great quality, would reorder", body: "Really happy with it overall. Would have liked a slightly larger size option but the standard pack is excellent value.", verified: true },
 ];
 
 /* ---------------------------------- SEO ---------------------------------- */
@@ -191,7 +147,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const p = PRODUCTS.find((x) => x.slug === slug);
   if (!p) return { title: "Product not found · Nutri Greenz" };
 
-  const cat = getCategory(p);
+  const { categoryId } = getPdpContent(p);
+  const cat = getCategoryMeta(p, categoryId);
   const title = `${p.title} · Nutri Greenz`;
   const description = `Buy ${p.title} (${p.unit ?? cat.title}) — single-origin, lab-tested and fully traceable to the farm. Rated ${p.rating}/5 by ${p.reviewCount.toLocaleString()} customers. Free delivery over ₹599.`;
   const url = `${SITE}/products/${p.slug}`;
@@ -224,38 +181,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const p = PRODUCTS.find((x) => x.slug === slug);
   if (!p) notFound();
 
-  const cat = getCategory(p);
-  const farm = getFarm(p);
-  const lotCode = getLotCode(p);
-  const harvestDate = getHarvestDate(p);
-  const { intro, benefits } = getDescription(p);
-  const specs = getSpecs(p, farm);
-  const nutrition = getNutrition(p);
-  const sameCat = PRODUCTS.filter((x) => x.id !== p.id && x.tags?.[0] === p.tags?.[0]);
-  const relatedRail = (sameCat.length >= 4 ? sameCat : PRODUCTS.filter((x) => x.id !== p.id)).slice(0, 4);
+  const { categoryId, content } = getPdpContent(p);
+  const cat = getCategoryMeta(p, categoryId);
+  const intro = getIntro(p, categoryId);
+  const { variants, baseIndex } = deriveVariants(p);
+  const basePrice = variants[baseIndex]?.price ?? p.price;
   const discount = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+
+  // Loyalty coins (deterministic: ~5% of base price, rounded to 5).
+  const coins = Math.max(5, Math.round((basePrice * 0.05) / 5) * 5);
+  // Best price after the harvest coupon (% off capped at COUPON_MAX).
+  const couponOff = Math.min(COUPON_MAX, Math.round((basePrice * COUPON_PERCENT) / 100));
+  const bestPrice = basePrice - couponOff;
+
+  // Related rail — same category first, fill from the rest.
+  const sameCat = PRODUCTS.filter((x) => x.id !== p.id && getPdpContent(x).categoryId === categoryId);
+  const others = PRODUCTS.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
+  const relatedRail = [...sameCat, ...others].slice(0, 4);
 
   const images = [
     { src: p.image || PLACEHOLDER, alt: p.title },
     { src: PLACEHOLDER, alt: `${p.title} — packaging` },
     { src: PLACEHOLDER, alt: `${p.title} — texture` },
     { src: PLACEHOLDER, alt: `${p.title} — lot label` },
-  ];
-
-  // Variant chips derived from the base unit
-  const variants = [{ label: p.unit?.split("·")[0]?.trim() || "Standard", priceDelta: 0 }];
-  if (p.tags?.[0] === "oil") {
-    variants.push({ label: "2L value pack", priceDelta: Math.round(p.price * 0.9) });
-  } else if (p.tags?.[0] === "ghee") {
-    variants.push({ label: "1L jar", priceDelta: Math.round(p.price * 0.85) });
-  } else {
-    variants.push({ label: "Family pack", priceDelta: Math.round(p.price * 0.8) });
-  }
-
-  const trust = [
-    { icon: "test-tube-bold", label: "Lab-tested purity" },
-    { icon: "shield-check-bold", label: "FSSAI certified" },
-    { icon: "delivery-bold", label: "Free delivery over ₹599" },
   ];
 
   const jsonLd = {
@@ -292,30 +240,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <nav aria-label="Breadcrumb" className="border-b border-ng-line-soft bg-ng-paper">
         <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-5 py-3 text-[13px] text-ng-ink-muted md:px-8">
           <li>
-            <Link href="/" className="transition-colors hover:text-ng-forest">
-              Home
-            </Link>
+            <Link href="/" className="transition-colors hover:text-ng-forest">Home</Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href="/shop" className="transition-colors hover:text-ng-forest">
-              Shop
-            </Link>
+            <Link href="/shop" className="transition-colors hover:text-ng-forest">Shop</Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href={`/shop?category=${cat.slug}`} className="transition-colors hover:text-ng-forest">
-              {cat.title}
-            </Link>
+            <Link href={`/shop/${cat.slug}`} className="transition-colors hover:text-ng-forest">{cat.title}</Link>
           </li>
           <li aria-hidden>/</li>
           <li className="truncate font-medium text-ng-forest">{p.title}</li>
         </ol>
       </nav>
 
-      {/* Hero: gallery + buy box */}
+      {/* 1 · Product hero — gallery (left) + buy panel (right) */}
       <Section className="relative overflow-hidden !py-10 md:!py-14">
-        {/* Soft parallax blobs behind the stage */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <Parallax speed={0.4} className="absolute -left-32 top-10">
             <div className="h-96 w-96 rounded-full bg-ng-leaf/10 blur-3xl" />
@@ -332,124 +273,85 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </Reveal>
           </div>
 
-          <Reveal delay={0.08} className="flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              <span className="ng-eyebrow text-ng-forest">{cat.title}</span>
-              <h1 className="font-display text-[clamp(28px,4vw,44px)] leading-tight text-ng-forest-deep">{p.title}</h1>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Stars rating={p.rating} reviewCount={p.reviewCount} size="md" />
-                <a href="#reviews" className="text-[13px] font-medium text-ng-leaf transition-colors hover:text-ng-forest">
-                  Read reviews
-                </a>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-cream px-3 py-1 font-mono text-[11px] tabular-nums text-ng-forest">
-                  <Icon name="box-bold" size={12} className="text-ng-clay" />
-                  Lot {lotCode}
-                </span>
-              </div>
-            </div>
-
-            <BuyBox title={p.title} basePrice={p.price} mrp={p.mrp} unit={p.unit} variants={variants} product={p} />
-
-            {/* Trust strip */}
-            <ul className="grid grid-cols-1 gap-3 rounded-2xl border border-ng-line-soft bg-ng-cream p-4 sm:grid-cols-3">
-              {trust.map((t) => (
-                <li key={t.label} className="flex items-center gap-2.5 text-[13px] font-medium text-ng-forest">
-                  <Icon name={t.icon} size={20} className="text-ng-leaf" />
-                  {t.label}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* Description + traceability */}
-      <Section className="!pt-0">
-        <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
-          <Reveal className="flex flex-col gap-6">
-            <div>
-              <h2 className="font-display text-2xl text-ng-forest-deep">About this product</h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-ng-ink">{intro}</p>
-            </div>
-            <div>
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-ng-ink-muted">Key benefits</h3>
-              <ul className="mt-3 flex flex-col gap-2.5">
-                {benefits.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5 text-[14px] text-ng-ink">
-                    <Icon name="leaf-bold" size={18} className="mt-0.5 shrink-0 text-ng-leaf" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-
           <Reveal delay={0.08}>
-            <TraceabilityPanel lotCode={lotCode} farm={farm} harvestDate={harvestDate} labReportHref="#lab-report" />
+            <BuyPanel
+              product={p}
+              categoryTitle={cat.title}
+              credentials={content.credentials}
+              variants={variants}
+              initialIndex={baseIndex}
+              coins={coins}
+              coupon={{ code: COUPON_CODE, bestPrice, off: COUPON_PERCENT }}
+            />
           </Reveal>
         </div>
       </Section>
 
-      {/* Nutrition + specs */}
+      {/* 2 · Product description */}
       <Section className="!pt-0">
-        <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-          <Reveal>
-            <div className="overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-paper shadow-[var(--shadow-ng-card)]">
-              <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-cream px-5 py-4">
-                <Icon name="bottle-bold" size={20} className="text-ng-clay" />
-                <h2 className="font-display text-xl text-ng-forest-deep">Nutrition</h2>
-                <span className="ml-auto font-mono text-[11px] text-ng-ink-muted">per 100g / ml</span>
-              </div>
-              <table className="w-full text-[14px]">
-                <tbody className="divide-y divide-ng-line-soft">
-                  {nutrition.map((n) => (
-                    <tr key={n.label} className="bg-ng-paper transition-colors hover:bg-ng-cream/40">
-                      <td className="px-5 py-3 text-ng-ink-muted">{n.label}</td>
-                      <td className="px-5 py-3 text-right font-medium tabular-nums text-ng-forest-deep">{n.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.08}>
-            <div className="overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-paper shadow-[var(--shadow-ng-card)]">
-              <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-cream px-5 py-4">
-                <Icon name="clipboard-list-bold" size={20} className="text-ng-clay" />
-                <h2 className="font-display text-xl text-ng-forest-deep">Specifications</h2>
-              </div>
-              <table className="w-full text-[14px]">
-                <tbody className="divide-y divide-ng-line-soft">
-                  {specs.map((s) => (
-                    <tr key={s.label} className="bg-ng-paper transition-colors hover:bg-ng-cream/40">
-                      <td className="px-5 py-3 text-ng-ink-muted">{s.label}</td>
-                      <td className="px-5 py-3 text-right font-medium text-ng-forest-deep">{s.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Reveal>
-        </div>
+        <Reveal className="flex max-w-3xl flex-col gap-4">
+          <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
+          <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
+          <p className="text-[15px] leading-relaxed text-ng-ink">
+            Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
+            reaches your kitchen is exactly what left the field, with nothing hidden in between.
+          </p>
+        </Reveal>
       </Section>
 
-      {/* Reviews */}
+      {/* 3 · Trust row */}
+      <Section className="!pt-0">
+        <Reveal>
+          <TrustRow checks={content.checks} />
+        </Reveal>
+      </Section>
+
+      {/* 4 · Brand story */}
+      <Section className="bg-ng-sage/15">
+        <StorySection story={content.story} produceIcon={content.produceIcon} />
+      </Section>
+
+      {/* 5 · The Nutri Greenz Way */}
+      <Section eyebrow={content.way.eyebrow} heading={<>{content.way.title}</>}>
+        <TheWay cards={content.way.cards} />
+      </Section>
+
+      {/* 6 · Uses */}
+      <Section className="!pt-0" eyebrow="Ways to use it" heading={<>{content.uses.title}</>}>
+        <Uses intro={content.uses.intro} tips={content.uses.tips} />
+      </Section>
+
+      {/* 7 · FAQ */}
+      <Section
+        className="bg-ng-cream-mesh bg-ng-cream"
+        eyebrow="You ask, we answer"
+        heading={<>Questions, <em className="italic text-ng-leaf">answered</em></>}
+        align="center"
+      >
+        <Faq items={content.faq} />
+      </Section>
+
+      {/* 8 · Know your [category] */}
+      <Section eyebrow="Compare the types" heading={<>{content.knowYour.title}</>}>
+        <KnowYour data={content.knowYour} />
+      </Section>
+
+      {/* 9 · Customer reviews */}
       <Section
         id="reviews"
-        className="bg-ng-sage/20 !py-16"
+        className="bg-ng-sage/15 !py-16"
         eyebrow="Customer reviews"
         heading={<>What people <em className="italic text-ng-leaf">are saying</em></>}
       >
         <Reveal>
-          <Reviews rating={p.rating} reviewCount={p.reviewCount} reviews={SAMPLE_REVIEWS} />
+          <ReviewsSummary rating={p.rating} reviewCount={p.reviewCount} reviews={SAMPLE_REVIEWS} />
         </Reveal>
       </Section>
 
-      {/* Related */}
+      {/* 10 · You may also like */}
       <Section
         eyebrow="You may also like"
-        heading={<>More from the <em className="italic text-ng-leaf">pantry</em></>}
+        heading={<>More from the <em className="italic text-ng-leaf">{cat.title.toLowerCase()}</em></>}
         description="Single-origin staples chosen by fellow shoppers — same lab-tested, lot-traceable promise."
       >
         <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
@@ -458,6 +360,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ))}
         </div>
       </Section>
+
+      {/* 11 · Certifications */}
+      <Section className="!pt-0" eyebrow="Certified & compliant" heading={<>Held to a <em className="italic text-ng-leaf">higher standard</em></>} align="center">
+        <Reveal>
+          <Certifications />
+        </Reveal>
+      </Section>
+
+      {/* 12 · Impact stats band */}
+      <Section className="!pt-0">
+        <ImpactBand impact={content.impact} />
+      </Section>
+
+      {/* Sticky bottom add-to-cart bar */}
+      <StickyBar product={p} price={basePrice} />
     </PageShell>
   );
 }

@@ -2,7 +2,6 @@ import { PromoBar } from "@/components/ng/promo-bar";
 import { Header } from "@/components/ng/header";
 import { Footer } from "@/components/ng/footer";
 import { Hero } from "@/components/ng/sections/hero";
-import { OfferBanner } from "@/components/ng/sections/offer-banner";
 import { ShopByCategory } from "@/components/ng/sections/shop-by-category";
 import { Why } from "@/components/ng/sections/why";
 import { Traceability } from "@/components/ng/sections/traceability";
@@ -69,7 +68,6 @@ export default function Home() {
       <PromoBar />
       <Header />
       <Hero />
-      <OfferBanner />
       <ShopByCategory />
 
       <Why />
