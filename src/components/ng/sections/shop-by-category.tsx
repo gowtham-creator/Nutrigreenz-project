@@ -36,6 +36,26 @@ const CATEGORY_TABS: TabDef[] = CATEGORIES.map((cat) => ({
 
 const TABS: TabDef[] = [ALL_TAB, ...CATEGORY_TABS];
 
+/**
+ * Per-category accent colour so the row reads colourful and varied instead of
+ * all-green. `tint` colours the glyph; `ring` is the soft circle behind it. The
+ * glyphs stay vector `currentColor`, so on the active (forest) tab they invert
+ * to cream cleanly — something a fixed-colour image could never do.
+ */
+const CAT_COLORS: Record<string, { tint: string; ring: string }> = {
+  all: { tint: "text-ng-leaf", ring: "bg-ng-leaf/12" },
+  oils: { tint: "text-ng-amber", ring: "bg-ng-amber/15" },
+  ghee: { tint: "text-ng-clay-deep", ring: "bg-ng-clay/20" },
+  honey: { tint: "text-ng-clay", ring: "bg-ng-clay/15" },
+  millets: { tint: "text-ng-soil", ring: "bg-ng-soil/12" },
+  spices: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/15" },
+  superfoods: { tint: "text-ng-green-bright", ring: "bg-ng-green-bright/15" },
+  pulses: { tint: "text-ng-soil", ring: "bg-ng-soil/12" },
+  flours: { tint: "text-ng-clay", ring: "bg-ng-clay/15" },
+  fruits: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/15" },
+  gifting: { tint: "text-ng-forest", ring: "bg-ng-forest/12" },
+};
+
 /** Bestsellers first (badge "Best seller"), then fill by rating. */
 function bestsellers(): ProductCardType[] {
   const flagged = PRODUCTS.filter((p) => p.badge === "Best seller");
@@ -84,6 +104,7 @@ export function ShopByCategory({ className }: { className?: string }) {
           {TABS.map((tab) => {
             const Icon = PRODUCE_ICONS[tab.icon] ?? PRODUCE_ICONS.leaf;
             const isActive = tab.key === active;
+            const color = CAT_COLORS[tab.key] ?? CAT_COLORS.all;
             return (
               <button
                 key={tab.key}
@@ -103,7 +124,7 @@ export function ShopByCategory({ className }: { className?: string }) {
                 <span
                   className={cn(
                     "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
-                    isActive ? "bg-ng-cream/15 text-ng-cream" : "bg-ng-sage/35 text-ng-leaf group-hover:bg-ng-sage/55",
+                    isActive ? cn("bg-ng-cream", color.tint) : cn(color.ring, color.tint),
                   )}
                 >
                   <Icon size={18} />
