@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { MagneticHover } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useCommerceRules } from "@/lib/commerce";
+import { useAuth } from "@/lib/auth";
 
 /**
  * Order summary card: subtotal, free-delivery progress, shipping, tax note, total,
@@ -16,8 +17,13 @@ import { useCommerceRules } from "@/lib/commerce";
 export function OrderSummary() {
   const { subtotal } = useCart();
   const { minOrderValue, freeDeliveryThreshold, shippingFlat, taxMode } = useCommerceRules();
+  const { isAuthed } = useAuth();
   // Pre-acknowledged by default (client request); shopper can still untick it.
   const [acknowledged, setAcknowledged] = useState(true);
+  // Require sign-in BEFORE checkout so the order is tied to the account and the
+  // customer's details/progress are saved against them. `next` returns them to
+  // checkout right after they authenticate.
+  const checkoutHref = isAuthed ? "/checkout" : "/auth?next=/checkout";
 
   const qualifiesFreeDelivery = subtotal >= freeDeliveryThreshold;
   const shipping = qualifiesFreeDelivery ? 0 : shippingFlat;
@@ -154,9 +160,18 @@ export function OrderSummary() {
           {canCheckout ? (
             <MagneticHover className="mt-5 block w-full">
               <Button variant="primary" size="lg" fullWidth asChild>
-                <Link href="/checkout">
-                  Proceed to checkout
-                  <Icon name="arrow-right-linear" size={18} />
+                <Link href={checkoutHref}>
+                  {isAuthed ? (
+                    <>
+                      Proceed to checkout
+                      <Icon name="arrow-right-linear" size={18} />
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                      Sign in to checkout
+                    </>
+                  )}
                 </Link>
               </Button>
             </MagneticHover>

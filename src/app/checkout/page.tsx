@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
@@ -25,6 +25,11 @@ import {
 } from "@/components/ng/checkout/payment-picker";
 import { NoCancellationAck } from "@/components/ng/checkout/no-cancellation";
 import { OrderSummary } from "@/components/ng/checkout/order-summary";
+import {
+  clearCheckoutDraft,
+  readCheckoutDraft,
+  writeCheckoutDraft,
+} from "@/components/ng/checkout/checkout-draft";
 import {
   computeTotals,
   generateOrderId,
@@ -70,7 +75,7 @@ function CheckoutStepper() {
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clear } = useCart();
-  const { isAuthed } = useAuth();
+  const { isAuthed, loading: authLoading } = useAuth();
   const rules = useCommerceRules();
   const { config: loyalty } = useLoyaltyConfig();
   const { addresses, defaultAddress } = useAddresses();
@@ -92,6 +97,34 @@ export default function CheckoutPage() {
   // Pre-acknowledged by default (client request) so the order can be placed
   // without an extra click; the shopper can still untick to opt out.
   const [acknowledged, setAcknowledged] = useState(true);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Gate: require sign-in BEFORE checkout. If auth has settled and the visitor
+  // isn't signed in, bounce them to /auth and bring them right back here.
+  useEffect(() => {
+    if (!authLoading && !isAuthed) router.replace("/auth?next=/checkout");
+  }, [authLoading, isAuthed, router]);
+
+  // Restore any saved in-progress checkout (abandoned-checkout recovery) once,
+  // after mount, so a returning customer picks up where they left off.
+  useEffect(() => {
+    const draft = readCheckoutDraft();
+    if (draft) {
+      if (draft.addressId !== undefined) setAddressId(draft.addressId);
+      if (draft.slotId !== undefined) setSlotId(draft.slotId);
+      if (draft.payment !== undefined) setPayment(draft.payment ?? null);
+      if (draft.applied !== undefined) setApplied(draft.applied ?? null);
+      if (typeof draft.redeemLoyalty === "boolean") setRedeemLoyalty(draft.redeemLoyalty);
+      if (typeof draft.acknowledged === "boolean") setAcknowledged(draft.acknowledged);
+    }
+    setDraftLoaded(true);
+  }, []);
+
+  // Persist the draft on every change (after the initial restore).
+  useEffect(() => {
+    if (!draftLoaded) return;
+    writeCheckoutDraft({ addressId, slotId, payment, applied, redeemLoyalty, acknowledged });
+  }, [draftLoaded, addressId, slotId, payment, applied, redeemLoyalty, acknowledged]);
 
   // Keep the selected address in sync with the (async-hydrated) default.
   const resolvedAddressId =
@@ -174,7 +207,43 @@ export default function CheckoutPage() {
     });
 
     clear();
+    clearCheckoutDraft();
     router.push(`/checkout/success?order=${id}`);
+  }
+
+  /* ── Auth gate ───────────────────────────────────────────────── */
+  // Until auth settles, or while the redirect to sign-in is in flight, show a
+  // lightweight holding screen instead of the checkout form.
+  if (authLoading || !isAuthed) {
+    return (
+      <PageShell hidePromo>
+        <Section className="!py-28">
+          <Reveal className="mx-auto max-w-md">
+            <div className="rounded-3xl border border-ng-line-soft bg-ng-paper px-6 py-14 text-center shadow-[var(--shadow-ng-card)]">
+              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ng-sage/40 text-ng-forest-deep">
+                <Icon name="lock-keyhole-minimalistic-bold" size={28} />
+              </span>
+              <h1 className="mt-6 font-display text-[26px] text-ng-forest-deep">
+                {authLoading ? "One moment…" : "Please sign in to continue"}
+              </h1>
+              <p className="mt-3 text-[15px] leading-relaxed text-ng-ink-muted">
+                {authLoading
+                  ? "Checking your session."
+                  : "Sign in so your order, address and details are saved to your account — then you'll come straight back to checkout."}
+              </p>
+              {!authLoading ? (
+                <Button variant="primary" size="lg" className="mt-7" asChild>
+                  <Link href="/auth?next=/checkout">
+                    <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                    Sign in to checkout
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          </Reveal>
+        </Section>
+      </PageShell>
+    );
   }
 
   /* ── Empty state ─────────────────────────────────────────────── */
