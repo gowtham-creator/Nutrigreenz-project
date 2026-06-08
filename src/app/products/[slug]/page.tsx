@@ -200,10 +200,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
   const images = [
-    { src: p.image || PLACEHOLDER, alt: p.title },
-    { src: PLACEHOLDER, alt: `${p.title} — packaging` },
-    { src: PLACEHOLDER, alt: `${p.title} — texture` },
-    { src: PLACEHOLDER, alt: `${p.title} — lot label` },
+    { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
+    { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
+    { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
+    { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
   ];
 
   const jsonLd = {
@@ -269,7 +269,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="relative z-10 grid gap-10 lg:grid-cols-2 lg:gap-14">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Reveal>
-              <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} />
+              <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} />
             </Reveal>
           </div>
 
@@ -318,7 +318,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {/* 6 · Uses */}
       <Section className="!pt-0" eyebrow="Ways to use it" heading={<>{content.uses.title}</>}>
-        <Uses intro={content.uses.intro} tips={content.uses.tips} />
+        <Uses intro={content.uses.intro} tips={content.uses.tips} icon={content.produceIcon} />
       </Section>
 
       {/* 7 · FAQ */}

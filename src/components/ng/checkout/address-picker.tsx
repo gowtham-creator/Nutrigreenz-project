@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { useAddresses } from "@/lib/addresses";
+import { AddressForm } from "@/components/ng/address/address-form";
 import type { Address } from "@/types/nutrigreenz";
 
 const TYPE_META: Record<Address["type"], { icon: string; label: string }> = {
@@ -20,6 +23,18 @@ export function AddressPicker({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { add } = useAddresses();
+  const [adding, setAdding] = useState(false);
+
+  // Save a brand-new address right here in checkout, then select it — no need
+  // to detour through the account page and back.
+  function handleAdd(input: Parameters<typeof add>[0]) {
+    const id = add(input);
+    onSelect(id);
+    setAdding(false);
+    toast.success("Address added", { description: "It's now selected for this order." });
+  }
+
   return (
     <div className="group/card rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">
       <div className="mb-5 flex items-center gap-3">
@@ -34,18 +49,24 @@ export function AddressPicker({
         </div>
       </div>
 
-      {addresses.length === 0 ? (
+      {/* Inline "add new address" form — opens right inside checkout. */}
+      {adding ? (
+        <div className="rounded-2xl border border-ng-line-soft bg-ng-cream/40 p-5 sm:p-6">
+          <AddressForm onSubmit={handleAdd} onCancel={() => setAdding(false)} />
+        </div>
+      ) : addresses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ng-line bg-ng-cream/50 p-6 text-center">
           <p className="text-[14px] text-ng-ink-muted">
             You don&apos;t have any saved addresses yet.
           </p>
-          <Link
-            href="/account/addresses"
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
             className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-ng-forest hover:text-ng-forest-deep"
           >
             <Icon name="add-circle-bold" size={16} />
             Add an address
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="grid items-stretch gap-3 sm:grid-cols-2">
@@ -101,14 +122,15 @@ export function AddressPicker({
         </div>
       )}
 
-      {addresses.length > 0 ? (
-        <Link
-          href="/account/addresses"
+      {addresses.length > 0 && !adding ? (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
           className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-ng-forest hover:text-ng-forest-deep"
         >
           <Icon name="add-circle-bold" size={16} />
           Add new address
-        </Link>
+        </button>
       ) : null}
     </div>
   );

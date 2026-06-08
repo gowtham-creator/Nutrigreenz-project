@@ -89,7 +89,9 @@ export default function CheckoutPage() {
     discount: number;
   } | null>(null);
   const [redeemLoyalty, setRedeemLoyalty] = useState(false);
-  const [acknowledged, setAcknowledged] = useState(false);
+  // Pre-acknowledged by default (client request) so the order can be placed
+  // without an extra click; the shopper can still untick to opt out.
+  const [acknowledged, setAcknowledged] = useState(true);
 
   // Keep the selected address in sync with the (async-hydrated) default.
   const resolvedAddressId =

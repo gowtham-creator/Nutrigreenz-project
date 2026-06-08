@@ -5,10 +5,14 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ng/badge";
 import type { Tone } from "@/types/nutrigreenz";
+import { PhotoPlaceholder, isPlaceholderSrc } from "./photo-placeholder";
+import type { ProduceIconName } from "@/components/ng/produce-icons";
 
 interface GalleryImage {
   src: string;
   alt: string;
+  /** Short caption shown on the branded placeholder (e.g. "Front of pack"). */
+  label?: string;
 }
 
 interface GalleryProps {
@@ -16,13 +20,17 @@ interface GalleryProps {
   badge?: string;
   badgeTone?: Tone;
   discount?: number;
+  /** Category glyph used by the photo placeholders until real photos exist. */
+  produceIcon?: ProduceIconName;
 }
 
 /**
  * Interactive product gallery — main viewer + clickable thumbnail rail.
- * Falls back to the branded placeholder SVG since no real photography exists yet.
+ * Until real photography exists, each slot renders an attractive, category-aware
+ * <PhotoPlaceholder> (front / pack / texture / lifestyle) instead of one flat
+ * logo — so the client can see exactly which shot drops in where.
  */
-export function Gallery({ images, badge, badgeTone, discount }: GalleryProps) {
+export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf" }: GalleryProps) {
   const safeImages = images.length > 0 ? images : [{ src: "/images/placeholder.svg", alt: "Product image" }];
   const [active, setActive] = useState(0);
   const current = safeImages[Math.min(active, safeImages.length - 1)];
@@ -43,7 +51,11 @@ export function Gallery({ images, badge, badgeTone, discount }: GalleryProps) {
               i === active ? "border-ng-forest ring-1 ring-ng-forest" : "border-ng-line hover:border-ng-leaf",
             )}
           >
-            <Image src={img.src} alt={img.alt} fill className="object-contain p-2" sizes="80px" />
+            {isPlaceholderSrc(img.src) ? (
+              <PhotoPlaceholder icon={produceIcon} variant="thumb" />
+            ) : (
+              <Image src={img.src} alt={img.alt} fill className="object-contain p-2" sizes="80px" />
+            )}
           </button>
         ))}
       </div>
@@ -56,14 +68,20 @@ export function Gallery({ images, badge, badgeTone, discount }: GalleryProps) {
             <div className="absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ng-leaf/10 blur-3xl" />
             <div className="absolute inset-x-8 bottom-6 h-6 rounded-[50%] bg-ng-forest-deep/10 blur-2xl" />
           </div>
-          <Image
-            src={current.src}
-            alt={current.alt}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="relative object-contain p-10 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:scale-[1.04]"
-          />
+          {isPlaceholderSrc(current.src) ? (
+            <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]">
+              <PhotoPlaceholder icon={produceIcon} variant="main" label={current.label ?? current.alt} />
+            </div>
+          ) : (
+            <Image
+              src={current.src}
+              alt={current.alt}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="relative object-contain p-10 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:scale-[1.04]"
+            />
+          )}
           <div className="absolute left-5 top-5 z-10 flex flex-col gap-2">
             {badge ? <Badge tone={badgeTone ?? "leaf"}>{badge}</Badge> : null}
             {discount && discount > 0 && !badge ? <Badge tone="terracotta">{discount}% OFF</Badge> : null}

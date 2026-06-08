@@ -16,7 +16,8 @@ import { useCommerceRules } from "@/lib/commerce";
 export function OrderSummary() {
   const { subtotal } = useCart();
   const { minOrderValue, freeDeliveryThreshold, shippingFlat, taxMode } = useCommerceRules();
-  const [acknowledged, setAcknowledged] = useState(false);
+  // Pre-acknowledged by default (client request); shopper can still untick it.
+  const [acknowledged, setAcknowledged] = useState(true);
 
   const qualifiesFreeDelivery = subtotal >= freeDeliveryThreshold;
   const shipping = qualifiesFreeDelivery ? 0 : shippingFlat;

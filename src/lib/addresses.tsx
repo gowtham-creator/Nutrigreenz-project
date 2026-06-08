@@ -19,8 +19,8 @@ export type AddressInput = Omit<Address, "id">;
 interface AddressContextValue {
   /** All saved addresses; the default (if any) is always sorted first. */
   addresses: Address[];
-  /** Add a new address. When it is the first one, it becomes the default. */
-  add: (input: AddressInput) => void;
+  /** Add a new address; returns its generated id. First one becomes default. */
+  add: (input: AddressInput) => string;
   /** Patch an existing address by id. */
   update: (id: string, input: Partial<AddressInput>) => void;
   /** Delete an address; if it was the default, the next one is promoted. */
@@ -141,11 +141,12 @@ export function AddressProvider({ children }: { children: ReactNode }) {
   }, [addresses, hydrated]);
 
   const add = useCallback((input: AddressInput) => {
+    const id = makeId();
     setAddresses((prev) => {
       const makeFirstDefault = prev.length === 0;
       const next: Address = {
         ...input,
-        id: makeId(),
+        id,
         isDefault: makeFirstDefault ? true : Boolean(input.isDefault),
       };
       const cleared = next.isDefault
@@ -153,6 +154,7 @@ export function AddressProvider({ children }: { children: ReactNode }) {
         : prev;
       return normalize([...cleared, next]);
     });
+    return id;
   }, []);
 
   const update = useCallback((id: string, input: Partial<AddressInput>) => {
