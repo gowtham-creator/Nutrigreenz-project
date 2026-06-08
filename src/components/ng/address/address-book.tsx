@@ -115,7 +115,7 @@ export function AddressBook() {
             if (e.target === e.currentTarget) setEditor({ mode: "closed" });
           }}
         >
-          <div className="my-8 w-full max-w-xl rounded-3xl bg-ng-paper p-6 shadow-[0_24px_60px_rgba(20,51,31,0.28)] sm:p-8">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-3xl bg-ng-paper p-6 shadow-[0_24px_60px_rgba(20,51,31,0.28)] sm:p-8">
             <AddressForm
               initial={editor.mode === "edit" ? editor.address : undefined}
               onSubmit={handleSubmit}
