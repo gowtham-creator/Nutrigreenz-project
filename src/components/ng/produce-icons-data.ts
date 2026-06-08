@@ -6,7 +6,7 @@ export interface ProduceIconData { body: string; w: number; h: number; }
 
 export const PRODUCE_ICON_DATA: Record<string, ProduceIconData> = {
   "oil": {
-    "body": "<g fill=\"currentColor\"><path d=\"M208 144a80 80 0 0 1-160 0c0-72 80-128 80-128s80 56 80 128\" opacity=\".2\"/><path d=\"M174 47.75a254.2 254.2 0 0 0-41.45-38.3a8 8 0 0 0-9.18 0A254.2 254.2 0 0 0 82 47.75C54.51 79.32 40 112.6 40 144a88 88 0 0 0 176 0c0-31.4-14.51-64.68-42-96.25M128 216a72.08 72.08 0 0 1-72-72c0-57.23 55.47-105 72-118c16.53 13 72 60.75 72 118a72.08 72.08 0 0 1-72 72m55.89-62.66a57.6 57.6 0 0 1-46.56 46.55a9 9 0 0 1-1.33.11a8 8 0 0 1-1.32-15.89c16.57-2.79 30.63-16.85 33.44-33.45a8 8 0 0 1 15.78 2.68Z\"/></g>",
+    "body": "<g fill=\"currentColor\"><path d=\"M112 52L144 52L144 86Q176 92 176 124L176 196Q176 224 148 224L108 224Q80 224 80 196L80 124Q80 92 112 86Z\" opacity=\".2\"/><path d=\"M112 52L144 52L144 86Q176 92 176 124L176 196Q176 224 148 224L108 224Q80 224 80 196L80 124Q80 92 112 86Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"16\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"104\" y=\"30\" width=\"48\" height=\"28\" rx=\"9\"/><path d=\"M128 150C124 158 118 166 118 174a10 10 0 0 0 20 0C138 166 132 158 128 150Z\"/></g>",
     "w": 256,
     "h": 256
   },
