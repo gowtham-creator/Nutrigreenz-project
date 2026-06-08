@@ -28,7 +28,9 @@ import { FloatIn, MagneticHover } from "../motion";
  */
 
 const COUPON = "HARVEST20";
-const AUTO_MS = 6000;
+/** Dwell per slide. Deliberately unhurried so copy is readable before the
+    crossfade; the timer is also reset on every manual nav (see effect below). */
+const AUTO_MS = 7000;
 
 const BENEFITS = [
   "Cold-pressed oils & bilona A2 ghee",
@@ -59,12 +61,14 @@ export function Hero() {
   const next = useCallback(() => go(index + 1), [go, index]);
   const prev = useCallback(() => go(index - 1), [go, index]);
 
-  // Auto-advance — paused on hover/focus, when the tab is hidden, or reduced motion.
+  // Auto-advance — paused on hover/focus, when the tab is hidden, or reduced
+  // motion. Depending on `index` restarts the timer after every change (manual
+  // or auto), so a slide is never cut short right after you click an arrow/dot.
   useEffect(() => {
     if (paused || reduce) return;
-    const t = window.setInterval(() => setIndex((i) => (i + 1) % count), AUTO_MS);
-    return () => window.clearInterval(t);
-  }, [paused, reduce, count]);
+    const t = window.setTimeout(() => setIndex((i) => (i + 1) % count), AUTO_MS);
+    return () => window.clearTimeout(t);
+  }, [paused, reduce, count, index]);
 
   // Pause autoplay while the tab is backgrounded.
   useEffect(() => {
@@ -85,7 +89,7 @@ export function Hero() {
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Promotional banners"
-      className="relative isolate px-4 pb-10 pt-4 sm:px-6 md:px-8 md:pb-14 md:pt-6"
+      className="relative isolate px-4 pb-7 pt-4 sm:px-6 md:px-8 md:pb-9 md:pt-6"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -98,7 +102,7 @@ export function Hero() {
         {/* Equal-height stage — the height is fixed by the banner clamp so slides
             never shift layout. The active slide is absolutely overlaid via
             AnimatePresence; a hidden sizer reserves the height. */}
-        <div className="relative min-h-[clamp(440px,62vh,580px)]">
+        <div className="relative min-h-[clamp(472px,64vh,600px)]">
           {/* Invisible sizer: keeps the tallest reasonable banner height reserved. */}
           <div aria-hidden className="invisible">
             <SaleSlide reduce={reduce} />
@@ -123,50 +127,51 @@ export function Hero() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Arrows */}
-          <button
-            type="button"
-            onClick={prev}
-            aria-label="Previous banner"
-            className="absolute left-3 top-1/2 z-30 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ng-paper/80 text-ng-forest shadow-[var(--shadow-ng-card)] ring-1 ring-ng-line backdrop-blur transition-transform hover:scale-105 active:scale-95 sm:left-5 md:h-11 md:w-11"
-          >
-            <Icon name="alt-arrow-left-linear" size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            aria-label="Next banner"
-            className="absolute right-3 top-1/2 z-30 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-ng-paper/80 text-ng-forest shadow-[var(--shadow-ng-card)] ring-1 ring-ng-line backdrop-blur transition-transform hover:scale-105 active:scale-95 sm:right-5 md:h-11 md:w-11"
-          >
-            <Icon name="alt-arrow-right-linear" size={20} />
-          </button>
+          {/* Controls — prev · dots · next grouped into one pill at the bottom.
+              Side-mounted arrows were colliding with the headline copy at
+              tablet widths, so the whole control set lives here instead, clear
+              of every slide's text. */}
+          <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-ng-forest-deep/40 px-1.5 py-1.5 shadow-[0_6px_20px_rgba(20,40,24,0.25)] ring-1 ring-white/10 backdrop-blur-md md:bottom-5">
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous banner"
+              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-ng-cream active:scale-95"
+            >
+              <Icon name="alt-arrow-left-linear" size={18} />
+            </button>
 
-          {/* Dots */}
-          <div
-            role="tablist"
-            aria-label="Choose banner"
-            className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5 rounded-full bg-ng-forest-deep/30 px-3 py-2 backdrop-blur-sm md:bottom-5"
-          >
-            {SLIDE_META.map((s, i) => {
-              const active = i === index;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`Go to ${s.label} banner`}
-                  onClick={() => go(i)}
-                  className="group grid place-items-center p-1"
-                >
-                  <span
-                    className={`block h-2 rounded-full transition-all duration-300 ${
-                      active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/50 group-hover:bg-ng-cream/80"
-                    }`}
-                  />
-                </button>
-              );
-            })}
+            <div role="tablist" aria-label="Choose banner" className="flex items-center gap-2.5 px-1">
+              {SLIDE_META.map((s, i) => {
+                const active = i === index;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-label={`Go to ${s.label} banner`}
+                    onClick={() => go(i)}
+                    className="group grid place-items-center p-1"
+                  >
+                    <span
+                      className={`block h-2 rounded-full transition-all duration-300 ${
+                        active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/50 group-hover:bg-ng-cream/80"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next banner"
+              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-ng-cream active:scale-95"
+            >
+              <Icon name="alt-arrow-right-linear" size={18} />
+            </button>
           </div>
         </div>
       </div>
@@ -189,8 +194,8 @@ function SlideFrame({
   right: ReactNode;
 }) {
   return (
-    <div className={`grid h-full min-h-[clamp(440px,62vh,580px)] overflow-hidden lg:grid-cols-[1.12fr_1fr] ${bgClass}`} style={bgStyle}>
-      <div className="relative isolate flex flex-col justify-center px-6 py-10 sm:px-10 md:px-12 md:py-14 lg:px-16">
+    <div className={`grid h-full min-h-[clamp(472px,64vh,600px)] overflow-hidden lg:grid-cols-[1.12fr_1fr] ${bgClass}`} style={bgStyle}>
+      <div className="relative isolate flex flex-col justify-center px-6 pb-16 pt-9 sm:px-10 md:px-12 md:pb-16 md:pt-12 lg:px-16">
         {left}
       </div>
       <div className="relative isolate min-h-[210px] overflow-hidden lg:min-h-0">{right}</div>
@@ -305,17 +310,17 @@ function BrandSlide({ reduce }: { reduce: boolean | null }) {
               Single-origin · New harvest
             </span>
 
-            <h1 className="mt-5 font-display text-[clamp(34px,5.6vw,64px)] font-semibold leading-[0.96] tracking-tight text-ng-cream">
+            <h1 className="mt-4 font-display text-[clamp(32px,5.2vw,58px)] font-semibold leading-[0.98] tracking-tight text-ng-cream">
               Real food,
               <br />
               grown the <span className="text-ng-leaf">honest way.</span>
             </h1>
 
-            <p className="mt-4 font-display text-[clamp(16px,2vw,21px)] font-medium leading-snug text-ng-clay">
+            <p className="mt-3 font-display text-[clamp(15px,1.9vw,20px)] font-medium leading-snug text-ng-clay">
               Straight from the farm to your kitchen — nothing in between.
             </p>
 
-            <ul className="mt-5 space-y-2.5">
+            <ul className="mt-4 space-y-2">
               {BENEFITS.map((line) => (
                 <li key={line} className="flex items-start gap-2.5 text-[14px] leading-snug text-ng-cream/85 sm:text-[15px]">
                   <LeafTick className="mt-0.5 h-4 w-4 shrink-0 text-ng-leaf" />
@@ -324,7 +329,7 @@ function BrandSlide({ reduce }: { reduce: boolean | null }) {
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <MagneticHover>
                 <Button variant="gold" size="lg" asChild className="rounded-full">
                   <Link href="/shop">
@@ -410,11 +415,13 @@ function HarvestSlide({ reduce }: { reduce: boolean | null }) {
 function SaleBadge({ className }: { className?: string }) {
   return (
     <div className={`pointer-events-none absolute z-30 ${className ?? ""}`}>
-      <div className="relative grid h-[88px] w-[88px] place-items-center sm:h-[104px] sm:w-[104px]">
+      <div className="relative grid h-[96px] w-[96px] place-items-center sm:h-[112px] sm:w-[112px]">
         <Starburst className="absolute inset-0 h-full w-full text-ng-clay drop-shadow-[0_8px_18px_rgba(181,134,47,0.35)]" />
-        <div className="relative text-center leading-none text-ng-soil">
-          <span className="block font-display text-[19px] font-bold tracking-tight sm:text-[23px]">SALE</span>
-          <span className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.16em] sm:text-[10px]">up to 20% off</span>
+        <div className="relative px-1 text-center leading-none text-ng-soil">
+          <span className="block font-display text-[20px] font-bold tracking-tight sm:text-[24px]">SALE</span>
+          <span className="mt-1 block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.06em] sm:text-[10px]">
+            up to 20% off
+          </span>
         </div>
       </div>
     </div>

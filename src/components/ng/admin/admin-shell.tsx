@@ -19,6 +19,8 @@ const NAV: NavItem[] = [
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
   { href: "/admin/reports", label: "Reports", icon: "chart-2-bold" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold" },
+  // Customer-saved products (wishlist demand signal) — both roles can view.
+  { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold" },
   // Super Admin control center — gated below; only superadmins see this item.
   { href: "/admin/config", label: "Config", icon: "settings-bold", superadminOnly: true },
 ];

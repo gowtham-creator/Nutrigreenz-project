@@ -11,6 +11,8 @@ interface FilterPanelProps {
   bounds: { min: number; max: number };
   /** count of products per tag, for the facet badges */
   tagCounts: Record<string, number>;
+  /** total products in the pool, for the "All categories" badge */
+  totalCount?: number;
   /** when true, the category facet is hidden (e.g. on a category page) */
   hideCategories?: boolean;
   onReset?: () => void;
@@ -24,6 +26,7 @@ export function FilterPanel({
   onChange,
   bounds,
   tagCounts,
+  totalCount,
   hideCategories,
   onReset,
   className,
@@ -60,6 +63,31 @@ export function FilterPanel({
           <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">
             Category
           </legend>
+          {(() => {
+            const allChecked = filters.tags.length === 0;
+            return (
+              <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-ng-ink-muted hover:text-ng-ink">
+                <span
+                  className={cn(
+                    "grid h-[18px] w-[18px] place-items-center rounded-[6px] border transition-colors",
+                    allChecked ? "border-ng-forest bg-ng-forest text-ng-paper" : "border-ng-line bg-ng-paper",
+                  )}
+                >
+                  {allChecked ? <Icon name="check-read-linear" size={12} /> : null}
+                </span>
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={allChecked}
+                  onChange={() => onChange({ ...filters, tags: [] })}
+                />
+                <span className="flex-1">All categories</span>
+                {typeof totalCount === "number" ? (
+                  <span className="text-[12px] text-ng-ink-muted/70">{totalCount}</span>
+                ) : null}
+              </label>
+            );
+          })()}
           {CATEGORY_TAGS.map(({ tag, label }) => {
             const count = tagCounts[tag] ?? 0;
             if (count === 0) return null;

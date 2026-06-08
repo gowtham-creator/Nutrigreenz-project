@@ -2,6 +2,7 @@ import { PromoBar } from "@/components/ng/promo-bar";
 import { Header } from "@/components/ng/header";
 import { Footer } from "@/components/ng/footer";
 import { Hero } from "@/components/ng/sections/hero";
+import { AssuranceStrip } from "@/components/ng/sections/assurance-strip";
 import { ShopByCategory } from "@/components/ng/sections/shop-by-category";
 import { Why } from "@/components/ng/sections/why";
 import { Traceability } from "@/components/ng/sections/traceability";
@@ -68,7 +69,8 @@ export default function Home() {
       <PromoBar />
       <Header />
       <Hero />
-      <ShopByCategory />
+      <AssuranceStrip />
+      <ShopByCategory className="overflow-hidden pt-14 md:pt-20" />
 
       <Why />
       <ProductInFocus

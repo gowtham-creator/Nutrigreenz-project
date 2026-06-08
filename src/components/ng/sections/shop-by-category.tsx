@@ -52,7 +52,7 @@ function productsForSlug(slug: string): ProductCardType[] {
   return PRODUCTS.filter((p) => p.tags?.some((t) => tags.includes(t))).slice(0, MAX_TILES);
 }
 
-export function ShopByCategory() {
+export function ShopByCategory({ className }: { className?: string }) {
   const [active, setActive] = useState<string>("all");
 
   const products = useMemo<ProductCardType[]>(
@@ -65,7 +65,7 @@ export function ShopByCategory() {
 
   return (
     <Section
-      className="overflow-hidden"
+      className={cn("overflow-hidden", className)}
       eyebrow="Shop the harvest"
       heading={
         <>

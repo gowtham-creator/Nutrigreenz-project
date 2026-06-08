@@ -120,6 +120,7 @@ export function ProductListing({ categorySlug }: ProductListingProps) {
       }}
       bounds={bounds}
       tagCounts={tagCounts}
+      totalCount={pool.length}
       hideCategories={Boolean(categorySlug)}
       onReset={resetFilters}
     />
