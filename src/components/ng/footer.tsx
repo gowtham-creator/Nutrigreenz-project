@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Logo } from "./logo";
-import { Input } from "./input";
 import { Button } from "./button";
 import { FooterScene } from "./footer-scene";
 import { Icon } from "@/components/ui/icon";
@@ -52,7 +51,7 @@ const NAV_GROUPS = [
 export function Footer() {
   return (
     <footer
-      className="relative text-ng-cream pt-20 pb-44 md:pb-52 mt-24 overflow-hidden"
+      className="relative text-ng-cream pt-20 pb-44 md:pb-52 overflow-hidden"
       style={{
         background:
           "linear-gradient(180deg, var(--ng-forest-deep) 0%, var(--ng-forest-deep) 38%, var(--ng-forest) 100%)",
@@ -96,15 +95,14 @@ export function Footer() {
             </p>
           </div>
           <div className="flex flex-col gap-4 justify-end">
-            <form className="flex gap-3 items-end">
-              <div className="flex-1">
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="bg-ng-cream/10 text-ng-cream placeholder:text-ng-cream/40 border-ng-cream/20"
-                />
-              </div>
-              <Button variant="gold" size="md">Subscribe</Button>
+            <form className="flex gap-3 items-stretch">
+              <input
+                type="email"
+                aria-label="Email address"
+                placeholder="your@email.com"
+                className="h-12 flex-1 rounded-xl border border-ng-cream/35 bg-ng-cream/10 px-4 text-[15px] text-ng-cream outline-none transition-colors placeholder:text-ng-cream/60 focus:border-ng-clay focus:bg-ng-cream/15"
+              />
+              <Button variant="gold" size="md" className="shrink-0">Subscribe</Button>
             </form>
             <p className="text-[12px] text-ng-cream/50">
               We send one letter a month. No spam. Unsubscribe anytime.
