@@ -64,6 +64,8 @@ interface Props {
   ctaLabel?: string;
   /** Stable hook for tests / anchors. */
   sectionId?: string;
+  /** Per-family colour wash behind the rail: oils→amber, ghee→gold, honey→honey, gifting→forest. */
+  accent?: "amber" | "gold" | "honey" | "forest";
 }
 
 /**
@@ -81,6 +83,7 @@ export function ProductInFocus({
   ctaHref = "/shop",
   ctaLabel = "See All",
   sectionId,
+  accent,
 }: Props) {
   const [active, setActive] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -101,15 +104,27 @@ export function ProductInFocus({
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
   };
 
+  const ACCENT_WASH: Record<NonNullable<Props["accent"]>, string> = {
+    amber:
+      "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(242,158,18,0.10), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(181,134,47,0.08), transparent 62%)",
+    gold:
+      "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(181,134,47,0.12), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(138,100,32,0.07), transparent 62%)",
+    honey:
+      "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(242,158,18,0.10), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(102,191,115,0.10), transparent 62%)",
+    forest:
+      "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(102,191,115,0.11), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(31,77,46,0.06), transparent 62%)",
+  };
+
   return (
     <Section id={sectionId} className="relative overflow-hidden" eyebrow={eyebrow} heading={heading} description={description}>
-      {/* Soft botanical wash behind the rail */}
+      {/* Soft botanical wash behind the rail (per-family hue when `accent` is set) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-0 opacity-60"
         style={{
-          background:
-            "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(184,212,154,0.20), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(200,166,104,0.12), transparent 60%)",
+          background: accent
+            ? ACCENT_WASH[accent]
+            : "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(184,212,154,0.20), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(200,166,104,0.12), transparent 60%)",
         }}
       />
 

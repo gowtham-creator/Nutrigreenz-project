@@ -65,16 +65,17 @@ export default function Home() {
   ];
 
   return (
-    <main className="bg-ng-paper text-ng-ink">
+    <main className="bg-page-warmth text-ng-ink">
       <PromoBar />
       <Header />
       <Hero />
       <AssuranceStrip />
-      <ShopByCategory className="overflow-hidden pt-14 md:pt-20" />
+      <ShopByCategory className="section-glow-leaf overflow-hidden pt-14 md:pt-20" />
 
       <Why />
       <ProductInFocus
         sectionId="pif-oils"
+        accent="amber"
         eyebrow="Product in focus"
         heading={
           <>
@@ -91,6 +92,7 @@ export default function Home() {
       <Traceability />
       <ProductInFocus
         sectionId="pif-ghee"
+        accent="gold"
         eyebrow="Product in focus"
         heading={
           <>
@@ -107,6 +109,7 @@ export default function Home() {
       <Farms />
       <ProductInFocus
         sectionId="pif-honey"
+        accent="honey"
         eyebrow="Product in focus"
         heading={
           <>
@@ -123,6 +126,7 @@ export default function Home() {
       <Testimonials />
       <ProductInFocus
         sectionId="pif-gifting"
+        accent="forest"
         eyebrow="Product in focus"
         heading={
           <>

@@ -251,6 +251,25 @@
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
+/* ── Gradient enhancements — restrained, earthy, on-brand (5–12% over cream).
+   Quieter than .bg-cream-mesh above; sit behind content, static, reduced-motion
+   safe; dark sections overpaint them so they only show through the light field. */
+.bg-page-warmth {
+  background-color: var(--ng-paper);
+  background-image:
+    linear-gradient(180deg,
+      var(--ng-paper) 0%,
+      var(--ng-paper) 20%,
+      #F7F4E8 62%,
+      var(--ng-cream) 100%),
+    radial-gradient(ellipse 120% 50% at 50% 90%, rgba(181, 134, 47, 0.05), transparent 70%);
+}
+.section-glow-leaf {
+  background-image:
+    radial-gradient(ellipse 90% 48% at 50% -4%, rgba(102, 191, 115, 0.07), transparent 62%),
+    radial-gradient(ellipse 70% 40% at 88% 12%, rgba(181, 134, 47, 0.045), transparent 60%);
+}
+
 /* Aurora background — soft drifting blobs */
 .aurora { position: relative; overflow: hidden; }
 .aurora::before, .aurora::after {
