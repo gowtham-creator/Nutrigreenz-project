@@ -131,12 +131,12 @@ export function Hero() {
               Side-mounted arrows were colliding with the headline copy at
               tablet widths, so the whole control set lives here instead, clear
               of every slide's text. */}
-          <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-ng-forest-deep/40 px-1.5 py-1.5 shadow-[0_6px_20px_rgba(20,40,24,0.25)] ring-1 ring-white/10 backdrop-blur-md md:bottom-5">
+          <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-ng-forest-deep/65 px-1.5 py-1.5 shadow-[0_8px_24px_rgba(20,40,24,0.42)] ring-1 ring-white/25 backdrop-blur-md md:bottom-5">
             <button
               type="button"
               onClick={prev}
               aria-label="Previous banner"
-              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-ng-cream active:scale-95"
+              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-left-linear" size={18} />
             </button>
@@ -156,7 +156,7 @@ export function Hero() {
                   >
                     <span
                       className={`block h-2 rounded-full transition-all duration-300 ${
-                        active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/50 group-hover:bg-ng-cream/80"
+                        active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/70 group-hover:bg-ng-cream/95"
                       }`}
                     />
                   </button>
@@ -168,7 +168,7 @@ export function Hero() {
               type="button"
               onClick={next}
               aria-label="Next banner"
-              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-ng-cream active:scale-95"
+              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-right-linear" size={18} />
             </button>

@@ -8,9 +8,9 @@ export function PromoBar() {
   // continuous left-scrolling loop.
   const loop = [...messages, ...messages];
   return (
-    <div className="bg-ng-forest-deep text-ng-paper text-[13px] py-2 overflow-hidden">
+    <div className="bg-ng-forest-deep text-ng-paper py-2 overflow-hidden">
       <div className="marquee">
-        <div className="marquee__track font-display tracking-wide">
+        <div className="marquee__track font-sans text-[11.5px] font-medium uppercase tracking-[0.15em]">
           {loop.map((m, i) => (
             <span key={i} className="marquee__item" aria-hidden={i >= messages.length}>
               <span aria-hidden className="text-ng-clay">◆</span>
