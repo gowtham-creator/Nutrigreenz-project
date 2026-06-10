@@ -49,17 +49,19 @@ export default async function proxy(req: NextRequest) {
   if (!adminRoute) return NextResponse.next();
 
   const isLogin = adminRoute === "/admin/login";
+  // Pre-login pages reachable WITHOUT a session (sign-in + password recovery).
+  const isPublicAdmin = isLogin || adminRoute === "/admin/forgot";
   const session = await verifyToken(req.cookies.get(ADMIN_COOKIE)?.value);
 
   // Unauthenticated → bounce to login on the SAME host, remembering the target.
-  if (!isLogin && !session) {
+  if (!isPublicAdmin && !session) {
     const url = new URL(isAdminHost ? "/login" : "/admin/login", req.nextUrl);
     url.searchParams.set("next", isAdminHost ? path : adminRoute);
     return NextResponse.redirect(url);
   }
 
-  // Already authed and sitting on the login page → send to the dashboard.
-  if (isLogin && session) {
+  // Already authed and sitting on a pre-login page → send to the dashboard.
+  if (isPublicAdmin && session) {
     return NextResponse.redirect(new URL(isAdminHost ? "/" : "/admin", req.nextUrl));
   }
 

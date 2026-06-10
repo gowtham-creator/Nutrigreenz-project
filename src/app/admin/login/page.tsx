@@ -113,6 +113,15 @@ function LoginForm() {
               error={error ?? undefined}
             />
 
+            <div className="-mt-1 text-right">
+              <Link
+                href="/admin/forgot"
+                className="text-[12px] font-sans text-ng-clay hover:text-ng-clay-deep transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" fullWidth disabled={submitting} className="mt-1">
               <Icon name="shield-keyhole-bold" size={18} />
               {submitting ? "Signing in…" : "Sign in to Admin"}

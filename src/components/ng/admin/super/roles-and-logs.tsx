@@ -3,8 +3,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
-import { Card, Pill } from "@/components/ng/admin/admin-shell";
+import { Card } from "@/components/ng/admin/admin-shell";
 import { SectionHeader } from "@/components/ng/admin/super/command-center";
+import { AdminsManagement } from "@/components/ng/admin/super/admins-management";
 
 /**
  * Super Admin · Roles & system activity (§3.1 / §3.2 access matrix).
@@ -54,16 +55,6 @@ const ROLES: {
       "Role management & system logs",
     ],
   },
-];
-
-/* ----------------------------------------------------------------------- */
-/* Mock admin roster.                                                       */
-/* ----------------------------------------------------------------------- */
-const ADMINS: { name: string; email: string; role: RoleKey; lastActive: string; status: "active" | "invited" }[] = [
-  { name: "Owner", email: "admin@nutrigreenz.in", role: "superadmin", lastActive: "Just now", status: "active" },
-  { name: "Priya Nair", email: "priya@nutrigreenz.in", role: "admin", lastActive: "2h ago", status: "active" },
-  { name: "Rahul Verma", email: "rahul@nutrigreenz.in", role: "admin", lastActive: "Yesterday", status: "active" },
-  { name: "Ops Desk", email: "ops@nutrigreenz.in", role: "admin", lastActive: "—", status: "invited" },
 ];
 
 /* ----------------------------------------------------------------------- */
@@ -143,47 +134,8 @@ export function RolesAndLogs() {
           ))}
         </div>
 
-        {/* ---- Admin roster ---------------------------------------------- */}
-        <div className="mt-6 pt-5 border-t border-ng-line-soft">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-[13px] font-semibold text-ng-ink-muted flex items-center gap-2">
-              <Icon name="users-group-rounded-bold" size={16} className="text-ng-forest" />
-              Admin users
-            </span>
-            <span className="text-[11px] text-ng-ink-soft font-mono">{ADMINS.length} accounts · read-only</span>
-          </div>
-          <div className="grid grid-cols-[1.4fr_1.8fr_1fr_0.9fr] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
-            <span>Name</span>
-            <span>Email</span>
-            <span>Role</span>
-            <span className="text-right">Last active</span>
-          </div>
-          <ul>
-            {ADMINS.map((a) => (
-              <li
-                key={a.email}
-                className="grid grid-cols-[1.4fr_1.8fr_1fr_0.9fr] gap-3 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
-              >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span className="grid place-items-center size-7 rounded-full bg-ng-forest/10 text-ng-forest text-[11px] font-bold shrink-0">
-                    {a.name.charAt(0)}
-                  </span>
-                  <span className="font-medium truncate">{a.name}</span>
-                  {a.status === "invited" ? <Pill tone="neutral">Invited</Pill> : null}
-                </span>
-                <span className="font-mono text-[12px] text-ng-ink-muted truncate">{a.email}</span>
-                <span>
-                  {a.role === "superadmin" ? (
-                    <Pill tone="warn">Super Admin</Pill>
-                  ) : (
-                    <Pill tone="info">Admin</Pill>
-                  )}
-                </span>
-                <span className="text-right text-[12px] text-ng-ink-soft tabular-nums">{a.lastActive}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* ---- Admin roster (interactive) — invite + per-row actions ----- */}
+        <AdminsManagement />
 
         {/* ---- System activity log --------------------------------------- */}
         <div className="mt-6 pt-5 border-t border-ng-line-soft">
