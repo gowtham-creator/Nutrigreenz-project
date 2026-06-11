@@ -17,7 +17,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label ? (
-          <label htmlFor={inputId} className="text-[13px] font-medium text-ng-ink-muted">
+          <label htmlFor={inputId} className="text-[13px] font-semibold text-ng-ink">
             {label}
           </label>
         ) : null}
@@ -41,9 +41,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {suffix ? <span className="text-ng-ink-soft">{suffix}</span> : null}
         </div>
         {hint && !error ? (
-          <p className="text-[12px] text-ng-ink-soft">{hint}</p>
+          <p className="text-[12px] font-medium text-ng-ink-soft">{hint}</p>
         ) : null}
-        {error ? <p className="text-[12px] text-ng-danger">{error}</p> : null}
+        {error ? <p className="text-[12px] font-medium text-ng-danger">{error}</p> : null}
       </div>
     );
   },

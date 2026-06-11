@@ -37,7 +37,7 @@ export function BundlesView() {
 
       {/* Delivery-date filter */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <span className="text-[12px] text-ng-ink-soft mr-1 flex items-center gap-1.5">
+        <span className="text-[12px] font-medium text-ng-ink-muted mr-1 flex items-center gap-1.5">
           <Icon name="calendar-bold" size={14} className="text-ng-forest" />
           Delivery date:
         </span>
@@ -46,7 +46,7 @@ export function BundlesView() {
           className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors ${
             activeDate === null
               ? "bg-ng-forest-deep text-ng-cream font-semibold"
-              : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted hover:bg-ng-cream"
+              : "bg-ng-paper border border-ng-line-soft font-medium text-ng-ink-muted hover:bg-ng-cream"
           }`}
         >
           All dates
@@ -58,7 +58,7 @@ export function BundlesView() {
             className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors ${
               activeDate === d
                 ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted hover:bg-ng-cream"
+                : "bg-ng-paper border border-ng-line-soft font-medium text-ng-ink-muted hover:bg-ng-cream"
             }`}
           >
             {formatDeliveryDate(d)}
@@ -68,7 +68,7 @@ export function BundlesView() {
 
       {/* Bundle cards */}
       {groups.length === 0 ? (
-        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] text-ng-ink-soft">
+        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] font-medium text-ng-ink-muted">
           No confirmed orders to bundle for this date.
         </div>
       ) : (

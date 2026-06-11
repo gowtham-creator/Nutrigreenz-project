@@ -53,7 +53,7 @@ export function StatusActions({ status, onChange }: StatusActionsProps) {
           <Icon name="card-recive-bold" size={15} />
           Retry payment
         </button>
-        <span className="text-[12px] text-ng-ink-soft">Awaiting a successful charge before this order can be packed.</span>
+        <span className="text-[11.5px] font-medium text-ng-ink-soft">Awaiting a successful charge before this order can be packed.</span>
       </div>
     );
   }
@@ -96,11 +96,11 @@ export function StatusActions({ status, onChange }: StatusActionsProps) {
       ) : null}
 
       {status === "Awaiting payment" ? (
-        <span className="text-[12px] text-ng-ink-soft">Waiting on the customer to complete payment.</span>
+        <span className="text-[11.5px] font-medium text-ng-ink-soft">Waiting on the customer to complete payment.</span>
       ) : null}
 
       {status === "Delivered" ? (
-        <span className="inline-flex items-center gap-2 text-[12.5px] text-ng-success font-medium">
+        <span className="inline-flex items-center gap-2 text-[12.5px] text-ng-success font-semibold">
           <Icon name="check-circle-bold" size={16} /> Fulfilled — nothing left to do.
         </span>
       ) : null}
@@ -109,7 +109,7 @@ export function StatusActions({ status, onChange }: StatusActionsProps) {
       {paidLifecycle ? (
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 text-[11.5px] text-ng-ink-soft rounded-full bg-ng-cream border border-ng-line-soft px-3 py-1.5",
+            "inline-flex items-center gap-1.5 text-[11.5px] font-medium text-ng-ink-soft rounded-full bg-ng-cream border border-ng-line-soft px-3 py-1.5",
           )}
         >
           <Icon name="lock-keyhole-minimalistic-bold" size={13} className="text-ng-clay-deep" />

@@ -104,7 +104,7 @@ export function AdminsManagement() {
   return (
     <div className="mt-6 pt-5 border-t border-ng-line-soft">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <span className="text-[13px] font-semibold text-ng-ink-muted flex items-center gap-2">
+        <span className="text-[13px] font-semibold text-ng-ink flex items-center gap-2">
           <Icon name="users-group-rounded-bold" size={16} className="text-ng-forest" />
           Admin users
         </span>
@@ -118,7 +118,7 @@ export function AdminsManagement() {
       <div
         className={cn(
           GRID,
-          "px-1 pb-2 mb-1 border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium",
+          "px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold",
         )}
       >
         <span>Name</span>
@@ -138,14 +138,14 @@ export function AdminsManagement() {
               <span className="grid place-items-center size-7 rounded-full bg-ng-forest/10 text-ng-forest text-[11px] font-bold shrink-0">
                 {a.name.charAt(0)}
               </span>
-              <span className="font-medium truncate">{a.name}</span>
+              <span className="font-semibold text-ng-ink truncate">{a.name}</span>
               {a.status === "invited" ? <Pill tone="neutral">Invited</Pill> : null}
             </span>
-            <span className="font-mono text-[12px] text-ng-ink-muted truncate">{a.email}</span>
+            <span className="font-mono text-[12px] font-medium text-ng-ink-muted truncate">{a.email}</span>
             <span>
               {a.role === "superadmin" ? <Pill tone="warn">Super Admin</Pill> : <Pill tone="info">Admin</Pill>}
             </span>
-            <span className="text-right text-[12px] text-ng-ink-soft tabular-nums">{a.lastActive}</span>
+            <span className="text-right text-[12px] font-medium text-ng-ink-soft tabular-nums">{a.lastActive}</span>
             <span className="flex items-center justify-end gap-0.5">
               {a.status === "invited" ? (
                 <RowAction icon="refresh-bold" label="Resend invite" onClick={() => resendInvite(a)} />
@@ -158,7 +158,7 @@ export function AdminsManagement() {
         ))}
       </ul>
 
-      <p className="text-[11.5px] text-ng-ink-soft mt-4 flex items-center gap-1.5">
+      <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
         <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
         Placeholder actions — real invites, resets &amp; role changes ship in Milestone 2.
       </p>
@@ -262,7 +262,7 @@ function AddInviteAdminModal({
             <h2 id={headingId} className="font-display text-[20px] text-ng-forest-deep leading-tight">
               Add / Invite admin
             </h2>
-            <p className="text-[12px] text-ng-ink-soft mt-1">They’ll receive an invite to set up access.</p>
+            <p className="text-[12px] font-medium text-ng-ink-soft mt-1">They’ll receive an invite to set up access.</p>
           </div>
           <button
             type="button"
@@ -305,7 +305,7 @@ function AddInviteAdminModal({
 
           {/* Role selector */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-medium text-ng-ink-muted">Role</span>
+            <span className="text-[13px] font-semibold text-ng-ink-muted">Role</span>
             <div role="radiogroup" aria-label="Role" className="grid grid-cols-2 gap-2">
               {ROLE_OPTS.map((o) => {
                 const active = role === o.key;
@@ -317,10 +317,10 @@ function AddInviteAdminModal({
                     aria-checked={active}
                     onClick={() => setRole(o.key)}
                     className={cn(
-                      "flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] font-medium transition-colors cursor-pointer",
+                      "flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] transition-colors cursor-pointer",
                       active
-                        ? "border-ng-forest bg-ng-forest text-ng-paper"
-                        : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-leaf",
+                        ? "border-ng-forest bg-ng-forest text-ng-paper font-semibold"
+                        : "border-ng-line bg-ng-paper text-ng-ink-muted font-medium hover:border-ng-leaf",
                     )}
                   >
                     <Icon name={o.icon} size={16} />

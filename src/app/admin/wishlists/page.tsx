@@ -112,13 +112,13 @@ export default function AdminWishlists() {
         title="Most-wishlisted products"
         action={
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline text-[11.5px] text-ng-ink-soft">Sorted by saves · last 30 days</span>
-            <button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All →</button>
+            <span className="hidden sm:inline text-[11.5px] font-medium text-ng-ink-soft">Sorted by saves · last 30 days</span>
+            <button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All →</button>
           </div>
         }
         className="!p-0 overflow-hidden mb-6"
       >
-        <div className="grid grid-cols-[0.4fr_2.4fr_1fr_0.9fr_0.9fr_1fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[0.4fr_2.4fr_1fr_0.9fr_0.9fr_1fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>#</span>
           <span>Product</span>
           <span>Category</span>
@@ -141,15 +141,15 @@ export default function AdminWishlists() {
                     <Icon name="heart-bold" size={16} />
                   </span>
                   <div className="min-w-0">
-                    <div className="font-medium truncate text-ng-forest-deep">{p.title}</div>
-                    <div className="text-[11px] text-ng-ink-soft">{p.unit ?? "—"} · ★ {p.rating}</div>
+                    <div className="font-semibold truncate text-ng-ink">{p.title}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft">{p.unit ?? "—"} · ★ {p.rating}</div>
                   </div>
                 </div>
-                <span className="text-[12px] text-ng-ink-muted truncate">{categoryOf(p)}</span>
+                <span className="text-[12px] font-medium text-ng-ink-muted truncate">{categoryOf(p)}</span>
                 <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">{saves}</span>
-                <span className="font-mono text-[12px] tabular-nums text-ng-ink-muted">{share}%</span>
+                <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink-muted">{share}%</span>
                 <span><Pill tone={demandTone(saves)}>{demandLabel(saves)}</Pill></span>
-                <span className="font-mono text-[12.5px] tabular-nums">₹{p.price.toLocaleString("en-IN")}</span>
+                <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink">₹{p.price.toLocaleString("en-IN")}</span>
               </li>
             );
           })}
@@ -160,7 +160,7 @@ export default function AdminWishlists() {
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
         <Card
           title="Who saved what"
-          action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All customers →</button>}
+          action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All customers →</button>}
           className="!p-0 overflow-hidden"
         >
           <ul>
@@ -177,19 +177,19 @@ export default function AdminWishlists() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3">
-                      <div className="font-medium text-[13px] text-ng-forest-deep truncate">{c.name}</div>
-                      <span className="text-[11px] text-ng-ink-soft shrink-0">Saved {c.last}</span>
+                      <div className="font-semibold text-[13px] text-ng-ink truncate">{c.name}</div>
+                      <span className="text-[11.5px] font-medium text-ng-ink-soft shrink-0">Saved {c.last}</span>
                     </div>
-                    <div className="text-[11px] text-ng-ink-soft">{c.community} · {c.saved} saved</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-muted">{c.community} · {c.saved} saved</div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {chips.map((t) => (
-                        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-ng-cream px-2.5 py-1 text-[11px] text-ng-ink-muted">
+                        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-ng-cream px-2.5 py-1 text-[11.5px] font-medium text-ng-ink-muted">
                           <Icon name="heart-bold" size={11} className="text-ng-clay" />
                           <span className="max-w-[150px] truncate">{t}</span>
                         </span>
                       ))}
                       {extra > 0 ? (
-                        <span className="inline-flex items-center rounded-full bg-ng-line-soft px-2.5 py-1 text-[11px] font-medium text-ng-ink-soft">
+                        <span className="inline-flex items-center rounded-full bg-ng-line-soft px-2.5 py-1 text-[11.5px] font-semibold text-ng-ink-muted">
                           +{extra} more
                         </span>
                       ) : null}
@@ -216,8 +216,8 @@ export default function AdminWishlists() {
                 return (
                   <li key={cat}>
                     <div className="flex items-baseline justify-between text-[12.5px]">
-                      <span className="text-ng-ink">{cat}</span>
-                      <span className="font-mono text-[12px] text-ng-ink-soft tabular-nums">{saves.toLocaleString("en-IN")} · {pct}%</span>
+                      <span className="font-semibold text-ng-ink">{cat}</span>
+                      <span className="font-mono text-[12px] font-medium text-ng-ink-muted tabular-nums">{saves.toLocaleString("en-IN")} · {pct}%</span>
                     </div>
                     <div className="mt-1.5 h-2 rounded-full bg-ng-line-soft overflow-hidden">
                       <div className="h-full rounded-full bg-ng-forest" style={{ width: `${pct}%` }} />

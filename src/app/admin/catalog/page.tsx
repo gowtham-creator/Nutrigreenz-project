@@ -181,7 +181,7 @@ export default function AdminCatalog() {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
             <Icon name="export-bold" size={15} className="text-ng-forest" />
             Export CSV
@@ -189,7 +189,7 @@ export default function AdminCatalog() {
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
             <Icon name="import-bold" size={15} className="text-ng-forest" />
             Import CSV
@@ -226,7 +226,7 @@ export default function AdminCatalog() {
               key={t}
               type="button"
               className={`px-4 py-1.5 rounded-full text-[12.5px] transition-colors cursor-pointer ${
-                i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:text-ng-forest"
+                i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted font-medium hover:text-ng-forest"
               }`}
             >
               {t}
@@ -239,10 +239,10 @@ export default function AdminCatalog() {
             <input
               type="search"
               placeholder="Search SKU, name, tag…"
-              className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-2 text-[13px] w-72 focus:border-ng-forest outline-none"
+              className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-2 text-[13px] font-medium w-72 focus:border-ng-forest outline-none"
             />
           </div>
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-ng-line-soft px-3.5 py-2 text-[13px] bg-ng-paper hover:bg-ng-cream transition-colors cursor-pointer">
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-full border border-ng-line-soft px-3.5 py-2 text-[13px] font-medium text-ng-ink-muted bg-ng-paper hover:bg-ng-cream transition-colors cursor-pointer">
             <Icon name="filter-bold" size={15} className="text-ng-ink-soft" />
             Filters
           </button>
@@ -252,40 +252,40 @@ export default function AdminCatalog() {
       <Card className="!p-0 overflow-hidden">
         {selected.size > 0 ? (
           <div className="flex items-center justify-between gap-4 px-6 py-2.5 bg-ng-forest-deep text-ng-cream">
-            <span className="text-[12.5px] font-medium">{selected.size} selected</span>
+            <span className="text-[12.5px] font-semibold">{selected.size} selected</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => bulkAction("Set active")}
-                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-semibold transition-colors cursor-pointer"
               >
                 Set active
               </button>
               <button
                 type="button"
                 onClick={() => bulkAction("Mark draft")}
-                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-semibold transition-colors cursor-pointer"
               >
                 Mark draft
               </button>
               <button
                 type="button"
                 onClick={() => bulkAction("Export selected")}
-                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer"
+                className="rounded-full bg-ng-cream/10 hover:bg-ng-cream/20 px-3 py-1 text-[12px] font-semibold transition-colors cursor-pointer"
               >
                 Export
               </button>
               <button
                 type="button"
                 onClick={clearSelection}
-                className="rounded-full px-3 py-1 text-[12px] font-medium text-ng-cream/70 hover:text-ng-cream transition-colors cursor-pointer"
+                className="rounded-full px-3 py-1 text-[12px] font-semibold text-ng-cream/85 hover:text-ng-cream transition-colors cursor-pointer"
               >
                 Clear
               </button>
             </div>
           </div>
         ) : null}
-        <div className="grid grid-cols-[auto_2.6fr_1fr_0.9fr_1.1fr_0.8fr_0.7fr_1fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[auto_2.6fr_1fr_0.9fr_1.1fr_0.8fr_0.7fr_1fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span className="w-4">
             <input
               ref={selectAllRef}
@@ -332,31 +332,31 @@ export default function AdminCatalog() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-medium text-ng-ink">{r.title}</span>
+                    <span className="truncate font-semibold text-ng-ink">{r.title}</span>
                     {r.badge ? (
-                      <span className="shrink-0 text-[9.5px] uppercase tracking-wider font-bold text-ng-clay-deep bg-ng-clay/15 rounded-full px-2 py-0.5">
+                      <span className="shrink-0 text-[11px] uppercase tracking-wider font-bold text-ng-clay-deep bg-ng-clay/15 rounded-full px-2 py-0.5">
                         {r.badge}
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-[11px] text-ng-ink-soft mt-0.5">{r.description}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{r.description}</div>
                 </div>
               </div>
-              <span className="font-mono text-[11.5px] text-ng-ink-muted">{r.sku}</span>
-              <span className="text-[12px] text-ng-ink-muted">{r.category}</span>
+              <span className="font-mono text-[11.5px] font-semibold text-ng-ink">{r.sku}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted">{r.category}</span>
               <span>
                 <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">₹{r.price.toLocaleString("en-IN")}</span>
                 {margin > 0 ? (
-                  <span className="block text-[10.5px] text-ng-ink-soft">
+                  <span className="block text-[11px] font-medium tabular-nums text-ng-ink-soft">
                     <span className="line-through">₹{r.mrp.toLocaleString("en-IN")}</span> · {margin}% off
                   </span>
                 ) : null}
               </span>
-              <span className="flex items-center gap-1 font-mono text-[12px] tabular-nums">
+              <span className="flex items-center gap-1 font-mono text-[12px] tabular-nums font-semibold text-ng-ink">
                 <Icon name="star-bold" size={12} className="text-ng-clay" />
                 {r.rating.toFixed(1)}
               </span>
-              <span className={`font-mono text-[12px] tabular-nums ${r.stock < 20 ? "text-ng-terracotta font-semibold" : ""}`}>{r.stock}</span>
+              <span className={`font-mono text-[12px] tabular-nums ${r.stock < 20 ? "text-ng-terracotta font-semibold" : "font-semibold text-ng-ink"}`}>{r.stock}</span>
               <span><Pill tone={STATUS_TONE[r.status] ?? "neutral"}>{r.status}</Pill></span>
               <button
                 type="button"
@@ -372,10 +372,10 @@ export default function AdminCatalog() {
         </ul>
 
         <div className="px-6 py-3 flex items-center justify-between text-[12px] text-ng-ink-soft border-t border-ng-line-soft bg-ng-cream/40">
-          <span>Showing 1–{products.length} of {products.length}</span>
+          <span className="text-[11.5px] font-medium tabular-nums">Showing 1–{products.length} of {products.length}</span>
           <div className="flex gap-2">
-            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">← Prev</button>
-            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft hover:bg-ng-paper transition-colors cursor-pointer">Next →</button>
+            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft font-medium text-ng-ink-muted hover:bg-ng-paper transition-colors cursor-pointer">← Prev</button>
+            <button type="button" className="px-3 py-1 rounded-lg border border-ng-line-soft font-medium text-ng-ink-muted hover:bg-ng-paper transition-colors cursor-pointer">Next →</button>
           </div>
         </div>
       </Card>

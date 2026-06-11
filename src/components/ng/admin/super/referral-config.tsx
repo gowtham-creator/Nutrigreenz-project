@@ -170,7 +170,7 @@ export function ReferralConfigSection() {
           <div className="flex items-center gap-2 mb-3">
             <Icon name="shield-check-bold" size={16} className="text-ng-clay-deep" />
             <span className="text-[12.5px] font-semibold text-ng-ink-muted">Anti-abuse guards</span>
-            <span className="text-[11px] text-ng-ink-soft font-mono">
+            <span className="text-[11px] font-medium text-ng-ink-soft font-mono">
               {guardsOn} / {ABUSE_GUARDS.length} on
             </span>
           </div>

@@ -372,6 +372,24 @@
   color: var(--ng-clay-deep);
 }
 
+/* ----------------------------------------------------------------
+   Admin scope — operator-console legibility.
+   The storefront keeps its airy, low-contrast captions; inside the
+   admin / operator surface the secondary + tertiary ink tokens are
+   darkened so dense data, labels and meta read with authority. Scoped
+   to the `.ng-admin` wrapper on the admin layout, so storefront tokens
+   are untouched. (@theme inline means `text-ng-ink-*` utilities resolve
+   `var(--ng-ink-*)` at use-site, so these overrides cascade.)
+   ---------------------------------------------------------------- */
+.ng-admin {
+  --ng-ink-muted: #3C4A40;   /* secondary text — strong (~8.7:1 on paper) */
+  --ng-ink-soft: #5A6358;    /* tertiary / meta — clearly readable (~6.3:1) */
+  --ng-line: #DEDED4;        /* slightly firmer borders for data tables */
+}
+/* Tighter, denser eyebrows inside admin (the wide 0.18em reads loose at
+   the small sizes used on dashboards). */
+.ng-admin .ng-eyebrow { letter-spacing: 0.13em; }
+
 /* Decorative line frame (corners) */
 .ng-corners { position: relative; }
 .ng-corners::before, .ng-corners::after {

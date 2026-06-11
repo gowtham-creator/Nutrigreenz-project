@@ -99,7 +99,7 @@ function LegendRow({ tone, label, value }: { tone: string; label: string; value:
   return (
     <li className="flex items-center gap-2.5 text-[12.5px]">
       <span className="size-2.5 rounded-full shrink-0" style={{ background: tone }} />
-      <span className="text-ng-ink-muted truncate">{label}</span>
+      <span className="text-ng-ink-muted font-medium truncate">{label}</span>
       <span className="ml-auto font-mono tabular-nums text-ng-forest-deep font-semibold pl-3">{value}</span>
     </li>
   );
@@ -408,7 +408,7 @@ export default function AdminReports() {
           <div>
             <div className="flex items-baseline justify-between mb-3">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Onboarded over time</div>
+                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Onboarded over time</div>
                 <div className="font-display text-[26px] text-ng-forest-deep leading-none mt-1.5 tabular-nums">
                   {data.newCustomers.toLocaleString("en-IN")}
                 </div>
@@ -424,7 +424,7 @@ export default function AdminReports() {
           </div>
           <div className="flex flex-col gap-5">
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Offline vs online orders</div>
+              <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Offline vs online orders</div>
               <DonutChart
                 size={150}
                 thickness={20}
@@ -438,14 +438,14 @@ export default function AdminReports() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-3">
-                <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Repeat rate</div>
+                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Repeat rate</div>
                 <div className="font-display text-[20px] text-ng-forest-deep tabular-nums mt-1">{PCT(data.repeatRate * 100)}</div>
               </div>
               <div className="rounded-xl bg-ng-cream/60 border border-ng-line-soft p-3">
-                <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">New vs repeat</div>
+                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">New vs repeat</div>
                 <div className="font-display text-[20px] text-ng-forest-deep tabular-nums mt-1">
                   {data.newCustomers}
-                  <span className="text-ng-ink-soft text-[14px]"> / {data.repeatCustomers}</span>
+                  <span className="text-ng-ink-muted font-medium text-[14px]"> / {data.repeatCustomers}</span>
                 </div>
               </div>
             </div>
@@ -461,7 +461,7 @@ export default function AdminReports() {
         action={<ExportButton onClick={() => { const s = segmentationCsv(); downloadCsv(`segmentation-${range.id}d`, s.rows, s.headers); }} />}
         className="!p-0 overflow-hidden mb-6"
       >
-        <div className="grid grid-cols-[2fr_1.1fr_0.8fr_0.7fr_1.6fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[2fr_1.1fr_0.8fr_0.7fr_1.6fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Community</span>
           <span>Area</span>
           <span>Pincode</span>
@@ -476,10 +476,10 @@ export default function AdminReports() {
                 key={s.community}
                 className="grid grid-cols-[2fr_1.1fr_0.8fr_0.7fr_1.6fr] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
               >
-                <span className="font-medium truncate">{s.community}</span>
-                <span className="text-[12px] text-ng-ink-muted truncate">{s.area}</span>
-                <span className="font-mono text-[12px] tabular-nums text-ng-ink-muted">{s.pincode}</span>
-                <span className="font-mono text-[12px] tabular-nums">{s.orders}</span>
+                <span className="font-semibold text-ng-ink truncate">{s.community}</span>
+                <span className="text-[12px] font-medium text-ng-ink-muted truncate">{s.area}</span>
+                <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink-muted">{s.pincode}</span>
+                <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{s.orders}</span>
                 <span className="flex items-center gap-2.5">
                   <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep w-16">{INR(s.gmv)}</span>
                   <span className="h-2 flex-1 rounded-full bg-ng-line-soft overflow-hidden">
@@ -493,7 +493,7 @@ export default function AdminReports() {
             );
           })}
         </ul>
-        <div className="px-6 py-3 text-[12px] text-ng-ink-soft border-t border-ng-line-soft bg-ng-cream/40">
+        <div className="px-6 py-3 text-[12px] font-medium text-ng-ink-soft border-t border-ng-line-soft bg-ng-cream/40">
           {data.segments.length} communities · derived from delivery addresses on {data.orderCount} orders
         </div>
       </Card>
@@ -508,26 +508,26 @@ export default function AdminReports() {
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
-            <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Avg order value</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Avg order value</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{INR(data.aov)}</div>
           </div>
           <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
-            <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Total revenue</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Total revenue</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{INR(data.gmv)}</div>
           </div>
           <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
-            <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Active SKUs</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Active SKUs</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{data.skus.length}</div>
           </div>
           <div className="h-full rounded-xl bg-ng-cream/60 border border-ng-line-soft p-4">
-            <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">Partner farms</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">Partner farms</div>
             <div className="font-display text-[22px] text-ng-forest-deep tabular-nums mt-1">{data.farms}</div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Revenue trend</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue trend</div>
             <AreaChart
               series={[{ name: "revenue", data: data.revSeries, tone: "forest" }]}
               labels={data.onboardLabels}
@@ -536,7 +536,7 @@ export default function AdminReports() {
             />
           </div>
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Category mix (catalog)</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Category mix (catalog)</div>
             <DonutChart
               size={150}
               thickness={20}
@@ -553,7 +553,7 @@ export default function AdminReports() {
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Top SKUs by revenue</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Top SKUs by revenue</div>
             <HBars
               tone="forest"
               formatValue={(v) => INR(v)}
@@ -561,7 +561,7 @@ export default function AdminReports() {
             />
           </div>
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Bottom SKUs by revenue</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Bottom SKUs by revenue</div>
             <HBars
               tone="terracotta"
               formatValue={(v) => INR(v)}
@@ -594,7 +594,7 @@ export default function AdminReports() {
         <div className="grid lg:grid-cols-[1.5fr_1fr] gap-8">
           {/* coupon table */}
           <div className="rounded-2xl border border-ng-line-soft overflow-hidden">
-            <div className="grid grid-cols-[1.2fr_0.8fr_0.9fr_0.7fr] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+            <div className="grid grid-cols-[1.2fr_0.8fr_0.9fr_0.7fr] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
               <span>Code</span>
               <span>Redeemed</span>
               <span>Revenue</span>
@@ -607,10 +607,10 @@ export default function AdminReports() {
                   className="grid grid-cols-[1.2fr_0.8fr_0.9fr_0.7fr] gap-3 px-4 py-3 items-center text-[12.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono text-[12px] font-semibold truncate">{c.code}</span>
+                    <span className="font-mono text-[12px] font-semibold text-ng-ink truncate">{c.code}</span>
                     {!c.active ? <Pill tone="neutral">off</Pill> : null}
                   </span>
-                  <span className="font-mono text-[12px] tabular-nums">{c.redemptions}</span>
+                  <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink-muted">{c.redemptions}</span>
                   <span className="font-mono text-[12px] tabular-nums text-ng-forest-deep font-semibold">{INR(c.revenue)}</span>
                   <span className="font-mono text-[12px] tabular-nums text-ng-success font-semibold">{c.roi.toFixed(1)}×</span>
                 </li>
@@ -620,7 +620,7 @@ export default function AdminReports() {
 
           {/* loyalty earned vs redeemed */}
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft mb-3">Loyalty ledger · earned vs redeemed</div>
+            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Loyalty ledger · earned vs redeemed</div>
             <DonutChart
               size={150}
               thickness={20}
@@ -642,7 +642,7 @@ export default function AdminReports() {
         </div>
       </Card>
 
-      <p className="text-[11.5px] text-ng-ink-soft text-center mt-2 mb-2">
+      <p className="text-[11.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
         Figures derived from sample data ({range.label}). Charts are hand-authored CSS/SVG — no chart libraries.
       </p>
     </AdminShell>

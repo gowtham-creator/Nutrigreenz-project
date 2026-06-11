@@ -52,7 +52,7 @@ export function StatusPipeline({ status }: { status: OrderStatus }) {
               <span
                 className={cn(
                   "text-[11px] text-center leading-tight max-w-[78px]",
-                  isCurrent ? "text-ng-forest-deep font-semibold" : completed ? "text-ng-ink" : "text-ng-ink-soft",
+                  isCurrent ? "text-ng-forest-deep font-semibold" : completed ? "text-ng-ink font-semibold" : "text-ng-ink-muted font-medium",
                 )}
               >
                 {step}

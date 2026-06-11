@@ -59,20 +59,20 @@ function LoginForm() {
         </Link>
 
         <div className="hidden lg:block max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono text-ng-clay">
+          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay">
             <Icon name="shield-keyhole-bold" size={14} />
             Admin · v0.4.1
           </div>
           <h2 className="font-display text-[34px] leading-tight text-ng-cream mt-6">
             Operator console
           </h2>
-          <p className="font-sans text-[14px] text-ng-cream/55 mt-3 leading-relaxed">
+          <p className="font-sans text-[14px] font-medium text-ng-cream/85 mt-3 leading-relaxed">
             Manage catalog, orders, inventory and marketing for the Nutri Greenz
             storefront. Restricted to authorised operators.
           </p>
         </div>
 
-        <p className="font-mono text-[11px] text-ng-cream/35">
+        <p className="font-mono text-[11.5px] font-medium text-ng-cream/85">
           Secured area — activity may be monitored.
         </p>
       </aside>
@@ -87,7 +87,7 @@ function LoginForm() {
           <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">
             Sign in to Admin
           </h1>
-          <p className="font-sans text-[13.5px] text-ng-ink-soft mt-2">
+          <p className="font-sans text-[13.5px] font-medium text-ng-ink-muted mt-2">
             Enter your operator credentials to continue.
           </p>
 
@@ -116,7 +116,7 @@ function LoginForm() {
             <div className="-mt-1 text-right">
               <Link
                 href="/admin/forgot"
-                className="text-[12px] font-sans text-ng-clay hover:text-ng-clay-deep transition-colors"
+                className="text-[12px] font-sans font-semibold text-ng-clay hover:text-ng-clay-deep transition-colors"
               >
                 Forgot password?
               </Link>
@@ -128,7 +128,7 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono">
+          <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">
             <Icon name="shield-keyhole-bold" size={13} />
             Authorised operators only
           </div>

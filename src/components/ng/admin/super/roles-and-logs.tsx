@@ -115,12 +115,12 @@ export function RolesAndLogs() {
                 </span>
                 <div>
                   <div className="font-display text-[15.5px] text-ng-forest-deep leading-tight">{r.label}</div>
-                  <div className="text-[11.5px] text-ng-ink-soft">{r.blurb}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-muted">{r.blurb}</div>
                 </div>
               </div>
               <ul className="space-y-1.5">
                 {r.can.map((c) => (
-                  <li key={c} className="flex items-start gap-2 text-[12.5px] text-ng-ink-muted">
+                  <li key={c} className="flex items-start gap-2 text-[12.5px] font-medium text-ng-ink-muted">
                     <Icon
                       name="check-circle-bold"
                       size={14}
@@ -144,7 +144,7 @@ export function RolesAndLogs() {
               <Icon name="history-bold" size={16} className="text-ng-forest" />
               System activity
             </span>
-            <span className="text-[11px] text-ng-ink-soft font-mono">Recent · mock trail</span>
+            <span className="text-[11.5px] font-medium text-ng-ink-soft font-mono">Recent · mock trail</span>
           </div>
           <ol className="relative pl-1">
             {LOG.map((e, i) => {
@@ -156,17 +156,17 @@ export function RolesAndLogs() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] uppercase tracking-wider text-ng-ink-soft font-mono">{meta.label}</span>
-                      <span className="font-mono text-[11.5px] text-ng-ink-muted truncate">{e.actor}</span>
+                      <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">{meta.label}</span>
+                      <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{e.actor}</span>
                     </div>
-                    <p className="text-[13px] text-ng-ink mt-0.5">{e.action}</p>
+                    <p className="text-[13px] font-medium text-ng-ink mt-0.5">{e.action}</p>
                   </div>
-                  <span className="text-[11.5px] text-ng-ink-soft tabular-nums shrink-0 mt-0.5">{e.when}</span>
+                  <span className="text-[11.5px] font-medium text-ng-ink-soft tabular-nums shrink-0 mt-0.5">{e.when}</span>
                 </li>
               );
             })}
           </ol>
-          <p className="text-[11.5px] text-ng-ink-soft mt-4 flex items-center gap-1.5">
+          <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
             <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
             Read-only demo — a persisted audit trail &amp; role editing ship in Milestone 2.
           </p>

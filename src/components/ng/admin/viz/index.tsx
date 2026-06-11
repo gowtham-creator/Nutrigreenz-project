@@ -55,7 +55,7 @@ export function TrendChip({
   const map = {
     up: { c: "text-ng-success bg-ng-success/12", a: "M3 8.5L6 5.5L8 7.5L11 4" },
     down: { c: "text-ng-terracotta bg-ng-terracotta/12", a: "M3 4L6 7L8 5L11 8.5" },
-    flat: { c: "text-ng-ink-soft bg-ng-line-soft", a: "M3 6.5H11" },
+    flat: { c: "text-ng-ink-muted bg-ng-line-soft", a: "M3 6.5H11" },
   }[direction];
   return (
     <span
@@ -228,7 +228,7 @@ export function AreaChart({
           return (
             <g key={i}>
               <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--ng-line-soft)" strokeWidth="1" />
-              <text x={padL} y={y - 3} fontSize="10" fill="var(--ng-ink-soft)" className="font-mono">
+              <text x={padL} y={y - 3} fontSize="11" fill="var(--ng-ink-soft)" className="font-mono font-medium">
                 {formatY ? formatY(val) : Math.round(val)}
               </text>
             </g>
@@ -262,7 +262,7 @@ export function AreaChart({
       {/* x labels */}
       <div className="flex justify-between px-1 mt-1">
         {labels.map((l, i) => (
-          <span key={i} className="text-[10px] text-ng-ink-soft font-mono">
+          <span key={i} className="text-[11px] text-ng-ink-soft font-mono font-medium">
             {l}
           </span>
         ))}
@@ -326,7 +326,7 @@ export function DonutChart({
             {centerValue ? (
               <span className="font-display text-[26px] text-ng-forest-deep leading-none tabular-nums">{centerValue}</span>
             ) : null}
-            {centerLabel ? <span className="text-[10px] uppercase tracking-wider text-ng-ink-soft mt-1">{centerLabel}</span> : null}
+            {centerLabel ? <span className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-1">{centerLabel}</span> : null}
           </div>
         )}
       </div>
@@ -334,7 +334,7 @@ export function DonutChart({
         {segments.map((s) => (
           <li key={s.label} className="flex items-center gap-2.5 text-[12.5px]">
             <span className="size-2.5 rounded-full shrink-0" style={{ background: TONE_STROKE[s.tone] }} />
-            <span className="text-ng-ink-muted truncate">{s.label}</span>
+            <span className="text-ng-ink-muted font-medium truncate">{s.label}</span>
             <span className="ml-auto font-mono tabular-nums text-ng-forest-deep font-semibold pl-3">
               {Math.round((s.value / total) * 100)}%
             </span>
@@ -366,10 +366,10 @@ export function HBars({
       {rows.map((r) => (
         <li key={r.label}>
           <div className="flex items-baseline justify-between gap-3 mb-1.5">
-            <span className="text-[12.5px] text-ng-ink truncate">{r.label}</span>
+            <span className="text-[12.5px] font-semibold text-ng-ink truncate">{r.label}</span>
             <span className="font-mono text-[12px] tabular-nums text-ng-forest-deep font-semibold shrink-0">
               {formatValue ? formatValue(r.value) : r.value}
-              {r.hint ? <span className="text-ng-ink-soft font-sans font-normal ml-1.5">{r.hint}</span> : null}
+              {r.hint ? <span className="text-ng-ink-soft font-sans font-medium ml-1.5">{r.hint}</span> : null}
             </span>
           </div>
           <div className="h-2 rounded-full bg-ng-line-soft overflow-hidden">
@@ -416,7 +416,7 @@ export function StockMeter({
           aria-hidden
         />
       </div>
-      <span className="font-mono text-[11.5px] tabular-nums text-ng-ink-muted w-9 text-right">{stock}</span>
+      <span className="font-mono text-[11.5px] font-semibold tabular-nums text-ng-ink w-9 text-right">{stock}</span>
     </div>
   );
 }
@@ -439,8 +439,8 @@ export function Pipeline({
         const pct = (s.value / max) * 100;
         return (
           <div key={s.label} className="flex items-center gap-3">
-            <div className="w-28 shrink-0 text-[12px] text-ng-ink-muted flex items-center gap-2">
-              <span className="font-mono text-[10px] text-ng-ink-soft">{String(i + 1).padStart(2, "0")}</span>
+            <div className="w-28 shrink-0 text-[12px] font-medium text-ng-ink-muted flex items-center gap-2">
+              <span className="font-mono text-[11px] font-medium text-ng-ink-soft">{String(i + 1).padStart(2, "0")}</span>
               {s.label}
             </div>
             <div className="flex-1 h-7 rounded-lg bg-ng-line-soft/60 overflow-hidden">
@@ -503,7 +503,7 @@ export function GaugeRing({
           </span>
         </div>
       </div>
-      {label ? <div className="text-[12px] text-ng-ink-muted leading-snug">{label}</div> : null}
+      {label ? <div className="text-[12px] font-medium text-ng-ink-muted leading-snug">{label}</div> : null}
     </div>
   );
 }

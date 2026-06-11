@@ -121,7 +121,7 @@ export default function AdminOverview() {
         <span className="size-8 rounded-full bg-ng-clay/20 flex items-center justify-center shrink-0">
           <Icon name="bell-bing-bold" size={17} className="text-ng-clay-deep" />
         </span>
-        <p className="text-[13px] text-ng-ink">
+        <p className="text-[13px] font-medium text-ng-ink">
           <span className="font-semibold text-ng-forest-deep tabular-nums">{needAttention} orders</span> need attention,{" "}
           <span className="font-semibold text-ng-forest-deep">2 lots</span> are low on stock, and{" "}
           <span className="font-semibold text-ng-forest-deep">1 refund</span> is awaiting review.
@@ -140,8 +140,8 @@ export default function AdminOverview() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft flex items-center gap-1.5">
-                  <Icon name={k.icon} size={13} className="text-ng-ink-soft" />
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted flex items-center gap-1.5">
+                  <Icon name={k.icon} size={13} className="text-ng-ink-muted" />
                   {k.label}
                 </div>
                 <div className="font-display text-[30px] text-ng-forest-deep leading-none mt-2.5 tabular-nums">{k.value}</div>
@@ -164,7 +164,7 @@ export default function AdminOverview() {
         {SECONDARY.map((s) => (
           <div key={s.label} className="h-full rounded-2xl bg-ng-paper border border-ng-line-soft px-5 py-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{s.label}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">{s.label}</div>
               <div className="font-display text-[22px] text-ng-forest-deep leading-none mt-1.5 tabular-nums">{s.value}</div>
             </div>
             <TrendChip delta={s.delta} direction={s.dir} />
@@ -177,7 +177,7 @@ export default function AdminOverview() {
         <Card
           title="Revenue & orders"
           action={
-            <div className="flex items-center gap-4 text-[11.5px]">
+            <div className="flex items-center gap-4 text-[11.5px] font-medium text-ng-ink-muted">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-ng-forest" /> Revenue (₹k)
               </span>
@@ -198,27 +198,27 @@ export default function AdminOverview() {
           />
         </Card>
 
-        <Card title="Category mix" action={<span className="text-[11px] text-ng-ink-soft uppercase tracking-wider">by GMV</span>}>
+        <Card title="Category mix" action={<span className="text-[11px] font-semibold text-ng-ink-muted uppercase tracking-wider">by GMV</span>}>
           <DonutChart segments={CATEGORY_MIX} centerValue="₹8.4L" centerLabel="this week" />
         </Card>
       </div>
 
       {/* ── pipeline + SLA gauges + top products ─────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        <Card title="Order pipeline" action={<Link href="/admin/orders" className="text-[12px] text-ng-forest hover:underline">Queue →</Link>}>
+        <Card title="Order pipeline" action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Queue →</Link>}>
           <Pipeline stages={pipeline} />
           <div className="mt-5 pt-4 border-t border-ng-line-soft grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="font-display text-[20px] text-ng-forest-deep tabular-nums">{ADMIN_ORDERS.length}</div>
-              <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft mt-0.5">Open</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Open</div>
             </div>
             <div>
               <div className="font-display text-[20px] text-ng-clay tabular-nums">{statusCount("Refund req.")}</div>
-              <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft mt-0.5">Refunds</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Refunds</div>
             </div>
             <div>
               <div className="font-display text-[20px] text-ng-terracotta tabular-nums">{statusCount("Payment failed")}</div>
-              <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft mt-0.5">Failed</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Failed</div>
             </div>
           </div>
         </Card>
@@ -236,7 +236,7 @@ export default function AdminOverview() {
           </div>
         </Card>
 
-        <Card title="Top products" action={<span className="text-[11px] text-ng-ink-soft uppercase tracking-wider">7-day GMV</span>}>
+        <Card title="Top products" action={<span className="text-[11px] font-semibold text-ng-ink-muted uppercase tracking-wider">7-day GMV</span>}>
           <HBars rows={TOP_PRODUCTS} tone="forest" formatValue={(v) => `₹${(v / 1000).toFixed(0)}k`} />
         </Card>
       </div>
@@ -245,10 +245,10 @@ export default function AdminOverview() {
       <div className="grid lg:grid-cols-[1.7fr_1fr] gap-6">
         <Card
           title="Recent orders"
-          action={<Link href="/admin/orders" className="text-[12px] text-ng-forest hover:underline">Open queue →</Link>}
+          action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Open queue →</Link>}
           className="!p-0 overflow-hidden"
         >
-          <div className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium border-b border-ng-line-soft">
+          <div className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold border-b border-ng-line-soft">
             <span>Order</span>
             <span>Customer</span>
             <span>Items</span>
@@ -262,12 +262,12 @@ export default function AdminOverview() {
                 key={o.id}
                 className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
               >
-                <span className="font-mono text-[12px] text-ng-forest-deep">{o.id}</span>
-                <span className="truncate">{o.customer.name}</span>
-                <span className="font-mono text-[12px] tabular-nums">{itemCount(o)}</span>
-                <span className="font-mono text-[12.5px] tabular-nums font-semibold">{INR(o.total)}</span>
+                <span className="font-mono text-[12px] font-semibold text-ng-forest-deep">{o.id}</span>
+                <span className="truncate font-semibold text-ng-ink">{o.customer.name}</span>
+                <span className="font-mono text-[12px] font-medium tabular-nums text-ng-ink-muted">{itemCount(o)}</span>
+                <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink">{INR(o.total)}</span>
                 <span><Pill tone={STATUS_TONE[o.status]}>{o.status}</Pill></span>
-                <span className="text-[11.5px] text-ng-ink-soft text-right">{o.placedAgo}</span>
+                <span className="text-[11.5px] font-medium text-ng-ink-soft text-right">{o.placedAgo}</span>
               </li>
             ))}
           </ul>
@@ -276,7 +276,7 @@ export default function AdminOverview() {
         <div className="space-y-6">
           <Card
             title="Low stock"
-            action={<Link href="/admin/inventory" className="text-[12px] text-ng-forest hover:underline">Restock →</Link>}
+            action={<Link href="/admin/inventory" className="text-[12px] font-semibold text-ng-forest hover:underline">Restock →</Link>}
           >
             <ul className="space-y-3.5">
               {LOW_STOCK.map((s) => {
@@ -285,7 +285,7 @@ export default function AdminOverview() {
                 return (
                   <li key={s.sku}>
                     <div className="flex justify-between gap-3 items-baseline mb-1.5">
-                      <span className="text-[12.5px] text-ng-ink truncate">{s.sku}</span>
+                      <span className="text-[12.5px] font-medium text-ng-ink truncate">{s.sku}</span>
                       <span className={`font-mono text-[11.5px] tabular-nums shrink-0 font-semibold ${danger ? "text-ng-terracotta" : "text-ng-clay-deep"}`}>
                         {s.left}/{s.threshold}
                       </span>
@@ -320,8 +320,8 @@ export default function AdminOverview() {
                     <Icon name={a.icon} size={14} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[12.5px] text-ng-ink leading-snug">{a.label}</div>
-                    <div className="text-[11px] text-ng-ink-soft mt-0.5">{a.actor} · {a.time}</div>
+                    <div className="text-[12.5px] font-medium text-ng-ink leading-snug">{a.label}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{a.actor} · {a.time}</div>
                   </div>
                 </li>
               ))}

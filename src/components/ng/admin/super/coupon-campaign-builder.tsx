@@ -296,7 +296,7 @@ export function CouponCampaignBuilder() {
           title="Coupon campaign builder"
           caption="Create a targeted coupon, stage SMS delivery and review redemption & ROI — per §3.5.2."
           badge={
-            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono">
+            <span className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-mono font-semibold">
               {campaigns.length} total
             </span>
           }
@@ -380,7 +380,7 @@ export function CouponCampaignBuilder() {
                 onChange={(e) => patch("expiresAt", e.target.value)}
                 className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200 cursor-pointer tabular-nums"
               />
-              <p className="text-[11.5px] text-ng-ink-soft">Blank = perpetual</p>
+              <p className="text-[11.5px] font-medium text-ng-ink-soft">Blank = perpetual</p>
             </div>
           </div>
 
@@ -417,7 +417,7 @@ export function CouponCampaignBuilder() {
             <div className="flex items-center gap-2 mb-3">
               <Icon name="target-bold" size={15} className="text-ng-clay-deep" />
               <span className="text-[12.5px] font-semibold text-ng-ink-muted">Targeting</span>
-              <span className="text-[11px] text-ng-ink-soft">— who receives this campaign</span>
+              <span className="text-[11.5px] font-medium text-ng-ink-soft">— who receives this campaign</span>
             </div>
             <div
               role="radiogroup"
@@ -453,7 +453,7 @@ export function CouponCampaignBuilder() {
                 );
               })}
             </div>
-            <p className="text-[11.5px] text-ng-ink-soft mt-2.5">{mode.hint}</p>
+            <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2.5">{mode.hint}</p>
             {!mode.noSelector ? (
               <TextField
                 label={mode.selectorLabel}
@@ -502,11 +502,11 @@ export function CouponCampaignBuilder() {
 
               {/* Live message preview */}
               <div className="rounded-xl border border-ng-line-soft bg-ng-cream/50 p-3.5">
-                <div className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-mono mb-2">
+                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-muted font-mono font-semibold mb-2">
                   <Icon name="smartphone-bold" size={13} className="text-ng-forest" />
                   Message preview
                 </div>
-                <p className="text-[13px] text-ng-ink leading-relaxed">
+                <p className="text-[13px] font-medium text-ng-ink leading-relaxed">
                   Nutri Greenz: Use code{" "}
                   <span className="font-mono font-semibold text-ng-forest-deep">
                     {draft.code.trim().toUpperCase() || "CODE"}
@@ -518,7 +518,7 @@ export function CouponCampaignBuilder() {
                     : ""}
                   . Shop fresh → nutrigreenz.in
                 </p>
-                <p className="text-[10.5px] text-ng-ink-soft mt-2 font-mono">
+                <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2 font-mono">
                   ~{160} char SMS · sent to {mode.label.toLowerCase()}
                 </p>
               </div>
@@ -527,7 +527,7 @@ export function CouponCampaignBuilder() {
 
           {/* Save row */}
           <div className="mt-5 pt-4 border-t border-ng-clay/20 flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-[11.5px] text-ng-ink-soft flex items-center gap-1.5 min-w-0">
+            <p className="text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5 min-w-0">
               <Icon name="info-circle-bold" size={13} className="text-ng-clay-deep shrink-0" />
               <span>Demo · campaign send &amp; live redemption tracking ship in Milestone 2.</span>
             </p>
@@ -560,7 +560,7 @@ export function CouponCampaignBuilder() {
                 <span className="text-[13px] font-semibold text-ng-ink-muted">Redemption &amp; ROI</span>
                 <span className="font-mono text-[12px] text-ng-forest-deep font-semibold">{tracked.code}</span>
               </div>
-              <span className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-mono">Mock · M2 live</span>
+              <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono font-medium">Mock · M2 live</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
               <TrackTile icon="letter-bold" label="Issued" value={tracked.issued.toLocaleString("en-IN")} />
@@ -579,11 +579,11 @@ export function CouponCampaignBuilder() {
               <Icon name="clipboard-list-bold" size={16} className="text-ng-forest" />
               Campaigns
             </span>
-            <span className="text-[11px] text-ng-ink-soft font-mono">
+            <span className="text-[11px] font-medium text-ng-ink-soft font-mono">
               {builtCount} built · {campaigns.length - builtCount} seed
             </span>
           </div>
-          <div className="grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+          <div className="grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
             <span>Code</span>
             <span>Targeting</span>
             <span>Value</span>
@@ -612,15 +612,15 @@ export function CouponCampaignBuilder() {
                     <span className="font-mono text-[13px] text-ng-forest-deep font-semibold truncate">{c.code}</span>
                     {c.source === "built" ? <Pill tone="info">New</Pill> : null}
                   </button>
-                  <span className="flex items-center gap-1.5 text-[12.5px] text-ng-ink-muted min-w-0">
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-ng-ink-muted min-w-0">
                     <Icon name={m.icon} size={14} className="text-ng-forest shrink-0" />
                     <span className="truncate">{m.label}</span>
                   </span>
-                  <span className="font-medium tabular-nums">{valueLabel(c)}</span>
-                  <span className="tabular-nums text-ng-ink-muted">
+                  <span className="font-semibold tabular-nums text-ng-ink">{valueLabel(c)}</span>
+                  <span className="tabular-nums font-medium text-ng-ink-muted">
                     {c.issued > 0 ? `${c.redeemed.toLocaleString("en-IN")} / ${c.issued.toLocaleString("en-IN")}` : "—"}
                   </span>
-                  <span className="font-mono tabular-nums text-[12.5px]">{roi(c)}</span>
+                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink">{roi(c)}</span>
                   <span className="flex justify-end">
                     <button
                       type="button"
@@ -657,7 +657,7 @@ function TrackTile({
 }) {
   return (
     <div className="h-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-3.5 py-3">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.1em] text-ng-ink-soft font-mono">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em] text-ng-ink-muted font-mono font-semibold">
         <Icon name={icon} size={13} className={accent ? "text-ng-clay-deep" : "text-ng-forest"} />
         {label}
       </div>

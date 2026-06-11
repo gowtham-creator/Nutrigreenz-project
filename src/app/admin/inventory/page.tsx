@@ -149,7 +149,7 @@ export default function AdminInventory() {
           <span className="size-8 rounded-full bg-ng-terracotta/15 flex items-center justify-center shrink-0">
             <Icon name="danger-triangle-bold" size={17} className="text-ng-terracotta" />
           </span>
-          <p className="text-[13px] text-ng-ink">
+          <p className="text-[13px] font-medium text-ng-ink">
             <span className="font-semibold text-ng-forest-deep tabular-nums">{reorderCount} SKUs</span> are at or below
             reorder threshold. Auto-PO drafts are ready for review.
           </p>
@@ -179,8 +179,8 @@ export default function AdminInventory() {
                 i === 0
                   ? "bg-ng-forest-deep text-ng-cream font-semibold"
                   : t === "Reorder now"
-                    ? "bg-ng-terracotta/10 text-ng-terracotta border border-ng-terracotta/30 hover:bg-ng-terracotta/15"
-                    : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted hover:bg-ng-cream"
+                    ? "bg-ng-terracotta/10 text-ng-terracotta font-semibold border border-ng-terracotta/30 hover:bg-ng-terracotta/15"
+                    : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream"
               }`}
             >
               {t}
@@ -194,7 +194,7 @@ export default function AdminInventory() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>SKU</span>
           <span>Product</span>
           <span>Category</span>
@@ -212,14 +212,14 @@ export default function AdminInventory() {
                 key={s.sku}
                 className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
               >
-                <span className="font-mono text-[11.5px] text-ng-forest-deep">{s.sku}</span>
-                <span className="truncate font-medium">{s.product}</span>
-                <span className="text-[12px] text-ng-ink-muted">{s.category}</span>
+                <span className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{s.sku}</span>
+                <span className="truncate font-semibold text-ng-ink">{s.product}</span>
+                <span className="text-[12px] font-medium text-ng-ink-muted">{s.category}</span>
                 <div className="flex items-center gap-2">
                   <StockMeter stock={s.stock} threshold={s.threshold} />
                   <Pill tone={st.tone}>{st.label}</Pill>
                 </div>
-                <span className="font-mono text-[11.5px] text-ng-ink-muted">{s.lot}</span>
+                <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted">{s.lot}</span>
                 <MiniBars data={s.movement} tone={tone} width={56} height={26} />
                 <div className="flex items-center justify-end gap-2">
                   {s.reorder ? (
@@ -253,7 +253,7 @@ export default function AdminInventory() {
         action={<button type="button" className="text-[12px] text-ng-forest hover:underline cursor-pointer">All lots →</button>}
         className="!p-0 overflow-hidden mb-6"
       >
-        <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Lot ID</span>
           <span>Product</span>
           <span>Farm</span>
@@ -269,12 +269,12 @@ export default function AdminInventory() {
               key={l.id}
               className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
             >
-              <span className="font-mono text-[11.5px] text-ng-forest-deep">{l.id}</span>
-              <span className="truncate">{l.product}</span>
-              <span className="truncate text-[12px] text-ng-ink-muted">{l.farm}</span>
-              <span className="text-[12px] text-ng-ink-muted">{l.received}</span>
-              <span className="font-mono text-[12px] tabular-nums">{l.units.toLocaleString()}</span>
-              <span className={`font-mono text-[12px] tabular-nums ${l.available === 0 ? "text-ng-ink-soft" : l.available < 50 ? "text-ng-terracotta font-semibold" : ""}`}>
+              <span className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{l.id}</span>
+              <span className="truncate font-semibold text-ng-ink">{l.product}</span>
+              <span className="truncate text-[12px] font-medium text-ng-ink-muted">{l.farm}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted">{l.received}</span>
+              <span className="font-mono text-[12px] font-medium tabular-nums text-ng-ink">{l.units.toLocaleString()}</span>
+              <span className={`font-mono text-[12px] tabular-nums ${l.available === 0 ? "font-medium text-ng-ink-soft" : l.available < 50 ? "text-ng-terracotta font-semibold" : "font-semibold text-ng-ink"}`}>
                 {l.available.toLocaleString()}
               </span>
               <span><Pill tone={l.tone}>{l.status}</Pill></span>
@@ -294,7 +294,7 @@ export default function AdminInventory() {
                 return (
                   <li key={s.sku}>
                     <div className="flex justify-between text-[13px] mb-1.5 items-baseline">
-                      <span className="truncate pr-2">{s.product}</span>
+                      <span className="truncate pr-2 font-semibold text-ng-ink">{s.product}</span>
                       <button
                         type="button"
                         onClick={() => openAdjust(s)}
@@ -311,7 +311,7 @@ export default function AdminInventory() {
               })}
             </ul>
           ) : (
-            <p className="text-[13px] text-ng-ink-soft">All SKUs above reorder threshold.</p>
+            <p className="text-[13px] font-medium text-ng-ink-muted">All SKUs above reorder threshold.</p>
           )}
         </Card>
 
@@ -322,13 +322,13 @@ export default function AdminInventory() {
               <li key={p.id} className="border-b border-ng-line-soft pb-3 last:border-0">
                 <div className="flex justify-between items-start gap-3">
                   <div className="min-w-0">
-                    <div className="font-mono text-[11.5px] text-ng-forest-deep">{p.id}</div>
-                    <div className="text-[13px] mt-0.5">{p.product}</div>
-                    <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{p.farm} · {p.qty}</div>
+                    <div className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{p.id}</div>
+                    <div className="text-[13px] font-medium text-ng-ink mt-0.5">{p.product}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{p.farm} · {p.qty}</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-mono font-semibold tabular-nums">₹{p.value.toLocaleString("en-IN")}</div>
-                    <div className="text-[11.5px] text-ng-ink-soft mt-0.5">ETA {p.expected}</div>
+                    <div className="font-mono font-semibold tabular-nums text-ng-ink">₹{p.value.toLocaleString("en-IN")}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">ETA {p.expected}</div>
                   </div>
                 </div>
               </li>

@@ -98,19 +98,19 @@ export default function AdminPeople() {
                 <button
                   key={t}
                   className={`px-3 py-1 rounded-full text-[11.5px] transition-colors cursor-pointer ${
-                    i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:text-ng-forest"
+                    i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted font-medium hover:text-ng-forest"
                   }`}
                 >
                   {t}
                 </button>
               ))}
             </div>
-            <button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All →</button>
+            <button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All →</button>
           </div>
         }
         className="!p-0 overflow-hidden mb-6"
       >
-        <div className="grid grid-cols-[2fr_0.7fr_1fr_1.6fr_1.1fr_0.9fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[2fr_0.7fr_1fr_1.6fr_1.1fr_0.9fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Customer</span>
           <span>Orders</span>
           <span>LTV</span>
@@ -130,13 +130,13 @@ export default function AdminPeople() {
                   {c.initial}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-medium truncate">{c.name}</div>
-                  <div className="text-[11px] text-ng-ink-soft">{c.tier} tier</div>
+                  <div className="font-semibold text-ng-ink truncate">{c.name}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-soft">{c.tier} tier</div>
                 </div>
               </div>
-              <span className="font-mono text-[12px] tabular-nums">{c.orders}</span>
+              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.orders}</span>
               <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">₹{c.ltv.toLocaleString("en-IN")}</span>
-              <span className="text-[12px] text-ng-ink-muted truncate">{c.community}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted truncate">{c.community}</span>
               <span><Pill tone={PILL_TONE[c.segment]}>{c.segment}</Pill></span>
               <Sparkline data={c.spend} tone={SEGMENT_TONE[c.segment]} width={64} height={24} fill={false} />
               <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">View →</button>
@@ -149,10 +149,10 @@ export default function AdminPeople() {
       <div className="grid lg:grid-cols-[1.5fr_1fr] gap-6 mb-6">
         <Card
           title="Team & partners"
-          action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All →</button>}
+          action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All →</button>}
           className="!p-0 overflow-hidden"
         >
-          <div className="grid grid-cols-[2.2fr_1.4fr_1.2fr_0.6fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+          <div className="grid grid-cols-[2.2fr_1.4fr_1.2fr_0.6fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
             <span>Person</span>
             <span>Access</span>
             <span>Last active</span>
@@ -169,14 +169,14 @@ export default function AdminPeople() {
                     {t.avatar}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{t.name}</div>
-                    <div className="text-[11.5px] text-ng-ink-soft truncate">{t.role}</div>
+                    <div className="font-semibold text-ng-ink truncate">{t.name}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft truncate">{t.role}</div>
                   </div>
                 </div>
                 <span>
                   <Pill tone={t.access === "Owner" ? "warn" : t.access.startsWith("Admin") ? "info" : "success"}>{t.access}</Pill>
                 </span>
-                <span className="text-[12px] text-ng-ink-muted">{t.last}</span>
+                <span className="text-[12px] font-medium text-ng-ink-soft">{t.last}</span>
                 <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Edit →</button>
               </li>
             ))}
@@ -189,9 +189,9 @@ export default function AdminPeople() {
               <li key={r.name} className="rounded-xl border border-ng-line-soft p-4 hover:border-ng-leaf-soft transition-colors">
                 <div className="flex justify-between gap-2 items-baseline">
                   <span className="font-display text-[15px] text-ng-forest-deep">{r.name}</span>
-                  <span className="font-mono text-[12px] text-ng-ink-soft tabular-nums">{r.count} {r.count === 1 ? "person" : "people"}</span>
+                  <span className="font-mono text-[12px] font-medium text-ng-ink-soft tabular-nums">{r.count} {r.count === 1 ? "person" : "people"}</span>
                 </div>
-                <p className="text-[12px] text-ng-ink-muted mt-1.5 leading-relaxed">{r.perms}</p>
+                <p className="text-[12px] font-medium text-ng-ink-muted mt-1.5 leading-relaxed">{r.perms}</p>
               </li>
             ))}
           </ul>
@@ -200,10 +200,10 @@ export default function AdminPeople() {
 
       <Card
         title="Community captains performance"
-        action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All captains →</button>}
+        action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All captains →</button>}
         className="!p-0 overflow-hidden"
       >
-        <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1.2fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1.2fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Captain</span>
           <span>Area</span>
           <span>Bundles</span>
@@ -216,11 +216,11 @@ export default function AdminPeople() {
               key={c.name}
               className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1.2fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
             >
-              <span className="font-medium">{c.name}</span>
-              <span className="text-[12px] text-ng-ink-muted font-mono">{c.area}</span>
-              <span className="font-mono text-[12px] tabular-nums">{c.bundles}</span>
-              <span className="font-mono text-[12px] tabular-nums">{c.members}</span>
-              <span className="font-mono text-[12.5px] tabular-nums font-semibold">₹{c.gmv.toLocaleString("en-IN")}</span>
+              <span className="font-semibold text-ng-ink">{c.name}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted font-mono">{c.area}</span>
+              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.bundles}</span>
+              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.members}</span>
+              <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink">₹{c.gmv.toLocaleString("en-IN")}</span>
             </li>
           ))}
         </ul>

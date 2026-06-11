@@ -108,8 +108,8 @@ export function StockAdjustDialog({
             <h2 id={headingId} className="font-display text-[20px] text-ng-forest-deep leading-tight">
               Adjust stock
             </h2>
-            <p className="text-[12px] text-ng-ink-soft mt-1 truncate">
-              <span className="font-mono text-[11px] text-ng-forest-deep">{target.sku}</span> · {target.product}
+            <p className="text-[12px] font-medium text-ng-ink-muted mt-1 truncate">
+              <span className="font-mono font-semibold text-[11.5px] text-ng-forest-deep">{target.sku}</span> · {target.product}
             </p>
           </div>
           <button
@@ -134,7 +134,7 @@ export function StockAdjustDialog({
                 type="button"
                 aria-label="Decrease stock by 10"
                 onClick={() => step(-10)}
-                className="size-10 shrink-0 rounded-xl border border-ng-line-soft bg-ng-paper text-ng-forest-deep hover:bg-ng-cream transition-colors cursor-pointer font-mono text-[13px]"
+                className="size-10 shrink-0 rounded-xl border border-ng-line-soft bg-ng-paper text-ng-forest-deep hover:bg-ng-cream transition-colors cursor-pointer font-mono font-semibold text-[13px]"
               >
                 −10
               </button>
@@ -152,15 +152,15 @@ export function StockAdjustDialog({
                 type="button"
                 aria-label="Increase stock by 10"
                 onClick={() => step(10)}
-                className="size-10 shrink-0 rounded-xl border border-ng-line-soft bg-ng-paper text-ng-forest-deep hover:bg-ng-cream transition-colors cursor-pointer font-mono text-[13px]"
+                className="size-10 shrink-0 rounded-xl border border-ng-line-soft bg-ng-paper text-ng-forest-deep hover:bg-ng-cream transition-colors cursor-pointer font-mono font-semibold text-[13px]"
               >
                 +10
               </button>
             </div>
             <div className="flex items-center justify-between mt-2 text-[11.5px]">
-              <span className="text-ng-ink-soft">
-                Reorder threshold <span className="font-mono tabular-nums">{target.threshold}</span> · lot{" "}
-                <span className="font-mono">{target.lot || "—"}</span>
+              <span className="font-medium text-ng-ink-soft">
+                Reorder threshold <span className="font-mono tabular-nums font-semibold text-ng-ink">{target.threshold}</span> · lot{" "}
+                <span className="font-mono font-medium text-ng-ink-muted">{target.lot || "—"}</span>
               </span>
               <Pill tone={st.tone}>{st.label}</Pill>
             </div>
@@ -182,8 +182,8 @@ export function StockAdjustDialog({
               className="size-4 accent-ng-terracotta cursor-pointer"
             />
             <span className="min-w-0">
-              <span className="block text-[13px] font-medium text-ng-ink">Flag for reorder</span>
-              <span className="block text-[11.5px] text-ng-ink-soft">Adds this SKU to the auto-PO draft queue.</span>
+              <span className="block text-[13px] font-semibold text-ng-ink">Flag for reorder</span>
+              <span className="block text-[11.5px] font-medium text-ng-ink-soft">Adds this SKU to the auto-PO draft queue.</span>
             </span>
             <Icon
               name={reorder ? "danger-triangle-bold" : "box-bold"}

@@ -96,7 +96,7 @@ export default function AdminOrders() {
 
       {/* Filter row */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <span className="text-[12px] text-ng-ink-soft mr-2">Filter:</span>
+        <span className="text-[12px] font-medium text-ng-ink-soft mr-2">Filter:</span>
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -104,7 +104,7 @@ export default function AdminOrders() {
             className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors ${
               filter === f.key
                 ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted hover:bg-ng-cream"
+                : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream"
             }`}
           >
             {f.key}
@@ -128,7 +128,7 @@ export default function AdminOrders() {
       {/* Orders table */}
       <Card className="!p-0 overflow-hidden">
         <div
-          className={`${COLS} px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium`}
+          className={`${COLS} px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold`}
         >
           <span>Order</span>
           <span>Customer</span>
@@ -140,7 +140,7 @@ export default function AdminOrders() {
           <span />
         </div>
         {rows.length === 0 ? (
-          <div className="px-5 py-14 text-center text-[13px] text-ng-ink-soft">
+          <div className="px-5 py-14 text-center text-[13px] font-medium text-ng-ink-muted">
             No orders match this filter or search.
           </div>
         ) : (
@@ -151,22 +151,22 @@ export default function AdminOrders() {
                 className={`${COLS} px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors`}
               >
                 <div>
-                  <div className="font-mono text-[12.5px] text-ng-forest-deep">{o.id}</div>
-                  <div className="text-[10.5px] text-ng-ink-soft mt-0.5">{o.placedAgo}</div>
+                  <div className="font-mono font-semibold text-[12.5px] text-ng-forest-deep">{o.id}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{o.placedAgo}</div>
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate">{o.customer.name}</div>
-                  <div className="text-[11px] text-ng-ink-soft truncate">
+                  <div className="truncate font-semibold text-ng-ink">{o.customer.name}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-muted truncate">
                     {o.address.community} · {o.address.pincode}
                   </div>
                 </div>
-                <span className="text-[11.5px] font-mono text-ng-ink-muted truncate">{lotsInBox(o)}</span>
-                <span className="tabular-nums">{itemCount(o)}</span>
-                <span className="font-medium tabular-nums">{INR(o.total)}</span>
+                <span className="text-[11.5px] font-mono font-medium text-ng-ink-muted truncate">{lotsInBox(o)}</span>
+                <span className="tabular-nums font-semibold text-ng-ink">{itemCount(o)}</span>
+                <span className="font-semibold text-ng-ink tabular-nums">{INR(o.total)}</span>
                 <span>
                   <Pill tone={STATUS_TONE[o.status]}>{o.status}</Pill>
                 </span>
-                <span className="text-[11.5px] text-ng-ink-muted truncate">{o.channel}</span>
+                <span className="text-[11.5px] font-medium text-ng-ink-muted truncate">{o.channel}</span>
                 <Link
                   href={`/admin/orders/${o.id}`}
                   className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors"
@@ -184,26 +184,26 @@ export default function AdminOrders() {
         <Card title="Top failing payments">
           <ul className="space-y-3 text-[13px]">
             <li className="flex justify-between">
-              <span>HDFC Credit · 3D-Secure timeout</span>
-              <span className="text-ng-terracotta font-semibold">42%</span>
+              <span className="font-medium text-ng-ink-muted">HDFC Credit · 3D-Secure timeout</span>
+              <span className="text-ng-terracotta font-semibold tabular-nums">42%</span>
             </li>
             <li className="flex justify-between">
-              <span>UPI · UPI ID typo</span>
-              <span className="text-ng-terracotta font-semibold">28%</span>
+              <span className="font-medium text-ng-ink-muted">UPI · UPI ID typo</span>
+              <span className="text-ng-terracotta font-semibold tabular-nums">28%</span>
             </li>
             <li className="flex justify-between">
-              <span>ICICI Debit · insufficient funds</span>
-              <span className="text-ng-terracotta font-semibold">16%</span>
+              <span className="font-medium text-ng-ink-muted">ICICI Debit · insufficient funds</span>
+              <span className="text-ng-terracotta font-semibold tabular-nums">16%</span>
             </li>
             <li className="flex justify-between">
-              <span>Card · expired</span>
-              <span className="text-ng-ink-muted font-semibold">14%</span>
+              <span className="font-medium text-ng-ink-muted">Card · expired</span>
+              <span className="text-ng-ink-muted font-semibold tabular-nums">14%</span>
             </li>
           </ul>
         </Card>
         <Card title="Refund SLA last 30d">
           <div className="font-display text-[44px] text-ng-forest-deep leading-none">3h 12m</div>
-          <p className="text-[13px] text-ng-ink-muted mt-3">
+          <p className="text-[13px] font-medium text-ng-ink-muted mt-3">
             Avg time-to-resolution. Target: under 4h. 96% within SLA.
           </p>
         </Card>

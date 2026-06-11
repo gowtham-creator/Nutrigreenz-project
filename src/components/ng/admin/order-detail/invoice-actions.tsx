@@ -20,7 +20,7 @@ export function InvoiceActions({ order }: { order: AdminOrder }) {
           href={`/orders/${order.id}/invoice`}
           className="flex items-center justify-between gap-3 rounded-xl border border-ng-line-soft px-4 py-3 text-[13px] hover:bg-ng-cream transition-colors"
         >
-          <span className="flex items-center gap-2.5 font-medium text-ng-ink">
+          <span className="flex items-center gap-2.5 font-semibold text-ng-ink">
             <Icon name="document-text-bold" size={17} className="text-ng-forest" />
             View invoice
           </span>
@@ -34,7 +34,7 @@ export function InvoiceActions({ order }: { order: AdminOrder }) {
                 description: `Sent to ${phone}.`,
               })
             }
-            className="flex items-center justify-center gap-2 rounded-xl border border-ng-line-soft px-3 py-2.5 text-[12.5px] font-medium text-ng-ink hover:bg-ng-cream transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl border border-ng-line-soft px-3 py-2.5 text-[12.5px] font-semibold text-ng-ink hover:bg-ng-cream transition-colors"
           >
             <Icon name="chat-round-dots-bold" size={16} className="text-ng-success" />
             WhatsApp
@@ -45,7 +45,7 @@ export function InvoiceActions({ order }: { order: AdminOrder }) {
                 description: `Sent to ${phone}.`,
               })
             }
-            className="flex items-center justify-center gap-2 rounded-xl border border-ng-line-soft px-3 py-2.5 text-[12.5px] font-medium text-ng-ink hover:bg-ng-cream transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl border border-ng-line-soft px-3 py-2.5 text-[12.5px] font-semibold text-ng-ink hover:bg-ng-cream transition-colors"
           >
             <Icon name="chat-line-bold" size={16} className="text-ng-forest" />
             SMS

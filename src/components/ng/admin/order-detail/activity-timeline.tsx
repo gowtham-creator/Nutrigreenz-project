@@ -33,10 +33,10 @@ export function ActivityTimeline({ timeline }: { timeline: AdminOrderEvent[] }) 
                 {ev.done ? <Icon name="check-read-linear" size={13} /> : <span className="size-1.5 rounded-full bg-ng-ink-soft/50" />}
               </span>
               <div className="min-w-0 -mt-0.5">
-                <div className={cn("text-[13px]", ev.done ? "text-ng-ink font-medium" : "text-ng-ink-soft")}>
+                <div className={cn("text-[13px]", ev.done ? "text-ng-ink font-semibold" : "text-ng-ink-muted font-medium")}>
                   {ev.label}
                 </div>
-                <div className="text-[11px] text-ng-ink-soft mt-0.5 font-mono">{ev.at}</div>
+                <div className="text-[11.5px] text-ng-ink-soft mt-0.5 font-mono font-medium">{ev.at}</div>
               </div>
             </li>
           );

@@ -43,8 +43,8 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
             <Icon name="box-minimalistic-broken" size={24} />
           </div>
           <h2 className="font-display text-[20px] text-ng-forest-deep">We couldn&rsquo;t find that order</h2>
-          <p className="text-[13px] text-ng-ink-muted mt-2">
-            No order matches <span className="font-mono">{id}</span>.
+          <p className="text-[13px] font-medium text-ng-ink-muted mt-2">
+            No order matches <span className="font-mono font-semibold text-ng-ink">{id}</span>.
           </p>
           <Link
             href="/admin/orders"
@@ -100,12 +100,12 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
           <Card title="Summary">
             <dl className="space-y-2.5 text-[13px]">
               <div className="flex justify-between">
-                <dt className="text-ng-ink-muted">Items ({itemCount(order)})</dt>
-                <dd className="tabular-nums">{INR(subtotal)}</dd>
+                <dt className="font-medium text-ng-ink-muted">Items ({itemCount(order)})</dt>
+                <dd className="tabular-nums font-semibold text-ng-ink">{INR(subtotal)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-ng-ink-muted">Delivery</dt>
-                <dd className="text-ng-success">Free</dd>
+                <dt className="font-medium text-ng-ink-muted">Delivery</dt>
+                <dd className="text-ng-success font-semibold">Free</dd>
               </div>
               <div className="flex justify-between pt-2.5 border-t border-ng-line-soft text-[15px]">
                 <dt className="font-display text-ng-forest-deep">Total</dt>

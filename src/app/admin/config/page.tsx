@@ -91,7 +91,7 @@ function AccessRequired() {
           <Icon name="lock-keyhole-bold" size={28} className="text-ng-clay" />
         </span>
         <h2 className="font-display text-[22px] text-ng-forest-deep">Super Admin access required</h2>
-        <p className="text-[13.5px] text-ng-ink-muted mt-2">
+        <p className="text-[13.5px] font-medium text-ng-ink-muted mt-2">
           The control center is restricted to Super Admins. Ask an owner to upgrade your
           role, or head back to the admin overview.
         </p>
@@ -155,7 +155,7 @@ function ConfigContent() {
       {/* Sticky in-page section nav. */}
       <div className="sticky top-[68px] z-[1] bg-ng-cream/85 backdrop-blur -mx-8 px-8 py-3 mb-7 border-b border-ng-line-soft">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] uppercase tracking-[0.14em] text-ng-ink-soft font-mono mr-1 hidden sm:inline">
+          <span className="text-[11px] uppercase tracking-[0.14em] text-ng-ink-muted font-mono font-semibold mr-1 hidden sm:inline">
             Jump to
           </span>
           <div className="flex gap-1 text-[12.5px] flex-wrap">
@@ -166,7 +166,7 @@ function ConfigContent() {
                 className={`px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
                   i === 0
                     ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                    : "text-ng-ink-muted hover:bg-ng-paper"
+                    : "text-ng-ink-muted font-medium hover:bg-ng-paper"
                 }`}
               >
                 {t}
@@ -192,7 +192,7 @@ function ConfigContent() {
 
       {/* Secondary controls. */}
       <div className="flex items-center gap-2.5 mt-9 mb-3.5">
-        <span className="ng-eyebrow text-ng-ink-soft">Programmes &amp; platform</span>
+        <span className="ng-eyebrow text-ng-ink-muted">Programmes &amp; platform</span>
         <span className="h-px flex-1 bg-ng-line-soft" />
       </div>
 
@@ -208,11 +208,11 @@ function ConfigContent() {
             Shipping zones
           </span>
         }
-        action={<span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{ZONES.filter((z) => z.on).length} live · read-only</span>}
+        action={<span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">{ZONES.filter((z) => z.on).length} live · read-only</span>}
         className="!p-0 overflow-hidden mb-6"
       >
         <div id="shipping" className="scroll-mt-32" />
-        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>City</span>
           <span>PIN range</span>
           <span>SLA</span>
@@ -225,10 +225,10 @@ function ConfigContent() {
               key={`${z.city}-${z.pin}`}
               className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
             >
-              <span className="font-medium">{z.city}</span>
-              <span className="font-mono text-[11.5px] text-ng-ink-muted tabular-nums">{z.pin}</span>
-              <span className="text-[12.5px]">{z.days}</span>
-              <span className="text-[12.5px]">{z.surcharge}</span>
+              <span className="font-semibold text-ng-ink">{z.city}</span>
+              <span className="font-mono font-medium text-[11.5px] text-ng-ink-muted tabular-nums">{z.pin}</span>
+              <span className="text-[12.5px] font-medium text-ng-ink-muted">{z.days}</span>
+              <span className="text-[12.5px] font-medium text-ng-ink">{z.surcharge}</span>
               <span><Pill tone={z.on ? "success" : "neutral"}>{z.on ? "Live" : "Off"}</Pill></span>
             </li>
           ))}
@@ -249,10 +249,10 @@ function ConfigContent() {
           {PAYMENT.map((p) => (
             <li key={p.method} className="py-3 flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <div className="text-[13.5px] font-medium">{p.method}</div>
-                <div className="text-[11.5px] text-ng-ink-soft mt-0.5">{p.note || `Fee: ${p.fee}`}</div>
+                <div className="text-[13.5px] font-semibold text-ng-ink">{p.method}</div>
+                <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{p.note || `Fee: ${p.fee}`}</div>
               </div>
-              <span className="font-mono text-[12px] text-ng-ink-muted tabular-nums">{p.fee}</span>
+              <span className="font-mono font-semibold text-[12px] text-ng-ink tabular-nums">{p.fee}</span>
               <Pill tone={p.on ? "success" : "neutral"}>{p.on ? "On" : "Off"}</Pill>
             </li>
           ))}
@@ -374,7 +374,7 @@ function CommerceRulesSection({
         {/* Delivery slots */}
         <div className="mt-6 pt-5 border-t border-ng-line-soft">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-[12.5px] font-medium text-ng-ink-muted">Delivery slots</span>
+            <span className="text-[12.5px] font-semibold text-ng-ink">Delivery slots</span>
             <button
               type="button"
               onClick={addSlot}
@@ -413,7 +413,7 @@ function CommerceRulesSection({
               </li>
             ))}
             {draft.deliverySlots.length === 0 ? (
-              <li className="text-[12px] text-ng-ink-soft py-2">No slots — add one above.</li>
+              <li className="text-[12px] font-medium text-ng-ink-soft py-2">No slots — add one above.</li>
             ) : null}
           </ul>
         </div>
@@ -557,7 +557,7 @@ function FeatureTogglesSection() {
           title="Feature toggles"
           caption="Switch storefront capabilities on or off across the platform."
           badge={
-            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">
               {features.filter((f) => f.on).length} / {features.length} on
             </span>
           }

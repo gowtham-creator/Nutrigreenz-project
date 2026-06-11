@@ -147,9 +147,9 @@ export function ProductFormDrawer({
             <h2 id={headingId} className="font-display text-[22px] text-ng-forest-deep leading-tight">
               {mode === "edit" ? "Edit product" : "New product"}
             </h2>
-            <p className="text-[12px] text-ng-ink-soft mt-1">
+            <p className="text-[12px] font-medium text-ng-ink-soft mt-1">
               {mode === "edit" ? draft.sku || "—" : "Add a SKU to the catalog"}
-              <span className="ml-2 text-ng-clay">· demo save (M2: persist to DB)</span>
+              <span className="ml-2 font-medium text-ng-clay">· demo save (M2: persist to DB)</span>
             </p>
           </div>
           <button
@@ -292,7 +292,7 @@ export function ProductFormDrawer({
 
           {/* Live status preview */}
           <div className="flex items-center gap-2 rounded-xl bg-ng-paper border border-ng-line-soft px-4 py-3">
-            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Preview</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">Preview</span>
             <Pill tone={STATUS_TONE[draft.status]}>{draft.status}</Pill>
             <span className="ml-auto font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">
               ₹{(Number.isFinite(draft.price) ? draft.price : 0).toLocaleString("en-IN")}
@@ -372,10 +372,10 @@ function Field({
           {label}
           {required ? <span className="text-ng-terracotta ml-0.5">*</span> : null}
         </span>
-        {hint ? <span className="text-[11px] text-ng-clay font-medium normal-case tracking-normal">{hint}</span> : null}
+        {hint ? <span className="text-[11.5px] text-ng-clay font-medium normal-case tracking-normal">{hint}</span> : null}
       </label>
       {children}
-      {error ? <p className="text-[11.5px] text-ng-terracotta mt-1.5">{error}</p> : null}
+      {error ? <p className="text-[11.5px] font-medium text-ng-terracotta mt-1.5">{error}</p> : null}
     </div>
   );
 }

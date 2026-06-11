@@ -12,8 +12,8 @@ function Field({ icon, label, children }: { icon: string; label: string; childre
         <Icon name={icon} size={16} />
       </span>
       <div className="min-w-0">
-        <div className="text-[10.5px] uppercase tracking-wider text-ng-ink-soft">{label}</div>
-        <div className="text-[13px] text-ng-ink mt-0.5 break-words">{children}</div>
+        <div className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">{label}</div>
+        <div className="text-[13px] font-medium text-ng-ink mt-0.5 break-words">{children}</div>
       </div>
     </div>
   );
@@ -25,17 +25,17 @@ export function CustomerDeliveryCard({ order }: { order: AdminOrder }) {
     <Card title="Customer & delivery">
       <div className="space-y-4">
         <Field icon="user-circle-bold" label="Customer">
-          <div className="font-medium">{customer.name}</div>
-          <div className="text-ng-ink-soft text-[12px]">
+          <div className="font-semibold text-ng-ink">{customer.name}</div>
+          <div className="text-ng-ink-muted font-medium text-[12px]">
             {customer.phone} · {customer.email}
           </div>
         </Field>
         <Field icon="map-point-bold" label="Delivery address">
           {address.line1}
-          <div className="text-ng-ink-soft text-[12px]">
+          <div className="text-ng-ink-muted font-medium text-[12px]">
             {address.community} · {address.area}
           </div>
-          <div className="text-ng-ink-soft text-[12px]">
+          <div className="text-ng-ink-muted font-medium text-[12px]">
             {address.city} {address.pincode}
           </div>
         </Field>
@@ -73,7 +73,7 @@ export function PaymentCard({ order }: { order: AdminOrder }) {
             <Pill tone={failed ? "danger" : refund ? "warn" : "success"}>
               {failed ? "Failed" : refund ? "Refund" : "Settled"}
             </Pill>
-            <span className="text-[12px] text-ng-ink-soft">{order.payment.state}</span>
+            <span className="text-[12px] font-medium text-ng-ink-muted">{order.payment.state}</span>
           </div>
         </Field>
       </div>

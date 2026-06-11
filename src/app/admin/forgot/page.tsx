@@ -49,20 +49,20 @@ export default function AdminForgotPage() {
         </Link>
 
         <div className="hidden lg:block max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono text-ng-clay">
+          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay">
             <Icon name="shield-keyhole-bold" size={14} />
             Admin · v0.4.1
           </div>
           <h2 className="font-display text-[34px] leading-tight text-ng-cream mt-6">
             Reset your access
           </h2>
-          <p className="font-sans text-[14px] text-ng-cream/55 mt-3 leading-relaxed">
+          <p className="font-sans text-[14px] font-medium text-ng-cream/85 mt-3 leading-relaxed">
             We’ll email a secure link to reset your operator passcode. For
             security, the link expires shortly after it’s sent.
           </p>
         </div>
 
-        <p className="font-mono text-[11px] text-ng-cream/35">
+        <p className="font-mono text-[11.5px] font-medium text-ng-cream/85">
           Secured area — activity may be monitored.
         </p>
       </aside>
@@ -77,7 +77,7 @@ export default function AdminForgotPage() {
           <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">
             Forgot your passcode?
           </h1>
-          <p className="font-sans text-[13.5px] text-ng-ink-soft mt-2">
+          <p className="font-sans text-[13.5px] font-medium text-ng-ink-muted mt-2">
             Enter your operator email and we’ll send a reset link.
           </p>
 
@@ -102,7 +102,7 @@ export default function AdminForgotPage() {
           <div className="mt-6">
             <Link
               href="/admin/login"
-              className="inline-flex items-center gap-1.5 text-[13px] font-sans text-ng-ink-soft hover:text-ng-forest-deep transition-colors"
+              className="inline-flex items-center gap-1.5 text-[13px] font-sans font-medium text-ng-ink-muted hover:text-ng-forest-deep transition-colors"
             >
               <Icon name="alt-arrow-left-bold" size={15} />
               Back to sign in

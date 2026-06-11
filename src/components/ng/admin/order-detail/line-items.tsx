@@ -26,7 +26,7 @@ export function LineItems({ items }: { items: AdminOrderItem[] }) {
   return (
     <div>
       <div className="overflow-hidden rounded-xl border border-ng-line-soft">
-        <div className="grid grid-cols-[2.6fr_0.6fr_1fr_1.6fr] gap-3 px-4 py-2.5 bg-ng-cream text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[2.6fr_0.6fr_1fr_1.6fr] gap-3 px-4 py-2.5 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Item</span>
           <span className="text-right">Qty</span>
           <span className="text-right">Amount</span>
@@ -39,13 +39,13 @@ export function LineItems({ items }: { items: AdminOrderItem[] }) {
               className="grid grid-cols-[2.6fr_0.6fr_1fr_1.6fr] gap-3 px-4 py-3 items-center border-t border-ng-line-soft text-[13px]"
             >
               <div className="min-w-0">
-                <div className="truncate text-ng-ink">{it.title}</div>
-                <div className="text-[11px] text-ng-ink-soft mt-0.5">
+                <div className="truncate font-semibold text-ng-ink">{it.title}</div>
+                <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">
                   <span className="font-mono">{it.sku}</span> · {it.unit} · {INR(it.price)}
                 </div>
               </div>
-              <span className="text-right tabular-nums">×{it.qty}</span>
-              <span className="text-right font-medium tabular-nums">{INR(it.price * it.qty)}</span>
+              <span className="text-right font-medium text-ng-ink tabular-nums">×{it.qty}</span>
+              <span className="text-right font-semibold text-ng-ink tabular-nums">{INR(it.price * it.qty)}</span>
               <div>
                 <input
                   aria-label={`Lot for ${it.title}`}
@@ -76,8 +76,8 @@ export function LineItems({ items }: { items: AdminOrderItem[] }) {
           <Icon name="diskette-bold" size={15} />
           Save lots
         </button>
-        <div className="text-[13px] text-ng-ink-muted">
-          Items subtotal <span className="font-semibold text-ng-ink ml-1">{INR(subtotal)}</span>
+        <div className="text-[13px] font-medium text-ng-ink-muted">
+          Items subtotal <span className="font-semibold text-ng-ink tabular-nums ml-1">{INR(subtotal)}</span>
         </div>
       </div>
     </div>

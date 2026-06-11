@@ -107,8 +107,8 @@ export function CsvImportDialog({
             <h2 id={headingId} className="font-display text-[21px] text-ng-forest-deep leading-tight">
               Import products
             </h2>
-            <p className="text-[12px] text-ng-ink-soft mt-1">
-              CSV columns: <span className="font-mono text-[11px]">name, sku, category, price, mrp, stock, status</span>
+            <p className="text-[12px] font-medium text-ng-ink-soft mt-1">
+              CSV columns: <span className="font-mono font-medium text-[11.5px] text-ng-ink-muted">name, sku, category, price, mrp, stock, status</span>
             </p>
           </div>
           <button
@@ -131,10 +131,10 @@ export function CsvImportDialog({
             <span className="size-11 rounded-full bg-ng-forest/10 flex items-center justify-center">
               <Icon name="upload-bold" size={20} className="text-ng-forest" />
             </span>
-            <span className="text-[13.5px] font-medium text-ng-forest-deep">
+            <span className="text-[13.5px] font-semibold text-ng-forest-deep">
               {fileName || "Choose a CSV file"}
             </span>
-            <span className="text-[11.5px] text-ng-ink-soft">Click to browse · .csv</span>
+            <span className="text-[11.5px] font-medium text-ng-ink-soft">Click to browse · .csv</span>
             <input
               ref={fileRef}
               id="csv-file"
@@ -145,7 +145,7 @@ export function CsvImportDialog({
             />
           </label>
 
-          {parsing ? <p className="text-[12.5px] text-ng-ink-soft text-center">Parsing…</p> : null}
+          {parsing ? <p className="text-[12.5px] font-medium text-ng-ink-soft text-center">Parsing…</p> : null}
 
           {/* Result summary */}
           {result ? (
@@ -155,13 +155,13 @@ export function CsvImportDialog({
                   {result.rows.length} valid
                 </Pill>
                 {result.skipped > 0 ? <Pill tone="danger">{result.skipped} skipped</Pill> : null}
-                <span className="text-[12px] text-ng-ink-soft">of {result.total} rows</span>
+                <span className="text-[12px] font-medium text-ng-ink-soft">of {result.total} rows</span>
               </div>
 
               {/* Preview table */}
               {preview.length > 0 ? (
                 <div className="rounded-xl border border-ng-line-soft overflow-hidden">
-                  <div className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr] gap-2 px-3.5 py-2 bg-ng-cream border-b border-ng-line-soft text-[10px] uppercase tracking-wider text-ng-ink-soft font-medium">
+                  <div className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr] gap-2 px-3.5 py-2 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                     <span>Name</span>
                     <span>SKU</span>
                     <span>Price</span>
@@ -171,17 +171,17 @@ export function CsvImportDialog({
                     {preview.map((r) => (
                       <li
                         key={r.id}
-                        className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr] gap-2 px-3.5 py-2 items-center text-[12px] border-b border-ng-line-soft last:border-0 bg-ng-paper"
+                        className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr] gap-2 px-3.5 py-2 items-center text-[12px] font-medium border-b border-ng-line-soft last:border-0 bg-ng-paper"
                       >
-                        <span className="truncate text-ng-ink">{r.title}</span>
-                        <span className="font-mono text-[11px] text-ng-ink-muted truncate">{r.sku}</span>
-                        <span className="font-mono tabular-nums">₹{r.price.toLocaleString("en-IN")}</span>
-                        <span className="font-mono tabular-nums">{r.stock}</span>
+                        <span className="truncate font-semibold text-ng-ink">{r.title}</span>
+                        <span className="font-mono font-medium text-[11px] text-ng-ink-muted truncate">{r.sku}</span>
+                        <span className="font-mono tabular-nums font-semibold text-ng-ink">₹{r.price.toLocaleString("en-IN")}</span>
+                        <span className="font-mono tabular-nums font-semibold text-ng-ink">{r.stock}</span>
                       </li>
                     ))}
                   </ul>
                   {result.rows.length > preview.length ? (
-                    <div className="px-3.5 py-1.5 text-[11px] text-ng-ink-soft bg-ng-cream/60 border-t border-ng-line-soft">
+                    <div className="px-3.5 py-1.5 text-[11.5px] font-medium text-ng-ink-soft bg-ng-cream/60 border-t border-ng-line-soft">
                       + {result.rows.length - preview.length} more row{result.rows.length - preview.length === 1 ? "" : "s"}
                     </div>
                   ) : null}
@@ -191,10 +191,10 @@ export function CsvImportDialog({
               {/* Errors */}
               {result.errors.length > 0 ? (
                 <details className="rounded-xl bg-ng-terracotta/8 border border-ng-terracotta/25 px-3.5 py-2.5">
-                  <summary className="text-[12px] font-medium text-ng-terracotta cursor-pointer">
+                  <summary className="text-[12px] font-semibold text-ng-terracotta cursor-pointer">
                     {result.errors.length} issue{result.errors.length === 1 ? "" : "s"} — review
                   </summary>
-                  <ul className="mt-2 space-y-1 text-[11.5px] text-ng-ink-muted max-h-32 overflow-y-auto">
+                  <ul className="mt-2 space-y-1 text-[11.5px] font-medium text-ng-ink-muted max-h-32 overflow-y-auto">
                     {result.errors.map((err, i) => (
                       <li key={i}>· {err}</li>
                     ))}

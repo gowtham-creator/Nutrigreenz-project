@@ -37,11 +37,11 @@ export function NumberField({
   const inputId = id ?? fieldId;
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-[12.5px] font-medium text-ng-ink-muted">
+      <label htmlFor={inputId} className="text-[12.5px] font-semibold text-ng-ink-muted">
         {label}
       </label>
       <div className="flex items-center gap-2 h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line focus-within:border-ng-forest focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200">
-        {prefix ? <span className="text-[14px] text-ng-ink-soft">{prefix}</span> : null}
+        {prefix ? <span className="text-[14px] font-medium text-ng-ink-muted">{prefix}</span> : null}
         <input
           id={inputId}
           type="number"
@@ -50,11 +50,11 @@ export function NumberField({
           step={step}
           value={Number.isFinite(value) ? value : 0}
           onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-          className="flex-1 w-full bg-transparent outline-none text-[15px] text-ng-ink tabular-nums placeholder:text-ng-ink-soft"
+          className="flex-1 w-full bg-transparent outline-none text-[15px] font-semibold text-ng-ink tabular-nums placeholder:text-ng-ink-soft"
         />
-        {suffix ? <span className="text-[12.5px] text-ng-ink-soft shrink-0">{suffix}</span> : null}
+        {suffix ? <span className="text-[12.5px] font-medium text-ng-ink-soft shrink-0">{suffix}</span> : null}
       </div>
-      {hint ? <p className="text-[11.5px] text-ng-ink-soft">{hint}</p> : null}
+      {hint ? <p className="text-[11.5px] font-medium text-ng-ink-soft">{hint}</p> : null}
     </div>
   );
 }
@@ -81,9 +81,9 @@ export function Toggle({
       className="flex items-center justify-between gap-4 py-3 cursor-pointer select-none"
     >
       <span className="min-w-0">
-        <span className="block text-[13.5px] font-medium text-ng-ink">{label}</span>
+        <span className="block text-[13.5px] font-semibold text-ng-ink">{label}</span>
         {description ? (
-          <span className="block text-[11.5px] text-ng-ink-soft mt-0.5">{description}</span>
+          <span className="block text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{description}</span>
         ) : null}
       </span>
       <button
@@ -124,7 +124,7 @@ export function SegToggle<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[12.5px] font-medium text-ng-ink-muted">{label}</span>
+      <span className="text-[12.5px] font-semibold text-ng-ink-muted">{label}</span>
       <div
         role="radiogroup"
         aria-label={label}
@@ -143,7 +143,7 @@ export function SegToggle<T extends string>({
                 "px-4 py-1.5 rounded-full text-[12.5px] transition-colors cursor-pointer",
                 isActive
                   ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                  : "text-ng-ink-muted hover:text-ng-forest",
+                  : "font-medium text-ng-ink-muted hover:text-ng-forest",
               )}
             >
               {o.label}
@@ -151,7 +151,7 @@ export function SegToggle<T extends string>({
           );
         })}
       </div>
-      {hint ? <p className="text-[11.5px] text-ng-ink-soft">{hint}</p> : null}
+      {hint ? <p className="text-[11.5px] font-medium text-ng-ink-soft">{hint}</p> : null}
     </div>
   );
 }
@@ -177,7 +177,7 @@ export function TextField({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label ? (
-        <label htmlFor={inputId} className="text-[12.5px] font-medium text-ng-ink-muted">
+        <label htmlFor={inputId} className="text-[12.5px] font-semibold text-ng-ink-muted">
           {label}
         </label>
       ) : null}
@@ -187,7 +187,7 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200"
+        className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] font-medium text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200"
       />
     </div>
   );
@@ -207,7 +207,7 @@ export function SaveBar({
 }) {
   return (
     <div className="mt-5 pt-4 border-t border-ng-line-soft flex items-center justify-between gap-4 flex-wrap">
-      <p className="text-[11.5px] text-ng-ink-soft flex items-center gap-1.5 min-w-0">
+      <p className="text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5 min-w-0">
         {note ? (
           <>
             <Icon name="info-circle-bold" size={13} className="text-ng-forest shrink-0" />

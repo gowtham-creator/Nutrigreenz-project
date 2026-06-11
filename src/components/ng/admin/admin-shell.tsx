@@ -73,10 +73,10 @@ function AdminIdentity() {
           {initial}
         </span>
         <span className="hidden sm:flex flex-col items-start leading-tight min-w-0">
-          <span className="font-mono text-[12px] text-ng-forest-deep truncate max-w-[140px]">
+          <span className="font-mono text-[12.5px] font-medium text-ng-forest-deep truncate max-w-[150px]">
             {email ?? "admin"}
           </span>
-          <span className="text-[10px] uppercase tracking-wider text-ng-ink-soft">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-muted">
             {roleLabel(role)}
           </span>
         </span>
@@ -90,7 +90,7 @@ function AdminIdentity() {
         >
           <div className="px-3 py-2">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft font-mono">
+              <div className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-muted font-mono">
                 Signed in as
               </div>
               {role === "superadmin" ? (
@@ -100,24 +100,24 @@ function AdminIdentity() {
                 </span>
               ) : null}
             </div>
-            <div className="font-mono text-[12.5px] text-ng-forest-deep truncate mt-0.5">
+            <div className="font-mono text-[12.5px] font-medium text-ng-forest-deep truncate mt-0.5">
               {email ?? "admin"}
             </div>
-            <div className="text-[11px] text-ng-ink-soft mt-0.5">{roleLabel(role)}</div>
+            <div className="text-[11.5px] font-medium text-ng-ink-muted mt-0.5">{roleLabel(role)}</div>
           </div>
           <div className="h-px bg-ng-line-soft my-1" />
           <Link
             href="/"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans text-ng-ink hover:bg-ng-line-soft transition-colors"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
           >
-            <Icon name="shop-2-bold" size={16} className="text-ng-ink-soft" />
+            <Icon name="shop-2-bold" size={16} className="text-ng-ink-muted" />
             View store
           </Link>
           <button
             type="button"
             role="menuitem"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors"
+            className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors"
           >
             <Icon name="logout-3-bold" size={16} />
             Sign out
@@ -160,7 +160,7 @@ export function AdminShell({
             <span className="font-display text-[17px] text-ng-cream">Nutri Greenz</span>
           </Link>
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
+            <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
             {isSuper ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay font-bold px-2 py-0.5 text-[9px] uppercase tracking-wider">
                 <Icon name="crown-bold" size={10} />
@@ -178,10 +178,10 @@ export function AdminShell({
                 href={n.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans font-medium text-[13.5px] tracking-[0.01em] transition-colors mb-0.5",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans font-semibold text-[13.5px] tracking-[0.01em] transition-colors mb-0.5",
                   isActive
-                    ? "bg-ng-cream/10 text-ng-cream"
-                    : "text-ng-cream/70 hover:bg-ng-cream/5 hover:text-ng-cream",
+                    ? "bg-ng-cream/12 text-ng-cream"
+                    : "text-ng-cream/80 hover:bg-ng-cream/5 hover:text-ng-cream",
                 )}
               >
                 <Icon
@@ -189,7 +189,7 @@ export function AdminShell({
                   size={18}
                   className={cn(
                     "transition-colors",
-                    isActive ? "text-ng-clay" : "text-ng-cream/45",
+                    isActive ? "text-ng-clay" : "text-ng-cream/60",
                   )}
                 />
                 {n.label}
@@ -198,8 +198,8 @@ export function AdminShell({
           })}
         </nav>
         <div className="mt-auto p-4">
-          <div className="rounded-2xl bg-ng-cream/5 border border-ng-cream/10 p-4 text-[12px] text-ng-cream/60">
-            <div className="text-ng-clay font-semibold mb-1">Need a hand?</div>
+          <div className="rounded-2xl bg-ng-cream/5 border border-ng-cream/10 p-4 text-[12px] font-medium text-ng-cream/75">
+            <div className="text-ng-clay font-bold text-[12.5px] mb-1">Need a hand?</div>
             Slack #admin-portal · runbook link in handbook
           </div>
         </div>
@@ -211,7 +211,7 @@ export function AdminShell({
           <div className="px-8 py-4 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="font-display text-[24px] text-ng-forest-deep leading-tight tracking-[-0.01em] truncate">{title}</h1>
-              {subtitle ? <p className="font-sans text-[12.5px] text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
+              {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
             </div>
             <div className="flex items-center gap-3 shrink-0">
               {actions}
@@ -241,10 +241,10 @@ export function StatTile({
   const trendArrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
   return (
     <div className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
-      <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">{label}</div>
       <div className="font-display text-[34px] text-ng-forest-deep leading-none mt-3">{value}</div>
       {delta ? (
-        <div className={cn("text-[12px] mt-auto pt-3 font-medium", trendColor)}>
+        <div className={cn("text-[12px] mt-auto pt-3 font-semibold", trendColor)}>
           {trendArrow} {delta}
         </div>
       ) : null}

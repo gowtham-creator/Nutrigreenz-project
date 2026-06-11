@@ -57,7 +57,7 @@ export default function AdminMarketing() {
         <StatTile label="Subscribers" value="28,412" delta="+412 this week" trend="up" />
         <div className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
           <div className="flex items-start justify-between gap-2">
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Avg open rate</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">Avg open rate</div>
             <TrendChip delta="+2.1 pt" direction="up" />
           </div>
           <div className="font-display text-[30px] text-ng-forest-deep leading-none mt-2.5 tabular-nums">48.6%</div>
@@ -70,10 +70,10 @@ export default function AdminMarketing() {
       {/* Campaigns */}
       <Card
         title="Campaigns"
-        action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">All →</button>}
+        action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All →</button>}
         className="!p-0 overflow-hidden mb-6"
       >
-        <div className="grid grid-cols-[2.2fr_1.1fr_1.6fr_0.8fr_0.6fr_0.9fr_0.6fr_0.9fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[10.5px] uppercase tracking-wider text-ng-ink-soft font-medium">
+        <div className="grid grid-cols-[2.2fr_1.1fr_1.6fr_0.8fr_0.6fr_0.9fr_0.6fr_0.9fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Campaign</span>
           <span>Channel</span>
           <span>Segment</span>
@@ -91,14 +91,14 @@ export default function AdminMarketing() {
               className="grid grid-cols-[2.2fr_1.1fr_1.6fr_0.8fr_0.6fr_0.9fr_0.6fr_0.9fr_0.5fr] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
             >
               <div className="min-w-0">
-                <div className="font-medium truncate">{c.name}</div>
-                <div className="text-[11px] text-ng-ink-soft mt-0.5">{c.sent}</div>
+                <div className="font-semibold text-ng-ink truncate">{c.name}</div>
+                <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{c.sent}</div>
               </div>
-              <span className="text-[12px] text-ng-ink-muted">{c.channel}</span>
-              <span className="text-[12px] text-ng-ink-muted truncate">{c.segment}</span>
-              <span className="font-mono text-[12px] tabular-nums">{c.opens ? c.opens.toLocaleString("en-IN") : "—"}</span>
-              <span className="font-mono text-[12px] tabular-nums">{c.ctr ? `${c.ctr}%` : "—"}</span>
-              <span className="font-mono text-[12px] tabular-nums font-semibold">{c.revenue ? `₹${c.revenue.toLocaleString("en-IN")}` : "—"}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted">{c.channel}</span>
+              <span className="text-[12px] font-medium text-ng-ink-muted truncate">{c.segment}</span>
+              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink">{c.opens ? c.opens.toLocaleString("en-IN") : "—"}</span>
+              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink">{c.ctr ? `${c.ctr}%` : "—"}</span>
+              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.revenue ? `₹${c.revenue.toLocaleString("en-IN")}` : "—"}</span>
               <span className="font-mono text-[12px] tabular-nums text-ng-success font-semibold">{c.roi}</span>
               <span><Pill tone={c.tone}>{c.status}</Pill></span>
               <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Open →</button>
@@ -109,7 +109,7 @@ export default function AdminMarketing() {
 
       {/* Coupons + segments */}
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 mb-6">
-        <Card title="Coupons" action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">+ Create</button>}>
+        <Card title="Coupons" action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">+ Create</button>}>
           <ul className="divide-y divide-ng-line-soft">
             {COUPONS.map((c) => {
               const cap = c.capacity;
@@ -119,16 +119,16 @@ export default function AdminMarketing() {
                   <div className="flex justify-between items-start gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[14px] text-ng-forest-deep">{c.code}</span>
-                        <span className="text-[9.5px] uppercase tracking-wider font-bold text-ng-forest bg-ng-forest/10 rounded-full px-2 py-0.5">{c.mode}</span>
+                        <span className="font-mono text-[14px] font-semibold text-ng-forest-deep">{c.code}</span>
+                        <span className="text-[11px] uppercase tracking-wider font-bold text-ng-forest bg-ng-forest/10 rounded-full px-2 py-0.5">{c.mode}</span>
                       </div>
-                      <div className="text-[12px] text-ng-ink-muted mt-1">{c.discount} · expires {c.expires}</div>
+                      <div className="text-[12px] font-medium text-ng-ink-muted mt-1">{c.discount} · expires {c.expires}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-mono text-[12.5px] tabular-nums font-semibold">
                         {c.uses.toLocaleString("en-IN")}{Number.isFinite(cap) ? ` / ${(cap as number).toLocaleString("en-IN")}` : " / ∞"}
                       </div>
-                      <div className="text-[10.5px] text-ng-ink-soft mt-0.5">redemptions · ROI {c.roi}</div>
+                      <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">redemptions · ROI {c.roi}</div>
                     </div>
                   </div>
                   {Number.isFinite(cap) ? (
@@ -142,11 +142,11 @@ export default function AdminMarketing() {
           </ul>
         </Card>
 
-        <Card title="Segments" action={<button className="text-[12px] text-ng-forest hover:underline cursor-pointer">+ New</button>}>
+        <Card title="Segments" action={<button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">+ New</button>}>
           <ul className="space-y-1">
             {SEGMENTS.map((s) => (
               <li key={s.name} className="flex items-center justify-between gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
-                <span className="text-[13px] flex-1 min-w-0 truncate">{s.name}</span>
+                <span className="text-[13px] font-medium text-ng-ink flex-1 min-w-0 truncate">{s.name}</span>
                 <span className="font-mono text-[13px] tabular-nums font-semibold">{s.count.toLocaleString("en-IN")}</span>
                 <TrendChip delta={s.growth} direction={s.dir} />
               </li>
@@ -165,10 +165,10 @@ export default function AdminMarketing() {
               </span>
               <span className="font-display text-[15px] text-ng-forest-deep">{p.title}</span>
             </div>
-            <p className="text-[12px] text-ng-ink-muted mt-3 leading-relaxed">{p.detail}</p>
+            <p className="text-[12px] font-medium text-ng-ink-muted mt-3 leading-relaxed">{p.detail}</p>
             <div className="mt-auto pt-3 border-t border-ng-line-soft flex items-baseline gap-2">
               <span className="font-display text-[22px] text-ng-forest-deep tabular-nums">{p.stat}</span>
-              <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">{p.statLabel}</span>
+              <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">{p.statLabel}</span>
             </div>
           </div>
         ))}
