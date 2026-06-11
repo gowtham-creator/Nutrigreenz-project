@@ -107,6 +107,13 @@ function AdminIdentity() {
           </div>
           <div className="h-px bg-ng-line-soft my-1" />
           <Link
+            href="/admin/profile"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
+          >
+            <Icon name="user-circle-bold" size={16} className="text-ng-ink-muted" />
+            Profile
+          </Link>
+          <Link
             href="/"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
           >
