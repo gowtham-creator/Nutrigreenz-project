@@ -38,7 +38,7 @@ export default function TraceabilityPage() {
       <PageHero
         tone="forest"
         eyebrow="Traceability is the product"
-        title={<>Type a code. <em className="italic text-ng-clay">See the farm.</em></>}
+        title={<>Type a code. <em className="italic text-ng-leaf">See the farm.</em></>}
         description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the full story — farmer, harvest date, pressing, lab tests, and kilometres travelled."
       >
         <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">

@@ -41,7 +41,33 @@ export function PageHero({
   const descColor = tone === "forest" ? "text-ng-cream/70" : "text-ng-ink-muted";
   return (
     <section className={cn("relative overflow-hidden", toneClass)}>
-      <div className={cn("mx-auto max-w-7xl px-5 md:px-8 py-16 md:py-24", align === "center" && "text-center")}>
+      {/* Forest tone gets a green-forward gradient + texture so the dark hero
+          reads with depth and on-brand green contrast (instead of flat green). */}
+      {tone === "forest" ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {/* Layered leaf / bright-green glows for contrast + depth */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 55% at 88% 10%, rgba(102,191,115,0.22), transparent 60%), radial-gradient(ellipse 55% 60% at 6% 100%, rgba(76,175,80,0.16), transparent 62%), radial-gradient(ellipse 95% 65% at 50% 134%, rgba(31,77,46,0.6), transparent 70%)",
+            }}
+          />
+          {/* Faint sage dot grid — subtle organic texture */}
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: "radial-gradient(rgba(178,199,178,0.75) 1px, transparent 1.4px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
+          {/* Soft leaf corner glow to fill the open right side */}
+          <div className="absolute -right-24 -top-24 h-[26rem] w-[26rem] rounded-full bg-ng-leaf/[0.12] blur-[90px]" />
+          {/* Crisp green hairline at the base */}
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ng-leaf/35 to-transparent" />
+        </div>
+      ) : null}
+      <div className={cn("relative z-10 mx-auto max-w-7xl px-5 md:px-8 py-16 md:py-24", align === "center" && "text-center")}>
         {eyebrow ? <span className={cn("ng-eyebrow", eyebrowColor)}>{eyebrow}</span> : null}
         <h1 className={cn("font-display text-[clamp(40px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl", titleColor, align === "center" && "mx-auto")}>
           {title}
