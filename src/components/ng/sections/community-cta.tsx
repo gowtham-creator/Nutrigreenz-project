@@ -27,7 +27,7 @@ export function CommunityCTA() {
         />
         <div
           aria-hidden
-          className="absolute -right-20 bottom-0 h-80 w-80 rounded-full blur-3xl"
+          className="absolute right-0 bottom-0 h-80 w-80 rounded-full blur-3xl"
           style={{ background: "radial-gradient(circle, rgba(181,134,47,0.22), transparent 70%)" }}
         />
       </Parallax>

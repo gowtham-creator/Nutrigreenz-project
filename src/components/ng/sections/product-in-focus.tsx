@@ -148,7 +148,7 @@ export function ProductInFocus({
                     aria-selected={isActive}
                     onClick={() => setActive(i)}
                     className={cn(
-                      "group inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium",
+                      "group inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 md:py-2 text-sm font-medium",
                       "transition-[background-color,border-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       isActive
@@ -162,7 +162,7 @@ export function ProductInFocus({
                           "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
                           isActive
                             ? "bg-ng-cream/15 text-ng-cream"
-                            : "bg-ng-sage/35 text-ng-leaf group-hover:bg-ng-sage/55",
+                            : "bg-ng-sage/60 text-ng-forest group-hover:bg-ng-sage/80",
                         )}
                       >
                         <Icon size={18} />
@@ -221,7 +221,7 @@ export function ProductInFocus({
         </div>
 
         {/* ── See All pill (right-aligned) ─────────────────────────────── */}
-        <div className="mt-7 flex justify-end">
+        <div className="mt-7 flex justify-center md:justify-end">
           <Link
             href={ctaHref}
             className="group inline-flex items-center gap-2 rounded-full border border-ng-line bg-ng-paper px-5 py-2.5 text-sm font-semibold text-ng-forest transition-colors hover:border-ng-leaf-soft hover:bg-ng-sage/30"

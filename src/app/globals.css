@@ -369,7 +369,7 @@
   font-family: var(--font-sans);
   font-size: 12px; font-weight: 600;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--ng-clay-deep);
+  color: #7A5717; /* darker gold — clears WCAG AA (~5:1) for the 12px eyebrow */
 }
 
 /* ----------------------------------------------------------------

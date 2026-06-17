@@ -51,7 +51,7 @@ const NAV_GROUPS = [
 export function Footer() {
   return (
     <footer
-      className="relative text-ng-cream pt-20 pb-44 md:pb-52 overflow-hidden"
+      className="relative text-ng-cream pt-14 md:pt-20 pb-44 md:pb-52 overflow-hidden"
       style={{
         background:
           "linear-gradient(180deg, var(--ng-forest-deep) 0%, var(--ng-forest-deep) 38%, var(--ng-forest) 100%)",
@@ -133,7 +133,7 @@ export function Footer() {
           ))}
 
           {/* Find us */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className="font-display text-[15px] tracking-wider uppercase text-ng-clay mb-5">
               Find us
             </h4>
@@ -150,7 +150,7 @@ export function Footer() {
                   key={s.name}
                   href={`https://${s.name}.com/nutrigreenz`}
                   aria-label={s.label}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
+                  className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
                 >
                   <Icon name={s.icon} size={16} label={s.label} />
                 </Link>
@@ -160,7 +160,7 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[12px] text-ng-cream/50">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[12px] text-ng-cream/70">
           <p>© {new Date().getFullYear()} Nutrigreenz Farm Pvt. Ltd. — FSSAI 10822005000123</p>
           <ul className="flex gap-6">
             <li><Link href="/policies/privacy" className="hover:text-ng-cream">Privacy</Link></li>

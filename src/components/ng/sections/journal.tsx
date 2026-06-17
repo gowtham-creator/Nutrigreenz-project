@@ -9,7 +9,7 @@ import { JOURNAL } from "../data";
 const CATEGORY_TONE: Record<string, string> = {
   science: "bg-ng-forest text-ng-cream",
   "field-notes": "bg-ng-clay text-ng-forest-deep",
-  recipes: "bg-ng-terracotta text-ng-cream",
+  recipes: "bg-ng-terracotta text-white",
   guides: "bg-ng-leaf text-ng-forest-deep",
 };
 
@@ -41,7 +41,7 @@ export function Journal() {
           <StaggerItem key={article.id} className="h-full">
             <Link
               href={`/journal/${article.slug}`}
-              className="group flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden ng-float tilt-soft transition-transform duration-500 ease-out [transform-style:preserve-3d] hover:[transform:rotateX(0deg)_rotateY(0deg)]"
+              className="group flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft overflow-hidden ng-float transition-transform duration-500"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-ng-cream-deep">
                 {/* Cover gets a gentle parallax drift within its frame */}
@@ -55,7 +55,7 @@ export function Journal() {
                   />
                 </Parallax>
                 <div className="absolute top-3 left-3 z-10">
-                  <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${CATEGORY_TONE[article.category] ?? "bg-ng-ink text-ng-cream"}`}>
+                  <span className={`text-[11px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${CATEGORY_TONE[article.category] ?? "bg-ng-ink text-ng-cream"}`}>
                     {article.category.replace("-", " ")}
                   </span>
                 </div>
@@ -68,7 +68,7 @@ export function Journal() {
                   {article.excerpt}
                 </p>
                 <div className="mt-4 pt-4 border-t border-ng-line-soft flex items-center justify-between text-[12px] text-ng-ink-soft">
-                  <span>{new Date(article.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  <span>{new Date(article.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</span>
                   <span className="ng-magnetic inline-flex items-center gap-1 font-semibold text-ng-forest group-hover:text-ng-leaf">
                     Read
                     <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">&rarr;</span>

@@ -58,7 +58,7 @@ export function Header() {
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
             <Logo className="h-10" priority />
           </Link>
-          <LocationPill className="hidden md:inline-flex" />
+          <LocationPill className="hidden md:inline-flex md:mr-auto" />
         </div>
 
         {/* Desktop nav */}
@@ -137,13 +137,13 @@ export function Header() {
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8Z" />
             </svg>
             {wishlistCount > 0 ? (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-ng-clay text-ng-soil text-[10px] font-semibold inline-flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-ng-clay-deep text-ng-paper text-[10px] font-semibold inline-flex items-center justify-center">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             ) : null}
@@ -151,7 +151,7 @@ export function Header() {
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
@@ -169,7 +169,7 @@ export function Header() {
           </Button>
           <button
             aria-label="Open menu"
-            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
+            className="lg:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

@@ -61,7 +61,7 @@ export function Farms() {
                   </span>
                 </div>
                 <div className="absolute bottom-4 left-4 right-4">
-                  <span className="ng-chip bg-ng-cream/90 text-ng-forest-deep border-ng-cream">
+                  <span className="text-[11px] font-medium text-ng-cream drop-shadow-[0_1px_2px_rgba(10,31,18,0.6)]">
                     Partner since {farm.partneredSince ? new Date(farm.partneredSince).getFullYear() : "—"}
                   </span>
                 </div>
@@ -71,10 +71,11 @@ export function Farms() {
                 <h3 className="font-display text-[22px] leading-tight text-ng-forest-deep">
                   {farm.name}
                 </h3>
-                <p className="text-[13px] text-ng-ink-muted mt-1">
-                  {farm.region}
-                  {farm.hectares ? ` · ${farm.hectares} ha` : ""}
-                </p>
+                {farm.hectares ? (
+                  <p className="text-[13px] text-ng-ink-muted mt-1">
+                    {farm.hectares} ha
+                  </p>
+                ) : null}
 
                 <p className="text-[14px] text-ng-ink-muted mt-4 leading-relaxed line-clamp-3">
                   {farm.story}
@@ -82,7 +83,7 @@ export function Farms() {
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   {farm.practices.slice(0, 3).map((p) => (
-                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-sage/60 text-ng-forest-deep capitalize">
+                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-sage border border-ng-leaf-soft/60 text-ng-forest-deep capitalize">
                       {p}
                     </span>
                   ))}

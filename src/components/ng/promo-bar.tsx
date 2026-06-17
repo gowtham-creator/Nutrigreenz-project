@@ -10,7 +10,7 @@ export function PromoBar() {
   return (
     <div className="bg-ng-forest-deep text-ng-paper py-2 overflow-hidden">
       <div className="marquee">
-        <div className="marquee__track font-sans text-[11.5px] font-medium uppercase tracking-[0.15em]">
+        <div className="marquee__track font-sans text-[12px] font-medium uppercase tracking-[0.12em]">
           {loop.map((m, i) => (
             <span key={i} className="marquee__item" aria-hidden={i >= messages.length}>
               <span aria-hidden className="text-ng-clay">◆</span>

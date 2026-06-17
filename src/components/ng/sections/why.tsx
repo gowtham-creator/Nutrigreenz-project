@@ -82,11 +82,11 @@ const TREATMENTS: Record<Variant, Treatment> = {
   // 02 — warm gold / clay block.
   clay: {
     card: "bg-gradient-to-br from-ng-clay/20 via-ng-clay/12 to-ng-cream-deep/50 border-ng-clay/35",
-    blob: "bg-ng-clay/35",
+    blob: "bg-ng-clay/25",
     badge: "bg-ng-clay text-ng-cream shadow-[0_8px_24px_-8px_rgba(181,134,47,0.6)]",
     eyebrow: "text-ng-clay-deep",
-    title: "text-ng-clay-deep",
-    body: "text-ng-ink-muted",
+    title: "text-ng-forest-deep",
+    body: "text-ng-ink",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(138,100,32,0.4)]",
   },
   // 03 — fresh leaf green block.
@@ -96,7 +96,7 @@ const TREATMENTS: Record<Variant, Treatment> = {
     badge: "bg-ng-forest-soft text-ng-cream shadow-[0_8px_24px_-8px_rgba(31,77,46,0.6)]",
     eyebrow: "text-ng-forest-soft",
     title: "text-ng-forest",
-    body: "text-ng-ink-muted",
+    body: "text-ng-ink",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(31,77,46,0.4)]",
   },
   // 04 — warm terracotta / amber block.
@@ -106,7 +106,7 @@ const TREATMENTS: Record<Variant, Treatment> = {
     badge: "bg-ng-terracotta text-ng-cream shadow-[0_8px_24px_-8px_rgba(199,77,51,0.6)]",
     eyebrow: "text-ng-terracotta",
     title: "text-ng-terracotta",
-    body: "text-ng-ink-muted",
+    body: "text-ng-ink",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(199,77,51,0.4)]",
   },
 };
@@ -119,7 +119,7 @@ export function Why() {
       heading={<>Four promises we put <em className="italic text-ng-leaf">in writing.</em></>}
       description="No tagline can replace the practice. Here's exactly how we operate, in plain language."
     >
-      <Stagger className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
+      <Stagger className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
         {PILLARS.map((p) => {
           const t = TREATMENTS[p.variant];
           return (
@@ -152,7 +152,7 @@ export function Why() {
                     </span>
                     <span
                       className={cn(
-                        "font-display text-4xl md:text-5xl leading-none tabular-nums opacity-30",
+                        "font-display text-4xl md:text-5xl leading-none tabular-nums opacity-40",
                         t.title,
                       )}
                     >
@@ -161,7 +161,7 @@ export function Why() {
                   </div>
 
                   <span className={cn("ng-eyebrow mt-6 block", t.eyebrow)}>
-                    {p.num} · {p.eyebrow}
+                    {p.eyebrow}
                   </span>
                   <h3
                     className={cn(

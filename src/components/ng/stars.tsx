@@ -45,7 +45,7 @@ export function Stars({ rating, reviewCount, size = "sm", className, showCount =
       </span>
       {showCount && reviewCount !== undefined ? (
         <span className="text-[12px] text-ng-ink-soft">
-          {rating.toFixed(1)} ({reviewCount.toLocaleString()})
+          {rating.toFixed(1)} ({reviewCount.toLocaleString("en-IN")})
         </span>
       ) : null}
     </span>

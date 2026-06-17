@@ -46,7 +46,7 @@ export function AssuranceStrip() {
     <section aria-label="Why shop with Nutri Greenz" className="relative px-4 sm:px-6 md:px-8">
       <div className="mx-auto max-w-7xl">
         <Reveal>
-          <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[26px] border border-ng-line bg-ng-line/70 shadow-[var(--shadow-ng-card)] lg:grid-cols-4">
+          <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-[26px] border border-ng-line bg-ng-line/70 shadow-[var(--shadow-ng-card)] sm:grid-cols-2 lg:grid-cols-4">
             {POINTS.map((p) => (
               <li
                 key={p.title}
@@ -59,7 +59,7 @@ export function AssuranceStrip() {
                   <div className="font-display text-[15px] font-semibold leading-tight text-ng-forest-deep md:text-[16px]">
                     {p.title}
                   </div>
-                  <div className="mt-0.5 text-[12.5px] leading-snug text-ng-ink-muted">{p.sub}</div>
+                  <div className="mt-0.5 text-[13px] leading-snug text-ng-ink-muted sm:text-sm">{p.sub}</div>
                 </div>
               </li>
             ))}

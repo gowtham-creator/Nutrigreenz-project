@@ -136,7 +136,7 @@ export function Hero() {
               type="button"
               onClick={prev}
               aria-label="Previous banner"
-              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-11 w-11 sm:h-9 sm:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-left-linear" size={18} />
             </button>
@@ -152,7 +152,7 @@ export function Hero() {
                     aria-selected={active}
                     aria-label={`Go to ${s.label} banner`}
                     onClick={() => go(i)}
-                    className="group grid place-items-center p-1"
+                    className="group grid place-items-center p-1 min-h-[44px] min-w-[28px]"
                   >
                     <span
                       className={`block h-2 rounded-full transition-all duration-300 ${
@@ -168,7 +168,7 @@ export function Hero() {
               type="button"
               onClick={next}
               aria-label="Next banner"
-              className="grid h-8 w-8 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-11 w-11 sm:h-9 sm:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-right-linear" size={18} />
             </button>
@@ -198,7 +198,7 @@ function SlideFrame({
       <div className="relative isolate flex flex-col justify-center px-6 pb-16 pt-9 sm:px-10 md:px-12 md:pb-16 md:pt-12 lg:px-16">
         {left}
       </div>
-      <div className="relative isolate min-h-[210px] overflow-hidden lg:min-h-0">{right}</div>
+      <div className="relative isolate min-h-[240px] overflow-hidden sm:min-h-[210px] lg:min-h-0">{right}</div>
     </div>
   );
 }
@@ -228,7 +228,7 @@ function SaleSlide({ reduce }: { reduce: boolean | null }) {
       }}
       left={
         <div className="relative z-10 max-w-xl">
-          <span className="inline-flex items-center gap-2 rounded-full bg-ng-clay px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_6px_18px_rgba(181,134,47,0.32)]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-ng-clay px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-forest-deep shadow-[0_6px_18px_rgba(181,134,47,0.32)]">
             <span className={`h-1.5 w-1.5 rounded-full bg-ng-soil/80 ${reduce ? "" : "animate-pulse"}`} />
             Harvest Sale is Live
           </span>
@@ -276,7 +276,7 @@ function SaleSlide({ reduce }: { reduce: boolean | null }) {
             </MagneticHover>
             <div className="flex items-center gap-2">
               <Stars rating={4.8} size="sm" showCount={false} />
-              <span className="text-[13px] text-ng-ink-soft">4.8 · 12,400+ reviews</span>
+              <span className="text-[13px] text-ng-ink-muted">4.8 · 12,400+ reviews</span>
             </div>
           </div>
         </div>
@@ -305,7 +305,7 @@ function BrandSlide({ reduce }: { reduce: boolean | null }) {
             }}
           />
           <div className="relative z-10 max-w-xl">
-            <span className="inline-flex items-center gap-2 rounded-full rounded-tl-sm bg-ng-clay px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_6px_18px_rgba(181,134,47,0.38)]">
+            <span className="inline-flex items-center gap-2 rounded-full rounded-tl-sm bg-ng-clay px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-forest-deep shadow-[0_6px_18px_rgba(181,134,47,0.38)]">
               <span className="h-1.5 w-1.5 rounded-full bg-ng-soil/70" />
               Single-origin · New harvest
             </span>
@@ -395,7 +395,7 @@ function HarvestSlide({ reduce }: { reduce: boolean | null }) {
                 </Link>
               </Button>
             </MagneticHover>
-            <div className="flex items-center gap-2 text-[13px] text-ng-ink-soft">
+            <div className="flex items-center gap-2 text-[13px] text-ng-ink-muted">
               <span className="h-1.5 w-1.5 rounded-full bg-ng-leaf" />
               FSSAI · ISO 22000 certified
             </div>
@@ -417,7 +417,7 @@ function SaleBadge({ className }: { className?: string }) {
     <div className={`pointer-events-none absolute z-30 ${className ?? ""}`}>
       <div className="relative grid h-[96px] w-[96px] place-items-center sm:h-[112px] sm:w-[112px]">
         <Starburst className="absolute inset-0 h-full w-full text-ng-clay drop-shadow-[0_8px_18px_rgba(181,134,47,0.35)]" />
-        <div className="relative px-1 text-center leading-none text-ng-soil">
+        <div className="relative px-1 text-center leading-none text-ng-forest-deep">
           <span className="block font-display text-[20px] font-bold tracking-tight sm:text-[24px]">SALE</span>
           <span className="mt-1 block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.06em] sm:text-[10px]">
             up to 20% off
@@ -451,7 +451,7 @@ function ProductSplash({ reduce }: { reduce: boolean | null }) {
         {/* Central glass product card (real photo drops in later) */}
         <FloatIn className="relative z-10">
           <div className="glass-strong relative mx-auto w-[210px] overflow-hidden rounded-[26px] border border-white/55 px-6 pb-6 pt-7 text-center shadow-[var(--shadow-ng-float)]">
-            <span className="absolute right-3.5 top-3.5 rounded-full bg-ng-clay/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-ng-soil shadow-sm">
+            <span className="absolute right-3.5 top-3.5 rounded-full bg-ng-clay/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-ng-forest-deep shadow-sm">
               20% off
             </span>
             <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-white to-ng-cream shadow-[var(--shadow-ng-card)] ring-1 ring-ng-clay/20">
@@ -471,10 +471,10 @@ function ProductSplash({ reduce }: { reduce: boolean | null }) {
         </FloatIn>
 
         {/* Produce chips bursting out of the splash */}
-        <BurstChip reduce={reduce} delay={0.15} icon="oil" tint="text-ng-leaf" className="-left-6 top-2 sm:-left-10" />
-        <BurstChip reduce={reduce} delay={0.3} icon="honey" tint="text-ng-amber" className="-right-5 top-6 sm:-right-9" />
-        <BurstChip reduce={reduce} delay={0.45} icon="ghee" tint="text-ng-clay" className="-left-4 bottom-6 sm:-left-8" />
-        <BurstChip reduce={reduce} delay={0.6} icon="spice" tint="text-ng-terracotta" className="-right-4 bottom-2 sm:-right-8" />
+        <BurstChip reduce={reduce} delay={0.15} icon="oil" tint="text-ng-leaf" className="left-0 top-2 sm:-left-10" />
+        <BurstChip reduce={reduce} delay={0.3} icon="honey" tint="text-ng-amber" className="right-0 top-6 sm:-right-9" />
+        <BurstChip reduce={reduce} delay={0.45} icon="ghee" tint="text-ng-clay" className="left-0 bottom-6 sm:-left-8" />
+        <BurstChip reduce={reduce} delay={0.6} icon="spice" tint="text-ng-terracotta" className="right-0 bottom-2 sm:-right-8" />
         <BurstChip reduce={reduce} delay={0.75} icon="seedling" tint="text-ng-green-bright" className="left-1/2 -top-7 -translate-x-1/2" />
       </div>
     </div>

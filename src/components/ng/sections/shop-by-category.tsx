@@ -99,7 +99,7 @@ export function ShopByCategory({ className }: { className?: string }) {
         <div
           role="tablist"
           aria-label="Shop by category"
-          className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 md:flex-wrap md:justify-center md:overflow-visible"
+          className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 md:flex-wrap md:justify-center md:overflow-visible"
         >
           {TABS.map((tab) => {
             const Icon = PRODUCE_ICONS[tab.icon] ?? PRODUCE_ICONS.leaf;
@@ -142,7 +142,7 @@ export function ShopByCategory({ className }: { className?: string }) {
           stuck-hidden state). */}
       <Stagger
         key={active}
-        className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5"
+        className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5 [&>*:nth-child(5)]:hidden sm:[&>*:nth-child(5)]:block"
       >
         {products.map((p) => (
           <StaggerItem key={p.id} className="h-full">

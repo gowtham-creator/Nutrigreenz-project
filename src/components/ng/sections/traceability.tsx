@@ -66,7 +66,7 @@ export function Traceability() {
               placeholder="e.g. ANT-24-051"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="bg-ng-cream/10 text-ng-cream placeholder:text-ng-cream/40 border-ng-cream/20"
+              className="bg-ng-cream/10 text-ng-cream placeholder:text-ng-cream/55 border-ng-cream/20"
               prefix={
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" />
@@ -76,10 +76,11 @@ export function Traceability() {
                 </svg>
               }
             />
-            <MagneticHover>
+            <MagneticHover className="w-full sm:w-auto">
               <Button
                 variant="gold"
                 onClick={() => setRevealed(true)}
+                className="w-full sm:w-auto"
               >
                 Trace
               </Button>
@@ -87,7 +88,7 @@ export function Traceability() {
           </Reveal>
 
           <Reveal delay={0.3}>
-            <p className="text-[12px] text-ng-cream/50 mt-3">
+            <p className="text-[12px] text-ng-cream/60 mt-3">
               Try the demo code{" "}
               <button
                 type="button"
@@ -103,7 +104,7 @@ export function Traceability() {
         {/* Right — receipt card on a perspective stage */}
         <Reveal className="relative persp-1000">
           {/* Floating glass verified/lot chip */}
-          <FloatIn delay={0.4} className="absolute -top-4 -right-2 sm:right-4 z-20">
+          <FloatIn delay={0.4} className="absolute -top-3 right-2 sm:right-4 z-20">
             <div className="glass rounded-full px-4 py-2 flex items-center gap-2 shadow-[var(--shadow-ng-glow)]">
               <span className="h-2 w-2 rounded-full bg-ng-success animate-pulse" />
               <span className="text-[11px] font-semibold tracking-wide text-ng-forest-deep">Lab-verified lot</span>
@@ -144,8 +145,8 @@ export function Traceability() {
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-6 pb-3 border-b border-ng-cream/10 last:border-0">
-      <dt className="text-[12px] uppercase tracking-wider text-ng-cream/50 shrink-0 w-32">{label}</dt>
+    <div className="flex items-start justify-between gap-4 sm:gap-6 pb-3 border-b border-ng-cream/10 last:border-0">
+      <dt className="text-[12px] uppercase tracking-wider text-ng-cream/60 shrink-0 w-24 sm:w-32">{label}</dt>
       <dd className={`text-right text-ng-cream font-display text-[14px] leading-snug ${highlight ? "text-ng-success font-medium" : ""}`}>
         {value}
       </dd>

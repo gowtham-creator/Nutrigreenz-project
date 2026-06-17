@@ -24,7 +24,7 @@ export function Section({
   id,
 }: SectionProps) {
   return (
-    <section id={id} className={cn("relative py-20 md:py-28", className)}>
+    <section id={id} className={cn("relative py-16 md:py-28", className)}>
       <div
         className={cn(
           "mx-auto max-w-7xl px-5 md:px-8",
@@ -35,7 +35,7 @@ export function Section({
           <Reveal
             as="header"
             className={cn(
-              "mb-12 md:mb-16 flex flex-col gap-4",
+              "mb-10 md:mb-16 flex flex-col gap-4",
               align === "center" && "items-center text-center",
               align === "left" && "max-w-2xl",
             )}
@@ -47,7 +47,7 @@ export function Section({
               </h2>
             ) : null}
             {description ? (
-              <p className="text-[17px] text-ng-ink-muted leading-relaxed">
+              <p className="text-[17px] text-ng-ink-muted leading-relaxed text-pretty">
                 {description}
               </p>
             ) : null}

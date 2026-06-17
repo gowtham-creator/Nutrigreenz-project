@@ -64,7 +64,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-ng-ink line-clamp-2">{product.title}</p>
-          <p className="text-[13px] font-semibold text-ng-forest mt-0.5">₹{product.price.toLocaleString()}</p>
+          <p className="text-[13px] font-semibold text-ng-forest mt-0.5">₹{product.price.toLocaleString("en-IN")}</p>
         </div>
       </Link>
     );
@@ -143,16 +143,16 @@ export function ProductCard({ product, variant = "default", className }: Props) 
 
         <div className="mt-auto flex items-baseline gap-2 pt-1">
           <span className="font-display text-[21px] font-semibold text-ng-forest-deep tabular-nums">
-            ₹{product.price.toLocaleString()}
+            ₹{product.price.toLocaleString("en-IN")}
           </span>
           {product.mrp && product.mrp > product.price ? (
             <span className="text-[13px] text-ng-ink-soft line-through tabular-nums">
-              ₹{product.mrp.toLocaleString()}
+              ₹{product.mrp.toLocaleString("en-IN")}
             </span>
           ) : null}
           {savings > 0 ? (
             <span className="ml-auto rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-ng-forest tabular-nums">
-              Save ₹{savings.toLocaleString()}
+              Save ₹{savings.toLocaleString("en-IN")}
             </span>
           ) : null}
         </div>
