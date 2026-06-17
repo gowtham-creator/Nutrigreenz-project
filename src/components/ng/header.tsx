@@ -61,8 +61,9 @@ export function Header() {
           <LocationPill className="hidden md:inline-flex md:mr-auto" />
         </div>
 
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1">
+        {/* Desktop nav — only at xl+, where there's room beside the logo,
+            location pill and actions (tablet/iPad uses the hamburger instead). */}
+        <nav className="hidden xl:flex items-center gap-1">
           {NAV.map((item) => (
             <div
               key={item.label}
@@ -111,7 +112,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <button
             aria-label="Search"
-            className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="hidden xl:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7" />
@@ -164,12 +165,12 @@ export function Header() {
               </span>
             ) : null}
           </Link>
-          <Button variant="primary" size="sm" className="hidden sm:inline-flex ml-1" asChild>
+          <Button variant="primary" size="sm" className="hidden xl:inline-flex ml-1 whitespace-nowrap shrink-0" asChild>
             <Link href={shopHref}>Shop now</Link>
           </Button>
           <button
             aria-label="Open menu"
-            className="lg:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
+            className="xl:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -190,7 +191,7 @@ export function Header() {
       {/* Mobile drawer */}
       <div
         className={cn(
-          "lg:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
+          "xl:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
           mobileOpen ? "max-h-[60vh]" : "max-h-0",
         )}
       >

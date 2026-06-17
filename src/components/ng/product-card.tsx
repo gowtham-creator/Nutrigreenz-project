@@ -141,8 +141,8 @@ export function ProductCard({ product, variant = "default", className }: Props) 
           </p>
         ) : null}
 
-        <div className="mt-auto flex items-baseline gap-2 pt-1">
-          <span className="font-display text-[21px] font-semibold text-ng-forest-deep tabular-nums">
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1.5 pt-1">
+          <span className="font-display text-[19px] sm:text-[21px] font-semibold text-ng-forest-deep tabular-nums">
             ₹{product.price.toLocaleString("en-IN")}
           </span>
           {product.mrp && product.mrp > product.price ? (
@@ -151,7 +151,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
             </span>
           ) : null}
           {savings > 0 ? (
-            <span className="ml-auto rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-ng-forest tabular-nums">
+            <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-ng-forest tabular-nums">
               Save ₹{savings.toLocaleString("en-IN")}
             </span>
           ) : null}
