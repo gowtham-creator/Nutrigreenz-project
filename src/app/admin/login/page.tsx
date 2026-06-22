@@ -240,7 +240,9 @@ function LoginForm() {
       const msg =
         res.status === 403
           ? "This number isn't an authorised operator."
-          : "Invalid or expired code.";
+          : res.status >= 500
+            ? "Server couldn't verify the sign-in — please try again in a moment."
+            : "Invalid or expired code.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } catch {
