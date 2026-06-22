@@ -3,8 +3,14 @@ import {
   ADMIN_COOKIE,
   ADMIN_EMAIL_COOKIE,
   ADMIN_ROLE_COOKIE,
+  ADMIN_MFA_COOKIE,
 } from "@/lib/admin-auth";
-import { createToken, type AdminRole } from "@/lib/admin-session";
+import {
+  createMfaTicket,
+  createToken,
+  type AdminRole,
+} from "@/lib/admin-session";
+import { isTotpConfigured } from "@/lib/totp";
 
 /** Session lifetime: 12 hours (seconds). */
 const MAX_AGE = 60 * 60 * 12;
@@ -96,6 +102,25 @@ export async function POST(request: Request): Promise<Response> {
   // No credential set matched → fail closed.
   if (!role || !normalizedEmail) {
     return Response.json({ ok: false }, { status: 401 });
+  }
+
+  // Super-admin clears a second factor when an authenticator is configured.
+  // Defer the real session: stash a short-lived signed ticket and ask the
+  // client for the TOTP code (verified by /api/admin/login-2fa).
+  if (role === "superadmin" && isTotpConfigured()) {
+    const ticket = await createMfaTicket(normalizedEmail);
+    const secure = process.env.NODE_ENV === "production";
+    const c = await cookies();
+    c.set({
+      name: ADMIN_MFA_COOKIE,
+      value: ticket,
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 5,
+    });
+    return Response.json({ ok: true, mfaRequired: true });
   }
 
   const token = await createToken(normalizedEmail, role);

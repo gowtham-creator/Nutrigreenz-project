@@ -44,6 +44,9 @@ function LoginForm() {
   // Passcode flow
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
+  // Super-admin second factor (authenticator app)
+  const [mfaStep, setMfaStep] = useState(false);
+  const [totp, setTotp] = useState("");
 
   // Phone flow
   const [phone, setPhone] = useState("");
@@ -64,6 +67,8 @@ function LoginForm() {
   function switchMethod(m: Method) {
     setMethod(m);
     setError(null);
+    setMfaStep(false);
+    setTotp("");
   }
 
   async function handlePasscode(e: React.FormEvent) {
@@ -77,6 +82,16 @@ function LoginForm() {
         body: JSON.stringify({ email, passcode }),
       });
       if (res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          mfaRequired?: boolean;
+        };
+        if (data.mfaRequired) {
+          // Super-admin still owes an authenticator code — switch to the 2FA step.
+          setTotp("");
+          setError(null);
+          setMfaStep(true);
+          return;
+        }
         toast.success("Welcome back", { description: "Signed in to Admin." });
         router.push(next);
         return;
@@ -88,6 +103,47 @@ function LoginForm() {
       const msg = "Could not reach the server. Try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function verifyMfa(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!/^\d{6}$/.test(totp)) {
+      setError("Enter the 6-digit code from your authenticator app.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/login-2fa", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: totp }),
+      });
+      if (res.ok) {
+        toast.success("Welcome back", { description: "Signed in to Admin." });
+        router.push(next);
+        return;
+      }
+      // 401 with restart → the short-lived ticket expired; send them back.
+      const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
+      if (data.restart) {
+        setMfaStep(false);
+        setTotp("");
+        const msg = "That took too long — enter your passcode again.";
+        setError(msg);
+        toast.error("Session expired", { description: msg });
+        return;
+      }
+      const msg = "Invalid or expired authenticator code.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
+    } catch {
+      const msg = "Could not reach the server. Try again.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
     } finally {
       setSubmitting(false);
     }
@@ -271,7 +327,38 @@ function LoginForm() {
             ))}
           </div>
 
-          {method === "passcode" ? (
+          {method === "passcode" && mfaStep ? (
+            <form onSubmit={verifyMfa} className="mt-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[13px] font-semibold text-ng-ink">
+                  Authenticator code
+                </span>
+                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                  Open your authenticator app and enter the current 6-digit code
+                  for Nutri Greenz Admin.
+                </p>
+                <OtpInput value={totp} onChange={setTotp} />
+                {error ? (
+                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                ) : null}
+              </div>
+              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
+                <Icon name="shield-keyhole-bold" size={18} />
+                {submitting ? "Verifying…" : "Verify & sign in"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMfaStep(false);
+                  setTotp("");
+                  setError(null);
+                }}
+                className="text-[12px] font-sans font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep"
+              >
+                Back to sign in
+              </button>
+            </form>
+          ) : method === "passcode" ? (
             <form onSubmit={handlePasscode} className="mt-6 flex flex-col gap-4">
               <Input
                 label="Email"

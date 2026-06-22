@@ -147,3 +147,59 @@ export async function verifyToken(
 
   return { email, role };
 }
+
+/**
+ * Mint a short-lived pre-auth MFA ticket binding an email plus an expiry. The
+ * signed payload is `${email}|mfa|${expiresAtMs}` — the literal `mfa` tag (not a
+ * real role) means {@link verifyToken} can never accept this as a session, so a
+ * leaked ticket can't be replayed as `ng_admin`. Throws if the secret is unset.
+ */
+export async function createMfaTicket(
+  email: string,
+  ttlMs = 5 * 60 * 1000,
+): Promise<string> {
+  const secret = getSecret();
+  if (!secret) {
+    throw new Error("ADMIN_SESSION_SECRET is not configured");
+  }
+  const claims = `${email}|mfa|${Date.now() + ttlMs}`;
+  const mac = await sign(claims, secret);
+  return `${toBase64Url(encoder.encode(claims))}.${toBase64Url(mac)}`;
+}
+
+/**
+ * Verify a pre-auth MFA ticket and return the bound email, or null if missing,
+ * malformed, badly signed, not `mfa`-tagged, or expired. Fails closed when the
+ * secret is unconfigured.
+ */
+export async function verifyMfaTicket(
+  token: string | undefined,
+): Promise<string | null> {
+  const secret = getSecret();
+  if (!secret || !token) return null;
+
+  const dot = token.indexOf(".");
+  if (dot <= 0 || dot === token.length - 1) return null;
+
+  const claimsBytes = fromBase64Url(token.slice(0, dot));
+  const providedSig = fromBase64Url(token.slice(dot + 1));
+  if (!claimsBytes || !providedSig) return null;
+
+  const claims = new TextDecoder().decode(claimsBytes);
+  const expectedSig = await sign(claims, secret);
+  if (!timingSafeEqual(providedSig, expectedSig)) return null;
+
+  // Parse `${email}|mfa|${expiresAt}` from the right (emails may contain "|").
+  const lastSep = claims.lastIndexOf("|");
+  if (lastSep <= 0) return null;
+  const expiresAt = Number(claims.slice(lastSep + 1));
+  const rest = claims.slice(0, lastSep);
+  const tagSep = rest.lastIndexOf("|");
+  if (tagSep <= 0) return null;
+  const tag = rest.slice(tagSep + 1);
+  const email = rest.slice(0, tagSep);
+  if (tag !== "mfa" || !email) return null;
+  if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
+
+  return email;
+}

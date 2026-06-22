@@ -26,6 +26,14 @@ export const ADMIN_EMAIL_COOKIE = "ng_admin_email";
 export const ADMIN_ROLE_COOKIE = "ng_admin_role";
 
 /**
+ * Short-lived, httpOnly signed ticket proving the passcode step passed and the
+ * super-admin still owes an authenticator code. It carries NO portal access on
+ * its own — it uses a distinct `mfa` payload tag that the session verifier
+ * rejects, so it can never be replayed as an `ng_admin` session.
+ */
+export const ADMIN_MFA_COOKIE = "ng_admin_mfa";
+
+/**
  * Sign out the current admin: clears both cookies server-side (the httpOnly
  * gate can only be cleared by the server), then redirects to the login screen.
  * Kept as `signOutAdmin` so existing callers (e.g. the admin shell) keep working.
