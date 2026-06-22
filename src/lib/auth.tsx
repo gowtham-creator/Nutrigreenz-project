@@ -153,6 +153,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Holds the live Firebase ConfirmationResult OR, in demo mode, the pending phone.
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const pendingPhoneRef = useRef<string | null>(null);
+  // One reused reCAPTCHA verifier — cleared before every (re)send so a "Resend
+  // code" tap never double-renders into the same container.
+  const verifierRef = useRef<RecaptchaVerifier | null>(null);
 
   // Hydrate the persisted account after mount (SSR-safe; mirrors cart.tsx).
   useEffect(() => {
@@ -239,10 +242,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pendingPhoneRef.current = phone;
         return;
       }
+      // reCAPTCHA tokens are single-use: drop any prior verifier before minting a
+      // fresh one so the second send (Resend) can't hit "already rendered".
+      verifierRef.current?.clear();
       const verifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
         size: "invisible",
       });
-      confirmationRef.current = await signInWithPhoneNumber(auth, phone, verifier);
+      verifierRef.current = verifier;
+      try {
+        confirmationRef.current = await signInWithPhoneNumber(auth, phone, verifier);
+      } catch (err) {
+        // A failed send leaves a spent widget — clear it so the retry is clean.
+        verifierRef.current?.clear();
+        verifierRef.current = null;
+        throw err;
+      }
     },
     [],
   );
@@ -275,6 +289,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccount(null);
     confirmationRef.current = null;
     pendingPhoneRef.current = null;
+    verifierRef.current?.clear();
+    verifierRef.current = null;
     await clearServerSession();
     if (auth) await signOut(auth);
   }, []);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -49,8 +49,17 @@ function LoginForm() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const verifierRef = useRef<RecaptchaVerifier | null>(null);
+
+  // Tick the resend cooldown down to zero (1s steps).
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   function switchMethod(m: Method) {
     setMethod(m);
@@ -84,8 +93,7 @@ function LoginForm() {
     }
   }
 
-  async function sendCode(e: React.FormEvent) {
-    e.preventDefault();
+  async function requestCode(isResend: boolean) {
     setError(null);
     if (!auth) {
       setError("Phone sign-in isn't configured yet — add your Firebase keys.");
@@ -97,7 +105,8 @@ function LoginForm() {
       return;
     }
     const fbAuth = auth;
-    setSubmitting(true);
+    if (isResend) setResending(true);
+    else setSubmitting(true);
     try {
       verifierRef.current?.clear();
       const verifier = new RecaptchaVerifier(fbAuth, "admin-recaptcha", {
@@ -106,7 +115,11 @@ function LoginForm() {
       verifierRef.current = verifier;
       confirmationRef.current = await signInWithPhoneNumber(fbAuth, e164, verifier);
       setCodeSent(true);
-      toast.success("Code sent", { description: `OTP sent to ${e164}.` });
+      setCode("");
+      setResendIn(30);
+      toast.success(isResend ? "New code sent" : "Code sent", {
+        description: `OTP sent to ${e164}.`,
+      });
     } catch (err) {
       const code =
         err && typeof err === "object" && "code" in err
@@ -129,8 +142,14 @@ function LoginForm() {
       verifierRef.current?.clear();
       verifierRef.current = null;
     } finally {
-      setSubmitting(false);
+      if (isResend) setResending(false);
+      else setSubmitting(false);
     }
+  }
+
+  function sendCode(e: React.FormEvent) {
+    e.preventDefault();
+    void requestCode(false);
   }
 
   async function verifyCode(e: React.FormEvent) {
@@ -179,6 +198,7 @@ function LoginForm() {
   function resetPhone() {
     setCodeSent(false);
     setCode("");
+    setResendIn(0);
     confirmationRef.current = null;
     verifierRef.current?.clear();
     verifierRef.current = null;
@@ -322,13 +342,27 @@ function LoginForm() {
                 <Icon name="shield-keyhole-bold" size={18} />
                 {submitting ? "Verifying…" : "Verify & sign in"}
               </Button>
-              <button
-                type="button"
-                onClick={resetPhone}
-                className="text-[12px] font-sans font-semibold text-ng-clay hover:text-ng-clay-deep transition-colors"
-              >
-                Use a different number
-              </button>
+              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                <button
+                  type="button"
+                  disabled={resendIn > 0 || resending || submitting}
+                  onClick={() => void requestCode(true)}
+                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft"
+                >
+                  {resending
+                    ? "Sending…"
+                    : resendIn > 0
+                      ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
+                      : "Resend code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetPhone}
+                  className="text-ng-ink-muted transition-colors hover:text-ng-ink"
+                >
+                  Use a different number
+                </button>
+              </div>
             </form>
           )}
 
