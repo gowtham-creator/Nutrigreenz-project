@@ -1,36 +1,57 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
-import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
+import { listReceipts, type OrderReceipt } from "@/components/ng/checkout/order-receipt";
 import { useAuth } from "@/lib/auth";
 
-const ORDERS = [
-  { id: "NG-25-1042", date: "2026-05-12", total: 2640, items: 3, status: "out for delivery", lot: "NG-24-051", products: ["Cold-Pressed Groundnut Oil — 1L", "A2 Gir Cow Ghee — 500ml", "Multifloral Raw Honey — 500g"] },
-  { id: "NG-25-0981", date: "2026-04-28", total: 1430, items: 2, status: "delivered", lot: "NG-24-018", products: ["A2 Desi Cow Ghee — 1L Jar", "Foxtail Millet — 500g"] },
-  { id: "NG-25-0863", date: "2026-04-14", total: 3960, items: 1, status: "delivered", lot: "NG-24-039", products: ["Harvest Hamper — Festive Edition"] },
-];
-
-// One unified pill system — every status is a soft tint + matching dot, so no
-// single status reads as a heavier/odd "solid" chip against the others.
+// One unified pill system — every status is a soft tint + matching dot.
 const STATUS: Record<string, { dot: string; pill: string }> = {
   "out for delivery": { dot: "bg-ng-amber", pill: "bg-ng-amber/15 text-ng-clay-deep" },
   delivered: { dot: "bg-ng-green-bright", pill: "bg-ng-leaf/15 text-ng-forest" },
   processing: { dot: "bg-ng-blue", pill: "bg-ng-blue/12 text-ng-blue" },
 };
 
-const STATS = [
-  { icon: "wallet-money-bold", number: "₹1,420", label: "Wallet credit", href: "/loyalty", tint: "clay" },
-  { icon: "box-bold", number: "14", label: "Orders placed", href: "/orders", tint: "leaf" },
-  { icon: "refresh-bold", number: "3", label: "Subscriptions", href: undefined, tint: "blue" },
-] as const;
+interface RecentOrder {
+  id: string;
+  date: string;
+  total: number;
+  items: number;
+  status: string;
+  products: string[];
+}
+
+function receiptToOrder(r: OrderReceipt): RecentOrder {
+  return {
+    id: r.id,
+    date: r.placedAt,
+    total: r.total,
+    items: r.items.reduce((s, i) => s + i.qty, 0),
+    status: "processing",
+    products: r.items.map((i) => i.title),
+  };
+}
 
 export default function AccountPage() {
   const { account, isAuthed } = useAuth();
-  const firstName = isAuthed ? (account?.name?.trim()?.split(" ")[0] || "there") : "there";
+  const firstName = isAuthed ? account?.name?.trim()?.split(" ")[0] || "there" : "there";
+
+  // Real placed orders only — empty for a brand-new account.
+  const [orders, setOrders] = useState<RecentOrder[]>([]);
+  useEffect(() => {
+    setOrders(listReceipts().map(receiptToOrder));
+  }, []);
+
+  const recent = orders.slice(0, 3);
+  const stats = [
+    { icon: "wallet-money-bold", number: "₹0", label: "Wallet credit", href: "/loyalty", tint: "clay" as const },
+    { icon: "box-bold", number: String(orders.length), label: "Orders placed", href: "/orders", tint: "leaf" as const },
+    { icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const },
+  ];
 
   return (
     <AccountShell active="overview">
@@ -61,7 +82,7 @@ export default function AccountPage() {
               </p>
 
               <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">
-                {STATS.map((s) => {
+                {stats.map((s) => {
                   const tint =
                     s.tint === "clay"
                       ? "text-ng-clay"
@@ -106,52 +127,63 @@ export default function AccountPage() {
               </span>
               <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Recent orders</h2>
             </div>
-            <Link href="/orders" className="inline-flex items-center gap-1 text-[13px] font-medium text-ng-forest hover:underline">
-              View all <Icon name="alt-arrow-right-linear" size={14} />
-            </Link>
+            {recent.length > 0 ? (
+              <Link href="/orders" className="inline-flex items-center gap-1 text-[13px] font-medium text-ng-forest hover:underline">
+                View all <Icon name="alt-arrow-right-linear" size={14} />
+              </Link>
+            ) : null}
           </div>
-          <div className="space-y-4">
-            {ORDERS.map((o) => {
-              const tone = STATUS[o.status] ?? STATUS.processing;
-              const extra = o.items - o.products.length;
-              return (
-                <article
-                  key={o.id}
-                  className="ng-float flex flex-col gap-4 rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50 sm:flex-row sm:items-center sm:justify-between sm:gap-5"
-                >
-                  {/* Left — id + status, meta, products */}
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="font-display text-[17px] leading-none text-ng-forest-deep">{o.id}</span>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider ${tone.pill}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                        {o.status}
-                      </span>
+          {recent.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-10 text-center">
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+                <Icon name="box-linear" size={26} />
+              </span>
+              <p className="font-display text-[19px] text-ng-forest-deep">No orders yet</p>
+              <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] text-ng-ink-muted">
+                Your first harvest is one tap away — fresh oils, ghee, honey and more.
+              </p>
+              <Button variant="primary" className="mt-5" asChild>
+                <Link href="/shop">Start shopping</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recent.map((o) => {
+                const tone = STATUS[o.status] ?? STATUS.processing;
+                const extra = o.items - o.products.length;
+                return (
+                  <article
+                    key={o.id}
+                    className="ng-float flex flex-col gap-4 rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50 sm:flex-row sm:items-center sm:justify-between sm:gap-5"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="font-display text-[17px] leading-none text-ng-forest-deep">{o.id}</span>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider ${tone.pill}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                          {o.status}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 text-[12px] text-ng-ink-soft">
+                        {new Date(o.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })} · {o.items} item{o.items > 1 ? "s" : ""}
+                      </div>
+                      <p className="mt-2 line-clamp-1 text-[13px] text-ng-ink-muted">
+                        {o.products.join(", ")}
+                        {extra > 0 ? ` +${extra} more` : ""}
+                      </p>
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ng-ink-soft">
-                      <span>
-                        {new Date(o.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} · {o.items} item{o.items > 1 ? "s" : ""}
-                      </span>
-                      <span aria-hidden className="text-ng-line">•</span>
-                      <span className="font-mono">lot {o.lot}</span>
-                    </div>
-                    <p className="mt-2 line-clamp-1 text-[13px] text-ng-ink-muted">
-                      {o.products.join(", ")}
-                      {extra > 0 ? ` +${extra} more` : ""}
-                    </p>
-                  </div>
 
-                  {/* Right — total + details */}
-                  <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end sm:gap-5">
-                    <span className="font-display text-[19px] tabular-nums text-ng-forest-deep">₹{o.total.toLocaleString("en-IN")}</span>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/orders/${o.id}`}>Details →</Link>
-                    </Button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                    <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end sm:gap-5">
+                      <span className="font-display text-[19px] tabular-nums text-ng-forest-deep">₹{o.total.toLocaleString("en-IN")}</span>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/orders/${o.id}`}>Details →</Link>
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </Reveal>
 
         {/* Subscriptions */}
@@ -162,49 +194,40 @@ export default function AccountPage() {
             </span>
             <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>
           </div>
-          <div className="grid items-stretch gap-5 md:grid-cols-3">
-            {[
-              { name: "A2 Gir Cow Ghee — 500ml", next: "12 June", cadence: "6 weeks", price: "₹1,480" },
-              { name: "Cold-Pressed Groundnut Oil — 1L", next: "22 May", cadence: "4 weeks", price: "₹645" },
-              { name: "Multifloral Raw Honey — 500g", next: "08 July", cadence: "8 weeks", price: "₹540" },
-            ].map((s) => (
-              <article key={s.name} className="ng-float group flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="line-clamp-2 font-display text-[15px] leading-tight text-ng-forest-deep">{s.name}</div>
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-forest transition-colors group-hover:bg-ng-leaf/20">
-                    <Icon name="refresh-linear" size={15} />
-                  </span>
-                </div>
-                <div className="mt-1.5 text-[12px] text-ng-ink-muted">Every {s.cadence} · {s.price}</div>
-                <div className="mt-auto flex items-center justify-between border-t border-ng-line-soft pt-4 text-[12px]">
-                  <span className="text-ng-ink-soft">Next: <span className="font-medium text-ng-forest-deep">{s.next}</span></span>
-                  <button className="font-medium text-ng-forest hover:underline">Manage</button>
-                </div>
-              </article>
-            ))}
+          <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-8 text-center">
+            <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+              <Icon name="refresh-linear" size={22} />
+            </span>
+            <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
+            <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
+              Subscribe to your staples and never run out — set it once and we deliver on schedule.
+            </p>
           </div>
         </Reveal>
 
-        {/* Review prompt */}
-        <Reveal as="section">
-          <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-ng-clay/30 bg-gradient-to-br from-ng-sage/40 to-ng-cream p-7 md:flex-row md:items-center">
-            <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ng-clay/15 blur-3xl" />
-            <div className="relative flex-1">
-              <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay-deep">
-                <Icon name="wallet-money-bold" size={14} />
-                Earn ₹100
-              </span>
-              <h3 className="mt-2 font-display text-[22px] text-ng-forest-deep">Review your last 3 orders</h3>
-              <p className="mt-2 max-w-md text-[14px] text-ng-ink-muted">
-                Honest reviews help future buyers. We credit ₹100 to your wallet for every verified review you publish.
-              </p>
+        {/* Review prompt — only once there are orders to review */}
+        {orders.length > 0 ? (
+          <Reveal as="section">
+            <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-ng-clay/30 bg-gradient-to-br from-ng-sage/40 to-ng-cream p-7 md:flex-row md:items-center">
+              <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ng-clay/15 blur-3xl" />
+              <div className="relative flex-1">
+                <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay-deep">
+                  <Icon name="wallet-money-bold" size={14} />
+                  Earn ₹100
+                </span>
+                <h3 className="mt-2 font-display text-[22px] text-ng-forest-deep">Review your recent orders</h3>
+                <p className="mt-2 max-w-md text-[14px] text-ng-ink-muted">
+                  Honest reviews help future buyers. We credit ₹100 to your wallet for every verified review you publish.
+                </p>
+              </div>
+              <div className="relative flex items-center gap-4">
+                <Button variant="primary" asChild>
+                  <Link href="/orders">Write a review</Link>
+                </Button>
+              </div>
             </div>
-            <div className="relative flex items-center gap-4">
-              <Stars rating={5} size="md" />
-              <Button variant="primary">Write a review</Button>
-            </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        ) : null}
       </div>
     </AccountShell>
   );

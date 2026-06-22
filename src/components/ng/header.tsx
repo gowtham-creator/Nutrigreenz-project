@@ -60,9 +60,9 @@ export function Header() {
           <LocationPill className="hidden md:inline-flex md:mr-auto" />
         </div>
 
-        {/* Desktop nav — only at xl+, where there's room beside the logo,
-            location pill and actions (tablet/iPad uses the hamburger instead). */}
-        <nav className="hidden xl:flex items-center gap-1">
+        {/* Desktop nav — shows from ~1152px, where there's room beside the logo,
+            location pill and actions; narrower widths use the hamburger. */}
+        <nav className="hidden min-[1152px]:flex items-center gap-1">
           {NAV.map((item) => (
             <div
               key={item.label}
@@ -154,7 +154,7 @@ export function Header() {
           </Button>
           <button
             aria-label="Open menu"
-            className="xl:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
+            className="min-[1152px]:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -175,7 +175,7 @@ export function Header() {
       {/* Mobile drawer */}
       <div
         className={cn(
-          "xl:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
+          "min-[1152px]:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
           mobileOpen ? "max-h-[60vh]" : "max-h-0",
         )}
       >

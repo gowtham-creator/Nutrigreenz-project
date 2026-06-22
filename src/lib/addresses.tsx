@@ -9,9 +9,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/lib/auth";
 import type { Address } from "@/types/nutrigreenz";
 
-const STORAGE_KEY = "ng.addresses.v1";
+/**
+ * Addresses are scoped to the current identity (like the cart), so a signed-out
+ * visitor and every signed-in account keep their OWN saved addresses and never
+ * see one another's. A brand-new account starts empty — there is no seed data.
+ */
+const LEGACY_KEY = "ng.addresses.v1"; // pre-identity global store — abandoned
+const GUEST_KEY = "ng.addresses.v1::guest";
+const USER_PREFIX = "ng.addresses.v1::u:";
 
 /** Fields the user can edit; the store owns `id` and seeds the rest. */
 export type AddressInput = Omit<Address, "id">;
@@ -33,48 +41,6 @@ interface AddressContextValue {
 
 const AddressContext = createContext<AddressContextValue | null>(null);
 
-/* ── Seed data (§3.10) — a default Home, a Work, and a custom "Other". ── */
-const SEED_ADDRESSES: Address[] = [
-  {
-    id: "addr-home",
-    fullName: "Ananya Rao",
-    phone: "+91 98765 43210",
-    line1: "Flat 4B, Banyan Grove Apartments",
-    line2: "Road No. 12, Madhapur",
-    landmark: "Near Inorbit Mall",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500081",
-    type: "home",
-    isDefault: true,
-  },
-  {
-    id: "addr-work",
-    fullName: "Ananya Rao",
-    phone: "+91 98765 43210",
-    line1: "7th Floor, Prestige Tech Park",
-    line2: "Hitech City Road, Gachibowli",
-    landmark: "Near DLF Cyber City",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500032",
-    type: "work",
-  },
-  {
-    id: "addr-other",
-    fullName: "Sundar Rao",
-    phone: "+91 90080 11223",
-    line1: "Door No. 21, Lakshmi Nilaya",
-    line2: "KPHB Phase 5, Kukatpally",
-    landmark: "Beside Ganesha temple",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500072",
-    type: "other",
-    label: "Parents' home",
-  },
-];
-
 function isAddress(entry: unknown): entry is Address {
   if (typeof entry !== "object" || entry === null) return false;
   const a = entry as Record<string, unknown>;
@@ -90,17 +56,25 @@ function isAddress(entry: unknown): entry is Address {
   );
 }
 
-function readStored(): Address[] | null {
-  if (typeof window === "undefined") return null;
+function readStored(key: string): Address[] {
+  if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    const valid = parsed.filter(isAddress);
-    return valid.length > 0 ? valid : null;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isAddress);
   } catch {
-    return null;
+    return [];
+  }
+}
+
+function writeStored(key: string, addresses: Address[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(addresses));
+  } catch {
+    /* quota / private-mode — fail silently */
   }
 }
 
@@ -121,24 +95,47 @@ function makeId(): string {
 }
 
 export function AddressProvider({ children }: { children: ReactNode }) {
+  const { account, loading: authLoading } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
-  // Hydrate from localStorage after mount (seed on first visit).
-  useEffect(() => {
-    setAddresses(normalize(readStored() ?? SEED_ADDRESSES));
-    setHydrated(true);
-  }, []);
+  // Storage key for the active identity (guest vs the signed-in account).
+  const storageKey = account
+    ? `${USER_PREFIX}${account.email || account.phone || "user"}`
+    : GUEST_KEY;
 
-  // Persist whenever addresses change (only after initial hydration).
+  // Load the right address book whenever the identity changes (after auth settles).
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
-    } catch {
-      /* quota / private-mode — fail silently */
+    if (authLoading) return;
+    if (loadedKey === storageKey) return;
+    // Drop the pre-identity global store once, so its old data never resurfaces.
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(LEGACY_KEY);
+      } catch {
+        /* ignore */
+      }
     }
-  }, [addresses, hydrated]);
+    let next = readStored(storageKey);
+    // On sign-in, fold any addresses added while browsing as a guest into the
+    // account book, then clear the guest bucket.
+    if (storageKey.startsWith(USER_PREFIX)) {
+      const guest = readStored(GUEST_KEY);
+      if (guest.length > 0) {
+        next = [...next, ...guest];
+        writeStored(storageKey, normalize(next));
+        writeStored(GUEST_KEY, []);
+      }
+    }
+    setAddresses(normalize(next));
+    setLoadedKey(storageKey);
+  }, [authLoading, storageKey, loadedKey]);
+
+  // Persist whenever addresses change — only once they belong to the active identity.
+  useEffect(() => {
+    if (loadedKey === null || loadedKey !== storageKey) return;
+    writeStored(storageKey, addresses);
+  }, [addresses, loadedKey, storageKey]);
 
   const add = useCallback((input: AddressInput) => {
     const id = makeId();

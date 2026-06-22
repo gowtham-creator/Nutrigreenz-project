@@ -23,10 +23,6 @@ const PREFS: { key: PrefKey; label: string; desc: string; icon: string }[] = [
   { key: "orders", label: "Order updates", desc: "Dispatch, delivery and trace alerts. Recommended.", icon: "box-bold" },
 ];
 
-const DEFAULT_NAME = "Ananya Rao";
-const DEFAULT_EMAIL = "ananya.rao@gmail.com";
-const DEFAULT_PHONE = "+91 98765 43210";
-
 function formatPhone(phone: string): string {
   // "+919876543210" → "+91 98765 43210"
   const m = phone.match(/^\+91(\d{5})(\d{5})$/);
@@ -36,23 +32,20 @@ function formatPhone(phone: string): string {
 export default function ProfilePage() {
   const { account, isAuthed, updateProfile } = useAuth();
 
-  const [fullName, setFullName] = useState(DEFAULT_NAME);
-  const [email, setEmail] = useState(DEFAULT_EMAIL);
-  const [dob, setDob] = useState("1994-08-17");
-  const [gender, setGender] = useState<string>("Female");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState<string>("");
 
-  // Prefill from the persisted account once it hydrates. Fall back to sample
-  // defaults only when there is no account (signed out).
+  // Reflect the signed-in account (or empty when signed out / a brand-new
+  // account) — no sample data ever bleeds across different accounts.
   useEffect(() => {
-    if (!account) return;
-    setFullName((prev) => (account.name ? account.name : prev));
-    setEmail((prev) => (account.email ? account.email : prev));
+    setFullName(account?.name ?? "");
+    setEmail(account?.email ?? "");
   }, [account]);
 
   const phoneIsLogin = account?.method === "phone";
-  const displayPhone = account?.phone
-    ? formatPhone(account.phone)
-    : DEFAULT_PHONE;
+  const displayPhone = account?.phone ? formatPhone(account.phone) : "Not added yet";
 
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
     whatsapp: true,

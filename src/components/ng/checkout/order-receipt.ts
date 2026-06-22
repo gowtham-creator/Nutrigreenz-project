@@ -46,3 +46,20 @@ export function loadReceipt(id: string): OrderReceipt | null {
     return null;
   }
 }
+
+/** All order receipts saved in this session, newest first. */
+export function listReceipts(): OrderReceipt[] {
+  if (typeof window === "undefined") return [];
+  const out: OrderReceipt[] = [];
+  try {
+    for (let i = 0; i < window.sessionStorage.length; i++) {
+      const key = window.sessionStorage.key(i);
+      if (!key || !key.startsWith(PREFIX)) continue;
+      const r = loadReceipt(key.slice(PREFIX.length));
+      if (r) out.push(r);
+    }
+  } catch {
+    /* ignore */
+  }
+  return out.sort((a, b) => (a.placedAt > b.placedAt ? -1 : 1));
+}

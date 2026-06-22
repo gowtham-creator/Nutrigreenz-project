@@ -9,9 +9,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/lib/auth";
 import type { ProductCard } from "@/types/nutrigreenz";
 
-const STORAGE_KEY = "ng.wishlist.v1";
+/**
+ * The wishlist is scoped to the current identity (like the cart/addresses) so a
+ * signed-out visitor and every signed-in account keep their OWN saved products
+ * and never see another account's. A new account starts empty.
+ */
+const LEGACY_KEY = "ng.wishlist.v1"; // pre-identity global store — abandoned
+const GUEST_KEY = "ng.wishlist.v1::guest";
+const USER_PREFIX = "ng.wishlist.v1::u:";
 
 interface WishlistContextValue {
   /** All saved products (most-recently saved first). */
@@ -42,10 +50,10 @@ function isProductCard(entry: unknown): entry is ProductCard {
   );
 }
 
-function readStoredItems(): ProductCard[] {
+function readStoredItems(key: string): ProductCard[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -55,25 +63,55 @@ function readStoredItems(): ProductCard[] {
   }
 }
 
+function writeStored(key: string, items: ProductCard[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(items));
+  } catch {
+    /* quota / private-mode — fail silently */
+  }
+}
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
+  const { account, loading: authLoading } = useAuth();
   const [items, setItems] = useState<ProductCard[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
-  // Hydrate from localStorage after mount (avoids SSR mismatch).
-  useEffect(() => {
-    setItems(readStoredItems());
-    setHydrated(true);
-  }, []);
+  const storageKey = account
+    ? `${USER_PREFIX}${account.email || account.phone || "user"}`
+    : GUEST_KEY;
 
-  // Persist whenever items change (only after initial hydration).
+  // Load the right wishlist whenever the identity changes (after auth settles).
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      /* quota / private-mode — fail silently */
+    if (authLoading) return;
+    if (loadedKey === storageKey) return;
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(LEGACY_KEY);
+      } catch {
+        /* ignore */
+      }
     }
-  }, [items, hydrated]);
+    let next = readStoredItems(storageKey);
+    // On sign-in, fold any guest-saved items in (de-duped), then clear guest.
+    if (storageKey.startsWith(USER_PREFIX)) {
+      const guest = readStoredItems(GUEST_KEY);
+      if (guest.length > 0) {
+        const ids = new Set(next.map((p) => p.id));
+        next = [...next, ...guest.filter((p) => !ids.has(p.id))];
+        writeStored(storageKey, next);
+        writeStored(GUEST_KEY, []);
+      }
+    }
+    setItems(next);
+    setLoadedKey(storageKey);
+  }, [authLoading, storageKey, loadedKey]);
+
+  // Persist whenever items change — only once they belong to the active identity.
+  useEffect(() => {
+    if (loadedKey === null || loadedKey !== storageKey) return;
+    writeStored(storageKey, items);
+  }, [items, loadedKey, storageKey]);
 
   const has = useCallback(
     (id: string) => items.some((item) => item.id === id),
