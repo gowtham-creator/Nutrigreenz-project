@@ -51,18 +51,18 @@ export function Header() {
       className="sticky top-0 z-40 glass-strong border-b border-ng-line"
       onMouseLeave={() => setOpenMega(null)}
     >
-      <div className="mx-auto max-w-7xl px-5 md:px-8 flex items-center justify-between h-[68px]">
+      <div className="mx-auto max-w-7xl px-5 md:px-8 flex items-center h-[68px]">
         {/* Logo + delivery location */}
         <div className="flex items-center gap-3">
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
             <Logo className="h-10" priority />
           </Link>
-          <LocationPill className="hidden md:inline-flex md:mr-auto" />
+          <LocationPill className="hidden md:inline-flex" />
         </div>
 
         {/* Desktop nav — shows from ~1152px, where there's room beside the logo,
             location pill and actions; narrower widths use the hamburger. */}
-        <nav className="hidden min-[1152px]:flex items-center gap-1">
+        <nav className="hidden min-[1152px]:flex items-center gap-1 ml-8">
           {NAV.map((item) => (
             <div
               key={item.label}
@@ -108,7 +108,7 @@ export function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <button
             aria-label="Search"
             className="hidden xl:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
