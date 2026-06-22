@@ -10,6 +10,7 @@ import { LocationOnboarding } from "./location/location-onboarding";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
+import { ProfileMenu } from "./profile-menu";
 import { cn } from "@/lib/utils";
 
 const NAV: Array<{ label: string; href: string; mega?: Array<{ label: string; href: string; description?: string }> }> = [
@@ -38,14 +39,12 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const { isAuthed, account } = useAuth();
+  const { isAuthed } = useAuth();
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   const shopHref = isAuthed ? "/shop" : "/auth?next=/shop";
-  const accountHref = isAuthed ? "/account" : "/auth?next=/account";
-  const accountInitial = account?.name?.trim()?.[0]?.toUpperCase();
 
   return (
     <header
@@ -119,22 +118,7 @@ export function Header() {
               <path d="M21 21l-4.3-4.3" />
             </svg>
           </button>
-          <Link
-            href={accountHref}
-            aria-label={isAuthed ? "Account" : "Sign in"}
-            className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
-          >
-            {isAuthed && accountInitial ? (
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-ng-forest font-display text-[13px] font-semibold text-ng-cream">
-                {accountInitial}
-              </span>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-              </svg>
-            )}
-          </Link>
+          <ProfileMenu />
           <Link
             href="/wishlist"
             aria-label="Wishlist"

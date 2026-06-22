@@ -33,7 +33,7 @@ const PERKS = [
 function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/account";
+  const next = searchParams.get("next") || "/";
   const { sendOtp, verifyOtp, signInWithGoogle, configured, isAuthed } = useAuth();
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");

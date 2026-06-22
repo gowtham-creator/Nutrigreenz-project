@@ -33,6 +33,8 @@ const ACCOUNT_KEY = "ng.account.v1";
  * edits) survive reloads regardless of whether Firebase keys are present.
  */
 export interface NgAccount {
+  /** Firebase UID — ties a stored profile to one specific account (real mode). */
+  uid?: string;
   name: string;
   email: string;
   /** Phone in E.164/display form, e.g. "+919876543210". */
@@ -92,15 +94,17 @@ function readStoredAccount(): NgAccount | null {
 /** Build an account snapshot from a Firebase user, merged with saved edits. */
 function accountFromUser(user: User, saved: NgAccount | null): NgAccount {
   const base: NgAccount = {
+    uid: user.uid,
     name: user.displayName ?? "",
     email: user.email ?? "",
     phone: user.phoneNumber ?? "",
     photoURL: user.photoURL ?? undefined,
     method: user.phoneNumber && !user.email ? "phone" : "google",
-    memberSince: saved?.memberSince ?? new Date().toISOString(),
+    memberSince: new Date().toISOString(),
   };
-  // Saved profile edits win over Firebase-derived fields.
-  if (!saved) return base;
+  // Carry over saved edits ONLY when they belong to the SAME Firebase user, so
+  // one account's profile can never bleed onto a different signed-in account.
+  if (!saved || saved.uid !== user.uid) return base;
   return {
     ...base,
     name: saved.name || base.name,
@@ -110,6 +114,34 @@ function accountFromUser(user: User, saved: NgAccount | null): NgAccount {
     method: saved.method ?? base.method,
     memberSince: saved.memberSince,
   };
+}
+
+/**
+ * Sync a client Firebase sign-in to the server: POST the Firebase ID token to
+ * /api/auth/session, which verifies it, upserts the user row in Supabase and
+ * sets the signed httpOnly `ng_session` cookie. Best-effort — a failure here
+ * never blocks the already-established client session.
+ */
+async function syncServerSession(u: User): Promise<void> {
+  try {
+    const idToken = await u.getIdToken();
+    await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Clear the server session cookie on sign-out. Best-effort. */
+async function clearServerSession(): Promise<void> {
+  try {
+    await fetch("/api/auth/session", { method: "DELETE" });
+  } catch {
+    /* ignore */
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -152,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u);
       if (u) {
         setAccount((prev) => accountFromUser(u, prev ?? readStoredAccount()));
+        // Mirror the sign-in to the server (upsert user + set ng_session cookie).
+        void syncServerSession(u);
       } else {
         setAccount(null);
       }
@@ -241,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccount(null);
     confirmationRef.current = null;
     pendingPhoneRef.current = null;
+    await clearServerSession();
     if (auth) await signOut(auth);
   }, []);
 
