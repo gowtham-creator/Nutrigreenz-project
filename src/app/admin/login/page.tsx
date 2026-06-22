@@ -402,10 +402,13 @@ function LoginForm() {
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
-                placeholder="+91 98XXXXXXXX"
+                placeholder="98XXX XXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                prefix={<Icon name="phone-bold" size={18} />}
+                prefix={
+                  <span className="text-[15px] font-medium text-ng-ink">+91</span>
+                }
+                maxLength={10}
                 hint="Authorised operator numbers only."
                 error={error ?? undefined}
               />
