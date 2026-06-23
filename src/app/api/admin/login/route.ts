@@ -11,6 +11,9 @@ import {
   type AdminRole,
 } from "@/lib/admin-session";
 import { isTotpConfigured } from "@/lib/totp";
+import { getAdminFactors, hasSecurityRow } from "@/lib/admin-security";
+import { isEmailConfigured } from "@/lib/email";
+import { isSupabaseConfigured } from "@/lib/supabase-admin";
 
 /** Session lifetime: 12 hours (seconds). */
 const MAX_AGE = 60 * 60 * 12;
@@ -104,10 +107,29 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  // Super-admin clears a second factor when an authenticator is configured.
-  // Defer the real session: stash a short-lived signed ticket and ask the
-  // client for the TOTP code (verified by /api/admin/login-2fa).
-  if (role === "superadmin" && isTotpConfigured()) {
+  // Work out which second factors gate this sign-in (super-admin only). The
+  // enabled set is driven by the admin's saved settings (`admin_security`); a
+  // factor only counts when it is actually usable (secret/provider present).
+  // Back-compat: with no saved row, env TOTP gates login exactly as before.
+  let factors: string[] = [];
+  if (role === "superadmin") {
+    try {
+      if (isSupabaseConfigured && (await hasSecurityRow(normalizedEmail))) {
+        const f = await getAdminFactors(normalizedEmail);
+        if (f.totp && isTotpConfigured()) factors.push("totp");
+        if (f.emailOtp && isEmailConfigured()) factors.push("email");
+      } else if (isTotpConfigured()) {
+        factors = ["totp"];
+      }
+    } catch {
+      // DB hiccup → fall back to env TOTP so MFA still gates the sign-in.
+      if (isTotpConfigured()) factors = ["totp"];
+    }
+  }
+
+  // One or more factors → defer the session: stash a short-lived signed ticket
+  // and ask the client to complete ANY one factor (verified by login-2fa).
+  if (factors.length > 0) {
     const ticket = await createMfaTicket(normalizedEmail);
     const secure = process.env.NODE_ENV === "production";
     const c = await cookies();
@@ -120,7 +142,7 @@ export async function POST(request: Request): Promise<Response> {
       path: "/",
       maxAge: 60 * 5,
     });
-    return Response.json({ ok: true, mfaRequired: true });
+    return Response.json({ ok: true, mfaRequired: true, factors });
   }
 
   const token = await createToken(normalizedEmail, role);

@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin-auth";
 import { createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
+import { verifyEmailOtp } from "@/lib/admin-security";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
 const MAX_AGE = 60 * 60 * 12;
@@ -27,15 +28,19 @@ const MAX_AGE = 60 * 60 * 12;
  */
 export async function POST(request: Request): Promise<Response> {
   let code: unknown;
+  let method: unknown;
   try {
     const body = await request.json();
     code = body?.code;
+    method = body?.method;
   } catch {
     return Response.json({ ok: false }, { status: 400 });
   }
   if (typeof code !== "string") {
     return Response.json({ ok: false }, { status: 400 });
   }
+  // Default to TOTP so the existing authenticator-only flow keeps working.
+  const factor = method === "email" ? "email" : "totp";
 
   const c = await cookies();
   const email = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
@@ -44,8 +49,14 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, restart: true }, { status: 401 });
   }
 
-  const secret = process.env.ADMIN_TOTP_SECRET;
-  if (!secret || !(await verifyTotp(code, secret))) {
+  let ok = false;
+  if (factor === "totp") {
+    const secret = process.env.ADMIN_TOTP_SECRET;
+    ok = secret ? await verifyTotp(code, secret) : false;
+  } else {
+    ok = await verifyEmailOtp(email, code);
+  }
+  if (!ok) {
     return Response.json({ ok: false }, { status: 401 });
   }
 
