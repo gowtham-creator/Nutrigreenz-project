@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
@@ -44,8 +44,17 @@ export default function AdminProfilePage() {
   // so the SaveBar can track "dirty" and Reset can revert.
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [saved, setSaved] = useState({ name: "", mobile: "" });
-  const [twoFA, setTwoFA] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [saved, setSaved] = useState<{ name: string; mobile: string; photo: string | null }>({
+    name: "",
+    mobile: "",
+    photo: null,
+  });
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Super-admin sign-in factors, loaded from /api/admin/security/factors.
+  const [factors, setFactors] = useState<{ totp: boolean; emailOtp: boolean; otpEmail: string | null } | null>(null);
+  const [available, setAvailable] = useState<{ totp: boolean; email: boolean }>({ totp: false, email: false });
 
   useEffect(() => {
     const e = getAdminEmail();
@@ -55,14 +64,38 @@ export default function AdminProfilePage() {
     const guess = e
       ? e.split("@")[0].split(/[._-]/).filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(" ")
       : "Operator";
-    const seed = { name: guess || "Operator", mobile: "+91 98480 12345" };
+    const seed = { name: guess || "Operator", mobile: "+91 98480 12345", photo: null };
     setName(seed.name);
     setMobile(seed.mobile);
     setSaved(seed);
   }, []);
 
+  // Load the super-admin's saved sign-in factors + which are available.
+  useEffect(() => {
+    if (role !== "superadmin") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/security/factors");
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        setFactors({
+          totp: Boolean(data.factors?.totp),
+          emailOtp: Boolean(data.factors?.emailOtp),
+          otpEmail: data.factors?.otpEmail ?? null,
+        });
+        setAvailable({ totp: Boolean(data.available?.totp), email: Boolean(data.available?.email) });
+      } catch {
+        /* ignore — the section just stays in its default state */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [role]);
+
   const isSuper = role === "superadmin";
-  const dirty = name !== saved.name || mobile !== saved.mobile;
+  const dirty = name !== saved.name || mobile !== saved.mobile || photo !== saved.photo;
   const initial = (name.trim()[0] ?? email?.trim()?.[0] ?? "A").toUpperCase();
 
   function handleSave() {
@@ -70,18 +103,79 @@ export default function AdminProfilePage() {
       toast.error("Name can’t be empty", { description: "Enter your full name before saving." });
       return;
     }
-    setSaved({ name: name.trim(), mobile: mobile.trim() });
-    // M2: PATCH /api/admin/me — mocked for the demo.
-    toast.success("Profile updated", { description: "Your name and mobile were saved." });
+    setSaved({ name: name.trim(), mobile: mobile.trim(), photo });
+    // M2: PATCH /api/admin/me (+ upload photo to storage) — mocked for the demo.
+    toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
   }
   function handleReset() {
     setName(saved.name);
     setMobile(saved.mobile);
+    setPhoto(saved.photo);
+  }
+  function onPickPhoto(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file later
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Unsupported file", { description: "Choose a PNG, JPG or WebP image." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image too large", { description: "Please pick an image under 5 MB." });
+      return;
+    }
+    setPhoto((prev) => {
+      if (prev && prev !== saved.photo) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    toast.message("Photo selected", { description: "Click Save to apply — preview only (uploads in Milestone 2)." });
+  }
+  function removePhoto() {
+    setPhoto((prev) => {
+      if (prev && prev !== saved.photo) URL.revokeObjectURL(prev);
+      return null;
+    });
   }
   function sendReset() {
     toast.success("Reset link sent", {
       description: `We’ve emailed a password reset link to ${email ?? "your inbox"}.`,
     });
+  }
+  async function setFactor(key: "totp" | "emailOtp", value: boolean) {
+    const prev = factors;
+    setFactors((f) => (f ? { ...f, [key]: value } : f)); // optimistic
+    try {
+      const res = await fetch("/api/admin/security/factors", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ [key]: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFactors(prev);
+        const msg =
+          data.error === "totp-unavailable"
+            ? "Scan the authenticator QR first."
+            : data.error === "email-unavailable"
+              ? "Connect email (add your Brevo key) first."
+              : "Couldn’t update — try again.";
+        toast.error("Not updated", { description: msg });
+        return;
+      }
+      setFactors({
+        totp: Boolean(data.factors?.totp),
+        emailOtp: Boolean(data.factors?.emailOtp),
+        otpEmail: data.factors?.otpEmail ?? null,
+      });
+      toast.success(value ? "Turned on" : "Turned off", {
+        description: value
+          ? "You’ll complete this code at sign-in."
+          : "No longer required at sign-in.",
+      });
+    } catch {
+      setFactors(prev);
+      toast.error("Not updated", { description: "Couldn’t reach the server." });
+    }
   }
 
   return (
@@ -100,9 +194,47 @@ export default function AdminProfilePage() {
           {/* Identity */}
           <Card title="Your profile">
             <div className="flex items-start gap-4">
-              <span className="grid place-items-center size-16 shrink-0 rounded-2xl bg-ng-forest-deep text-ng-cream font-display text-[26px]">
-                {initial}
-              </span>
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    aria-label="Upload profile picture"
+                    className="group relative grid place-items-center size-16 overflow-hidden rounded-2xl bg-ng-forest-deep text-ng-cream font-display text-[26px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper"
+                  >
+                    {photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={photo} alt="Your profile" className="size-full object-cover" />
+                    ) : (
+                      <span>{initial}</span>
+                    )}
+                    <span className="absolute inset-0 grid place-items-center bg-ng-forest-deep/55 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Icon name="camera-bold" size={18} className="text-ng-cream" />
+                    </span>
+                  </button>
+                  <span className="absolute -bottom-1 -right-1 grid place-items-center size-6 rounded-full bg-ng-clay text-ng-soil ring-2 ring-ng-paper pointer-events-none">
+                    <Icon name="camera-bold" size={12} />
+                  </span>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={onPickPhoto}
+                  />
+                </div>
+                {photo ? (
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="text-[11px] font-semibold text-ng-terracotta hover:underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <span className="text-[10.5px] font-medium text-ng-ink-soft">Add photo</span>
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-[20px] text-ng-forest-deep leading-tight truncate">{name || "—"}</h3>
                 <div className="mt-1 flex items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
@@ -160,30 +292,55 @@ export default function AdminProfilePage() {
 
             <div className="border-t border-ng-line-soft" />
 
-            {/* Two-factor */}
-            <div className="flex items-center justify-between gap-4 py-1">
-              <Toggle
-                label={
-                  <span className="inline-flex items-center gap-2">
-                    Two-factor authentication
-                    {isSuper ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 text-ng-forest font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
-                        <Icon name="shield-check-bold" size={10} />
-                        Recommended
-                      </span>
-                    ) : null}
+            {/* Two-factor sign-in — selectable factors (super admin) */}
+            {isSuper ? (
+              <div className="py-1">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className="text-[13.5px] font-semibold text-ng-ink">Two-factor sign-in</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 text-ng-forest font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
+                    <Icon name="shield-check-bold" size={10} />
+                    Recommended
                   </span>
-                }
-                description="A one-time code by SMS / authenticator on every new sign-in."
-                checked={twoFA}
-                onChange={(v) => {
-                  setTwoFA(v);
-                  toast[v ? "success" : "message"](v ? "Two-factor enabled" : "Two-factor disabled", {
-                    description: v ? "You’ll be asked for a code at next sign-in." : "Codes are no longer required.",
-                  });
-                }}
-              />
-            </div>
+                </div>
+                <p className="mb-2 text-[11.5px] font-medium text-ng-ink-soft">
+                  Turn on any of these — after your password you’ll complete{" "}
+                  <span className="font-semibold text-ng-ink-muted">any one</span> at sign-in.
+                </p>
+
+                <Toggle
+                  label="Authenticator app"
+                  description="6-digit codes from Google Authenticator, Authy or 1Password."
+                  checked={Boolean(factors?.totp)}
+                  onChange={(v) => setFactor("totp", v)}
+                />
+                {!available.totp ? (
+                  <p className="-mt-1.5 mb-2 ml-0.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-ng-clay-deep">
+                    <Icon name="info-circle-bold" size={12} />
+                    Scan the authenticator QR (set ADMIN_TOTP_SECRET) to enable.
+                  </p>
+                ) : null}
+
+                <div className="my-1 border-t border-ng-line-soft" />
+
+                <Toggle
+                  label="Email one-time code"
+                  description={`A code emailed to ${factors?.otpEmail || email || "your inbox"} on each sign-in.`}
+                  checked={Boolean(factors?.emailOtp)}
+                  onChange={(v) => setFactor("emailOtp", v)}
+                />
+                {!available.email ? (
+                  <p className="-mt-1.5 ml-0.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-ng-clay-deep">
+                    <Icon name="info-circle-bold" size={12} />
+                    Connect email (add your Brevo key) to enable.
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 py-2 text-[12px] font-medium text-ng-ink-soft">
+                <Icon name="shield-keyhole-bold" size={14} className="text-ng-ink-soft" />
+                Two-factor sign-in is managed by your Super Admin.
+              </div>
+            )}
 
             <div className="border-t border-ng-line-soft" />
 
