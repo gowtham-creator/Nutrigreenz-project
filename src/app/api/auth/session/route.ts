@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
-import type { DecodedIdToken } from "firebase-admin/auth";
-import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
+import {
+  isAdminConfigured,
+  verifyIdToken,
+  type DecodedIdToken,
+} from "@/lib/firebase-admin";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import { NG_SESSION_COOKIE, createSessionToken } from "@/lib/session";
 
