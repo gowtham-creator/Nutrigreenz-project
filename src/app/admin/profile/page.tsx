@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
-import { Toggle, TextField, SaveBar } from "@/components/ng/admin/super/controls";
+import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
+import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 
 /**
@@ -64,7 +65,7 @@ export default function AdminProfilePage() {
     const guess = e
       ? e.split("@")[0].split(/[._-]/).filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(" ")
       : "Operator";
-    const seed = { name: guess || "Operator", mobile: "+91 98480 12345", photo: null };
+    const seed = { name: guess || "Operator", mobile: "", photo: null };
     setName(seed.name);
     setMobile(seed.mobile);
     setSaved(seed);
@@ -259,8 +260,23 @@ export default function AdminProfilePage() {
 
             {/* Editable fields */}
             <div className="mt-5 pt-5 border-t border-ng-line-soft grid sm:grid-cols-2 gap-4">
-              <TextField label="Full name" value={name} onChange={setName} placeholder="Your full name" />
-              <TextField label="Mobile number" value={mobile} onChange={setMobile} placeholder="+91 …" />
+              <Input
+                label="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
+                prefix={<Icon name="user-circle-bold" size={18} />}
+              />
+              <Input
+                label="Mobile number"
+                type="tel"
+                inputMode="tel"
+                placeholder="98XXX XXXXX"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                prefix={<span className="text-[15px] font-medium text-ng-ink">+91</span>}
+                maxLength={10}
+              />
             </div>
             <SaveBar
               note="Mock save — changes aren’t persisted yet (Milestone 2)."

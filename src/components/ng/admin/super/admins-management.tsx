@@ -14,16 +14,16 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ng/admin/admin-shell";
-import { SegToggle } from "@/components/ng/admin/super/controls";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 
 type RoleKey = "admin" | "superadmin";
-type InviteMethod = "link" | "google";
+type Channel = "email" | "sms" | "whatsapp";
 
 type AdminUser = {
   name: string;
   email: string;
+  mobile?: string;
   role: RoleKey;
   lastActive: string;
   status: "active" | "invited";
@@ -73,12 +73,13 @@ export function AdminsManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>(SEED);
   const [open, setOpen] = useState(false);
 
-  function handleInvite(newAdmin: AdminUser, method: InviteMethod) {
+  function handleInvite(newAdmin: AdminUser, channels: Channel[]) {
     setAdmins((prev) => [...prev, newAdmin]);
+    const via = channels
+      .map((c) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp"))
+      .join(", ");
     toast.success("Admin invited", {
-      description: `${newAdmin.email} added as ${roleLabel(newAdmin.role)} (${
-        method === "link" ? "set-password link" : "Google sign-in"
-      }).`,
+      description: `${newAdmin.email} added as Admin — credentials sent via ${via}.`,
     });
   }
 
@@ -178,7 +179,7 @@ function AddInviteAdminModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onInvite: (admin: AdminUser, method: InviteMethod) => void;
+  onInvite: (admin: AdminUser, channels: Channel[]) => void;
 }) {
   const headingId = useId();
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -187,9 +188,9 @@ function AddInviteAdminModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
-  const [role, setRole] = useState<RoleKey>("admin");
-  const [method, setMethod] = useState<InviteMethod>("link");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [password, setPassword] = useState("");
+  const [channels, setChannels] = useState<Channel[]>(["email"]);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
 
   // reset + focus on open
   useEffect(() => {
@@ -197,8 +198,8 @@ function AddInviteAdminModal({
     setName("");
     setEmail("");
     setMobile("");
-    setRole("admin");
-    setMethod("link");
+    setPassword("");
+    setChannels(["email"]);
     setErrors({});
     restoreFocusRef.current = (document.activeElement as HTMLElement) ?? null;
     const t = setTimeout(() => firstFieldRef.current?.focus(), 30);
@@ -223,22 +224,54 @@ function AddInviteAdminModal({
 
   if (!open) return null;
 
+  function generatePassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";
+    const buf = new Uint32Array(16);
+    crypto.getRandomValues(buf);
+    setPassword(Array.from(buf, (n) => chars[n % chars.length]).join(""));
+    setErrors((e) => ({ ...e, password: undefined }));
+  }
+
+  function toggleChannel(c: Channel) {
+    setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+  }
+
   function handleInvite() {
-    const next: { name?: string; email?: string } = {};
+    const digits = mobile.replace(/\D/g, "");
+    const next: { name?: string; email?: string; mobile?: string; password?: string } = {};
     if (!name.trim()) next.name = "Name is required.";
     if (!EMAIL_RE.test(email.trim())) next.email = "Enter a valid email address.";
+    if (digits.length !== 10) next.mobile = "Enter a 10-digit mobile number.";
+    if (password.trim().length < 8) next.password = "Set a password (min 8 characters).";
     setErrors(next);
-    if (next.name || next.email) {
-      toast.error("Couldn’t send invite", { description: "Name and a valid email are required." });
+    if (next.name || next.email || next.mobile || next.password) {
+      toast.error("Couldn’t send invite", { description: "Fill in every field correctly." });
       return;
     }
-    onInvite({ name: name.trim(), email: email.trim(), role, lastActive: "—", status: "invited" }, method);
+    if (channels.length === 0) {
+      toast.error("Pick a delivery channel", {
+        description: "Send credentials via Email, SMS or WhatsApp.",
+      });
+      return;
+    }
+    onInvite(
+      {
+        name: name.trim(),
+        email: email.trim(),
+        mobile: `+91${digits}`,
+        role: "admin",
+        lastActive: "—",
+        status: "invited",
+      },
+      channels,
+    );
     onClose();
   }
 
-  const ROLE_OPTS: { key: RoleKey; label: string; icon: string }[] = [
-    { key: "admin", label: "Admin", icon: "shield-keyhole-bold" },
-    { key: "superadmin", label: "Super Admin", icon: "crown-bold" },
+  const CHANNELS: { key: Channel; label: string; icon: string }[] = [
+    { key: "email", label: "Email", icon: "letter-bold" },
+    { key: "sms", label: "SMS", icon: "chat-round-dots-bold" },
+    { key: "whatsapp", label: "WhatsApp", icon: "chat-round-call-bold" },
   ];
 
   return (
@@ -295,57 +328,68 @@ function AddInviteAdminModal({
             error={errors.email ?? undefined}
           />
           <Input
-            label="Mobile (optional)"
+            label="Mobile number"
             type="tel"
-            placeholder="+91 ·····"
+            inputMode="tel"
+            placeholder="98XXX XXXXX"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            prefix={<Icon name="phone-bold" size={18} />}
+            prefix={<span className="text-[15px] font-medium text-ng-ink">+91</span>}
+            maxLength={10}
+            error={errors.mobile ?? undefined}
           />
 
-          {/* Role selector */}
+          {/* Password + auto-generate */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-semibold text-ng-ink-muted">Role</span>
-            <div role="radiogroup" aria-label="Role" className="grid grid-cols-2 gap-2">
-              {ROLE_OPTS.map((o) => {
-                const active = role === o.key;
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-ng-ink">Password</span>
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="text-[12px] font-semibold text-ng-clay-deep hover:text-ng-clay transition-colors cursor-pointer"
+              >
+                Auto-generate
+              </button>
+            </div>
+            <Input
+              type="text"
+              placeholder="Set or auto-generate"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              prefix={<Icon name="key-minimalistic-bold" size={18} />}
+              error={errors.password ?? undefined}
+            />
+          </div>
+
+          {/* Send credentials via */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-ng-ink">Send credentials via</span>
+            <div className="grid grid-cols-3 gap-2">
+              {CHANNELS.map((c) => {
+                const active = channels.includes(c.key);
                 return (
                   <button
-                    key={o.key}
+                    key={c.key}
                     type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => setRole(o.key)}
+                    aria-pressed={active}
+                    onClick={() => toggleChannel(c.key)}
                     className={cn(
-                      "flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] transition-colors cursor-pointer",
+                      "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-[12.5px] transition-colors cursor-pointer",
                       active
                         ? "border-ng-forest bg-ng-forest text-ng-paper font-semibold"
                         : "border-ng-line bg-ng-paper text-ng-ink-muted font-medium hover:border-ng-leaf",
                     )}
                   >
-                    <Icon name={o.icon} size={16} />
-                    {o.label}
+                    <Icon name={c.icon} size={15} />
+                    {c.label}
                   </button>
                 );
               })}
             </div>
+            <p className="text-[11.5px] font-medium text-ng-ink-soft">
+              New users are added as <span className="font-semibold text-ng-ink-muted">Admin</span> and must change the password on first sign-in.
+            </p>
           </div>
-
-          {/* Invite method */}
-          <SegToggle
-            label="Invite method"
-            value={method}
-            onChange={setMethod}
-            options={[
-              { value: "link", label: "Set-password link" },
-              { value: "google", label: "Google sign-in" },
-            ]}
-            hint={
-              method === "link"
-                ? "They set their own passcode via the emailed link."
-                : "They sign in with their Google workspace account."
-            }
-          />
         </div>
 
         {/* Footer */}
