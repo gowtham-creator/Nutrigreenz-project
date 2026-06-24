@@ -54,8 +54,18 @@ export default function AdminProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Super-admin sign-in factors, loaded from /api/admin/security/factors.
-  const [factors, setFactors] = useState<{ totp: boolean; emailOtp: boolean; otpEmail: string | null } | null>(null);
-  const [available, setAvailable] = useState<{ totp: boolean; email: boolean }>({ totp: false, email: false });
+  const [factors, setFactors] = useState<{
+    totp: boolean;
+    emailOtp: boolean;
+    phoneOtp: boolean;
+    otpEmail: string | null;
+    otpPhone: string | null;
+  } | null>(null);
+  const [available, setAvailable] = useState<{ totp: boolean; email: boolean; phone: boolean }>({
+    totp: false,
+    email: false,
+    phone: false,
+  });
 
   useEffect(() => {
     const e = getAdminEmail();
@@ -83,9 +93,15 @@ export default function AdminProfilePage() {
         setFactors({
           totp: Boolean(data.factors?.totp),
           emailOtp: Boolean(data.factors?.emailOtp),
+          phoneOtp: Boolean(data.factors?.phoneOtp),
           otpEmail: data.factors?.otpEmail ?? null,
+          otpPhone: data.factors?.otpPhone ?? null,
         });
-        setAvailable({ totp: Boolean(data.available?.totp), email: Boolean(data.available?.email) });
+        setAvailable({
+          totp: Boolean(data.available?.totp),
+          email: Boolean(data.available?.email),
+          phone: Boolean(data.available?.phone),
+        });
       } catch {
         /* ignore — the section just stays in its default state */
       }
@@ -142,7 +158,7 @@ export default function AdminProfilePage() {
       description: `We’ve emailed a password reset link to ${email ?? "your inbox"}.`,
     });
   }
-  async function setFactor(key: "totp" | "emailOtp", value: boolean) {
+  async function setFactor(key: "totp" | "emailOtp" | "phoneOtp", value: boolean) {
     const prev = factors;
     setFactors((f) => (f ? { ...f, [key]: value } : f)); // optimistic
     try {
@@ -159,14 +175,18 @@ export default function AdminProfilePage() {
             ? "Scan the authenticator QR first."
             : data.error === "email-unavailable"
               ? "Connect email (add your Brevo key) first."
-              : "Couldn’t update — try again.";
+              : data.error === "phone-required"
+                ? "Add an operator mobile (ADMIN_PHONE) first."
+                : "Couldn’t update — try again.";
         toast.error("Not updated", { description: msg });
         return;
       }
       setFactors({
         totp: Boolean(data.factors?.totp),
         emailOtp: Boolean(data.factors?.emailOtp),
+        phoneOtp: Boolean(data.factors?.phoneOtp),
         otpEmail: data.factors?.otpEmail ?? null,
+        otpPhone: data.factors?.otpPhone ?? null,
       });
       toast.success(value ? "Turned on" : "Turned off", {
         description: value
@@ -308,6 +328,27 @@ export default function AdminProfilePage() {
 
             <div className="border-t border-ng-line-soft" />
 
+            {/* Sign-in methods */}
+            <div className="py-3">
+              <span className="block text-[13.5px] font-semibold text-ng-ink">Sign-in methods</span>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-success/12 text-ng-success font-semibold px-3 py-1.5 text-[12px]">
+                  <Icon name="key-minimalistic-bold" size={14} />
+                  Password · enabled
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toast.message("Connect Google", { description: "Google sign-in links up in Milestone 2." })}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink-muted font-semibold px-3 py-1.5 text-[12px] hover:bg-ng-cream transition-colors cursor-pointer"
+                >
+                  <Icon name="global-bold" size={14} className="text-ng-ink-soft" />
+                  Google · connect
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-ng-line-soft" />
+
             {/* Two-factor sign-in — selectable factors (super admin) */}
             {isSuper ? (
               <div className="py-1">
@@ -350,6 +391,21 @@ export default function AdminProfilePage() {
                     Connect email (add your Brevo key) to enable.
                   </p>
                 ) : null}
+
+                <div className="my-1 border-t border-ng-line-soft" />
+
+                <Toggle
+                  label="Mobile one-time code (SMS)"
+                  description="A code by SMS to your operator mobile on each sign-in."
+                  checked={Boolean(factors?.phoneOtp)}
+                  onChange={(v) => setFactor("phoneOtp", v)}
+                />
+                {!available.phone ? (
+                  <p className="-mt-1.5 ml-0.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-ng-clay-deep">
+                    <Icon name="info-circle-bold" size={12} />
+                    Add an operator mobile (ADMIN_PHONE) to enable.
+                  </p>
+                ) : null}
               </div>
             ) : (
               <div className="flex items-center gap-1.5 py-2 text-[12px] font-medium text-ng-ink-soft">
@@ -357,27 +413,6 @@ export default function AdminProfilePage() {
                 Two-factor sign-in is managed by your Super Admin.
               </div>
             )}
-
-            <div className="border-t border-ng-line-soft" />
-
-            {/* Sign-in methods */}
-            <div className="py-3">
-              <span className="block text-[13.5px] font-semibold text-ng-ink">Sign-in methods</span>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-success/12 text-ng-success font-semibold px-3 py-1.5 text-[12px]">
-                  <Icon name="key-minimalistic-bold" size={14} />
-                  Password · enabled
-                </span>
-                <button
-                  type="button"
-                  onClick={() => toast.message("Connect Google", { description: "Google sign-in links up in Milestone 2." })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink-muted font-semibold px-3 py-1.5 text-[12px] hover:bg-ng-cream transition-colors cursor-pointer"
-                >
-                  <Icon name="global-bold" size={14} className="text-ng-ink-soft" />
-                  Google · connect
-                </button>
-              </div>
-            </div>
 
             <div className="border-t border-ng-line-soft" />
 

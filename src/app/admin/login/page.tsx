@@ -44,9 +44,12 @@ function LoginForm() {
   // Passcode flow
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
-  // Super-admin second factor (authenticator app)
-  const [mfaStep, setMfaStep] = useState(false);
+  // Super-admin second factor — pick any one of the enabled factors.
+  const [mfaFactors, setMfaFactors] = useState<string[] | null>(null);
+  const [mfaChoice, setMfaChoice] = useState<"totp" | "email" | "phone" | null>(null);
   const [totp, setTotp] = useState("");
+  const [mail, setMail] = useState("");
+  const [mailSending, setMailSending] = useState(false);
 
   // Phone flow
   const [phone, setPhone] = useState("");
@@ -67,8 +70,43 @@ function LoginForm() {
   function switchMethod(m: Method) {
     setMethod(m);
     setError(null);
-    setMfaStep(false);
+    resetMfa();
+  }
+
+  function resetMfa() {
+    setMfaFactors(null);
+    setMfaChoice(null);
     setTotp("");
+    setMail("");
+  }
+
+  async function sendMailCode() {
+    setMailSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/mfa/email-send", { method: "POST" });
+      if (res.ok) {
+        toast.success("Code sent", {
+          description: "Check your admin email for the 6-digit code.",
+        });
+      } else {
+        setError(
+          res.status === 503
+            ? "Email sign-in codes aren't set up yet."
+            : "Couldn't send the email code.",
+        );
+      }
+    } catch {
+      setError("Couldn't reach the server. Try again.");
+    } finally {
+      setMailSending(false);
+    }
+  }
+
+  async function chooseFactor(f: "totp" | "email" | "phone" | null) {
+    setMfaChoice(f);
+    setError(null);
+    if (f === "email") await sendMailCode();
   }
 
   async function handlePasscode(e: React.FormEvent) {
@@ -84,12 +122,19 @@ function LoginForm() {
       if (res.ok) {
         const data = (await res.json().catch(() => ({}))) as {
           mfaRequired?: boolean;
+          factors?: string[];
         };
         if (data.mfaRequired) {
-          // Super-admin still owes an authenticator code — switch to the 2FA step.
-          setTotp("");
+          const fs = (data.factors && data.factors.length ? data.factors : ["totp"]).filter(
+            (f) => f === "totp" || f === "email",
+          );
+          const list = fs.length ? fs : ["totp"];
           setError(null);
-          setMfaStep(true);
+          setTotp("");
+          setMail("");
+          setMfaFactors(list);
+          // One factor → go straight to it; several → show the chooser.
+          await chooseFactor(list.length === 1 ? (list[0] as "totp" | "email") : null);
           return;
         }
         toast.success("Welcome back", { description: "Signed in to Admin." });
@@ -120,7 +165,7 @@ function LoginForm() {
       const res = await fetch("/api/admin/login-2fa", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code: totp }),
+        body: JSON.stringify({ method: "totp", code: totp }),
       });
       if (res.ok) {
         toast.success("Welcome back", { description: "Signed in to Admin." });
@@ -130,14 +175,52 @@ function LoginForm() {
       // 401 with restart → the short-lived ticket expired; send them back.
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
       if (data.restart) {
-        setMfaStep(false);
-        setTotp("");
+        resetMfa();
         const msg = "That took too long — enter your passcode again.";
         setError(msg);
         toast.error("Session expired", { description: msg });
         return;
       }
       const msg = "Invalid or expired authenticator code.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
+    } catch {
+      const msg = "Could not reach the server. Try again.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function verifyMail(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!/^\d{6}$/.test(mail)) {
+      setError("Enter the 6-digit code from your email.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/login-2fa", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ method: "email", code: mail }),
+      });
+      if (res.ok) {
+        toast.success("Welcome back", { description: "Signed in to Admin." });
+        router.push(next);
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
+      if (data.restart) {
+        resetMfa();
+        const msg = "That took too long — enter your passcode again.";
+        setError(msg);
+        toast.error("Session expired", { description: msg });
+        return;
+      }
+      const msg = "Invalid or expired email code.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } catch {
@@ -329,7 +412,69 @@ function LoginForm() {
             ))}
           </div>
 
-          {method === "passcode" && mfaStep ? (
+          {method === "passcode" && mfaFactors !== null && mfaChoice === null ? (
+            <div className="mt-6 flex flex-col gap-3">
+              <p className="text-[13px] font-medium text-ng-ink-muted">
+                Choose how to finish signing in:
+              </p>
+              {mfaFactors.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => void chooseFactor(f as "totp" | "email")}
+                  className="flex items-center gap-3 rounded-xl border border-ng-line bg-ng-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ng-ink transition-colors hover:border-ng-leaf cursor-pointer"
+                >
+                  <Icon
+                    name={f === "email" ? "letter-bold" : "shield-keyhole-bold"}
+                    size={18}
+                    className="text-ng-forest"
+                  />
+                  {f === "email" ? "Email one-time code" : "Authenticator app"}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={resetMfa}
+                className="self-start text-[12px] font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep cursor-pointer"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : method === "passcode" && mfaChoice === "email" ? (
+            <form onSubmit={verifyMail} className="mt-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[13px] font-semibold text-ng-ink">Email code</span>
+                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                  Enter the 6-digit code we emailed you.
+                </p>
+                <OtpInput value={mail} onChange={setMail} />
+                {error ? (
+                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                ) : null}
+              </div>
+              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
+                <Icon name="letter-bold" size={18} />
+                {submitting ? "Verifying…" : "Verify & sign in"}
+              </Button>
+              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                <button
+                  type="button"
+                  disabled={mailSending}
+                  onClick={() => void sendMailCode()}
+                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:text-ng-ink-soft cursor-pointer"
+                >
+                  {mailSending ? "Sending…" : "Resend code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                  className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
+                >
+                  {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
+                </button>
+              </div>
+            </form>
+          ) : method === "passcode" && mfaChoice === "totp" ? (
             <form onSubmit={verifyMfa} className="mt-6 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <span className="text-[13px] font-semibold text-ng-ink">
@@ -350,14 +495,10 @@ function LoginForm() {
               </Button>
               <button
                 type="button"
-                onClick={() => {
-                  setMfaStep(false);
-                  setTotp("");
-                  setError(null);
-                }}
-                className="text-[12px] font-sans font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep"
+                onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                className="text-[12px] font-sans font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep cursor-pointer"
               >
-                Back to sign in
+                {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
               </button>
             </form>
           ) : method === "passcode" ? (

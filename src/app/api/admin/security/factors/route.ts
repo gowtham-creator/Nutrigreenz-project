@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
-import { getAdminFactors, setAdminFactors } from "@/lib/admin-security";
+import { getAdminFactors, setAdminFactors, hasSecurityRow } from "@/lib/admin-security";
 import { isTotpConfigured } from "@/lib/totp";
 import { isEmailConfigured } from "@/lib/email";
 
@@ -18,10 +18,18 @@ export async function GET(): Promise<Response> {
   const email = await requireSuperAdmin();
   if (!email) return Response.json({ ok: false }, { status: 401 });
   const factors = await getAdminFactors(email);
+  // With no saved settings yet, reflect the *effective* default so the toggles
+  // match real login behaviour: an env-configured authenticator gates sign-in
+  // until the super-admin turns it off (which then writes a row, below).
+  if (!(await hasSecurityRow(email)) && isTotpConfigured()) factors.totp = true;
   return Response.json({
     ok: true,
     factors,
-    available: { totp: isTotpConfigured(), email: isEmailConfigured() },
+    available: {
+      totp: isTotpConfigured(),
+      email: isEmailConfigured(),
+      phone: Boolean(process.env.ADMIN_PHONE),
+    },
   });
 }
 
@@ -73,11 +81,14 @@ export async function PUT(request: Request): Promise<Response> {
   }
 
   if (typeof body.phoneOtp === "boolean") {
-    if (body.phoneOtp && !patch.otpPhone && typeof body.otpPhone !== "string") {
-      // Need a number on file to enable phone OTP.
+    if (body.phoneOtp && typeof body.otpPhone !== "string") {
+      // Need a number on file to enable phone OTP — default to the operator
+      // number (ADMIN_PHONE) so the super-admin can enable it in one tap.
       const current = await getAdminFactors(email);
       if (!current.otpPhone) {
-        return Response.json({ ok: false, error: "phone-required" }, { status: 409 });
+        const fallback = process.env.ADMIN_PHONE;
+        if (fallback) patch.otpPhone = fallback;
+        else return Response.json({ ok: false, error: "phone-required" }, { status: 409 });
       }
     }
     patch.phoneOtp = body.phoneOtp;

@@ -7,7 +7,8 @@ import {
 } from "@/lib/admin-auth";
 import { createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
-import { verifyEmailOtp } from "@/lib/admin-security";
+import { verifyEmailOtp, getAdminFactors } from "@/lib/admin-security";
+import { verifyIdToken } from "@/lib/firebase-admin";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
 const MAX_AGE = 60 * 60 * 12;
@@ -29,18 +30,21 @@ const MAX_AGE = 60 * 60 * 12;
 export async function POST(request: Request): Promise<Response> {
   let code: unknown;
   let method: unknown;
+  let idToken: unknown;
   try {
     const body = await request.json();
     code = body?.code;
     method = body?.method;
+    idToken = body?.idToken;
   } catch {
     return Response.json({ ok: false }, { status: 400 });
   }
-  if (typeof code !== "string") {
+  // Default to TOTP so the existing authenticator-only flow keeps working.
+  const factor =
+    method === "email" ? "email" : method === "phone" ? "phone" : "totp";
+  if (factor === "phone" ? typeof idToken !== "string" : typeof code !== "string") {
     return Response.json({ ok: false }, { status: 400 });
   }
-  // Default to TOTP so the existing authenticator-only flow keeps working.
-  const factor = method === "email" ? "email" : "totp";
 
   const c = await cookies();
   const email = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
@@ -52,9 +56,22 @@ export async function POST(request: Request): Promise<Response> {
   let ok = false;
   if (factor === "totp") {
     const secret = process.env.ADMIN_TOTP_SECRET;
-    ok = secret ? await verifyTotp(code, secret) : false;
+    ok = secret ? await verifyTotp(code as string, secret) : false;
+  } else if (factor === "email") {
+    ok = await verifyEmailOtp(email, code as string);
   } else {
-    ok = await verifyEmailOtp(email, code);
+    // phone: verify the Firebase ID token and match the number on file.
+    try {
+      const decoded = await verifyIdToken(idToken as string);
+      const f = await getAdminFactors(email);
+      ok =
+        decoded.firebase?.sign_in_provider === "phone" &&
+        Boolean(decoded.phone_number) &&
+        Boolean(f.otpPhone) &&
+        f.otpPhone === decoded.phone_number;
+    } catch {
+      ok = false;
+    }
   }
   if (!ok) {
     return Response.json({ ok: false }, { status: 401 });
