@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-session";
 import { isTotpConfigured } from "@/lib/totp";
 import { getAdminFactors, hasSecurityRow } from "@/lib/admin-security";
+import { verifyAdminLogin } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 
@@ -99,6 +100,19 @@ export async function POST(request: Request): Promise<Response> {
     if (emailOk && passOk) {
       normalizedEmail = staffEmail;
       role = "admin";
+    }
+  }
+
+  // Finally try a DB-backed admin (created via People → Add admin).
+  if (!role && isSupabaseConfigured) {
+    try {
+      const dbAdmin = await verifyAdminLogin(inputEmail, passcode);
+      if (dbAdmin) {
+        normalizedEmail = dbAdmin.email;
+        role = dbAdmin.role;
+      }
+    } catch {
+      /* DB hiccup → fall through to fail-closed */
     }
   }
 

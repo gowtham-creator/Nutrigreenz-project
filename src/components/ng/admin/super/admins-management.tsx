@@ -29,12 +29,28 @@ type AdminUser = {
   status: "active" | "invited";
 };
 
-const SEED: AdminUser[] = [
-  { name: "Owner", email: "admin@nutrigreenz.in", role: "superadmin", lastActive: "Just now", status: "active" },
-  { name: "Priya Nair", email: "priya@nutrigreenz.in", role: "admin", lastActive: "2h ago", status: "active" },
-  { name: "Rahul Verma", email: "rahul@nutrigreenz.in", role: "admin", lastActive: "Yesterday", status: "active" },
-  { name: "Ops Desk", email: "ops@nutrigreenz.in", role: "admin", lastActive: "—", status: "invited" },
-];
+type NewAdminPayload = { name: string; email: string; phone: string; password: string };
+
+const labelChannel = (c: string) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp");
+
+/** Map an API admin record to the roster's display shape. */
+function recordToUser(a: {
+  name: string | null;
+  email: string;
+  phone: string | null;
+  role: RoleKey;
+  status: string;
+  lastLoginAt: string | null;
+}): AdminUser {
+  return {
+    name: a.name || a.email.split("@")[0],
+    email: a.email,
+    mobile: a.phone ?? undefined,
+    role: a.role,
+    lastActive: a.lastLoginAt ? "Recently" : "—",
+    status: a.status === "active" ? "active" : "invited",
+  };
+}
 
 const roleLabel = (r: RoleKey) => (r === "superadmin" ? "Super Admin" : "Admin");
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -70,17 +86,59 @@ function RowAction({
 }
 
 export function AdminsManagement() {
-  const [admins, setAdmins] = useState<AdminUser[]>(SEED);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [open, setOpen] = useState(false);
 
-  function handleInvite(newAdmin: AdminUser, channels: Channel[]) {
-    setAdmins((prev) => [...prev, newAdmin]);
-    const via = channels
-      .map((c) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp"))
-      .join(", ");
-    toast.success("Admin invited", {
-      description: `${newAdmin.email} added as Admin — credentials sent via ${via}.`,
-    });
+  // Load the real, DB-backed admins.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/admins");
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        if (Array.isArray(data.admins)) setAdmins(data.admins.map(recordToUser));
+      } catch {
+        /* ignore — the roster just stays empty */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function handleInvite(payload: NewAdminPayload, channels: Channel[]): Promise<boolean> {
+    try {
+      const res = await fetch("/api/admin/admins", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...payload, channels }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          data.error === "exists"
+            ? "That email is already an admin."
+            : data.error === "db-unavailable"
+              ? "The database isn't configured yet."
+              : "Couldn’t add the admin — check the details.";
+        toast.error("Not added", { description: msg });
+        return false;
+      }
+      setAdmins((prev) => [...prev, recordToUser(data.admin)]);
+      const sent = (data.sent ?? []).map(labelChannel).join(", ");
+      const pending = (data.pending ?? []).map(labelChannel).join(", ");
+      toast.success("Admin added", {
+        description:
+          `${data.admin.email} created as Admin.` +
+          (sent ? ` Credentials sent via ${sent}.` : "") +
+          (pending ? ` Pending (no provider yet): ${pending}.` : ""),
+      });
+      return true;
+    } catch {
+      toast.error("Not added", { description: "Couldn’t reach the server." });
+      return false;
+    }
   }
 
   function resendInvite(a: AdminUser) {
@@ -130,6 +188,11 @@ export function AdminsManagement() {
       </div>
 
       <ul>
+        {admins.length === 0 ? (
+          <li className="px-1 py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
+            No admins yet — click “Add admin” to create one.
+          </li>
+        ) : null}
         {admins.map((a) => (
           <li
             key={a.email}
@@ -161,7 +224,7 @@ export function AdminsManagement() {
 
       <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
         <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-        Placeholder actions — real invites, resets &amp; role changes ship in Milestone 2.
+        Add admin is live (creates a real account). Row actions — resend, reset &amp; deactivate — ship next.
       </p>
 
       <AddInviteAdminModal open={open} onClose={() => setOpen(false)} onInvite={handleInvite} />
@@ -179,7 +242,7 @@ function AddInviteAdminModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onInvite: (admin: AdminUser, channels: Channel[]) => void;
+  onInvite: (payload: NewAdminPayload, channels: Channel[]) => Promise<boolean>;
 }) {
   const headingId = useId();
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -190,6 +253,7 @@ function AddInviteAdminModal({
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["email"]);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
 
   // reset + focus on open
@@ -236,7 +300,7 @@ function AddInviteAdminModal({
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   }
 
-  function handleInvite() {
+  async function handleInvite() {
     const digits = mobile.replace(/\D/g, "");
     const next: { name?: string; email?: string; mobile?: string; password?: string } = {};
     if (!name.trim()) next.name = "Name is required.";
@@ -254,18 +318,13 @@ function AddInviteAdminModal({
       });
       return;
     }
-    onInvite(
-      {
-        name: name.trim(),
-        email: email.trim(),
-        mobile: `+91${digits}`,
-        role: "admin",
-        lastActive: "—",
-        status: "invited",
-      },
+    setSubmitting(true);
+    const ok = await onInvite(
+      { name: name.trim(), email: email.trim(), phone: digits, password },
       channels,
     );
-    onClose();
+    setSubmitting(false);
+    if (ok) onClose();
   }
 
   const CHANNELS: { key: Channel; label: string; icon: string }[] = [
@@ -397,9 +456,9 @@ function AddInviteAdminModal({
           <Button variant="ghost" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" type="button" onClick={handleInvite}>
+          <Button variant="primary" type="button" onClick={handleInvite} disabled={submitting}>
             <Icon name="letter-bold" size={16} />
-            Send invite
+            {submitting ? "Adding…" : "Send invite"}
           </Button>
         </div>
       </div>
