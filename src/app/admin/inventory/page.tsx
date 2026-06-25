@@ -1,109 +1,229 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
-import { StockMeter, MiniBars, type VizTone } from "@/components/ng/admin/viz";
-import { StockAdjustDialog, type StockTarget } from "@/components/ng/admin/catalog/stock-adjust-dialog";
-import { downloadCsv, toCsv } from "@/components/ng/admin/catalog/csv";
+import { StockMeter } from "@/components/ng/admin/viz";
+import { ProductModal, type ProductDraft } from "./product-modal";
+import { CategoryModal } from "./category-modal";
+import { ImportModal } from "./import-modal";
+import {
+  formatPaise,
+  STATUS_TONE,
+  type Category,
+  type Product,
+  type ProductStatus,
+} from "./types";
 
-/* ---- product stock (SKU level) ----------------------------------- */
-interface StockRow {
-  sku: string;
-  product: string;
-  category: string;
-  stock: number;
-  threshold: number;
-  lot: string;
-  movement: number[];
-  reorder: boolean;
-}
+const LOW_STOCK_THRESHOLD = 20;
 
-const SEED_STOCK: StockRow[] = [
-  { sku: "OIL-GN-1L", product: "Cold-Pressed Groundnut Oil", category: "Oils", stock: 982, threshold: 200, lot: "ANT-24-051", movement: [42, 38, 51, 44, 60, 55, 66], reorder: false },
-  { sku: "GHE-A2-500", product: "A2 Gir Cow Bilona Ghee", category: "Ghee", stock: 318, threshold: 120, lot: "ANT-24-049", movement: [22, 28, 24, 31, 29, 34, 38], reorder: false },
-  { sku: "OIL-SF-1L", product: "Cold-Pressed Sunflower Oil", category: "Oils", stock: 12, threshold: 40, lot: "ANT-24-046", movement: [18, 14, 20, 11, 9, 7, 5], reorder: true },
-  { sku: "MIL-FX-500", product: "Foxtail Millet", category: "Millets", stock: 412, threshold: 150, lot: "ANT-24-044", movement: [60, 54, 71, 65, 78, 72, 80], reorder: false },
-  { sku: "HON-ML-500", product: "Multifloral Raw Honey", category: "Honey", stock: 142, threshold: 90, lot: "ANT-24-038", movement: [30, 36, 28, 41, 35, 44, 39], reorder: false },
-  { sku: "GHE-BUF-250", product: "Cultured Buffalo Ghee", category: "Ghee", stock: 9, threshold: 35, lot: "ANT-24-029", movement: [14, 11, 9, 12, 7, 6, 4], reorder: true },
-  { sku: "SF-MOR-200", product: "Moringa Superfood Powder", category: "Superfoods", stock: 28, threshold: 60, lot: "ANT-24-051", movement: [20, 16, 22, 14, 18, 12, 10], reorder: true },
-  { sku: "FLR-BAJ-1K", product: "Stone-Ground Bajra Flour", category: "Flours", stock: 0, threshold: 50, lot: "ANT-24-041", movement: [12, 10, 8, 6, 3, 1, 0], reorder: true },
+type StatusFilter = "all" | ProductStatus;
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "All products" },
+  { key: "active", label: "Active" },
+  { key: "draft", label: "Drafts" },
+  { key: "archived", label: "Archived" },
 ];
 
-/* ---- lot / batch traceability ------------------------------------ */
-const LOTS = [
-  { id: "ANT-24-051", product: "Cold-Pressed Groundnut Oil 1L", farm: "Anantapur · K. Subbaiah", received: "12 May 2026", units: 1240, available: 982, status: "Active", tone: "success" as const, qc: "Passed" },
-  { id: "ANT-24-049", product: "A2 Gir Cow Bilona Ghee 500ml", farm: "Junagadh · H. Pateel", received: "08 May 2026", units: 540, available: 318, status: "Active", tone: "success" as const, qc: "Passed" },
-  { id: "ANT-24-052", product: "Cold-Pressed Groundnut Oil 1L", farm: "Anantapur · K. Subbaiah", received: "19 May 2026", units: 1180, available: 1180, status: "QC pending", tone: "warn" as const, qc: "In lab" },
-  { id: "ANT-24-044", product: "Foxtail Millet 500g", farm: "Bellary · R. Eshwarappa", received: "01 May 2026", units: 820, available: 412, status: "Active", tone: "success" as const, qc: "Passed" },
-  { id: "ANT-24-038", product: "Multifloral Forest Honey 500g", farm: "Nilgiri · Kani co-op", received: "24 Apr 2026", units: 380, available: 142, status: "Active", tone: "success" as const, qc: "Passed" },
-  { id: "ANT-24-046", product: "Cold-Pressed Sunflower Oil 1L", farm: "Telangana · M. Devraj", received: "04 May 2026", units: 920, available: 12, status: "Low stock", tone: "danger" as const, qc: "Passed" },
-  { id: "ANT-24-041", product: "Stone-Ground Bajra Flour 1kg", farm: "Bikaner · B. Choudhary", received: "28 Apr 2026", units: 640, available: 0, status: "Depleted", tone: "neutral" as const, qc: "Passed" },
-  { id: "ANT-24-050", product: "Kashmiri Acacia Honey 350g", farm: "Pulwama · co-op", received: "10 May 2026", units: 220, available: 64, status: "Active", tone: "success" as const, qc: "Passed" },
-];
-
-const PO_OPEN = [
-  { id: "PO-2026-018", farm: "Anantapur · K. Subbaiah", product: "Groundnut · cold-press grade", qty: "1,500 kg", expected: "24 May 2026", value: 187500 },
-  { id: "PO-2026-019", farm: "Telangana · M. Devraj", product: "Sunflower seed", qty: "900 kg", expected: "26 May 2026", value: 99000 },
-  { id: "PO-2026-020", farm: "Bellary · R. Eshwarappa", product: "Foxtail millet", qty: "1,200 kg", expected: "28 May 2026", value: 96000 },
-];
-
-const FILTERS = ["All SKUs", "Reorder now", "Oils", "Ghee", "Honey", "Millets", "Flours"];
-
-function stockState(stock: number, threshold: number) {
-  if (stock <= 0) return { tone: "neutral" as const, label: "Out" };
-  if (stock <= threshold) return { tone: "danger" as const, label: "Low" };
-  return { tone: "success" as const, label: "OK" };
+async function postJson<T>(url: string, method: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json()) as T & { ok?: boolean; error?: string };
+  if (!res.ok || data.ok === false) throw new Error(data.error || "request-failed");
+  return data;
 }
 
 export default function AdminInventory() {
-  // ── editable SKU stock (demo persistence — real write = M2) ──────
-  const [stock, setStock] = useState<StockRow[]>(() => SEED_STOCK.map((s) => ({ ...s })));
-  const reorderCount = stock.filter((s) => s.reorder).length;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
 
-  // ── stock-adjust dialog state ────────────────────────────────────
-  const [adjustTarget, setAdjustTarget] = useState<StockTarget | null>(null);
-  const [adjustOpen, setAdjustOpen] = useState(false);
+  // ── modal state ───────────────────────────────────────────────────
+  const [productOpen, setProductOpen] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const openAdjust = useCallback((s: StockRow, prefillReorder?: boolean) => {
-    setAdjustTarget({
-      sku: s.sku,
-      product: s.product,
-      stock: s.stock,
-      threshold: s.threshold,
-      lot: s.lot,
-      reorder: prefillReorder ?? s.reorder,
-    });
-    setAdjustOpen(true);
+  // ── inline stock edit ─────────────────────────────────────────────
+  const [stockEditId, setStockEditId] = useState<string | null>(null);
+  const [stockDraft, setStockDraft] = useState("");
+
+  const loadCategories = useCallback(async () => {
+    const res = await fetch("/api/admin/inventory/categories");
+    const data = (await res.json()) as { ok: boolean; categories: Category[] };
+    if (data.ok) setCategories(data.categories);
   }, []);
 
-  const handleSaveStock = useCallback((sku: string, nextStock: number, reorder: boolean) => {
-    setStock((prev) => prev.map((s) => (s.sku === sku ? { ...s, stock: nextStock, reorder } : s)));
-    setAdjustOpen(false);
-    toast.success("Stock updated", {
-      description: `${sku} → ${nextStock} units${reorder ? " · flagged for reorder" : ""}.`,
-    });
-  }, []);
+  const loadProducts = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (categoryFilter) params.set("categoryId", categoryFilter);
+    params.set("pageSize", "200");
+    const res = await fetch(`/api/admin/inventory/products?${params.toString()}`);
+    const data = (await res.json()) as { ok: boolean; products: Product[] };
+    if (data.ok) setProducts(data.products);
+  }, [search, statusFilter, categoryFilter]);
 
-  const handleExportStock = useCallback(() => {
-    const csv = toCsv(
-      ["sku", "product", "stock", "status", "lot"],
-      stock.map((s) => [s.sku, s.product, s.stock, stockState(s.stock, s.threshold).label, s.lot]),
-    );
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(`nutrigreenz-stock-${stamp}.csv`, csv);
-    toast.success("Export started", { description: `${stock.length} SKUs → CSV download.` });
-  }, [stock]);
+  useEffect(() => {
+    void loadCategories();
+  }, [loadCategories]);
 
-  // Low-stock list derived from live stock state (keeps existing visual).
-  const lowStock = useMemo(
-    () =>
-      stock
-        .filter((s) => s.stock <= s.threshold)
-        .sort((a, b) => a.stock / a.threshold - b.stock / b.threshold)
-        .slice(0, 4),
-    [stock],
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const t = setTimeout(() => {
+      void loadProducts().finally(() => {
+        if (active) setLoading(false);
+      });
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [loadProducts]);
+
+  const stats = useMemo(() => {
+    const total = products.length;
+    const active = products.filter((p) => p.status === "active").length;
+    const low = products.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length;
+    const out = products.filter((p) => p.stock <= 0).length;
+    return { total, active, low, out };
+  }, [products]);
+
+  // ── product create / edit ─────────────────────────────────────────
+  const openAdd = () => {
+    setEditing(null);
+    setProductOpen(true);
+  };
+  const openEdit = (p: Product) => {
+    setEditing(p);
+    setProductOpen(true);
+  };
+
+  const saveProduct = useCallback(
+    async (draft: ProductDraft) => {
+      setSaving(true);
+      const payload = {
+        name: draft.name.trim(),
+        sku: draft.sku.trim() || null,
+        categoryId: draft.categoryId || null,
+        pricePaise: Math.round((Number(draft.priceRupees) || 0) * 100),
+        stock: Math.max(0, Math.round(Number(draft.stock) || 0)),
+        status: draft.status,
+        description: draft.description.trim() || null,
+      };
+      try {
+        if (editing) {
+          await postJson(`/api/admin/inventory/products/${editing.id}`, "PATCH", payload);
+          await postJson(`/api/admin/inventory/products/${editing.id}/stock`, "PUT", {
+            stock: payload.stock,
+          });
+          toast.success("Product updated", { description: payload.name });
+        } else {
+          await postJson("/api/admin/inventory/products", "POST", payload);
+          toast.success("Product created", { description: payload.name });
+        }
+        setProductOpen(false);
+        await loadProducts();
+      } catch {
+        toast.error("Could not save product", { description: "Please try again." });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [editing, loadProducts],
+  );
+
+  const removeProduct = useCallback(
+    async (p: Product) => {
+      try {
+        await postJson(`/api/admin/inventory/products/${p.id}`, "DELETE", {});
+        toast.success("Product removed", { description: p.name });
+        await loadProducts();
+      } catch {
+        toast.error("Could not remove product");
+      }
+    },
+    [loadProducts],
+  );
+
+  // ── inline stock ──────────────────────────────────────────────────
+  const startStockEdit = (p: Product) => {
+    setStockEditId(p.id);
+    setStockDraft(String(p.stock));
+  };
+  const commitStock = useCallback(
+    async (p: Product) => {
+      const next = Math.max(0, Math.round(Number(stockDraft) || 0));
+      setStockEditId(null);
+      if (next === p.stock) return;
+      try {
+        await postJson(`/api/admin/inventory/products/${p.id}/stock`, "PUT", { stock: next });
+        setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, stock: next } : x)));
+        toast.success("Stock updated", { description: `${p.name} → ${next}` });
+      } catch {
+        toast.error("Could not update stock");
+      }
+    },
+    [stockDraft],
+  );
+
+  // ── categories ────────────────────────────────────────────────────
+  const createCategory = useCallback(
+    async (name: string) => {
+      setCategoryBusy(true);
+      try {
+        await postJson("/api/admin/inventory/categories", "POST", { name });
+        await loadCategories();
+        toast.success("Category added", { description: name });
+      } catch {
+        toast.error("Could not add category");
+      } finally {
+        setCategoryBusy(false);
+      }
+    },
+    [loadCategories],
+  );
+  const renameCategory = useCallback(
+    async (id: string, name: string) => {
+      setCategoryBusy(true);
+      try {
+        await postJson(`/api/admin/inventory/categories/${id}`, "PATCH", { name });
+        await loadCategories();
+        await loadProducts();
+      } catch {
+        toast.error("Could not rename category");
+      } finally {
+        setCategoryBusy(false);
+      }
+    },
+    [loadCategories, loadProducts],
+  );
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      setCategoryBusy(true);
+      try {
+        await postJson(`/api/admin/inventory/categories/${id}`, "DELETE", {});
+        await loadCategories();
+        await loadProducts();
+        toast.success("Category removed");
+      } catch {
+        toast.error("Could not remove category");
+      } finally {
+        setCategoryBusy(false);
+      }
+    },
+    [loadCategories, loadProducts],
   );
 
   return (
@@ -111,238 +231,198 @@ export default function AdminInventory() {
       active="/admin/inventory"
       title={
         <span>
-          Inventory <em className="italic text-ng-clay font-display">&amp; lots</em>
+          Inventory <em className="italic text-ng-clay font-display">&amp; catalog</em>
         </span>
       }
-      subtitle="Every jar traces back to a lot. Every lot traces back to a farmer."
+      subtitle="Manage products, stock and categories from one place."
       actions={
         <>
           <button
             type="button"
-            onClick={handleExportStock}
+            onClick={() => setCategoryOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="tag-bold" size={15} className="text-ng-forest" />
+            Categories
+          </button>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="import-bold" size={15} className="text-ng-forest" />
+            Import CSV
+          </button>
+          <a
+            href="/api/admin/inventory/export"
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
             <Icon name="export-bold" size={15} className="text-ng-forest" />
             Export CSV
-          </button>
+          </a>
           <button
             type="button"
+            onClick={openAdd}
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
           >
-            <Icon name="box-bold" size={15} />
-            Receive lot
+            <Icon name="add-circle-bold" size={15} />
+            Add product
           </button>
         </>
       }
     >
       {/* Stat tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatTile label="Lots active" value="86" delta="3 received this week" trend="up" />
-        <StatTile label="Inventory value" value="₹38.4L" delta="+₹2.1L vs last wk" trend="up" />
-        <StatTile label="QC pending" value="4" delta="all in-lab" trend="flat" />
-        <StatTile label="Low-stock SKUs" value={String(reorderCount)} delta="auto-PO drafted" trend="down" />
+        <StatTile label="Products" value={String(stats.total)} />
+        <StatTile label="Active" value={String(stats.active)} />
+        <StatTile label="Low stock" value={String(stats.low)} delta="≤ 20 units" trend={stats.low > 0 ? "down" : "flat"} />
+        <StatTile label="Out of stock" value={String(stats.out)} delta={stats.out > 0 ? "needs restock" : "all stocked"} trend={stats.out > 0 ? "down" : "up"} />
       </div>
 
-      {/* Reorder banner */}
-      {reorderCount > 0 ? (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-terracotta/8 border border-ng-terracotta/25 px-5 py-3.5">
-          <span className="size-8 rounded-full bg-ng-terracotta/15 flex items-center justify-center shrink-0">
-            <Icon name="danger-triangle-bold" size={17} className="text-ng-terracotta" />
-          </span>
-          <p className="text-[13px] font-medium text-ng-ink">
-            <span className="font-semibold text-ng-forest-deep tabular-nums">{reorderCount} SKUs</span> are at or below
-            reorder threshold. Auto-PO drafts are ready for review.
-          </p>
-          <button className="ml-auto shrink-0 text-[12.5px] font-semibold text-ng-terracotta hover:underline cursor-pointer">
-            Review drafts →
-          </button>
-        </div>
-      ) : null}
-
-      {/* Product stock table */}
-      <Card
-        title="Product stock"
-        action={
-          <button type="button" onClick={handleExportStock} className="inline-flex items-center gap-1.5 text-[12px] text-ng-forest hover:underline cursor-pointer">
-            <Icon name="export-bold" size={14} />
-            Export →
-          </button>
-        }
-        className="!p-0 overflow-hidden mb-6"
-      >
+      {/* Product table */}
+      <Card title="Products" className="!p-0 overflow-hidden">
         <div className="px-6 pt-6 pb-4 flex items-center gap-2 flex-wrap border-b border-ng-line-soft">
-          {FILTERS.map((t, i) => (
+          {STATUS_FILTERS.map((f) => (
             <button
-              key={t}
+              key={f.key}
               type="button"
+              onClick={() => setStatusFilter(f.key)}
               className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors cursor-pointer ${
-                i === 0
+                statusFilter === f.key
                   ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                  : t === "Reorder now"
-                    ? "bg-ng-terracotta/10 text-ng-terracotta font-semibold border border-ng-terracotta/30 hover:bg-ng-terracotta/15"
-                    : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream"
+                  : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream"
               }`}
             >
-              {t}
+              {f.label}
             </button>
           ))}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3.5 py-1.5 rounded-full text-[12px] bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium outline-none focus:border-ng-forest cursor-pointer"
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
           <div className="ml-auto relative">
             <Icon name="magnifer-linear" size={15} className="text-ng-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
-              placeholder="Search SKU, product…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, SKU…"
               className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-1.5 text-[12.5px] w-64 outline-none focus:border-ng-forest"
             />
           </div>
         </div>
-        <div className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
-          <span>SKU</span>
-          <span>Product</span>
-          <span>Category</span>
-          <span>Stock level</span>
-          <span>Active lot</span>
-          <span>7-day flow</span>
-          <span></span>
-        </div>
-        <ul>
-          {stock.map((s) => {
-            const st = stockState(s.stock, s.threshold);
-            const tone: VizTone = st.tone === "danger" ? "terracotta" : st.tone === "neutral" ? "ink" : "leaf";
-            return (
-              <li
-                key={s.sku}
-                className="grid grid-cols-[1fr_2fr_0.9fr_1.4fr_1fr_0.7fr_0.7fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
-              >
-                <span className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{s.sku}</span>
-                <span className="truncate font-semibold text-ng-ink">{s.product}</span>
-                <span className="text-[12px] font-medium text-ng-ink-muted">{s.category}</span>
-                <div className="flex items-center gap-2">
-                  <StockMeter stock={s.stock} threshold={s.threshold} />
-                  <Pill tone={st.tone}>{st.label}</Pill>
-                </div>
-                <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted">{s.lot}</span>
-                <MiniBars data={s.movement} tone={tone} width={56} height={26} />
-                <div className="flex items-center justify-end gap-2">
-                  {s.reorder ? (
-                    <button
-                      type="button"
-                      onClick={() => openAdjust(s, true)}
-                      className="text-[12px] font-bold text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer"
-                    >
-                      Reorder
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => openAdjust(s)}
-                    aria-label={`Adjust stock for ${s.product}`}
-                    className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
-                  >
-                    <Icon name="pen-2-bold" size={13} />
-                    Adjust
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </Card>
 
-      {/* Lots table */}
-      <Card
-        title="Lot register"
-        action={<button type="button" className="text-[12px] text-ng-forest hover:underline cursor-pointer">All lots →</button>}
-        className="!p-0 overflow-hidden mb-6"
-      >
-        <div className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
-          <span>Lot ID</span>
+        <div className="grid grid-cols-[2fr_1.1fr_1fr_0.9fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
-          <span>Farm</span>
-          <span>Received</span>
-          <span>Units</span>
-          <span>Available</span>
+          <span>SKU</span>
+          <span>Category</span>
+          <span>Price</span>
+          <span>Stock level</span>
           <span>Status</span>
           <span></span>
         </div>
-        <ul>
-          {LOTS.map((l) => (
-            <li
-              key={l.id}
-              className="grid grid-cols-[1.1fr_2.2fr_1.6fr_1fr_0.8fr_0.8fr_0.9fr_0.5fr] gap-3 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
-            >
-              <span className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{l.id}</span>
-              <span className="truncate font-semibold text-ng-ink">{l.product}</span>
-              <span className="truncate text-[12px] font-medium text-ng-ink-muted">{l.farm}</span>
-              <span className="text-[12px] font-medium text-ng-ink-muted">{l.received}</span>
-              <span className="font-mono text-[12px] font-medium tabular-nums text-ng-ink">{l.units.toLocaleString()}</span>
-              <span className={`font-mono text-[12px] tabular-nums ${l.available === 0 ? "font-medium text-ng-ink-soft" : l.available < 50 ? "text-ng-terracotta font-semibold" : "font-semibold text-ng-ink"}`}>
-                {l.available.toLocaleString()}
-              </span>
-              <span><Pill tone={l.tone}>{l.status}</Pill></span>
-              <button type="button" className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">Open →</button>
-            </li>
-          ))}
-        </ul>
-      </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Low stock */}
-        <Card title="Low stock — replenish this week">
-          {lowStock.length > 0 ? (
-            <ul className="space-y-4">
-              {lowStock.map((s) => {
-                const pct = Math.min(100, s.threshold > 0 ? (s.stock / s.threshold) * 100 : 0);
-                return (
-                  <li key={s.sku}>
-                    <div className="flex justify-between text-[13px] mb-1.5 items-baseline">
-                      <span className="truncate pr-2 font-semibold text-ng-ink">{s.product}</span>
+        {loading ? (
+          <div className="px-6 py-12 text-center text-[13px] font-medium text-ng-ink-muted">Loading…</div>
+        ) : products.length === 0 ? (
+          <div className="px-6 py-12 text-center text-[13px] font-medium text-ng-ink-muted">
+            No products match. Add one to get started.
+          </div>
+        ) : (
+          <ul>
+            {products.map((p) => {
+              const tone = p.stock <= 0 ? "neutral" : p.stock <= LOW_STOCK_THRESHOLD ? "danger" : "success";
+              const label = p.stock <= 0 ? "Out" : p.stock <= LOW_STOCK_THRESHOLD ? "Low" : "OK";
+              return (
+                <li
+                  key={p.id}
+                  className="grid grid-cols-[2fr_1.1fr_1fr_0.9fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                >
+                  <span className="truncate font-semibold text-ng-ink">{p.name}</span>
+                  <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>
+                  <span className="text-[12px] font-medium text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>
+                  <span className="font-mono text-[12px] tabular-nums text-ng-ink">{formatPaise(p.pricePaise)}</span>
+                  <div className="flex items-center gap-2">
+                    {stockEditId === p.id ? (
+                      <input
+                        type="number"
+                        min={0}
+                        autoFocus
+                        value={stockDraft}
+                        onChange={(e) => setStockDraft(e.target.value)}
+                        onBlur={() => void commitStock(p)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") void commitStock(p);
+                          if (e.key === "Escape") setStockEditId(null);
+                        }}
+                        className="w-20 rounded-lg bg-ng-paper border border-ng-forest px-2 py-1 text-[12.5px] font-mono tabular-nums outline-none"
+                      />
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => openAdjust(s)}
-                        className="text-ng-terracotta font-semibold font-mono text-[11.5px] tabular-nums hover:underline cursor-pointer shrink-0"
+                        onClick={() => startStockEdit(p)}
+                        aria-label={`Edit stock for ${p.name}`}
+                        className="flex items-center gap-2 cursor-pointer text-left"
                       >
-                        {s.stock} left · adjust
+                        <StockMeter stock={p.stock} threshold={LOW_STOCK_THRESHOLD} />
+                        <Pill tone={tone}>{label}</Pill>
                       </button>
-                    </div>
-                    <div className="h-2 bg-ng-line-soft rounded-full overflow-hidden">
-                      <div className="h-full bg-ng-terracotta rounded-full" style={{ width: `${pct}%` }} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-[13px] font-medium text-ng-ink-muted">All SKUs above reorder threshold.</p>
-          )}
-        </Card>
-
-        {/* Open POs */}
-        <Card title="Open purchase orders" action={<button type="button" className="text-[12px] text-ng-forest hover:underline cursor-pointer">Create PO →</button>}>
-          <ul className="space-y-3 text-[13px]">
-            {PO_OPEN.map((p) => (
-              <li key={p.id} className="border-b border-ng-line-soft pb-3 last:border-0">
-                <div className="flex justify-between items-start gap-3">
-                  <div className="min-w-0">
-                    <div className="font-mono text-[11.5px] font-semibold text-ng-forest-deep">{p.id}</div>
-                    <div className="text-[13px] font-medium text-ng-ink mt-0.5">{p.product}</div>
-                    <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{p.farm} · {p.qty}</div>
+                    )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-mono font-semibold tabular-nums text-ng-ink">₹{p.value.toLocaleString("en-IN")}</div>
-                    <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">ETA {p.expected}</div>
+                  <span><Pill tone={STATUS_TONE[p.status]}>{p.status}</Pill></span>
+                  <div className="flex items-center justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      aria-label={`Edit ${p.name}`}
+                      className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
+                    >
+                      <Icon name="pen-2-bold" size={13} />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void removeProduct(p)}
+                      aria-label={`Delete ${p.name}`}
+                      className="text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer"
+                    >
+                      <Icon name="trash-bin-trash-bold" size={14} />
+                    </button>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
-        </Card>
-      </div>
+        )}
+      </Card>
 
-      {/* Stock adjust / reorder dialog (demo persistence) */}
-      <StockAdjustDialog
-        open={adjustOpen}
-        target={adjustTarget}
-        onClose={() => setAdjustOpen(false)}
-        onSave={handleSaveStock}
+      <ProductModal
+        key={productOpen ? (editing?.id ?? "new") : "closed"}
+        open={productOpen}
+        product={editing}
+        categories={categories}
+        saving={saving}
+        onClose={() => setProductOpen(false)}
+        onSave={saveProduct}
+      />
+      <CategoryModal
+        open={categoryOpen}
+        categories={categories}
+        busy={categoryBusy}
+        onClose={() => setCategoryOpen(false)}
+        onCreate={createCategory}
+        onRename={renameCategory}
+        onDelete={deleteCategory}
+      />
+      <ImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onCommitted={() => void loadProducts()}
       />
     </AdminShell>
   );

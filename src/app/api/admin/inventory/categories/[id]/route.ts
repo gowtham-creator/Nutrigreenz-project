@@ -1,0 +1,44 @@
+import { isSignedInAdmin } from "../../guard";
+import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { upsertCategory, deleteCategory } from "@/lib/catalog";
+
+type Ctx = { params: Promise<{ id: string }> };
+
+/** PATCH — rename a category or change its sort order. */
+export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+  if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+  const { id } = await ctx.params;
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return Response.json({ ok: false }, { status: 400 });
+  }
+
+  const name = String(body.name ?? "").trim();
+  if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+  const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
+
+  try {
+    const category = await upsertCategory({ id, name, sort });
+    return Response.json({ ok: true, category });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "update-failed";
+    return Response.json({ ok: false, error: message }, { status: 400 });
+  }
+}
+
+/** DELETE — remove a category (products keep their rows, category goes null). */
+export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
+  if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+  const { id } = await ctx.params;
+  await deleteCategory(id);
+  return Response.json({ ok: true });
+}
