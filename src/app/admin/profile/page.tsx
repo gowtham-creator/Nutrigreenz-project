@@ -81,7 +81,9 @@ export default function AdminProfilePage() {
     setSaved(seed);
   }, []);
 
-  // Load the super-admin's saved sign-in factors + which are available.
+  // Load the super-admin's saved sign-in factors + which are available, and
+  // prefill the mobile field from the saved OTP destination (#42) so the form
+  // shows the number the mobile code is delivered to.
   useEffect(() => {
     if (role !== "superadmin") return;
     let alive = true;
@@ -90,18 +92,26 @@ export default function AdminProfilePage() {
         const res = await fetch("/api/admin/security/factors");
         if (!res.ok || !alive) return;
         const data = await res.json();
+        const savedPhone: string | null = data.factors?.otpPhone ?? null;
         setFactors({
           totp: Boolean(data.factors?.totp),
           emailOtp: Boolean(data.factors?.emailOtp),
           phoneOtp: Boolean(data.factors?.phoneOtp),
           otpEmail: data.factors?.otpEmail ?? null,
-          otpPhone: data.factors?.otpPhone ?? null,
+          otpPhone: savedPhone,
         });
         setAvailable({
           totp: Boolean(data.available?.totp),
           email: Boolean(data.available?.email),
           phone: Boolean(data.available?.phone),
         });
+        // Seed the editable mobile field + saved snapshot from the OTP number
+        // (kept as the last 10 digits for the +91-prefixed input).
+        const digits = savedPhone ? savedPhone.replace(/\D/g, "").slice(-10) : "";
+        if (digits && alive) {
+          setMobile(digits);
+          setSaved((s) => ({ ...s, mobile: digits }));
+        }
       } catch {
         /* ignore — the section just stays in its default state */
       }
@@ -115,13 +125,34 @@ export default function AdminProfilePage() {
   const dirty = name !== saved.name || mobile !== saved.mobile || photo !== saved.photo;
   const initial = (name.trim()[0] ?? email?.trim()?.[0] ?? "A").toUpperCase();
 
-  function handleSave() {
+  async function handleSave() {
     if (!name.trim()) {
       toast.error("Name can’t be empty", { description: "Enter your full name before saving." });
       return;
     }
-    setSaved({ name: name.trim(), mobile: mobile.trim(), photo });
-    // M2: PATCH /api/admin/me (+ upload photo to storage) — mocked for the demo.
+    const mobileDigits = mobile.trim();
+    setSaved({ name: name.trim(), mobile: mobileDigits, photo });
+
+    // Persist the profile mobile as the mobile-OTP destination (#42) so the
+    // sign-in code always goes to the number shown here. The factors endpoint
+    // is super-admin gated; `factors !== null` means it loaded for this user.
+    if (factors && mobileDigits.length === 10) {
+      const e164 = `+91${mobileDigits}`;
+      try {
+        const res = await fetch("/api/admin/security/factors", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ otpPhone: e164 }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setFactors((f) => (f ? { ...f, otpPhone: data.factors?.otpPhone ?? e164 } : f));
+        }
+      } catch {
+        /* non-fatal — the rest of the profile still saved */
+      }
+    }
+
     toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
   }
   function handleReset() {

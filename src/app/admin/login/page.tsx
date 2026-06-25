@@ -50,6 +50,9 @@ function LoginForm() {
   const [totp, setTotp] = useState("");
   const [mail, setMail] = useState("");
   const [mailSending, setMailSending] = useState(false);
+  // Saved operator number the mobile-OTP factor is delivered to (#42), echoed
+  // by the passcode response so we can auto-send the Firebase OTP to it.
+  const [otpPhone, setOtpPhone] = useState<string | null>(null);
 
   // Phone flow
   const [phone, setPhone] = useState("");
@@ -67,6 +70,15 @@ function LoginForm() {
     return () => clearTimeout(t);
   }, [resendIn]);
 
+  // Idle sign-out (Feature #51) → explain why they landed back here.
+  useEffect(() => {
+    if (params.get("reason") === "timeout") {
+      toast.message("Signed out due to inactivity", {
+        description: "Please sign in again.",
+      });
+    }
+  }, [params]);
+
   function switchMethod(m: Method) {
     setMethod(m);
     setError(null);
@@ -78,6 +90,13 @@ function LoginForm() {
     setMfaChoice(null);
     setTotp("");
     setMail("");
+    // Tear down any in-flight mobile-OTP 2FA attempt too.
+    setCode("");
+    setCodeSent(false);
+    setResendIn(0);
+    confirmationRef.current = null;
+    verifierRef.current?.clear();
+    verifierRef.current = null;
   }
 
   async function sendMailCode() {
@@ -106,7 +125,15 @@ function LoginForm() {
   async function chooseFactor(f: "totp" | "email" | "phone" | null) {
     setMfaChoice(f);
     setError(null);
-    if (f === "email") await sendMailCode();
+    if (f === "email") {
+      await sendMailCode();
+    } else if (f === "phone" && otpPhone) {
+      // Auto-send a Firebase OTP to the saved operator number, reusing the same
+      // RecaptchaVerifier + signInWithPhoneNumber machinery as the Phone-OTP tab.
+      setCode("");
+      setCodeSent(false);
+      await requestCode(false, otpPhone);
+    }
   }
 
   async function handlePasscode(e: React.FormEvent) {
@@ -123,18 +150,24 @@ function LoginForm() {
         const data = (await res.json().catch(() => ({}))) as {
           mfaRequired?: boolean;
           factors?: string[];
+          otpPhone?: string | null;
         };
         if (data.mfaRequired) {
           const fs = (data.factors && data.factors.length ? data.factors : ["totp"]).filter(
-            (f) => f === "totp" || f === "email",
+            (f) => f === "totp" || f === "email" || f === "phone",
           );
           const list = fs.length ? fs : ["totp"];
           setError(null);
           setTotp("");
           setMail("");
+          // Stash the saved mobile-OTP destination so chooseFactor("phone") can
+          // auto-send the Firebase OTP to it.
+          setOtpPhone(data.otpPhone ?? null);
           setMfaFactors(list);
           // One factor → go straight to it; several → show the chooser.
-          await chooseFactor(list.length === 1 ? (list[0] as "totp" | "email") : null);
+          await chooseFactor(
+            list.length === 1 ? (list[0] as "totp" | "email" | "phone") : null,
+          );
           return;
         }
         toast.success("Welcome back", { description: "Signed in to Admin." });
@@ -232,13 +265,73 @@ function LoginForm() {
     }
   }
 
-  async function requestCode(isResend: boolean) {
+  async function verifyMfaPhone(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const confirmation = confirmationRef.current;
+    if (!confirmation) {
+      setError("Request a code first.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      setError("Enter the 6-digit code.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const cred = await confirmation.confirm(code);
+      const idToken = await cred.user.getIdToken();
+      // Finish the SUPER-ADMIN second factor: login-2fa verifies the Firebase
+      // phone token against the saved number and mints the real session.
+      const res = await fetch("/api/admin/login-2fa", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ method: "phone", idToken }),
+      });
+      // Drop the throwaway Firebase phone session regardless of the outcome.
+      if (auth) await signOut(auth).catch(() => {});
+      if (res.ok) {
+        toast.success("Welcome back", { description: "Signed in to Admin." });
+        router.push(next);
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
+      if (data.restart) {
+        resetMfa();
+        const msg = "That took too long — enter your passcode again.";
+        setError(msg);
+        toast.error("Session expired", { description: msg });
+        return;
+      }
+      const msg = "We couldn't verify that code — request a fresh one and try again.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
+    } catch (err) {
+      // Reuse the same Firebase error-code handling as the Phone-OTP tab.
+      const errCode = (err as { code?: string })?.code ?? "";
+      console.error("[admin mobile 2FA] confirm failed:", errCode || err);
+      const msg =
+        errCode === "auth/invalid-verification-code"
+          ? "That code is incorrect — check it and re-enter."
+          : errCode === "auth/code-expired" || errCode === "auth/session-expired"
+            ? "Your code expired — request a new one."
+            : "Couldn't verify the code — request a fresh one and try again.";
+      setError(msg);
+      toast.error("Verification failed", { description: msg });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function requestCode(isResend: boolean, overrideNumber?: string) {
     setError(null);
     if (!auth) {
       setError("Phone sign-in isn't configured yet — add your Firebase keys.");
       return;
     }
-    const e164 = toE164(phone);
+    // The mobile-OTP 2FA flow (#42) passes the saved E.164 number directly so it
+    // doesn't depend on the (async) `phone` state; the Phone-OTP tab uses input.
+    const e164 = overrideNumber ? toE164(overrideNumber) : toE164(phone);
     if (!e164) {
       setError("Enter a valid mobile number with country code.");
       return;
@@ -431,15 +524,25 @@ function LoginForm() {
                 <button
                   key={f}
                   type="button"
-                  onClick={() => void chooseFactor(f as "totp" | "email")}
+                  onClick={() => void chooseFactor(f as "totp" | "email" | "phone")}
                   className="flex items-center gap-3 rounded-xl border border-ng-line bg-ng-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ng-ink transition-colors hover:border-ng-leaf cursor-pointer"
                 >
                   <Icon
-                    name={f === "email" ? "letter-bold" : "shield-keyhole-bold"}
+                    name={
+                      f === "email"
+                        ? "letter-bold"
+                        : f === "phone"
+                          ? "phone-bold"
+                          : "shield-keyhole-bold"
+                    }
                     size={18}
                     className="text-ng-forest"
                   />
-                  {f === "email" ? "Email one-time code" : "Authenticator app"}
+                  {f === "email"
+                    ? "Email one-time code"
+                    : f === "phone"
+                      ? "Mobile code"
+                      : "Authenticator app"}
                 </button>
               ))}
               <button
@@ -511,7 +614,47 @@ function LoginForm() {
                 {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
               </button>
             </form>
-          ) : method === "passcode" ? (
+          ) : method === "passcode" && mfaChoice === "phone" ? (
+            <form onSubmit={verifyMfaPhone} className="mt-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-[13px] font-semibold text-ng-ink">Mobile code</span>
+                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                  {codeSent
+                    ? `Enter the 6-digit code we sent to ${otpPhone ?? "your mobile"}.`
+                    : `Sending a code to ${otpPhone ?? "your mobile"}…`}
+                </p>
+                <OtpInput value={code} onChange={setCode} />
+                {error ? (
+                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                ) : null}
+              </div>
+              <Button type="submit" fullWidth disabled={submitting || !codeSent} className="mt-1">
+                <Icon name="phone-bold" size={18} />
+                {submitting ? "Verifying…" : "Verify & sign in"}
+              </Button>
+              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                <button
+                  type="button"
+                  disabled={resendIn > 0 || resending || submitting}
+                  onClick={() => (otpPhone ? void requestCode(true, otpPhone) : undefined)}
+                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
+                >
+                  {resending
+                    ? "Sending…"
+                    : resendIn > 0
+                      ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
+                      : "Resend code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                  className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
+                >
+                  {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
+                </button>
+              </div>
+            </form>
+          ) : method === "passcode" && mfaFactors === null ? (
             <form onSubmit={handlePasscode} className="mt-6 flex flex-col gap-4">
               <Input
                 label="Email"

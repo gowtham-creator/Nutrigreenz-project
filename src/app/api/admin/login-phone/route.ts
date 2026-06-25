@@ -7,6 +7,7 @@ import {
 import { createToken } from "@/lib/admin-session";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
+import { logActivity } from "@/lib/activity-log";
 
 // firebase-admin needs the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -86,6 +87,14 @@ export async function POST(request: Request): Promise<Response> {
   c.set({ name: ADMIN_COOKIE, value: token, httpOnly: true, ...base });
   c.set({ name: ADMIN_EMAIL_COOKIE, value: op.email, httpOnly: false, ...base });
   c.set({ name: ADMIN_ROLE_COOKIE, value: op.role, httpOnly: false, ...base });
+
+  // Best-effort audit of the phone-OTP sign-in.
+  await logActivity({
+    actorEmail: op.email,
+    actorRole: op.role,
+    action: "admin.signin",
+    meta: { method: "phone" },
+  });
 
   return Response.json({ ok: true });
 }

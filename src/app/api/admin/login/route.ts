@@ -15,6 +15,7 @@ import { getAdminFactors, hasSecurityRow } from "@/lib/admin-security";
 import { verifyAdminLogin } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { logActivity } from "@/lib/activity-log";
 
 /** Session lifetime: 12 hours (seconds). */
 const MAX_AGE = 60 * 60 * 12;
@@ -126,15 +127,23 @@ export async function POST(request: Request): Promise<Response> {
   // factor only counts when it is actually usable (secret/provider present).
   // Back-compat: with no saved row, env TOTP gates login exactly as before.
   let factors: string[] = [];
+  // The number a mobile-OTP factor is sent to (echoed to the client so it can
+  // auto-send the Firebase OTP to the saved operator number). Never a secret —
+  // it's the operator's own number, already shown in their profile.
+  let otpPhone: string | null = null;
   if (role === "superadmin") {
     try {
       if (isSupabaseConfigured && (await hasSecurityRow(normalizedEmail))) {
         const f = await getAdminFactors(normalizedEmail);
         if (f.totp && isTotpConfigured()) factors.push("totp");
         if (f.emailOtp && isEmailConfigured()) factors.push("email");
-        // Phone OTP is NOT surfaced as a sign-in factor until its dedicated 2FA
-        // step ships (task #42), so enabling the Mobile factor can't show a
-        // broken chooser option or lock anyone out.
+        // Mobile OTP (#42): offered only when the Mobile factor is on AND a
+        // destination number is saved, so the chooser never shows a dead option.
+        // login-2fa already verifies a Firebase phone token against this number.
+        if (f.phoneOtp && f.otpPhone) {
+          factors.push("phone");
+          otpPhone = f.otpPhone;
+        }
       } else if (isTotpConfigured()) {
         factors = ["totp"];
       }
@@ -159,7 +168,7 @@ export async function POST(request: Request): Promise<Response> {
       path: "/",
       maxAge: 60 * 5,
     });
-    return Response.json({ ok: true, mfaRequired: true, factors });
+    return Response.json({ ok: true, mfaRequired: true, factors, otpPhone });
   }
 
   const token = await createToken(normalizedEmail, role);
@@ -196,6 +205,15 @@ export async function POST(request: Request): Promise<Response> {
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
+  });
+
+  // Best-effort audit (never blocks the sign-in). MFA-gated sign-ins are logged
+  // when they complete in login-2fa / login-phone instead.
+  await logActivity({
+    actorEmail: normalizedEmail,
+    actorRole: role,
+    action: "admin.signin",
+    meta: { method: "passcode" },
   });
 
   return Response.json({ ok: true });

@@ -4,12 +4,18 @@ import { verifyToken } from "@/lib/admin-session";
 import { listAdmins, createAdmin, adminEmailExists } from "@/lib/admins";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { logActivity } from "@/lib/activity-log";
 
 /** Only a signed-in super-admin may list or create admins. */
 async function isSuperAdmin(): Promise<boolean> {
+  return Boolean(await superAdminEmail());
+}
+
+/** The signed-in super-admin's email, or null when not a super-admin. */
+async function superAdminEmail(): Promise<string | null> {
   const c = await cookies();
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
-  return Boolean(session && session.role === "superadmin");
+  return session && session.role === "superadmin" ? session.email : null;
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -39,7 +45,8 @@ export async function GET(): Promise<Response> {
 
 /** POST — create an admin and deliver their credentials. */
 export async function POST(request: Request): Promise<Response> {
-  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  const actorEmail = await superAdminEmail();
+  if (!actorEmail) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -93,6 +100,14 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (channels.includes("sms")) pending.push("sms");
   if (channels.includes("whatsapp")) pending.push("whatsapp");
+
+  await logActivity({
+    actorEmail,
+    actorRole: "superadmin",
+    action: "admin.create",
+    target: admin.email,
+    meta: { name: admin.name ?? null, role: admin.role },
+  });
 
   return Response.json({ ok: true, admin, sent, pending });
 }

@@ -9,6 +9,7 @@ import { createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
 import { verifyEmailOtp, getAdminFactors } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
+import { logActivity } from "@/lib/activity-log";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
 const MAX_AGE = 60 * 60 * 12;
@@ -116,6 +117,14 @@ export async function POST(request: Request): Promise<Response> {
     sameSite: "lax",
     path: "/",
     maxAge: 0,
+  });
+
+  // Best-effort audit of the completed (second-factor) sign-in.
+  await logActivity({
+    actorEmail: email,
+    actorRole: "superadmin",
+    action: "admin.signin",
+    meta: { method: factor },
   });
 
   return Response.json({ ok: true });

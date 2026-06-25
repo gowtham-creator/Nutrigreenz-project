@@ -11,12 +11,13 @@ import {
 } from "@/lib/admins";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { logActivity } from "@/lib/activity-log";
 
-/** Only a signed-in super-admin may edit or remove admins. */
-async function isSuperAdmin(): Promise<boolean> {
+/** The signed-in super-admin's email, or null when not a super-admin. */
+async function superAdminEmail(): Promise<string | null> {
   const c = await cookies();
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
-  return Boolean(session && session.role === "superadmin");
+  return session && session.role === "superadmin" ? session.email : null;
 }
 
 const ROLES: AdminRole[] = ["admin", "superadmin"];
@@ -40,7 +41,8 @@ export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/admin/admins/[id]">,
 ): Promise<Response> {
-  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  const actorEmail = await superAdminEmail();
+  if (!actorEmail) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -83,6 +85,15 @@ export async function PATCH(
 
   const admin = await updateAdmin(id, patch);
   if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  await logActivity({
+    actorEmail,
+    actorRole: "superadmin",
+    action: "admin.update",
+    target: admin.email,
+    meta: { changed: Object.keys(patch) },
+  });
+
   return Response.json({ ok: true, admin });
 }
 
@@ -91,7 +102,8 @@ export async function POST(
   request: Request,
   ctx: RouteContext<"/api/admin/admins/[id]">,
 ): Promise<Response> {
-  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  const actorEmail = await superAdminEmail();
+  if (!actorEmail) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -136,6 +148,14 @@ export async function POST(
     }
   }
 
+  await logActivity({
+    actorEmail,
+    actorRole: "superadmin",
+    action: "admin.reset_password",
+    target: admin.email,
+    meta: { action },
+  });
+
   return Response.json({ ok: true, email: admin.email, password, sent, pending });
 }
 
@@ -144,7 +164,8 @@ export async function DELETE(
   _request: Request,
   ctx: RouteContext<"/api/admin/admins/[id]">,
 ): Promise<Response> {
-  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  const actorEmail = await superAdminEmail();
+  if (!actorEmail) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -154,5 +175,13 @@ export async function DELETE(
   if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
 
   await deleteAdminById(id);
+
+  await logActivity({
+    actorEmail,
+    actorRole: "superadmin",
+    action: "admin.delete",
+    target: admin.email,
+  });
+
   return Response.json({ ok: true });
 }

@@ -58,27 +58,92 @@ const ROLES: {
 ];
 
 /* ----------------------------------------------------------------------- */
-/* Mock activity log.                                                       */
+/* System activity feed (real — sourced from /api/admin/activity).          */
 /* ----------------------------------------------------------------------- */
-type LogKind = "config" | "auth" | "campaign" | "toggle";
 
-const LOG: { kind: LogKind; actor: string; action: string; when: string }[] = [
-  { kind: "config", actor: "admin@nutrigreenz.in", action: "Updated commerce rules — free-delivery ≥ ₹599", when: "Just now" },
-  { kind: "campaign", actor: "admin@nutrigreenz.in", action: "Created coupon campaign FRESH50 (specific customers)", when: "12m ago" },
-  { kind: "config", actor: "admin@nutrigreenz.in", action: "Set loyalty earn ratio to 1 pt/₹", when: "1h ago" },
-  { kind: "auth", actor: "priya@nutrigreenz.in", action: "Signed in from Hyderabad", when: "2h ago" },
-  { kind: "toggle", actor: "admin@nutrigreenz.in", action: "Enabled Referrals feature toggle", when: "Yesterday" },
-  { kind: "auth", actor: "rahul@nutrigreenz.in", action: "Signed in from Madhapur, Hyderabad", when: "Yesterday" },
-];
+/** One activity row, as returned by the activity API. */
+interface ActivityRow {
+  id: string;
+  actorEmail: string | null;
+  actorRole: string | null;
+  action: string;
+  target: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+}
 
+type LogKind = "auth" | "create" | "update" | "remove";
+
+/** Visual treatment per activity kind, reusing the existing log styling. */
 const LOG_META: Record<LogKind, { icon: string; label: string; cls: string }> = {
-  config: { icon: "tuning-2-bold", label: "Config", cls: "bg-ng-forest/12 text-ng-forest" },
   auth: { icon: "login-3-bold", label: "Sign-in", cls: "bg-ng-clay/15 text-ng-clay-deep" },
-  campaign: { icon: "ticket-sale-bold", label: "Campaign", cls: "bg-ng-forest/12 text-ng-forest" },
-  toggle: { icon: "bolt-bold", label: "Toggle", cls: "bg-ng-clay/15 text-ng-clay-deep" },
+  create: { icon: "user-plus-bold", label: "Admin", cls: "bg-ng-forest/12 text-ng-forest" },
+  update: { icon: "tuning-2-bold", label: "Admin", cls: "bg-ng-forest/12 text-ng-forest" },
+  remove: { icon: "trash-bin-trash-bold", label: "Admin", cls: "bg-ng-clay/15 text-ng-clay-deep" },
 };
 
+/** Map a stored `action` to its display kind. */
+function logKind(action: string): LogKind {
+  if (action === "admin.signin") return "auth";
+  if (action === "admin.create") return "create";
+  if (action === "admin.delete") return "remove";
+  return "update";
+}
+
+/** A short, human-readable summary for an activity row. */
+function describe(row: ActivityRow): string {
+  const method = typeof row.meta?.method === "string" ? row.meta.method : null;
+  switch (row.action) {
+    case "admin.signin":
+      return method ? `Signed in (${method})` : "Signed in";
+    case "admin.create":
+      return `Added admin ${row.target ?? ""}`.trim();
+    case "admin.update":
+      return `Updated admin ${row.target ?? ""}`.trim();
+    case "admin.reset_password":
+      return `Reset password for ${row.target ?? ""}`.trim();
+    case "admin.delete":
+      return `Removed admin ${row.target ?? ""}`.trim();
+    default:
+      return row.target ? `${row.action} · ${row.target}` : row.action;
+  }
+}
+
+/** Compact relative time (e.g. "Just now", "12m ago", "2h ago", "3d ago"). */
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 45) return "Just now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(then).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 export function RolesAndLogs() {
+  const [log, setLog] = React.useState<ActivityRow[] | null>(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/activity");
+        if (!res.ok || !alive) return;
+        const data = (await res.json()) as { activity?: ActivityRow[] };
+        if (alive) setLog(Array.isArray(data.activity) ? data.activity : []);
+      } catch {
+        if (alive) setLog([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <section id="access" className="mb-6 scroll-mt-32">
       <Card>
@@ -137,38 +202,48 @@ export function RolesAndLogs() {
         {/* ---- Admin roster (interactive) — invite + per-row actions ----- */}
         <AdminsManagement />
 
-        {/* ---- System activity log --------------------------------------- */}
+        {/* ---- System activity log (real feed) --------------------------- */}
         <div className="mt-6 pt-5 border-t border-ng-line-soft">
           <div className="flex items-center justify-between gap-3 mb-3">
             <span className="text-[13px] font-semibold text-ng-ink-muted flex items-center gap-2">
               <Icon name="history-bold" size={16} className="text-ng-forest" />
               System activity
             </span>
-            <span className="text-[11.5px] font-medium text-ng-ink-soft font-mono">Recent · mock trail</span>
+            <span className="text-[11.5px] font-medium text-ng-ink-soft font-mono">Recent · sign-ins &amp; admin changes</span>
           </div>
-          <ol className="relative pl-1">
-            {LOG.map((e, i) => {
-              const meta = LOG_META[e.kind];
-              return (
-                <li key={i} className="flex items-start gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
-                  <span className={cn("grid place-items-center size-8 rounded-lg shrink-0 mt-0.5", meta.cls)}>
-                    <Icon name={meta.icon} size={15} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">{meta.label}</span>
-                      <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{e.actor}</span>
+
+          {log === null ? (
+            <p className="py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">Loading activity…</p>
+          ) : log.length === 0 ? (
+            <p className="py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
+              No activity recorded yet.
+            </p>
+          ) : (
+            <ol className="relative pl-1">
+              {log.map((e) => {
+                const meta = LOG_META[logKind(e.action)];
+                return (
+                  <li key={e.id} className="flex items-start gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
+                    <span className={cn("grid place-items-center size-8 rounded-lg shrink-0 mt-0.5", meta.cls)}>
+                      <Icon name={meta.icon} size={15} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">{meta.label}</span>
+                        <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{e.actorEmail ?? "—"}</span>
+                      </div>
+                      <p className="text-[13px] font-medium text-ng-ink mt-0.5">{describe(e)}</p>
                     </div>
-                    <p className="text-[13px] font-medium text-ng-ink mt-0.5">{e.action}</p>
-                  </div>
-                  <span className="text-[11.5px] font-medium text-ng-ink-soft tabular-nums shrink-0 mt-0.5">{e.when}</span>
-                </li>
-              );
-            })}
-          </ol>
+                    <span className="text-[11.5px] font-medium text-ng-ink-soft tabular-nums shrink-0 mt-0.5">{relativeTime(e.createdAt)}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+
           <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
             <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-            Read-only demo — a persisted audit trail &amp; role editing ship in Milestone 2.
+            Live trail of admin sign-ins and roster changes.
           </p>
         </div>
       </Card>
