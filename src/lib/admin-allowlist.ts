@@ -24,15 +24,37 @@ export function normalizePhone(raw: string): string {
  * not an authorised operator. Comparison is on the normalised form so
  * "+91 98765 43210" matches "+919876543210".
  */
-export function roleForPhone(phone: string): AdminRole | null {
+/** Default super-admin email — mirrors `/api/admin/login`. */
+const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.in";
+
+/**
+ * Resolve a verified phone number to its operator identity (role + canonical
+ * email), or null when the number is not an authorised operator. Mapping the
+ * number back to the SAME email that passcode sign-in uses is what keeps phone
+ * sign-in landing in the EXISTING admin profile (e.g. admin@nutrigreenz.in)
+ * instead of minting a separate phone-keyed identity.
+ */
+export function operatorForPhone(
+  phone: string,
+): { role: AdminRole; email: string } | null {
   const p = normalizePhone(phone);
   if (!p) return null;
 
   const superPhone = process.env.ADMIN_PHONE;
-  if (superPhone && normalizePhone(superPhone) === p) return "superadmin";
+  if (superPhone && normalizePhone(superPhone) === p) {
+    return { role: "superadmin", email: process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL };
+  }
 
   const staffPhone = process.env.STAFF_ADMIN_PHONE;
-  if (staffPhone && normalizePhone(staffPhone) === p) return "admin";
+  const staffEmail = process.env.STAFF_ADMIN_EMAIL;
+  if (staffPhone && staffEmail && normalizePhone(staffPhone) === p) {
+    return { role: "admin", email: staffEmail };
+  }
 
   return null;
+}
+
+/** Back-compat: just the role for a verified number (null if unauthorised). */
+export function roleForPhone(phone: string): AdminRole | null {
+  return operatorForPhone(phone)?.role ?? null;
 }

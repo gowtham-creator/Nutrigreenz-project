@@ -6,7 +6,7 @@ import {
 } from "@/lib/admin-auth";
 import { createToken } from "@/lib/admin-session";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
-import { roleForPhone } from "@/lib/admin-allowlist";
+import { operatorForPhone } from "@/lib/admin-allowlist";
 
 // firebase-admin needs the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -68,22 +68,24 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "not-phone" }, { status: 401 });
   }
 
-  // 3. Allowlist → role (fail closed).
-  const role = roleForPhone(phone);
-  if (!role) {
+  // 3. Allowlist → operator identity (fail closed). The number maps back to the
+  //    SAME canonical email as passcode sign-in, so phone sign-in lands in the
+  //    existing admin profile (e.g. admin@nutrigreenz.in) — not a phone-keyed one.
+  const op = operatorForPhone(phone);
+  if (!op) {
     return Response.json({ ok: false, error: "not-authorised" }, { status: 403 });
   }
 
-  // 4. Mint the same signed session cookies as the passcode login. The phone
-  //    number is the operator identity (the email cookie is display-only).
-  const token = await createToken(phone, role);
+  // 4. Mint the same signed session cookies as the passcode login, keyed on the
+  //    canonical operator email.
+  const token = await createToken(op.email, op.role);
   const secure = process.env.NODE_ENV === "production";
   const base = { secure, sameSite: "lax" as const, path: "/", maxAge: MAX_AGE };
   const c = await cookies();
 
   c.set({ name: ADMIN_COOKIE, value: token, httpOnly: true, ...base });
-  c.set({ name: ADMIN_EMAIL_COOKIE, value: phone, httpOnly: false, ...base });
-  c.set({ name: ADMIN_ROLE_COOKIE, value: role, httpOnly: false, ...base });
+  c.set({ name: ADMIN_EMAIL_COOKIE, value: op.email, httpOnly: false, ...base });
+  c.set({ name: ADMIN_ROLE_COOKIE, value: op.role, httpOnly: false, ...base });
 
   return Response.json({ ok: true });
 }
