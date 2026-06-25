@@ -74,6 +74,26 @@ export async function adminEmailExists(email: string): Promise<boolean> {
   return Boolean(data);
 }
 
+/** A single admin by id, or null when it doesn't exist. */
+export async function getAdminById(id: string): Promise<AdminRecord | null> {
+  const { data } = await supabaseAdmin()
+    .from("admins")
+    .select(COLS)
+    .eq("id", id)
+    .maybeSingle();
+  return data ? toRecord(data as AdminRow) : null;
+}
+
+/** Generate a readable, strong password (no ambiguous characters). */
+export function generatePassword(length = 16): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";
+  const buf = new Uint32Array(length);
+  crypto.getRandomValues(buf);
+  let out = "";
+  for (let i = 0; i < length; i++) out += chars[buf[i] % chars.length];
+  return out;
+}
+
 export interface NewAdminInput {
   name: string;
   email: string;
@@ -127,4 +147,57 @@ export async function setAdminStatus(email: string, status: AdminStatus): Promis
 
 export async function deleteAdmin(email: string): Promise<void> {
   await supabaseAdmin().from("admins").delete().eq("email", norm(email));
+}
+
+/** Set an admin's status by id. */
+export async function setAdminStatusById(id: string, status: AdminStatus): Promise<void> {
+  await supabaseAdmin().from("admins").update({ status }).eq("id", id);
+}
+
+/** Delete an admin by id. */
+export async function deleteAdminById(id: string): Promise<void> {
+  await supabaseAdmin().from("admins").delete().eq("id", id);
+}
+
+export interface AdminUpdateInput {
+  name?: string;
+  phone?: string;
+  role?: AdminRole;
+  status?: AdminStatus;
+}
+
+/** Apply an editable subset of fields to an admin and return the fresh record. */
+export async function updateAdmin(id: string, input: AdminUpdateInput): Promise<AdminRecord | null> {
+  const patch: Record<string, string | null> = {};
+  if (input.name !== undefined) patch.name = input.name.trim() || null;
+  if (input.phone !== undefined) patch.phone = input.phone.trim() || null;
+  if (input.role !== undefined) patch.role = input.role;
+  if (input.status !== undefined) patch.status = input.status;
+  if (Object.keys(patch).length === 0) return getAdminById(id);
+
+  const { data, error } = await supabaseAdmin()
+    .from("admins")
+    .update(patch)
+    .eq("id", id)
+    .select(COLS)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toRecord(data as AdminRow) : null;
+}
+
+/**
+ * Generate a new strong password for an admin, store its hash, and clear the
+ * must-change flag. Returns the plaintext ONCE so it can be revealed/copied;
+ * it is never persisted in clear and can't be retrieved again.
+ */
+export async function resetAdminPassword(id: string): Promise<string | null> {
+  const password = generatePassword();
+  const passcode_hash = await hashPassword(password);
+  const { data } = await supabaseAdmin()
+    .from("admins")
+    .update({ passcode_hash, must_change_password: true })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  return data ? password : null;
 }

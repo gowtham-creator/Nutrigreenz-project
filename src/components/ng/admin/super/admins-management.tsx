@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Super Admin · Admins management (Milestone-1 placeholder).
+ * Super Admin · Admins management.
  *
- * Interactive roster with an "Add / Invite admin" modal and per-row actions
- * (resend invite, reset password, change role, deactivate). Everything is
- * LOCAL STATE + sonner toasts only — real invite emails/SMS, password resets,
- * Google OAuth and persisted role changes land in Milestone 2.
+ * Interactive roster backed by the `public.admins` table. Supports adding an
+ * admin (with a copyable credentials hand-off), editing name/mobile/role/status,
+ * resetting the password (revealed once), activating/deactivating, resending
+ * credentials and deleting. All mutations go through the super-admin-gated
+ * `/api/admin/admins` endpoints.
  */
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -18,44 +19,80 @@ import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 
 type RoleKey = "admin" | "superadmin";
+type StatusKey = "active" | "invited" | "disabled";
 type Channel = "email" | "sms" | "whatsapp";
 
 type AdminUser = {
+  id: string;
   name: string;
   email: string;
   mobile?: string;
   role: RoleKey;
-  lastActive: string;
-  status: "active" | "invited";
+  status: StatusKey;
+  lastLoginAt: string | null;
 };
 
-type NewAdminPayload = { name: string; email: string; phone: string; password: string };
-
-const labelChannel = (c: string) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp");
-
-/** Map an API admin record to the roster's display shape. */
-function recordToUser(a: {
+type AdminRecord = {
+  id: string;
   name: string | null;
   email: string;
   phone: string | null;
   role: RoleKey;
   status: string;
   lastLoginAt: string | null;
-}): AdminUser {
+};
+
+type NewAdminPayload = { name: string; email: string; phone: string; password: string };
+type Credentials = { email: string; password: string };
+
+const labelChannel = (c: string) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp");
+
+function toStatus(s: string): StatusKey {
+  return s === "disabled" ? "disabled" : s === "invited" ? "invited" : "active";
+}
+
+/** Map an API admin record to the roster's display shape. */
+function recordToUser(a: AdminRecord): AdminUser {
   return {
+    id: a.id,
     name: a.name || a.email.split("@")[0],
     email: a.email,
     mobile: a.phone ?? undefined,
     role: a.role,
-    lastActive: a.lastLoginAt ? "Recently" : "—",
-    status: a.status === "active" ? "active" : "invited",
+    status: toStatus(a.status),
+    lastLoginAt: a.lastLoginAt,
   };
 }
 
-const roleLabel = (r: RoleKey) => (r === "superadmin" ? "Super Admin" : "Admin");
+/** Turn an ISO timestamp into a short "x ago" label. */
+function humanizeLastActive(iso: string | null): string {
+  if (!iso) return "Never";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const diff = Date.now() - then;
+  if (diff < 60_000) return "Just now";
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-const GRID = "grid grid-cols-[1.3fr_1.7fr_1fr_0.8fr_1.1fr] gap-3";
+const GRID = "grid grid-cols-[1.2fr_1.6fr_0.8fr_0.8fr_0.9fr_1.2fr] gap-3";
+
+/** Copy text to the clipboard with a small confirmation toast. */
+async function copyText(value: string, what: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast.success("Copied", { description: `${what} copied to clipboard.` });
+  } catch {
+    toast.error("Couldn’t copy", { description: "Copy it manually instead." });
+  }
+}
 
 /* ---- a compact ghost icon button used in the actions column ----------- */
 function RowAction({
@@ -63,11 +100,13 @@ function RowAction({
   label,
   onClick,
   danger,
+  disabled,
 }: {
   icon: string;
   label: string;
   onClick: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -75,8 +114,9 @@ function RowAction({
       onClick={onClick}
       aria-label={label}
       title={label}
+      disabled={disabled}
       className={cn(
-        "grid place-items-center size-8 rounded-lg text-ng-ink-soft transition-colors cursor-pointer",
+        "grid place-items-center size-8 rounded-lg text-ng-ink-soft transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
         danger ? "hover:bg-ng-terracotta/10 hover:text-ng-terracotta" : "hover:bg-ng-line-soft hover:text-ng-forest-deep",
       )}
     >
@@ -85,9 +125,82 @@ function RowAction({
   );
 }
 
+/* ---- a read-only credential field with a copy button ------------------ */
+function CopyField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-semibold">{label}</span>
+      <div className="flex items-center gap-2 rounded-lg border border-ng-line bg-ng-paper px-3 py-2">
+        <span className={cn("flex-1 text-[13px] text-ng-ink truncate", mono && "font-mono")}>{value}</span>
+        <button
+          type="button"
+          onClick={() => copyText(value, label)}
+          aria-label={`Copy ${label.toLowerCase()}`}
+          className="grid place-items-center size-7 rounded-md text-ng-ink-soft hover:bg-ng-line-soft hover:text-ng-forest-deep transition-colors cursor-pointer"
+        >
+          <Icon name="copy-bold" size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---- the copyable credentials hand-off panel -------------------------- */
+function CredentialsPanel({
+  title,
+  creds,
+  onDismiss,
+}: {
+  title: string;
+  creds: Credentials;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-ng-leaf bg-ng-sage/40 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[13px] font-semibold text-ng-forest-deep flex items-center gap-2">
+          <Icon name="key-minimalistic-bold" size={16} className="text-ng-forest" />
+          {title}
+        </span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss credentials"
+          className="grid place-items-center size-7 rounded-md text-ng-ink-soft hover:bg-ng-line-soft hover:text-ng-forest-deep transition-colors cursor-pointer"
+        >
+          <Icon name="close-circle-bold" size={16} />
+        </button>
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2 mt-3">
+        <CopyField label="Email" value={creds.email} mono />
+        <CopyField label="Password" value={creds.password} mono />
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-3">
+        <p className="text-[11.5px] font-medium text-ng-ink-soft">
+          Shown once — copy and share it now. It can’t be retrieved again.
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          type="button"
+          onClick={() => copyText(`Email: ${creds.email}\nPassword: ${creds.password}`, "Credentials")}
+        >
+          <Icon name="copy-bold" size={15} />
+          Copy both
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AdminsManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [staffEmail, setStaffEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [created, setCreated] = useState<Credentials | null>(null);
+  const [reset, setReset] = useState<Credentials | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   // Load the real, DB-backed admins.
   useEffect(() => {
@@ -98,6 +211,7 @@ export function AdminsManagement() {
         if (!res.ok || !alive) return;
         const data = await res.json();
         if (Array.isArray(data.admins)) setAdmins(data.admins.map(recordToUser));
+        if (typeof data.staffEmail === "string") setStaffEmail(data.staffEmail);
       } catch {
         /* ignore — the roster just stays empty */
       }
@@ -120,12 +234,14 @@ export function AdminsManagement() {
           data.error === "exists"
             ? "That email is already an admin."
             : data.error === "db-unavailable"
-              ? "The database isn't configured yet."
+              ? "The database isn’t configured yet."
               : "Couldn’t add the admin — check the details.";
         toast.error("Not added", { description: msg });
         return false;
       }
       setAdmins((prev) => [...prev, recordToUser(data.admin)]);
+      setReset(null);
+      setCreated({ email: data.admin.email, password: payload.password });
       const sent = (data.sent ?? []).map(labelChannel).join(", ");
       const pending = (data.pending ?? []).map(labelChannel).join(", ");
       toast.success("Admin added", {
@@ -141,23 +257,106 @@ export function AdminsManagement() {
     }
   }
 
-  function resendInvite(a: AdminUser) {
-    toast.success("Invite resent", { description: `${a.email} will get a fresh set-up link.` });
+  async function handleEdit(
+    id: string,
+    patch: { name: string; phone: string; role: RoleKey; status: StatusKey },
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/admin/admins/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error("Not saved", { description: "Couldn’t update the admin — check the details." });
+        return false;
+      }
+      setAdmins((prev) => prev.map((x) => (x.id === id ? recordToUser(data.admin) : x)));
+      toast.success("Changes saved", { description: `${data.admin.email} updated.` });
+      return true;
+    } catch {
+      toast.error("Not saved", { description: "Couldn’t reach the server." });
+      return false;
+    }
   }
 
-  function resetPassword(a: AdminUser) {
-    toast.success("Password reset sent", { description: `A reset link is on its way to ${a.email}.` });
+  async function credentialAction(a: AdminUser, action: "reset-password" | "resend") {
+    setBusyId(a.id);
+    try {
+      const res = await fetch(`/api/admin/admins/${a.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.password) {
+        toast.error("Action failed", { description: "Couldn’t update the password." });
+        return;
+      }
+      setCreated(null);
+      setReset({ email: data.email, password: data.password });
+      if (action === "resend") {
+        const sent = (data.sent ?? []).map(labelChannel).join(", ");
+        const pending = (data.pending ?? []).map(labelChannel).join(", ");
+        toast.success("Credentials regenerated", {
+          description:
+            (sent ? `Emailed to ${a.email}.` : "") +
+            (pending ? ` Pending (no provider yet): ${pending}.` : "") ||
+            `New password ready for ${a.email}.`,
+        });
+      } else {
+        toast.success("Password reset", { description: `New password ready for ${a.email}.` });
+      }
+    } catch {
+      toast.error("Action failed", { description: "Couldn’t reach the server." });
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function changeRole(a: AdminUser) {
-    const next: RoleKey = a.role === "superadmin" ? "admin" : "superadmin";
-    setAdmins((prev) => prev.map((x) => (x.email === a.email ? { ...x, role: next } : x)));
-    toast.success("Role updated", { description: `${a.name} is now ${roleLabel(next)}.` });
+  async function toggleStatus(a: AdminUser) {
+    const next: StatusKey = a.status === "disabled" ? "active" : "disabled";
+    setBusyId(a.id);
+    try {
+      const res = await fetch(`/api/admin/admins/${a.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error("Action failed", { description: "Couldn’t change the status." });
+        return;
+      }
+      setAdmins((prev) => prev.map((x) => (x.id === a.id ? recordToUser(data.admin) : x)));
+      toast.success(next === "disabled" ? "Admin deactivated" : "Admin activated", {
+        description:
+          next === "disabled" ? `${a.email} can no longer sign in.` : `${a.email} can sign in again.`,
+      });
+    } catch {
+      toast.error("Action failed", { description: "Couldn’t reach the server." });
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function deactivate(a: AdminUser) {
-    // M1: toast only — no list mutation; real deactivation ships in Milestone 2.
-    toast.success("Admin deactivated", { description: `${a.email} can no longer sign in.` });
+  async function removeAdmin(a: AdminUser) {
+    if (!window.confirm(`Remove ${a.email}? This permanently deletes the account.`)) return;
+    setBusyId(a.id);
+    try {
+      const res = await fetch(`/api/admin/admins/${a.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Not removed", { description: "Couldn’t delete the admin." });
+        return;
+      }
+      setAdmins((prev) => prev.filter((x) => x.id !== a.id));
+      toast.success("Admin removed", { description: `${a.email} has been deleted.` });
+    } catch {
+      toast.error("Not removed", { description: "Couldn’t reach the server." });
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -183,51 +382,124 @@ export function AdminsManagement() {
         <span>Name</span>
         <span>Email</span>
         <span>Role</span>
-        <span className="text-right">Last active</span>
+        <span>Status</span>
+        <span>Last active</span>
         <span className="text-right">Actions</span>
       </div>
 
       <ul>
-        {admins.length === 0 ? (
+        {admins.length === 0 && !staffEmail ? (
           <li className="px-1 py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
             No admins yet — click “Add admin” to create one.
           </li>
         ) : null}
+
+        {staffEmail ? (
+          <li className={cn(GRID, "px-1 py-3 items-center text-[13px] border-b border-ng-line-soft")}>
+            <span className="flex items-center gap-2 min-w-0">
+              <span className="grid place-items-center size-7 rounded-full bg-ng-clay/15 text-ng-clay-deep text-[11px] font-bold shrink-0">
+                <Icon name="server-minimalistic-bold" size={14} />
+              </span>
+              <span className="font-semibold text-ng-ink truncate">Built-in</span>
+              <Pill tone="neutral">Env</Pill>
+            </span>
+            <span className="font-mono text-[12px] font-medium text-ng-ink-muted truncate">{staffEmail}</span>
+            <span>
+              <Pill tone="info">Admin</Pill>
+            </span>
+            <span>
+              <Pill tone="success">Active</Pill>
+            </span>
+            <span className="text-[12px] font-medium text-ng-ink-soft">Always on</span>
+            <span className="text-right text-[11.5px] font-medium text-ng-ink-soft">
+              Password is env-configured
+            </span>
+          </li>
+        ) : null}
+
         {admins.map((a) => (
           <li
-            key={a.email}
+            key={a.id}
             className={cn(GRID, "px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0")}
           >
             <span className="flex items-center gap-2 min-w-0">
               <span className="grid place-items-center size-7 rounded-full bg-ng-forest/10 text-ng-forest text-[11px] font-bold shrink-0">
-                {a.name.charAt(0)}
+                {a.name.charAt(0).toUpperCase()}
               </span>
               <span className="font-semibold text-ng-ink truncate">{a.name}</span>
-              {a.status === "invited" ? <Pill tone="neutral">Invited</Pill> : null}
             </span>
             <span className="font-mono text-[12px] font-medium text-ng-ink-muted truncate">{a.email}</span>
             <span>
               {a.role === "superadmin" ? <Pill tone="warn">Super Admin</Pill> : <Pill tone="info">Admin</Pill>}
             </span>
-            <span className="text-right text-[12px] font-medium text-ng-ink-soft tabular-nums">{a.lastActive}</span>
+            <span>
+              {a.status === "disabled" ? (
+                <Pill tone="danger">Deactivated</Pill>
+              ) : a.status === "invited" ? (
+                <Pill tone="neutral">Invited</Pill>
+              ) : (
+                <Pill tone="success">Active</Pill>
+              )}
+            </span>
+            <span className="text-[12px] font-medium text-ng-ink-soft tabular-nums">
+              {humanizeLastActive(a.lastLoginAt)}
+            </span>
             <span className="flex items-center justify-end gap-0.5">
-              {a.status === "invited" ? (
-                <RowAction icon="refresh-bold" label="Resend invite" onClick={() => resendInvite(a)} />
-              ) : null}
-              <RowAction icon="lock-keyhole-minimalistic-bold" label="Reset password" onClick={() => resetPassword(a)} />
-              <RowAction icon="shield-user-bold" label="Change role" onClick={() => changeRole(a)} />
-              <RowAction icon="trash-bin-trash-linear" label="Deactivate" onClick={() => deactivate(a)} danger />
+              <RowAction icon="pen-2-bold" label="Edit" onClick={() => setEditing(a)} disabled={busyId === a.id} />
+              <RowAction
+                icon="lock-keyhole-minimalistic-bold"
+                label="Reset password"
+                onClick={() => credentialAction(a, "reset-password")}
+                disabled={busyId === a.id}
+              />
+              <RowAction
+                icon="refresh-bold"
+                label="Resend credentials"
+                onClick={() => credentialAction(a, "resend")}
+                disabled={busyId === a.id}
+              />
+              <RowAction
+                icon={a.status === "disabled" ? "play-circle-bold" : "pause-circle-bold"}
+                label={a.status === "disabled" ? "Activate" : "Deactivate"}
+                onClick={() => toggleStatus(a)}
+                disabled={busyId === a.id}
+              />
+              <RowAction
+                icon="trash-bin-trash-linear"
+                label="Delete"
+                onClick={() => removeAdmin(a)}
+                danger
+                disabled={busyId === a.id}
+              />
             </span>
           </li>
         ))}
       </ul>
 
+      {created ? (
+        <CredentialsPanel
+          title="Credentials created — copy & share"
+          creds={created}
+          onDismiss={() => setCreated(null)}
+        />
+      ) : null}
+      {reset ? (
+        <CredentialsPanel
+          title="New password — copy & share"
+          creds={reset}
+          onDismiss={() => setReset(null)}
+        />
+      ) : null}
+
       <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
         <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-        Add admin is live (creates a real account). Row actions — resend, reset &amp; deactivate — ship next.
+        Passwords are stored hashed — a reset reveals the new one only once, so copy it before dismissing.
       </p>
 
-      <AddInviteAdminModal open={open} onClose={() => setOpen(false)} onInvite={handleInvite} />
+      {open ? <AddInviteAdminModal onClose={() => setOpen(false)} onInvite={handleInvite} /> : null}
+      {editing ? (
+        <EditAdminModal key={editing.id} admin={editing} onClose={() => setEditing(null)} onSave={handleEdit} />
+      ) : null}
     </div>
   );
 }
@@ -236,11 +508,9 @@ export function AdminsManagement() {
 /* Add / Invite admin modal (mirrors stock-adjust-dialog a11y pattern).     */
 /* ----------------------------------------------------------------------- */
 function AddInviteAdminModal({
-  open,
   onClose,
   onInvite,
 }: {
-  open: boolean;
   onClose: () => void;
   onInvite: (payload: NewAdminPayload, channels: Channel[]) => Promise<boolean>;
 }) {
@@ -256,23 +526,18 @@ function AddInviteAdminModal({
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
 
-  // reset + focus on open
+  // focus the first field on mount, restore focus on unmount
   useEffect(() => {
-    if (!open) return;
-    setName("");
-    setEmail("");
-    setMobile("");
-    setPassword("");
-    setChannels(["email"]);
-    setErrors({});
     restoreFocusRef.current = (document.activeElement as HTMLElement) ?? null;
     const t = setTimeout(() => firstFieldRef.current?.focus(), 30);
-    return () => clearTimeout(t);
-  }, [open]);
+    return () => {
+      clearTimeout(t);
+      restoreFocusRef.current?.focus?.();
+    };
+  }, []);
 
   // escape + scroll-lock
   useEffect(() => {
-    if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
@@ -282,11 +547,8 @@ function AddInviteAdminModal({
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
-      restoreFocusRef.current?.focus?.();
     };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [onClose]);
 
   function generatePassword() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";
@@ -459,6 +721,210 @@ function AddInviteAdminModal({
           <Button variant="primary" type="button" onClick={handleInvite} disabled={submitting}>
             <Icon name="letter-bold" size={16} />
             {submitting ? "Adding…" : "Send invite"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Edit admin modal — name, mobile, role, status.                           */
+/* ----------------------------------------------------------------------- */
+function EditAdminModal({
+  admin,
+  onClose,
+  onSave,
+}: {
+  admin: AdminUser;
+  onClose: () => void;
+  onSave: (
+    id: string,
+    patch: { name: string; phone: string; role: RoleKey; status: StatusKey },
+  ) => Promise<boolean>;
+}) {
+  const headingId = useId();
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+  // The modal is keyed by admin id, so it remounts per row — initialise once.
+  const [name, setName] = useState(admin.name);
+  const [mobile, setMobile] = useState((admin.mobile ?? "").replace(/\D/g, "").slice(-10));
+  const [role, setRole] = useState<RoleKey>(admin.role);
+  const [active, setActive] = useState(admin.status !== "disabled");
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; mobile?: string }>({});
+
+  // focus the first field on mount, restore focus on unmount
+  useEffect(() => {
+    restoreFocusRef.current = (document.activeElement as HTMLElement) ?? null;
+    const t = setTimeout(() => firstFieldRef.current?.focus(), 30);
+    return () => {
+      clearTimeout(t);
+      restoreFocusRef.current?.focus?.();
+    };
+  }, []);
+
+  // escape + scroll-lock
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  async function handleSave() {
+    const digits = mobile.replace(/\D/g, "");
+    const next: { name?: string; mobile?: string } = {};
+    if (!name.trim()) next.name = "Name is required.";
+    if (digits.length !== 10) next.mobile = "Enter a 10-digit mobile number.";
+    setErrors(next);
+    if (next.name || next.mobile) {
+      toast.error("Couldn’t save", { description: "Fill in every field correctly." });
+      return;
+    }
+    setSubmitting(true);
+    const ok = await onSave(admin.id, {
+      name: name.trim(),
+      phone: digits,
+      role,
+      status: active ? "active" : "disabled",
+    });
+    setSubmitting(false);
+    if (ok) onClose();
+  }
+
+  const ROLE_OPTIONS: { key: RoleKey; label: string }[] = [
+    { key: "admin", label: "Admin" },
+    { key: "superadmin", label: "Super Admin" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <button
+        type="button"
+        aria-label="Close edit dialog"
+        onClick={onClose}
+        className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-[1px] cursor-pointer"
+      />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        className="relative w-full max-w-[480px] rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[0_24px_64px_rgba(31,77,46,0.22)] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-paper">
+          <div className="min-w-0">
+            <h2 id={headingId} className="font-display text-[20px] text-ng-forest-deep leading-tight">
+              Edit admin
+            </h2>
+            <p className="text-[12px] font-medium text-ng-ink-soft mt-1 truncate">{admin.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="shrink-0 size-9 rounded-full flex items-center justify-center text-ng-ink-soft hover:bg-ng-line-soft hover:text-ng-forest-deep transition-colors cursor-pointer"
+          >
+            <Icon name="close-circle-bold" size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <Input
+            ref={firstFieldRef}
+            label="Full name"
+            placeholder="e.g. Priya Nair"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            prefix={<Icon name="user-circle-bold" size={18} />}
+            error={errors.name ?? undefined}
+          />
+          <Input
+            label="Mobile number"
+            type="tel"
+            inputMode="tel"
+            placeholder="98XXX XXXXX"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            prefix={<span className="text-[15px] font-medium text-ng-ink">+91</span>}
+            maxLength={10}
+            error={errors.mobile ?? undefined}
+          />
+
+          {/* Role */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-ng-ink">Role</span>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLE_OPTIONS.map((r) => {
+                const selected = role === r.key;
+                return (
+                  <button
+                    key={r.key}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setRole(r.key)}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-[12.5px] transition-colors cursor-pointer",
+                      selected
+                        ? "border-ng-forest bg-ng-forest text-ng-paper font-semibold"
+                        : "border-ng-line bg-ng-paper text-ng-ink-muted font-medium hover:border-ng-leaf",
+                    )}
+                  >
+                    <Icon name="shield-user-bold" size={15} />
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center justify-between rounded-xl border border-ng-line bg-ng-paper px-4 py-3">
+            <div className="min-w-0">
+              <span className="text-[13px] font-semibold text-ng-ink">Account status</span>
+              <p className="text-[11.5px] font-medium text-ng-ink-soft">
+                {active ? "Active — can sign in." : "Deactivated — sign-in is blocked."}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={active}
+              aria-label="Toggle account status"
+              onClick={() => setActive((v) => !v)}
+              className={cn(
+                "relative h-6 w-11 rounded-full transition-colors cursor-pointer shrink-0",
+                active ? "bg-ng-forest" : "bg-ng-line",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-5 rounded-full bg-ng-paper transition-transform",
+                  active ? "translate-x-[22px]" : "translate-x-0.5",
+                )}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ng-line-soft bg-ng-paper">
+          <Button variant="ghost" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" type="button" onClick={handleSave} disabled={submitting}>
+            <Icon name="diskette-bold" size={16} />
+            {submitting ? "Saving…" : "Save changes"}
           </Button>
         </div>
       </div>

@@ -27,12 +27,14 @@ function credentialsEmailHtml(name: string, email: string, password: string): st
   </div></body></html>`;
 }
 
-/** GET — list admins. */
+/** GET — list admins (plus the optional built-in env staff email, if set). */
 export async function GET(): Promise<Response> {
   if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
-  if (!isSupabaseConfigured) return Response.json({ ok: true, admins: [] });
+  // Surface only the env staff EMAIL for an info row — never its passcode.
+  const staffEmail = process.env.STAFF_ADMIN_EMAIL?.trim() || null;
+  if (!isSupabaseConfigured) return Response.json({ ok: true, admins: [], staffEmail });
   const admins = await listAdmins();
-  return Response.json({ ok: true, admins });
+  return Response.json({ ok: true, admins, staffEmail });
 }
 
 /** POST — create an admin and deliver their credentials. */

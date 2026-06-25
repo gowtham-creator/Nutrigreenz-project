@@ -1,0 +1,158 @@
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE } from "@/lib/admin-auth";
+import { verifyToken } from "@/lib/admin-session";
+import {
+  getAdminById,
+  updateAdmin,
+  resetAdminPassword,
+  deleteAdminById,
+  type AdminRole,
+  type AdminStatus,
+} from "@/lib/admins";
+import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { isEmailConfigured, sendEmail } from "@/lib/email";
+
+/** Only a signed-in super-admin may edit or remove admins. */
+async function isSuperAdmin(): Promise<boolean> {
+  const c = await cookies();
+  const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
+  return Boolean(session && session.role === "superadmin");
+}
+
+const ROLES: AdminRole[] = ["admin", "superadmin"];
+const STATUSES: AdminStatus[] = ["active", "invited", "disabled"];
+
+function credentialsEmailHtml(name: string, email: string, password: string): string {
+  return `<!doctype html><html><body style="margin:0;background:#f4f1e8;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#1a2b22">
+  <div style="max-width:520px;margin:0 auto;padding:32px 24px">
+    <div style="font-size:18px;font-weight:700;color:#14532d">Nutri Greenz · Admin access</div>
+    <p style="font-size:15px;line-height:1.6">Hi ${name || "there"}, here are your updated sign-in details for the Nutri Greenz admin portal:</p>
+    <div style="background:#fff;border:1px solid #d9d3c2;border-radius:12px;padding:16px 18px;margin:14px 0">
+      <div style="font-size:13px;color:#5b6b60">Email</div><div style="font-size:16px;font-weight:600">${email}</div>
+      <div style="font-size:13px;color:#5b6b60;margin-top:10px">Temporary password</div><div style="font-size:18px;font-weight:700;letter-spacing:1px;color:#14532d">${password}</div>
+    </div>
+    <p style="font-size:13px;color:#5b6b60">Please change this password after your next sign-in. If you didn't expect this, ignore the email.</p>
+  </div></body></html>`;
+}
+
+/** PATCH — edit name, mobile, role or status. */
+export async function PATCH(
+  request: Request,
+  ctx: RouteContext<"/api/admin/admins/[id]">,
+): Promise<Response> {
+  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+
+  const { id } = await ctx.params;
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return Response.json({ ok: false }, { status: 400 });
+  }
+
+  const patch: { name?: string; phone?: string; role?: AdminRole; status?: AdminStatus } = {};
+
+  if (body.name !== undefined) {
+    const name = String(body.name).trim();
+    if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+    patch.name = name;
+  }
+  if (body.phone !== undefined) {
+    const digits = String(body.phone).replace(/\D/g, "");
+    if (digits.length !== 10) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+    patch.phone = `+91${digits}`;
+  }
+  if (body.role !== undefined) {
+    const role = String(body.role);
+    if (!ROLES.includes(role as AdminRole)) {
+      return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+    }
+    patch.role = role as AdminRole;
+  }
+  if (body.status !== undefined) {
+    const status = String(body.status);
+    if (!STATUSES.includes(status as AdminStatus)) {
+      return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+    }
+    patch.status = status as AdminStatus;
+  }
+
+  const admin = await updateAdmin(id, patch);
+  if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  return Response.json({ ok: true, admin });
+}
+
+/** POST — per-row credential actions (reset password, resend credentials). */
+export async function POST(
+  request: Request,
+  ctx: RouteContext<"/api/admin/admins/[id]">,
+): Promise<Response> {
+  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+
+  const { id } = await ctx.params;
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return Response.json({ ok: false }, { status: 400 });
+  }
+
+  const action = String(body.action ?? "");
+  if (action !== "reset-password" && action !== "resend") {
+    return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+  }
+
+  const admin = await getAdminById(id);
+  if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  const password = await resetAdminPassword(id);
+  if (!password) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  // For "resend", also deliver the new credentials by email when configured.
+  const sent: string[] = [];
+  const pending: string[] = [];
+  if (action === "resend") {
+    if (isEmailConfigured()) {
+      try {
+        await sendEmail({
+          to: admin.email,
+          subject: "Your Nutri Greenz admin access",
+          html: credentialsEmailHtml(admin.name ?? "", admin.email, password),
+        });
+        sent.push("email");
+      } catch {
+        pending.push("email");
+      }
+    } else {
+      pending.push("email");
+    }
+  }
+
+  return Response.json({ ok: true, email: admin.email, password, sent, pending });
+}
+
+/** DELETE — remove an admin permanently. */
+export async function DELETE(
+  _request: Request,
+  ctx: RouteContext<"/api/admin/admins/[id]">,
+): Promise<Response> {
+  if (!(await isSuperAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+
+  const { id } = await ctx.params;
+  const admin = await getAdminById(id);
+  if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  await deleteAdminById(id);
+  return Response.json({ ok: true });
+}
