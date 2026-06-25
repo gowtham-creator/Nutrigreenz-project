@@ -388,3 +388,24 @@ export async function resolveCustomer(
 
   return { customer: target, identity, created, merged };
 }
+
+/**
+ * Best-effort backlink: stamp `public.users.customer_id` with the canonical
+ * customer for a Firebase UID. Used by the sign-in route after
+ * {@link resolveCustomer} so the live `users` row points at its canonical
+ * customer. Additive and non-destructive — it only writes the FK column and
+ * never touches any other `users` field. Returns true on a successful update.
+ *
+ * The caller is expected to wrap this in its own try/catch; this helper itself
+ * does not throw on a "no matching row" result (the row reconciles next login).
+ */
+export async function linkUserToCustomer(
+  firebaseUid: string,
+  customerId: string,
+): Promise<boolean> {
+  const { error } = await supabaseAdmin()
+    .from("users")
+    .update({ customer_id: customerId })
+    .eq("firebase_uid", firebaseUid);
+  return !error;
+}

@@ -6,6 +6,7 @@ import {
 } from "@/lib/firebase-admin";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import { NG_SESSION_COOKIE, createSessionToken } from "@/lib/session";
+import { linkUserToCustomer, resolveCustomer } from "@/lib/customer-identity";
 
 // firebase-admin needs the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -75,6 +76,43 @@ export async function POST(request: Request): Promise<Response> {
         );
     } catch {
       // Swallow — the signed session still mints; the row reconciles next login.
+    }
+
+    // 2b. Canonical customer dedup — STRICTLY best-effort and non-breaking.
+    //
+    // Resolve (or create) the single canonical `customers` row + per-provider
+    // `customer_identities` row for this sign-in, then backlink the `users`
+    // row to it. This is entirely additive: any failure here is swallowed and
+    // can NEVER block, change, or fail the sign-in below. Firebase phone OTP is
+    // verified-by-construction; Google sign-in is not phone-verified.
+    try {
+      const provider = providerTag(decoded);
+      const resolved =
+        provider === "phone"
+          ? await resolveCustomer({
+              provider: "phone",
+              providerUid: decoded.uid,
+              phone: decoded.phone_number ?? undefined,
+              email: decoded.email ?? undefined,
+              displayName: decoded.name ?? undefined,
+              phoneVerified: true, // Firebase phone OTP == verified.
+            })
+          : provider === "google"
+            ? await resolveCustomer({
+                provider: "google",
+                providerUid: decoded.uid,
+                email: decoded.email ?? undefined,
+                displayName: decoded.name ?? undefined,
+                phone: decoded.phone_number ?? undefined,
+                phoneVerified: false,
+              })
+            : null; // Any other provider → skip; never break.
+
+      if (resolved) {
+        await linkUserToCustomer(decoded.uid, resolved.customer.id);
+      }
+    } catch {
+      // Swallow — dedup is best-effort; the signed session must still mint.
     }
   }
 
