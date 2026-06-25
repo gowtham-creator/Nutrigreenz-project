@@ -132,8 +132,9 @@ export async function POST(request: Request): Promise<Response> {
         const f = await getAdminFactors(normalizedEmail);
         if (f.totp && isTotpConfigured()) factors.push("totp");
         if (f.emailOtp && isEmailConfigured()) factors.push("email");
-        // NOTE: phone OTP as a sign-in factor lands with its dedicated 2FA step;
-        // until then it is NOT enforced at login so enabling it can't lock anyone out.
+        // Phone OTP is NOT surfaced as a sign-in factor until its dedicated 2FA
+        // step ships (task #42), so enabling the Mobile factor can't show a
+        // broken chooser option or lock anyone out.
       } else if (isTotpConfigured()) {
         factors = ["totp"];
       }

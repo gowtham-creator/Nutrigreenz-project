@@ -51,13 +51,21 @@ export async function POST(request: Request): Promise<Response> {
     const decoded = await verifyIdToken(idToken);
     phone = decoded.phone_number;
     provider = decoded.firebase?.sign_in_provider;
-  } catch {
-    return Response.json({ ok: false }, { status: 401 });
+  } catch (err) {
+    // Surface the real reason in server logs. A client-side "expired code" is
+    // almost always THIS throwing (issuer/audience mismatch, clock skew, bad
+    // signature) rather than a genuinely-expired OTP.
+    console.error(
+      "[login-phone] verifyIdToken failed:",
+      err instanceof Error ? err.message : String(err),
+    );
+    return Response.json({ ok: false, error: "verify-failed" }, { status: 401 });
   }
 
   // 2. Must be a phone sign-in with a phone number.
   if (provider !== "phone" || !phone) {
-    return Response.json({ ok: false }, { status: 401 });
+    console.error("[login-phone] non-phone token", { provider, hasPhone: Boolean(phone) });
+    return Response.json({ ok: false, error: "not-phone" }, { status: 401 });
   }
 
   // 3. Allowlist → role (fail closed).

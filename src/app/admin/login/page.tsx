@@ -325,12 +325,22 @@ function LoginForm() {
           ? "This number isn't an authorised operator."
           : res.status >= 500
             ? "Server couldn't verify the sign-in — please try again in a moment."
-            : "Invalid or expired code.";
+            : "We couldn't verify your sign-in — request a fresh code and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
-    } catch {
-      setError("Invalid or expired code.");
-      toast.error("Sign in failed", { description: "Invalid or expired code." });
+    } catch (err) {
+      // confirm() rejected on the client — surface WHICH Firebase error so a real
+      // expiry is distinguishable from a wrong/replayed code.
+      const code = (err as { code?: string })?.code ?? "";
+      console.error("[admin phone sign-in] confirm failed:", code || err);
+      const msg =
+        code === "auth/invalid-verification-code"
+          ? "That code is incorrect — check it and re-enter."
+          : code === "auth/code-expired" || code === "auth/session-expired"
+            ? "Your code expired — request a new one."
+            : "Couldn't verify the code — request a fresh one and try again.";
+      setError(msg);
+      toast.error("Sign in failed", { description: msg });
     } finally {
       setSubmitting(false);
     }
