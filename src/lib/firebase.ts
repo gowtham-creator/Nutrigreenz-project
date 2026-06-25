@@ -21,6 +21,14 @@ const firebaseConfig = {
 /** True when the Firebase web config is present. */
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
 
+/**
+ * The raw web config — exported so a SECONDARY, isolated Firebase app instance
+ * can be spun up (e.g. to OTP-verify a phone that already belongs to another
+ * account WITHOUT disturbing the primary signed-in session). See
+ * `@/components/ng/account/link-phone-prompt`.
+ */
+export { firebaseConfig };
+
 export const firebaseApp: FirebaseApp | null = isFirebaseConfigured
   ? getApps().length
     ? getApp()

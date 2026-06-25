@@ -3,6 +3,7 @@ import { Roboto_Slab, Lora, Figtree, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
+import { LinkPhonePrompt } from "@/components/ng/account/link-phone-prompt";
 import { CommerceProvider } from "@/lib/commerce";
 import { LoyaltyConfigProvider } from "@/lib/loyalty-config";
 import { LocationProvider } from "@/lib/location";
@@ -60,7 +61,10 @@ export default function RootLayout({
               <LocationProvider>
                 <CartProvider>
                   <WishlistProvider>
-                    <AddressProvider>{children}</AddressProvider>
+                    <AddressProvider>
+                      {children}
+                      <LinkPhonePrompt />
+                    </AddressProvider>
                   </WishlistProvider>
                 </CartProvider>
               </LocationProvider>

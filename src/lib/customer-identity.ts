@@ -29,6 +29,12 @@ export interface Customer {
   primaryPhone: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * When this row has been merged INTO a survivor, the survivor's id; null for a
+   * live (un-merged) customer. The row is kept (never deleted) as an audit
+   * breadcrumb + forwarding pointer.
+   */
+  mergedInto: string | null;
 }
 
 /** A provider identity attached to a customer (`public.customer_identities`). */
@@ -50,6 +56,7 @@ interface CustomerRow {
   primary_phone: string | null;
   created_at: string;
   updated_at: string;
+  merged_into: string | null;
 }
 
 interface CustomerIdentityRow {
@@ -64,7 +71,7 @@ interface CustomerIdentityRow {
 }
 
 const CUSTOMER_COLS =
-  "id, display_name, primary_email, primary_phone, created_at, updated_at";
+  "id, display_name, primary_email, primary_phone, created_at, updated_at, merged_into";
 const IDENTITY_COLS =
   "id, customer_id, provider, provider_uid, email, phone, verified, created_at";
 
@@ -76,6 +83,7 @@ function toCustomer(r: CustomerRow): Customer {
     primaryPhone: r.primary_phone,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    mergedInto: r.merged_into,
   };
 }
 
@@ -408,4 +416,242 @@ export async function linkUserToCustomer(
     .update({ customer_id: customerId })
     .eq("firebase_uid", firebaseUid);
   return !error;
+}
+
+/** Fetch a single canonical customer by id, or null. */
+export async function getCustomerById(id: string): Promise<Customer | null> {
+  const { data } = await supabaseAdmin()
+    .from("customers")
+    .select(CUSTOMER_COLS)
+    .eq("id", id)
+    .maybeSingle();
+  return data ? toCustomer(data as CustomerRow) : null;
+}
+
+/**
+ * Find the canonical customer that OWNS a VERIFIED phone, by either:
+ *   (a) `customers.primary_phone` equals the number (the dedup key is always a
+ *       verified number — `resolveCustomer` only seeds it from a verified phone), or
+ *   (b) a `customer_identities` row with this phone and `verified = true`.
+ *
+ * Returns the owning customer, or null when nobody verifiably owns it. A loser
+ * row that was already merged away (`merged_into` set) is followed to its
+ * survivor so we never relink onto a tombstone.
+ */
+export async function findCustomerOwningVerifiedPhone(
+  phoneE164: string,
+): Promise<Customer | null> {
+  const normalized = normalizePhoneE164(phoneE164);
+  if (!normalized) return null;
+
+  // (a) primary_phone match — the trusted dedup key.
+  const byPrimary = await findCustomerByPhone(normalized);
+  if (byPrimary) return resolveSurvivor(byPrimary);
+
+  // (b) a verified phone identity pointing at some customer.
+  const { data: idRow } = await supabaseAdmin()
+    .from("customer_identities")
+    .select(IDENTITY_COLS)
+    .eq("phone", normalized)
+    .eq("verified", true)
+    .limit(1)
+    .maybeSingle();
+  if (!idRow) return null;
+
+  const identity = toIdentity(idRow as CustomerIdentityRow);
+  const owner = await getCustomerById(identity.customerId);
+  return owner ? resolveSurvivor(owner) : null;
+}
+
+/** Follow a merged loser's forwarding pointer to its live survivor (1 hop is
+ *  enough — a survivor is never itself merged away, by construction). */
+async function resolveSurvivor(customer: Customer): Promise<Customer> {
+  if (!customer.mergedInto) return customer;
+  const survivor = await getCustomerById(customer.mergedInto);
+  return survivor ?? customer;
+}
+
+/**
+ * Merge the `loserId` customer INTO the `survivorId` customer — non-destructive
+ * and idempotent. NEVER deletes a row.
+ *
+ * Steps:
+ *   1. Re-point every `customer_identities.customer_id` from loser → survivor.
+ *   2. Re-point every `users.customer_id` from loser → survivor.
+ *   3. Backfill ONLY the survivor's EMPTY canonical fields from the loser
+ *      (display_name / primary_email / primary_phone) — never overwrite a
+ *      value the survivor already has.
+ *   4. Stamp `loser.merged_into = survivor` so the loser becomes an audit
+ *      breadcrumb + forwarding pointer.
+ *
+ * No-op (returns the survivor unchanged) when `loserId === survivorId` or the
+ * loser is already merged. Re-running with the same pair is a safe no-op: the
+ * relinks have nothing left to move and the backfill only touches empty fields.
+ */
+export async function mergeCustomers(
+  survivorId: string,
+  loserId: string,
+): Promise<Customer> {
+  const db = supabaseAdmin();
+
+  // Idempotency / self-merge guard.
+  if (survivorId === loserId) {
+    const same = await getCustomerById(survivorId);
+    if (!same) throw new Error(`mergeCustomers: customer ${survivorId} not found`);
+    return same;
+  }
+
+  const survivor = await getCustomerById(survivorId);
+  const loser = await getCustomerById(loserId);
+  if (!survivor) throw new Error(`mergeCustomers: survivor ${survivorId} not found`);
+  if (!loser) throw new Error(`mergeCustomers: loser ${loserId} not found`);
+
+  // Already merged into THIS survivor → nothing to do (idempotent).
+  if (loser.mergedInto === survivorId) return survivor;
+
+  // 1. Relink the loser's provider identities onto the survivor.
+  await db
+    .from("customer_identities")
+    .update({ customer_id: survivorId })
+    .eq("customer_id", loserId);
+
+  // 2. Repoint any live users rows from loser → survivor.
+  await db
+    .from("users")
+    .update({ customer_id: survivorId })
+    .eq("customer_id", loserId);
+
+  // 3. Backfill ONLY the survivor's empty canonical fields from the loser.
+  //
+  // `primary_email` and `primary_phone` carry PARTIAL-UNIQUE indexes, so the
+  // value must be cleared on the loser BEFORE it is written to the survivor —
+  // otherwise the copy collides with the loser's own (about-to-be-tombstoned)
+  // row. We move the value (clear loser → set survivor); the relinked identity
+  // rows still retain the original email/phone for audit, so nothing is lost.
+  const patch: Record<string, string> = {};
+  const loserClear: Record<string, null> = {};
+  if (!survivor.displayName && loser.displayName) patch.display_name = loser.displayName;
+  if (!survivor.primaryEmail && loser.primaryEmail) {
+    patch.primary_email = loser.primaryEmail;
+    loserClear.primary_email = null;
+  }
+  if (!survivor.primaryPhone && loser.primaryPhone) {
+    patch.primary_phone = loser.primaryPhone;
+    loserClear.primary_phone = null;
+  }
+
+  // Free the moved unique values on the loser first (keeps the unique index happy).
+  if (Object.keys(loserClear).length > 0) {
+    await db.from("customers").update(loserClear).eq("id", loserId);
+  }
+
+  let merged = survivor;
+  if (Object.keys(patch).length > 0) {
+    const { data } = await db
+      .from("customers")
+      .update(patch)
+      .eq("id", survivorId)
+      .select(CUSTOMER_COLS)
+      .single();
+    if (data) merged = toCustomer(data as CustomerRow);
+  }
+
+  // 4. Tombstone the loser: keep the row, stamp the forwarding pointer.
+  await db
+    .from("customers")
+    .update({ merged_into: survivorId })
+    .eq("id", loserId);
+
+  return merged;
+}
+
+/** Result of {@link attachVerifiedPhone}. */
+export interface AttachVerifiedPhoneResult {
+  /** True when a DIFFERENT customer owned the phone and was merged in. */
+  merged: boolean;
+  /** The surviving canonical customer id the phone is now attached to. */
+  customerId: string;
+}
+
+/**
+ * Attach a VERIFIED phone to `currentCustomerId`, de-duplicating against any
+ * existing owner of that phone.
+ *
+ * Cases:
+ *   - Nobody (or the current customer) owns the phone → attach to the current
+ *     customer: set `primary_phone` if empty + upsert a verified phone identity.
+ *   - A DIFFERENT customer owns the phone → MERGE the two. The survivor is the
+ *     OLDER `created_at` (stable, takeover-safe); the newer row is merged in.
+ *     The verified phone identity is then ensured on the survivor.
+ *
+ * Non-destructive (never deletes) and idempotent (re-running attaches/merges to
+ * the same survivor with no further effect). Caller must have already verified
+ * ownership of the phone (Firebase phone OTP).
+ */
+export async function attachVerifiedPhone(
+  currentCustomerId: string,
+  phoneE164: string,
+): Promise<AttachVerifiedPhoneResult> {
+  const phone = normalizePhoneE164(phoneE164);
+  if (!phone) {
+    // Unnormalizable number — fail safe, attach nothing, no merge.
+    return { merged: false, customerId: currentCustomerId };
+  }
+
+  const owner = await findCustomerOwningVerifiedPhone(phone);
+
+  // Different customer owns this number → merge. Older row survives.
+  if (owner && owner.id !== currentCustomerId) {
+    const current = await getCustomerById(currentCustomerId);
+    let survivorId = owner.id;
+    let loserId = currentCustomerId;
+    if (current) {
+      // Older created_at wins; tie → keep the existing owner as survivor.
+      const ownerOlder = owner.createdAt <= current.createdAt;
+      survivorId = ownerOlder ? owner.id : current.id;
+      loserId = ownerOlder ? current.id : owner.id;
+    }
+    await mergeCustomers(survivorId, loserId);
+    await ensurePhoneOnCustomer(survivorId, phone);
+    return { merged: true, customerId: survivorId };
+  }
+
+  // Nobody else owns it (or the current customer already does) → attach here.
+  await ensurePhoneOnCustomer(currentCustomerId, phone);
+  return { merged: false, customerId: currentCustomerId };
+}
+
+/**
+ * Ensure `customer` carries the verified `phone`: set `primary_phone` only when
+ * it is currently empty (never overwrite), and upsert a verified phone identity
+ * for the number. Idempotent.
+ */
+async function ensurePhoneOnCustomer(
+  customerId: string,
+  phone: string,
+): Promise<void> {
+  const db = supabaseAdmin();
+
+  const customer = await getCustomerById(customerId);
+  if (customer && !customer.primaryPhone) {
+    await db
+      .from("customers")
+      .update({ primary_phone: phone })
+      .eq("id", customerId);
+  }
+
+  // Upsert a verified phone identity. provider_uid is the E.164 number so the
+  // (provider, provider_uid) unique key makes this idempotent per number.
+  await db
+    .from("customer_identities")
+    .upsert(
+      {
+        customer_id: customerId,
+        provider: "phone" as CustomerProvider,
+        provider_uid: phone,
+        phone,
+        verified: true,
+      },
+      { onConflict: "provider,provider_uid" },
+    );
 }
