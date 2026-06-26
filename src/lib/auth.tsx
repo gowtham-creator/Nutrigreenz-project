@@ -21,6 +21,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { runGoogleEnrich } from "@/lib/google-enrich-client";
 
 const NOT_CONFIGURED =
   "Authentication isn't configured yet — add your Firebase keys to .env.local.";
@@ -230,9 +231,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const provider = new GoogleAuthProvider();
+    // People API scopes (Task T6, Decision C) — ADDITIVE. Requesting them lets the
+    // server auto-import the account's phone + addresses. Denial of these sensitive
+    // scopes must NEVER break sign-in: the popup still completes with profile/email,
+    // `credentialFromResult` simply returns no usable token and enrichment no-ops.
+    provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
+    provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
     provider.setCustomParameters({ prompt: "select_account" });
-    await signInWithPopup(auth, provider);
-    // onAuthStateChanged populates `account`.
+    const result = await signInWithPopup(auth, provider);
+    // onAuthStateChanged populates `account`. Separately, capture the Google OAuth
+    // ACCESS token and best-effort enrich (own addresses + takeover-safe phone).
+    // Wrapped so a People-API hiccup can never reject the (successful) sign-in.
+    try {
+      const accessToken =
+        GoogleAuthProvider.credentialFromResult(result)?.accessToken ?? null;
+      void runGoogleEnrich(accessToken);
+    } catch {
+      /* best-effort — sign-in already succeeded */
+    }
   }, []);
 
   const sendOtp = useCallback(

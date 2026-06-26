@@ -18,6 +18,10 @@ import { OtpInput } from "@/components/ng/otp-input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { auth, firebaseConfig } from "@/lib/firebase";
+import {
+  GOOGLE_ENRICH_EVENT,
+  type GoogleEnrichDetail,
+} from "@/lib/google-enrich-client";
 
 /**
  * Additive, SKIPPABLE mobile-capture prompt (Task T3 — customer-identity dedup).
@@ -45,6 +49,18 @@ function dismissedKey(uid: string): string {
 
 function toE164(localTenDigits: string): string {
   return `+91${localTenDigits.replace(/\D/g, "")}`;
+}
+
+/**
+ * Best-effort: reduce a People-API E.164 number to the 10-digit local form the
+ * input expects. Strips a leading +91 / 91 country code; keeps the last 10 digits
+ * when that's all that's left (Indian mobiles). Returns "" when it can't.
+ */
+function toLocalTenDigits(e164: string): string {
+  let digits = e164.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  if (digits.length > 10) digits = digits.slice(-10);
+  return digits.length === 10 ? digits : "";
 }
 
 export function LinkPhonePrompt() {
@@ -86,6 +102,29 @@ export function LinkPhonePrompt() {
     const t = window.setTimeout(() => setOpen(true), 900);
     return () => window.clearTimeout(t);
   }, [configured, user]);
+
+  // Task T6 — when the People-API enrichment found a phone that COLLIDES with
+  // another customer, the server returns it as `prefillPhone` (it is NEVER
+  // auto-merged). Open this prompt PRE-FILLED so the user OTP-verifies it — the
+  // takeover-safe step that actually merges the two canonical customers. We open
+  // even if the prompt was previously "skipped": this is a specific, collision-
+  // driven ask, not the generic capture nag.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onEnrich = (event: Event) => {
+      const detail = (event as CustomEvent<GoogleEnrichDetail>).detail;
+      const local = detail?.prefillPhone ? toLocalTenDigits(detail.prefillPhone) : "";
+      if (!local) return;
+      setStep("phone");
+      setOtp("");
+      setError(null);
+      setDone(false);
+      setPhone(local);
+      setOpen(true);
+    };
+    window.addEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
+    return () => window.removeEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
+  }, []);
 
   // Escape + body scroll lock while open.
   useEffect(() => {

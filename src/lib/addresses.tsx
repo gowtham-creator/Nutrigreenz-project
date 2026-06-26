@@ -11,6 +11,10 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/lib/auth";
+import {
+  GOOGLE_ENRICH_EVENT,
+  type GoogleEnrichDetail,
+} from "@/lib/google-enrich-client";
 import type { Address } from "@/types/nutrigreenz";
 
 /**
@@ -361,6 +365,23 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     if (signedIn) return;
     writeStored(GUEST_KEY, addresses);
   }, [addresses, loadedKey, storageKey, signedIn]);
+
+  // Task T6 — after a Google sign-in, the People-API enrichment may auto-import
+  // the account's addresses server-side. Re-pull the canonical DB book so the
+  // freshly imported addresses appear immediately (no reload needed). Best-effort.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onEnrich = (event: Event) => {
+      const detail = (event as CustomEvent<GoogleEnrichDetail>).detail;
+      if (!detail || detail.addressesAdded <= 0) return;
+      void (async () => {
+        const fresh = await apiList();
+        if (fresh) setAddresses(normalize(fresh));
+      })();
+    };
+    window.addEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
+    return () => window.removeEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
+  }, []);
 
   const add = useCallback(
     (input: AddressInput) => {
