@@ -132,7 +132,7 @@ export function LinkPhonePrompt() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      if (e.key === "Escape") closeForNow();
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -152,6 +152,15 @@ export function LinkPhonePrompt() {
     }
   }
 
+  // Close WITHOUT the permanent flag — used by the X / backdrop / Escape, so a
+  // casual or accidental close (or closing after an error) re-prompts next time
+  // instead of suppressing the link step forever.
+  function closeForNow() {
+    cleanup();
+    setOpen(false);
+  }
+
+  // Explicit "Skip for now" — set the per-account flag so it won't auto-nag again.
   function dismiss() {
     if (user) {
       try {
@@ -160,8 +169,7 @@ export function LinkPhonePrompt() {
         /* ignore */
       }
     }
-    cleanup();
-    setOpen(false);
+    closeForNow();
   }
 
   /** Mint a fresh invisible reCAPTCHA verifier against the given Auth instance. */
@@ -296,7 +304,7 @@ export function LinkPhonePrompt() {
     >
       <div
         className="absolute inset-0 bg-ng-forest-deep/50 backdrop-blur-sm motion-safe:animate-[fadeIn_.25s_ease]"
-        onClick={dismiss}
+        onClick={closeForNow}
         aria-hidden="true"
       />
       <div
@@ -310,8 +318,8 @@ export function LinkPhonePrompt() {
         <div className="relative bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-leaf px-6 pb-7 pt-7 text-ng-paper">
           <button
             type="button"
-            onClick={dismiss}
-            aria-label="Skip for now"
+            onClick={closeForNow}
+            aria-label="Close"
             className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-ng-paper/80 hover:bg-ng-paper/15 hover:text-ng-paper transition-colors"
           >
             <Icon name="close-circle-linear" size={20} />
