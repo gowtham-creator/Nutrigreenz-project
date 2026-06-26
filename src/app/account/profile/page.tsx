@@ -70,7 +70,7 @@ export default function ProfilePage() {
   }, [isAuthed, account]);
 
   const phoneIsLogin = account?.method === "phone";
-  const effectivePhone = account?.phone ?? canonical?.phone ?? null;
+  const effectivePhone = account?.phone || canonical?.phone || null;
   const displayPhone = effectivePhone ? formatPhone(effectivePhone) : "Not added yet";
 
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
