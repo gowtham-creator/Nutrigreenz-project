@@ -94,12 +94,12 @@ export function Toggle({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
-          checked ? "bg-ng-forest" : "bg-ng-line",
+          checked ? "bg-ng-forest" : "bg-ng-ink-soft/35",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 size-5 rounded-full bg-ng-paper shadow-sm transition-transform",
+            "absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-md ring-1 ring-black/10 transition-transform duration-200",
             checked && "translate-x-5",
           )}
         />

@@ -44,6 +44,7 @@ function LoginForm() {
   // Passcode flow
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
+  const [showPasscode, setShowPasscode] = useState(false);
   // Super-admin second factor — pick any one of the enabled factors.
   const [mfaFactors, setMfaFactors] = useState<string[] | null>(null);
   const [mfaChoice, setMfaChoice] = useState<"totp" | "email" | "phone" | null>(null);
@@ -122,17 +123,27 @@ function LoginForm() {
     }
   }
 
+  // Auto-send the mobile-OTP 2FA code once the phone step (and its reCAPTCHA
+  // container) has actually rendered — fixes the first send silently failing
+  // while "Resend code" worked.
+  useEffect(() => {
+    if (mfaChoice === "phone" && otpPhone && !codeSent && !submitting && !resending) {
+      void requestCode(false, otpPhone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mfaChoice]);
+
   async function chooseFactor(f: "totp" | "email" | "phone" | null) {
     setMfaChoice(f);
     setError(null);
     if (f === "email") {
       await sendMailCode();
     } else if (f === "phone" && otpPhone) {
-      // Auto-send a Firebase OTP to the saved operator number, reusing the same
-      // RecaptchaVerifier + signInWithPhoneNumber machinery as the Phone-OTP tab.
+      // The OTP is sent from an effect AFTER this step (+ its reCAPTCHA container)
+      // has mounted. Sending synchronously here raced the mount, so the first
+      // attempt silently no-op'd and only "Resend code" worked.
       setCode("");
       setCodeSent(false);
-      await requestCode(false, otpPhone);
     }
   }
 
@@ -345,6 +356,9 @@ function LoginForm() {
         size: "invisible",
       });
       verifierRef.current = verifier;
+      // Initialise the invisible reCAPTCHA before the first send; without this the
+      // very first signInWithPhoneNumber can no-op until the widget is warmed up.
+      await verifier.render();
       confirmationRef.current = await signInWithPhoneNumber(fbAuth, e164, verifier);
       setCodeSent(true);
       setCode("");
@@ -668,12 +682,22 @@ function LoginForm() {
               />
               <Input
                 label="Passcode"
-                type="password"
+                type={showPasscode ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="••••••••"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 prefix={<Icon name="key-minimalistic-bold" size={18} />}
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode((s) => !s)}
+                    aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
+                    className="inline-flex items-center justify-center text-ng-ink-soft hover:text-ng-forest transition-colors"
+                  >
+                    <Icon name={showPasscode ? "eye-closed-bold" : "eye-bold"} size={18} />
+                  </button>
+                }
                 error={error ?? undefined}
               />
 
