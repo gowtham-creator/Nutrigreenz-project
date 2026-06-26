@@ -61,7 +61,19 @@ export default function ProfilePage() {
     fetch("/api/account/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (active) setCanonical(d?.customer ?? null);
+        if (!active) return;
+        const c = (d?.customer ?? null) as {
+          name: string | null;
+          email: string | null;
+          phone: string | null;
+        } | null;
+        setCanonical(c);
+        // Fill name/email from the canonical record when the Firebase user has
+        // none (a phone login) — so a merged Google identity's details show.
+        if (c) {
+          setFullName((cur) => cur || c.name || "");
+          setEmail((cur) => cur || c.email || "");
+        }
       })
       .catch(() => {});
     return () => {
@@ -69,8 +81,11 @@ export default function ProfilePage() {
     };
   }, [isAuthed, account]);
 
-  const phoneIsLogin = account?.method === "phone";
   const effectivePhone = account?.phone || canonical?.phone || null;
+  // A phone only lands in the canonical record once it's OTP-verified, so any
+  // present number here is verified — whether you signed in by phone OR linked it
+  // to a Google account. Badge/helper key off this, not the login method.
+  const hasVerifiedPhone = Boolean(effectivePhone);
   const displayPhone = effectivePhone ? formatPhone(effectivePhone) : "Not added yet";
 
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
@@ -174,14 +189,14 @@ export default function ProfilePage() {
               <div
                 className={cn(
                   "flex h-12 items-center gap-2 rounded-xl border px-4",
-                  phoneIsLogin ? "border-ng-leaf/40 bg-ng-leaf/[0.07]" : "border-ng-line bg-ng-sage/25",
+                  hasVerifiedPhone ? "border-ng-leaf/40 bg-ng-leaf/[0.07]" : "border-ng-line bg-ng-sage/25",
                 )}
               >
-                <span className={phoneIsLogin ? "text-ng-forest" : "text-ng-ink-soft"}>
+                <span className={hasVerifiedPhone ? "text-ng-forest" : "text-ng-ink-soft"}>
                   <Icon name="phone-bold" size={18} />
                 </span>
                 <span className="flex-1 text-[15px] font-mono text-ng-ink">{displayPhone}</span>
-                {phoneIsLogin ? (
+                {hasVerifiedPhone ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-forest">
                     <Icon name="verified-check-bold" size={13} className="text-ng-green-bright" />
                     Verified
@@ -189,8 +204,8 @@ export default function ProfilePage() {
                 ) : null}
               </div>
               <p className="text-[12px] text-ng-ink-soft">
-                {phoneIsLogin
-                  ? "Your phone is your login identity and can't be changed here."
+                {hasVerifiedPhone
+                  ? "Your verified mobile — used to sign in and for delivery updates."
                   : "Add a phone number at checkout for delivery updates."}
               </p>
             </div>
