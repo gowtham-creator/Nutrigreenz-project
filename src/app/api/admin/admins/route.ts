@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
-import { listAdmins, createAdmin, adminEmailExists } from "@/lib/admins";
+import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/admins";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity-log";
@@ -64,17 +64,25 @@ export async function POST(request: Request): Promise<Response> {
   const password = String(body.password ?? "");
   const channels = (Array.isArray(body.channels) ? body.channels : ["email"]).map(String);
 
-  if (!name || !EMAIL_RE.test(email) || phoneDigits.length !== 10 || password.length < 8) {
+  if (!name || !EMAIL_RE.test(email) || phoneDigits.length !== 10) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+  }
+  if (password.length < 12) {
+    return Response.json({ ok: false, error: "weak-password" }, { status: 400 });
   }
   if (await adminEmailExists(email)) {
     return Response.json({ ok: false, error: "exists" }, { status: 409 });
   }
 
+  const phone = `+91${phoneDigits}`;
+  if (await phoneTaken(phone)) {
+    return Response.json({ ok: false, error: "phone-exists" }, { status: 409 });
+  }
+
   const admin = await createAdmin({
     name,
     email,
-    phone: `+91${phoneDigits}`,
+    phone,
     password,
     role: "admin",
   });

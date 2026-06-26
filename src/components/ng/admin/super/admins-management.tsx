@@ -233,9 +233,13 @@ export function AdminsManagement() {
         const msg =
           data.error === "exists"
             ? "That email is already an admin."
-            : data.error === "db-unavailable"
-              ? "The database isn’t configured yet."
-              : "Couldn’t add the admin — check the details.";
+            : data.error === "phone-exists"
+              ? "This number already belongs to an admin."
+              : data.error === "weak-password"
+                ? "Use at least 12 characters for the password."
+                : data.error === "db-unavailable"
+                  ? "The database isn’t configured yet."
+                  : "Couldn’t add the admin — check the details.";
         toast.error("Not added", { description: msg });
         return false;
       }
@@ -296,17 +300,25 @@ export function AdminsManagement() {
       }
       setCreated(null);
       setReset({ email: data.email, password: data.password });
+      const sent: string[] = Array.isArray(data.sent) ? data.sent : [];
       if (action === "resend") {
-        const sent = (data.sent ?? []).map(labelChannel).join(", ");
-        const pending = (data.pending ?? []).map(labelChannel).join(", ");
         toast.success("Credentials regenerated", {
-          description:
-            (sent ? `Emailed to ${a.email}.` : "") +
-            (pending ? ` Pending (no provider yet): ${pending}.` : "") ||
-            `New password ready for ${a.email}.`,
+          description: sent.includes("admin")
+            ? `New password emailed to ${a.email}.`
+            : `New password ready for ${a.email} — copy it below.`,
         });
       } else {
-        toast.success("Password reset", { description: `New password ready for ${a.email}.` });
+        const emailedAdmin = sent.includes("admin");
+        const emailedYou = sent.includes("you");
+        const note =
+          emailedAdmin && emailedYou
+            ? ` Also emailed to ${a.email} and to you.`
+            : emailedAdmin
+              ? ` Also emailed to ${a.email}.`
+              : "";
+        toast.success("Password reset", {
+          description: `New password ready for ${a.email} — copy it below.${note}`,
+        });
       }
     } catch {
       toast.error("Action failed", { description: "Couldn’t reach the server." });
@@ -445,27 +457,27 @@ export function AdminsManagement() {
               {humanizeLastActive(a.lastLoginAt)}
             </span>
             <span className="flex items-center justify-end gap-0.5">
-              <RowAction icon="pen-2-bold" label="Edit" onClick={() => setEditing(a)} disabled={busyId === a.id} />
+              <RowAction icon="pen-new-square-bold" label="Edit" onClick={() => setEditing(a)} disabled={busyId === a.id} />
               <RowAction
-                icon="lock-keyhole-minimalistic-bold"
+                icon="key-bold"
                 label="Reset password"
                 onClick={() => credentialAction(a, "reset-password")}
                 disabled={busyId === a.id}
               />
               <RowAction
-                icon="refresh-bold"
+                icon="plain-2-bold"
                 label="Resend credentials"
                 onClick={() => credentialAction(a, "resend")}
                 disabled={busyId === a.id}
               />
               <RowAction
-                icon={a.status === "disabled" ? "play-circle-bold" : "pause-circle-bold"}
+                icon={a.status === "disabled" ? "play-bold" : "pause-bold"}
                 label={a.status === "disabled" ? "Activate" : "Deactivate"}
                 onClick={() => toggleStatus(a)}
                 disabled={busyId === a.id}
               />
               <RowAction
-                icon="trash-bin-trash-linear"
+                icon="trash-bin-trash-bold"
                 label="Delete"
                 onClick={() => removeAdmin(a)}
                 danger
@@ -524,6 +536,7 @@ function AddInviteAdminModal({
   const [password, setPassword] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["email"]);
   const [submitting, setSubmitting] = useState(false);
+  const [mobileTaken, setMobileTaken] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
 
   // focus the first field on mount, restore focus on unmount
@@ -550,6 +563,31 @@ function AddInviteAdminModal({
     };
   }, [onClose]);
 
+  // Live "while typing" duplicate-mobile check (debounced ~400ms).
+  const mobileDigits = mobile.replace(/\D/g, "");
+  useEffect(() => {
+    if (mobileDigits.length !== 10) return;
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/admins/check-phone?phone=${mobileDigits}`);
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        if (!alive) return;
+        setMobileTaken(Boolean(data?.exists));
+        if (data?.exists) {
+          setErrors((e) => ({ ...e, mobile: "This number already belongs to an admin." }));
+        }
+      } catch {
+        /* ignore — the final POST still guards against duplicates */
+      }
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [mobileDigits]);
+
   function generatePassword() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";
     const buf = new Uint32Array(16);
@@ -568,7 +606,8 @@ function AddInviteAdminModal({
     if (!name.trim()) next.name = "Name is required.";
     if (!EMAIL_RE.test(email.trim())) next.email = "Enter a valid email address.";
     if (digits.length !== 10) next.mobile = "Enter a 10-digit mobile number.";
-    if (password.trim().length < 8) next.password = "Set a password (min 8 characters).";
+    else if (mobileTaken) next.mobile = "This number already belongs to an admin.";
+    if (password.length < 12) next.password = "Use at least 12 characters.";
     setErrors(next);
     if (next.name || next.email || next.mobile || next.password) {
       toast.error("Couldn’t send invite", { description: "Fill in every field correctly." });
@@ -654,7 +693,11 @@ function AddInviteAdminModal({
             inputMode="tel"
             placeholder="98XXX XXXXX"
             value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            onChange={(e) => {
+              setMobile(e.target.value);
+              setMobileTaken(false);
+              setErrors((prev) => ({ ...prev, mobile: undefined }));
+            }}
             prefix={<span className="text-[15px] font-medium text-ng-ink">+91</span>}
             maxLength={10}
             error={errors.mobile ?? undefined}
@@ -674,9 +717,12 @@ function AddInviteAdminModal({
             </div>
             <Input
               type="text"
-              placeholder="Set or auto-generate"
+              placeholder="Set or auto-generate (min 12 characters)"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
               prefix={<Icon name="key-minimalistic-bold" size={18} />}
               error={errors.password ?? undefined}
             />
@@ -718,7 +764,7 @@ function AddInviteAdminModal({
           <Button variant="ghost" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" type="button" onClick={handleInvite} disabled={submitting}>
+          <Button variant="primary" type="button" onClick={handleInvite} disabled={submitting || mobileTaken}>
             <Icon name="letter-bold" size={16} />
             {submitting ? "Adding…" : "Send invite"}
           </Button>

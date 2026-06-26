@@ -128,23 +128,32 @@ export async function POST(
   const password = await resetAdminPassword(id);
   if (!password) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
 
-  // For "resend", also deliver the new credentials by email when configured.
+  // Deliver the new credentials by email when configured.
+  //  · "resend"         → email the target admin only.
+  //  · "reset-password" → email BOTH the target admin and the acting super-admin
+  //                       (best-effort; a send failure must not break the reset).
   const sent: string[] = [];
   const pending: string[] = [];
-  if (action === "resend") {
-    if (isEmailConfigured()) {
+  if (isEmailConfigured()) {
+    const html = credentialsEmailHtml(admin.name ?? "", admin.email, password);
+    try {
+      await sendEmail({ to: admin.email, subject: "Your Nutri Greenz admin access", html });
+      sent.push("admin");
+    } catch {
+      pending.push("admin");
+    }
+    if (action === "reset-password" && actorEmail.toLowerCase() !== admin.email.toLowerCase()) {
       try {
-        await sendEmail({
-          to: admin.email,
-          subject: "Your Nutri Greenz admin access",
-          html: credentialsEmailHtml(admin.name ?? "", admin.email, password),
-        });
-        sent.push("email");
+        await sendEmail({ to: actorEmail, subject: "Your Nutri Greenz admin access", html });
+        sent.push("you");
       } catch {
-        pending.push("email");
+        pending.push("you");
       }
-    } else {
-      pending.push("email");
+    }
+  } else {
+    pending.push("admin");
+    if (action === "reset-password" && actorEmail.toLowerCase() !== admin.email.toLowerCase()) {
+      pending.push("you");
     }
   }
 

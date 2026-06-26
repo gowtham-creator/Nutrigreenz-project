@@ -5,7 +5,7 @@
  */
 import "server-only";
 
-const ITERATIONS = 120_000;
+const ITERATIONS = 210_000;
 const KEY_BYTES = 32;
 const encoder = new TextEncoder();
 

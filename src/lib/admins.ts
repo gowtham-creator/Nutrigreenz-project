@@ -6,6 +6,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { normalizePhone } from "@/lib/admin-allowlist";
 
 export type AdminRole = "admin" | "superadmin";
 export type AdminStatus = "active" | "invited" | "disabled";
@@ -72,6 +73,32 @@ export async function adminEmailExists(email: string): Promise<boolean> {
     .eq("email", norm(email))
     .maybeSingle();
   return Boolean(data);
+}
+
+/** Whether any admin already holds the given normalised E.164 phone. */
+export async function adminPhoneExists(phoneE164: string): Promise<boolean> {
+  const phone = normalizePhone(phoneE164);
+  if (!phone) return false;
+  const { data } = await supabaseAdmin()
+    .from("admins")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/**
+ * Whether an E.164 number is already taken — by an existing DB admin OR by the
+ * env-configured super-admin / staff numbers (which sign in without a DB row).
+ */
+export async function phoneTaken(phoneE164: string): Promise<boolean> {
+  const phone = normalizePhone(phoneE164);
+  if (!phone) return false;
+  const envPhones = [process.env.ADMIN_PHONE, process.env.STAFF_ADMIN_PHONE]
+    .map((p) => (p ? normalizePhone(p) : ""))
+    .filter(Boolean);
+  if (envPhones.includes(phone)) return true;
+  return adminPhoneExists(phone);
 }
 
 /** A single admin by id, or null when it doesn't exist. */
