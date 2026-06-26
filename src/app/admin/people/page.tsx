@@ -1,38 +1,6 @@
+import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
-import { Sparkline, TrendChip, type VizTone } from "@/components/ng/admin/viz";
-
-/* ---- customers ---------------------------------------------------- */
-const CUSTOMERS: {
-  name: string;
-  initial: string;
-  orders: number;
-  ltv: number;
-  segment: string;
-  tier: "Seed" | "Sapling" | "Banyan";
-  community: string;
-  spend: number[];
-}[] = [
-  { name: "Anjali Verma", initial: "A", orders: 28, ltv: 48200, segment: "VIP", tier: "Banyan", community: "Aparna Sarovar Zenith", spend: [1.2, 1.8, 1.5, 2.1, 1.9, 2.4, 2.2] },
-  { name: "Rahul Menon", initial: "R", orders: 19, ltv: 31400, segment: "Repeat", tier: "Sapling", community: "Aparna Sarovar Zenith", spend: [0.9, 1.1, 1.0, 1.4, 1.2, 1.5, 1.3] },
-  { name: "Priya Kapoor", initial: "P", orders: 22, ltv: 38600, segment: "VIP", tier: "Banyan", community: "My Home Avatar", spend: [1.4, 1.2, 1.7, 1.5, 1.9, 1.6, 2.0] },
-  { name: "Karthik Rao", initial: "K", orders: 31, ltv: 52800, segment: "Subscriber", tier: "Banyan", community: "Lodha Bellezza", spend: [1.7, 1.9, 1.8, 2.0, 2.2, 2.1, 2.4] },
-  { name: "Meera Shankar", initial: "M", orders: 12, ltv: 19200, segment: "Repeat", tier: "Sapling", community: "Lodha Bellezza", spend: [0.7, 0.9, 1.1, 0.8, 1.0, 1.2, 1.1] },
-  { name: "Fatima Sheikh", initial: "F", orders: 4, ltv: 4800, segment: "New", tier: "Seed", community: "My Home Avatar", spend: [0.4, 0.6, 0.5, 0.7, 0.6, 0.8, 0.7] },
-];
-
-const SEGMENT_TONE: Record<string, VizTone> = {
-  VIP: "clay",
-  Repeat: "forest",
-  Subscriber: "leaf",
-  New: "blue",
-};
-const PILL_TONE: Record<string, "warn" | "info" | "success" | "neutral"> = {
-  VIP: "warn",
-  Repeat: "info",
-  Subscriber: "success",
-  New: "neutral",
-};
 
 /* ---- team --------------------------------------------------------- */
 const TEAM = [
@@ -88,61 +56,27 @@ export default function AdminPeople() {
         <StatTile label="MFA enrolled (team)" value="100%" trend="up" />
       </div>
 
-      {/* Customers table */}
-      <Card
-        title="Customers"
-        action={
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex gap-1 bg-ng-cream rounded-full p-1">
-              {["All", "VIP", "Repeat", "New"].map((t, i) => (
-                <button
-                  key={t}
-                  className={`px-3 py-1 rounded-full text-[11.5px] transition-colors cursor-pointer ${
-                    i === 0 ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted font-medium hover:text-ng-forest"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <button className="text-[12px] font-semibold text-ng-forest hover:underline cursor-pointer">All →</button>
+      {/* Customers — now a deduped canonical directory, lives on its own page. */}
+      <Card title="Customers" className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="size-12 rounded-2xl bg-ng-sage/50 flex items-center justify-center shrink-0">
+            <Icon name="user-rounded-bold" size={24} className="text-ng-forest" />
           </div>
-        }
-        className="!p-0 overflow-hidden mb-6"
-      >
-        <div className="grid grid-cols-[2fr_0.7fr_1fr_1.6fr_1.1fr_0.9fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
-          <span>Customer</span>
-          <span>Orders</span>
-          <span>LTV</span>
-          <span>Community</span>
-          <span>Segment</span>
-          <span>Trend</span>
-          <span></span>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[15px] text-ng-forest-deep">Deduped customer directory</p>
+            <p className="text-[12.5px] font-medium text-ng-ink-muted mt-0.5 leading-relaxed">
+              One canonical row per real person — Google and phone sign-ins folded into a single
+              customer, with linked providers, mobile, email and saved addresses.
+            </p>
+          </div>
+          <Link
+            href="/admin/customers"
+            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer shrink-0"
+          >
+            Open customers
+            <Icon name="alt-arrow-right-bold" size={14} />
+          </Link>
         </div>
-        <ul>
-          {CUSTOMERS.map((c) => (
-            <li
-              key={c.name}
-              className="grid grid-cols-[2fr_0.7fr_1fr_1.6fr_1.1fr_0.9fr_0.5fr] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-9 rounded-full bg-ng-sage text-ng-forest-deep flex items-center justify-center font-display text-[14px] shrink-0">
-                  {c.initial}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-ng-ink truncate">{c.name}</div>
-                  <div className="text-[11.5px] font-medium text-ng-ink-soft">{c.tier} tier</div>
-                </div>
-              </div>
-              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.orders}</span>
-              <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">₹{c.ltv.toLocaleString("en-IN")}</span>
-              <span className="text-[12px] font-medium text-ng-ink-muted truncate">{c.community}</span>
-              <span><Pill tone={PILL_TONE[c.segment]}>{c.segment}</Pill></span>
-              <Sparkline data={c.spend} tone={SEGMENT_TONE[c.segment]} width={64} height={24} fill={false} />
-              <button className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer">View →</button>
-            </li>
-          ))}
-        </ul>
       </Card>
 
       {/* Team + roles */}
