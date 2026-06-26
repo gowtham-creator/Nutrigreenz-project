@@ -687,7 +687,7 @@ function LoginForm() {
                 placeholder="••••••••"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                prefix={<Icon name="key-minimalistic-bold" size={18} />}
+                prefix={<Icon name="lock-keyhole-minimalistic-linear" size={18} />}
                 suffix={
                   <button
                     type="button"
