@@ -44,8 +44,34 @@ export default function ProfilePage() {
     setEmail(account?.email ?? "");
   }, [account]);
 
+  // Canonical customer profile (name/email/phone from public.customers). A phone
+  // merged in via the link-phone flow lives HERE, not on the Firebase user — so
+  // this is what makes a verified mobile actually show up for a Google session.
+  const [canonical, setCanonical] = useState<{
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!isAuthed) {
+      setCanonical(null);
+      return;
+    }
+    let active = true;
+    fetch("/api/account/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active) setCanonical(d?.customer ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isAuthed, account]);
+
   const phoneIsLogin = account?.method === "phone";
-  const displayPhone = account?.phone ? formatPhone(account.phone) : "Not added yet";
+  const effectivePhone = account?.phone ?? canonical?.phone ?? null;
+  const displayPhone = effectivePhone ? formatPhone(effectivePhone) : "Not added yet";
 
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
     whatsapp: true,
