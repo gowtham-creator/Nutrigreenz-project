@@ -188,34 +188,19 @@ export function LinkPhonePrompt() {
     setBusy(true);
     const e164 = toE164(local);
     try {
-      // Primary path: link the number to the LIVE Google user. This sends the
-      // OTP and (on confirm) attaches the phone to the same Firebase account.
-      const { linkWithPhoneNumber } = await import("firebase/auth");
-      confirmationRef.current = await linkWithPhoneNumber(
-        user,
-        e164,
-        freshVerifier(auth),
-      );
+      // Always verify on a SECONDARY, isolated Firebase app: we only need a
+      // verified phone id token — the server links/merges the canonical customer.
+      // This works whether or not the number already belongs to a prior phone
+      // account, and avoids linkWithPhoneNumber's confirm-time
+      // `credential-already-in-use` (which surfaced as a misleading "code expired"
+      // on the merge path).
+      await sendViaSecondary(e164);
       setStep("otp");
       setOtp("");
     } catch (err) {
-      const code = (err as { code?: string })?.code ?? "";
-      if (code === "auth/credential-already-in-use") {
-        // The number already belongs to a prior PHONE account — the duplicate we
-        // want to merge. Re-verify it on a SECONDARY, isolated app so the primary
-        // Google session is untouched, then send its phone id token to the server.
-        try {
-          await sendViaSecondary(e164);
-          setStep("otp");
-          setOtp("");
-        } catch (secErr) {
-          setError(friendlySendError((secErr as { code?: string })?.code ?? ""));
-        }
-      } else {
-        setError(friendlySendError(code));
-        verifierRef.current?.clear();
-        verifierRef.current = null;
-      }
+      setError(friendlySendError((err as { code?: string })?.code ?? ""));
+      verifierRef.current?.clear();
+      verifierRef.current = null;
     } finally {
       setBusy(false);
     }
@@ -397,18 +382,29 @@ export function LinkPhonePrompt() {
               >
                 {busy ? "Verifying…" : "Verify & link"}
               </Button>
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("phone");
-                  setOtp("");
-                  setError(null);
-                  cleanup();
-                }}
-                className="mx-auto text-[13px] font-medium text-ng-ink-muted hover:text-ng-forest transition-colors"
-              >
-                Change number
-              </button>
+              <div className="mx-auto flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={busy}
+                  className="text-[13px] font-medium text-ng-forest hover:text-ng-leaf transition-colors disabled:opacity-50"
+                >
+                  Resend code
+                </button>
+                <span className="text-ng-ink-muted/40" aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("phone");
+                    setOtp("");
+                    setError(null);
+                    cleanup();
+                  }}
+                  className="text-[13px] font-medium text-ng-ink-muted hover:text-ng-forest transition-colors"
+                >
+                  Change number
+                </button>
+              </div>
             </div>
           )}
         </div>
