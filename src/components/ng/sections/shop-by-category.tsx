@@ -6,11 +6,9 @@ import { Section } from "../section";
 import { ProductCard } from "../product-card";
 import { PRODUCE_ICONS } from "../produce-icons";
 import { Stagger, StaggerItem } from "../motion";
-import { CATEGORIES } from "../data";
-import { PRODUCTS } from "../data";
 import { SLUG_TO_TAGS } from "../shop/types";
 import { cn } from "@/lib/utils";
-import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
+import type { Category, ProductCard as ProductCardType } from "@/types/nutrigreenz";
 
 /** How many products each tab surfaces. */
 const MAX_TILES = 5;
@@ -27,14 +25,24 @@ type TabDef = {
 
 const ALL_TAB: TabDef = { key: "all", label: "All", icon: "leaf", href: "/shop" };
 
-const CATEGORY_TABS: TabDef[] = CATEGORIES.map((cat) => ({
-  key: cat.slug,
-  label: cat.title,
-  icon: (cat.icon as keyof typeof PRODUCE_ICONS) ?? "leaf",
-  href: `/shop/${cat.slug}`,
-}));
-
-const TABS: TabDef[] = [ALL_TAB, ...CATEGORY_TABS];
+/**
+ * A produce glyph per known category slug so the live catalog (whose categories
+ * all carry the same generic icon) still reads colourful and varied. Falls back
+ * to the category's own icon, then a leaf.
+ */
+const SLUG_ICONS: Record<string, keyof typeof PRODUCE_ICONS> = {
+  oils: "oil",
+  ghee: "ghee",
+  honey: "honey",
+  rice: "grain",
+  millets: "grain",
+  spices: "spice",
+  superfoods: "seedling",
+  pulses: "nuts",
+  flours: "flour",
+  fruits: "fruit",
+  gifting: "gift",
+};
 
 /**
  * Per-category accent colour so the row reads colourful and varied instead of
@@ -47,6 +55,7 @@ const CAT_COLORS: Record<string, { tint: string; ring: string }> = {
   oils: { tint: "text-ng-amber", ring: "bg-ng-amber/15" },
   ghee: { tint: "text-ng-clay-deep", ring: "bg-ng-clay/20" },
   honey: { tint: "text-ng-clay", ring: "bg-ng-clay/15" },
+  rice: { tint: "text-ng-clay-deep", ring: "bg-ng-clay-deep/12" },
   millets: { tint: "text-ng-soil", ring: "bg-ng-soil/12" },
   spices: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/15" },
   superfoods: { tint: "text-ng-green-bright", ring: "bg-ng-green-bright/15" },
@@ -56,31 +65,57 @@ const CAT_COLORS: Record<string, { tint: string; ring: string }> = {
   gifting: { tint: "text-ng-forest", ring: "bg-ng-forest/12" },
 };
 
-/** Bestsellers first (badge "Best seller"), then fill by rating. */
-function bestsellers(): ProductCardType[] {
-  const flagged = PRODUCTS.filter((p) => p.badge === "Best seller");
-  const flaggedIds = new Set(flagged.map((p) => p.id));
-  const rest = PRODUCTS.filter((p) => !flaggedIds.has(p.id)).sort(
-    (a, b) => b.rating - a.rating || (b.reviewCount ?? 0) - (a.reviewCount ?? 0),
+/** Highest-rated products first — the live mapper sets no "Best seller" badge. */
+function bestsellers(products: ProductCardType[]): ProductCardType[] {
+  return [...products]
+    .sort((a, b) => b.rating - a.rating || (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
+    .slice(0, MAX_TILES);
+}
+
+/**
+ * Products for a category slug, capped to MAX_TILES. The live catalog stamps the
+ * category SLUG into each product's `tags`; the bundled sample uses the singular
+ * demo tag (via SLUG_TO_TAGS). Match either so the tab is populated in both modes.
+ */
+function productsForSlug(products: ProductCardType[], slug: string): ProductCardType[] {
+  const extra = SLUG_TO_TAGS[slug] ?? [];
+  return products
+    .filter((p) => p.tags?.some((t) => t === slug || extra.includes(t)))
+    .slice(0, MAX_TILES);
+}
+
+interface Props {
+  /** Real categories that have ≥1 active product (empty ones are pre-filtered). */
+  categories: Category[];
+  /** The product pool the tabs surface, in storefront ProductCard shape. */
+  products: ProductCardType[];
+  className?: string;
+}
+
+export function ShopByCategory({ categories, products, className }: Props) {
+  // Tabs come straight from the catalog's real categories, so the home page,
+  // /shop and the PDP breadcrumbs all reference the same set of slugs.
+  const tabs = useMemo<TabDef[]>(
+    () => [
+      ALL_TAB,
+      ...categories.map((cat) => ({
+        key: cat.slug,
+        label: cat.title,
+        icon: SLUG_ICONS[cat.slug] ?? (cat.icon as keyof typeof PRODUCE_ICONS) ?? "leaf",
+        href: `/shop/${cat.slug}`,
+      })),
+    ],
+    [categories],
   );
-  return [...flagged, ...rest].slice(0, MAX_TILES);
-}
 
-/** Products for a category slug, mapped via SLUG_TO_TAGS, capped to MAX_TILES. */
-function productsForSlug(slug: string): ProductCardType[] {
-  const tags = SLUG_TO_TAGS[slug] ?? [];
-  return PRODUCTS.filter((p) => p.tags?.some((t) => tags.includes(t))).slice(0, MAX_TILES);
-}
-
-export function ShopByCategory({ className }: { className?: string }) {
   const [active, setActive] = useState<string>("all");
 
-  const products = useMemo<ProductCardType[]>(
-    () => (active === "all" ? bestsellers() : productsForSlug(active)),
-    [active],
+  const shown = useMemo<ProductCardType[]>(
+    () => (active === "all" ? bestsellers(products) : productsForSlug(products, active)),
+    [active, products],
   );
 
-  const activeTab = TABS.find((t) => t.key === active) ?? ALL_TAB;
+  const activeTab = tabs.find((t) => t.key === active) ?? ALL_TAB;
   const viewAllLabel = active === "all" ? "View all products" : `View all ${activeTab.label}`;
 
   return (
@@ -101,7 +136,7 @@ export function ShopByCategory({ className }: { className?: string }) {
           aria-label="Shop by category"
           className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 md:flex-wrap md:justify-center md:overflow-visible"
         >
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = PRODUCE_ICONS[tab.icon] ?? PRODUCE_ICONS.leaf;
             const isActive = tab.key === active;
             const color = CAT_COLORS[tab.key] ?? CAT_COLORS.all;
@@ -144,7 +179,7 @@ export function ShopByCategory({ className }: { className?: string }) {
         key={active}
         className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5 [&>*:nth-child(5)]:hidden sm:[&>*:nth-child(5)]:block"
       >
-        {products.map((p) => (
+        {shown.map((p) => (
           <StaggerItem key={p.id} className="h-full">
             <ProductCard product={p} className="h-full" />
           </StaggerItem>

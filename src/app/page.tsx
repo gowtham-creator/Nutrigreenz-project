@@ -11,57 +11,63 @@ import { Farms } from "@/components/ng/sections/farms";
 import { Testimonials } from "@/components/ng/sections/testimonials";
 import { Journal } from "@/components/ng/sections/journal";
 import { CommunityCTA } from "@/components/ng/sections/community-cta";
-import { PRODUCTS } from "@/components/ng/data";
+import { getStorefrontCatalog } from "@/lib/storefront-catalog";
+import type { ProductCard } from "@/types/nutrigreenz";
 
-/** Tag helper for building each section's product pool (runs on the server). */
+// Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
+// stock, new SKUs, status) appear on the home page without a redeploy — the same
+// ISR window the shop + product pages use, so home → shop → PDP stay consistent.
+export const revalidate = 60;
+
+/**
+ * Tag helper for building each section's product pool. The live catalog stamps a
+ * product's category SLUG into `tags` (e.g. `oils`), while the bundled offline
+ * sample uses the singular demo tag (`oil`); pass both so each rail is populated
+ * against the real catalog AND the resilience fallback.
+ */
 const hasTag =
   (...tags: string[]) =>
-  (p: (typeof PRODUCTS)[number]) =>
+  (p: ProductCard) =>
     p.tags?.some((t) => tags.includes(t)) ?? false;
 
-export default function Home() {
-  // ── OILS ──────────────────────────────────────────────────────────────
+export default async function Home() {
+  // Single source of truth for every catalog-backed home section. Falls back to
+  // the bundled sample when Supabase is unconfigured/empty, so it's never blank.
+  const { products, categories } = await getStorefrontCatalog();
+
+  // ── OILS (Cold-Pressed Oils) ──────────────────────────────────────────
   // Sub-tab `filter`s are serializable descriptors (no functions) so they can
   // cross the Server → Client boundary into <ProductInFocus>.
-  const oils = PRODUCTS.filter(hasTag("oil"));
+  const oils = products.filter(hasTag("oils", "oil"));
   const oilTabs: FocusSubTab[] = [
     { label: "All oils", icon: "oil", filter: { type: "all" } },
     { label: "Groundnut", icon: "seedling", filter: { type: "titleHas", keywords: ["groundnut"] } },
-    { label: "Sunflower", icon: "leaf", filter: { type: "titleHas", keywords: ["sunflower"] } },
-    { label: "Coconut", icon: "fruit", filter: { type: "titleHas", keywords: ["coconut"] } },
     { label: "Sesame", icon: "grain", filter: { type: "titleHas", keywords: ["sesame"] } },
+    { label: "Safflower", icon: "leaf", filter: { type: "titleHas", keywords: ["safflower"] } },
+    { label: "Olive", icon: "fruit", filter: { type: "titleHas", keywords: ["olive"] } },
     { label: "Mustard", icon: "spice", filter: { type: "titleHas", keywords: ["mustard"] } },
+    { label: "Coconut", icon: "fruit", filter: { type: "titleHas", keywords: ["coconut"] } },
   ];
 
-  // ── A2 GHEE ───────────────────────────────────────────────────────────
-  const ghee = PRODUCTS.filter(hasTag("ghee"));
-  const gheeTabs: FocusSubTab[] = [
-    { label: "All ghee", icon: "ghee", filter: { type: "all" } },
-    { label: "Gir cow", icon: "milk", filter: { type: "titleHas", keywords: ["gir"] } },
-    { label: "Desi cow", icon: "milk", filter: { type: "titleHas", keywords: ["desi", "sahiwal"] } },
-    { label: "Buffalo", icon: "milk", filter: { type: "titleHas", keywords: ["buffalo"] } },
-    { label: "Cultured", icon: "ghee", filter: { type: "titleHas", keywords: ["cultured", "vedic", "bilona"] } },
-  ];
+  // ── GHEE ──────────────────────────────────────────────────────────────
+  const ghee = products.filter(hasTag("ghee"));
+  const gheeTabs: FocusSubTab[] = [{ label: "All ghee", icon: "ghee", filter: { type: "all" } }];
 
-  // ── HONEY & SUPERFOODS ────────────────────────────────────────────────
-  const honeySuperfoods = PRODUCTS.filter(hasTag("honey", "superfood"));
-  const honeyTabs: FocusSubTab[] = [
+  // ── HONEY ─────────────────────────────────────────────────────────────
+  const honey = products.filter(hasTag("honey"));
+  const honeyTabs: FocusSubTab[] = [{ label: "All honey", icon: "honey", filter: { type: "all" } }];
+
+  // ── COMMUNITY FAVOURITES ──────────────────────────────────────────────
+  // The real catalog has no "gifting"/"superfood" category, so this rail is the
+  // highest-rated picks across the whole pantry — always populated, never demo.
+  const favourites = [...products]
+    .sort((a, b) => b.rating - a.rating || (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
+    .slice(0, 10);
+  const favouriteTabs: FocusSubTab[] = [
     { label: "All", icon: "leaf", filter: { type: "all" } },
+    { label: "Oils", icon: "oil", filter: { type: "tag", tags: ["oils", "oil"] } },
+    { label: "Ghee", icon: "ghee", filter: { type: "tag", tags: ["ghee"] } },
     { label: "Honey", icon: "honey", filter: { type: "tag", tags: ["honey"] } },
-    { label: "Superfoods", icon: "seedling", filter: { type: "tag", tags: ["superfood"] } },
-  ];
-
-  // ── GIFTING & COMBOS ──────────────────────────────────────────────────
-  // Gifting hampers first, topped up with the highest-rated bestsellers.
-  const gifting = PRODUCTS.filter(hasTag("gifting"));
-  const giftingIds = new Set(gifting.map((p) => p.id));
-  const topPicks = PRODUCTS.filter((p) => !giftingIds.has(p.id)).sort((a, b) => b.rating - a.rating);
-  const giftingAndBest = [...gifting, ...topPicks].slice(0, 10);
-  const giftingTabs: FocusSubTab[] = [
-    { label: "All", icon: "gift", filter: { type: "all" } },
-    { label: "Hampers", icon: "gift", filter: { type: "titleHas", keywords: ["hamper", "sampler"] } },
-    { label: "Wellness boxes", icon: "leaf", filter: { type: "titleHas", keywords: ["box", "wellness"] } },
-    { label: "Bestsellers", icon: "seedling", filter: { type: "bestseller", minRating: 4.7 } },
   ];
 
   return (
@@ -70,75 +76,87 @@ export default function Home() {
       <Header />
       <Hero />
       <AssuranceStrip />
-      <ShopByCategory className="section-glow-leaf overflow-hidden pt-14 md:pt-20" />
+      <ShopByCategory
+        className="section-glow-leaf overflow-hidden pt-14 md:pt-20"
+        categories={categories}
+        products={products}
+      />
 
       <Why />
-      <ProductInFocus
-        sectionId="pif-oils"
-        accent="amber"
-        eyebrow="Product in focus"
-        heading={
-          <>
-            Explore our <em className="italic text-ng-leaf">cold-pressed oils</em>
-          </>
-        }
-        description="Single-origin, pressed within seven days of dispatch. Always glass, never plastic — pick your press."
-        products={oils}
-        subTabs={oilTabs}
-        ctaHref="/shop/oils"
-        ctaLabel="See all oils"
-      />
+      {oils.length > 0 && (
+        <ProductInFocus
+          sectionId="pif-oils"
+          accent="amber"
+          eyebrow="Product in focus"
+          heading={
+            <>
+              Explore our <em className="italic text-ng-leaf">cold-pressed oils</em>
+            </>
+          }
+          description="Single-origin, pressed within seven days of dispatch. Always glass, never plastic — pick your press."
+          products={oils}
+          subTabs={oilTabs}
+          ctaHref="/shop/oils"
+          ctaLabel="See all oils"
+        />
+      )}
 
       <Traceability />
-      <ProductInFocus
-        sectionId="pif-ghee"
-        accent="gold"
-        eyebrow="Product in focus"
-        heading={
-          <>
-            Explore our <em className="italic text-ng-leaf">A2 ghee</em>
-          </>
-        }
-        description="Bilona-churned the same day the milk is collected, from named desi cows — never bulk-boiled, never blended."
-        products={ghee}
-        subTabs={gheeTabs}
-        ctaHref="/shop/ghee"
-        ctaLabel="See all ghee"
-      />
+      {ghee.length > 0 && (
+        <ProductInFocus
+          sectionId="pif-ghee"
+          accent="gold"
+          eyebrow="Product in focus"
+          heading={
+            <>
+              Explore our <em className="italic text-ng-leaf">A2 ghee</em>
+            </>
+          }
+          description="Bilona-churned the same day the milk is collected, from named desi cows — never bulk-boiled, never blended."
+          products={ghee}
+          subTabs={gheeTabs}
+          ctaHref="/shop/ghee"
+          ctaLabel="See all ghee"
+        />
+      )}
 
       <Farms />
-      <ProductInFocus
-        sectionId="pif-honey"
-        accent="honey"
-        eyebrow="Product in focus"
-        heading={
-          <>
-            Honey &amp; <em className="italic text-ng-leaf">superfoods</em>
-          </>
-        }
-        description="Forest honey harvested without smoke and sun-dried superfoods — every lot is lab-tested for purity."
-        products={honeySuperfoods}
-        subTabs={honeyTabs}
-        ctaHref="/shop/honey"
-        ctaLabel="See all honey & superfoods"
-      />
+      {honey.length > 0 && (
+        <ProductInFocus
+          sectionId="pif-honey"
+          accent="honey"
+          eyebrow="Product in focus"
+          heading={
+            <>
+              Pure, raw <em className="italic text-ng-leaf">honey</em>
+            </>
+          }
+          description="Forest honey harvested without smoke and never heated — every lot lab-tested for purity."
+          products={honey}
+          subTabs={honeyTabs}
+          ctaHref="/shop/honey"
+          ctaLabel="See all honey"
+        />
+      )}
 
       <Testimonials />
-      <ProductInFocus
-        sectionId="pif-gifting"
-        accent="forest"
-        eyebrow="Product in focus"
-        heading={
-          <>
-            Gifting &amp; <em className="italic text-ng-leaf">combos</em>
-          </>
-        }
-        description="Hand-packed gift boxes and the crowd-favourites our community reorders most — ready to gift or keep."
-        products={giftingAndBest}
-        subTabs={giftingTabs}
-        ctaHref="/shop/gifting"
-        ctaLabel="See all gifting"
-      />
+      {favourites.length > 0 && (
+        <ProductInFocus
+          sectionId="pif-favourites"
+          accent="forest"
+          eyebrow="Loved by the community"
+          heading={
+            <>
+              Community <em className="italic text-ng-leaf">favourites</em>
+            </>
+          }
+          description="The single-origin staples our community reorders most — pantry essentials, ready to ship."
+          products={favourites}
+          subTabs={favouriteTabs}
+          ctaHref="/shop"
+          ctaLabel="Shop the full pantry"
+        />
+      )}
 
       <Journal />
       <CommunityCTA />
