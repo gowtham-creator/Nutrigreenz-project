@@ -68,7 +68,7 @@ export function CommunityCTA() {
               <Input label="Email" type="email" placeholder="your@email.com" />
               <Input
                 label="Favourite category (optional)"
-                placeholder="Cold-pressed oils, ghee, millets…"
+                placeholder="Cold-pressed oils, ghee, honey…"
                 hint="We'll tailor the letter to what you cook with most."
               />
               <div className="pt-2">

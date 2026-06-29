@@ -16,12 +16,9 @@ const NAV_GROUPS = [
     title: "Shop",
     links: [
       { label: "All produce", href: "/shop" },
-      { label: "Cold-pressed oils", href: "/shop/oils" },
-      { label: "A2 Ghee", href: "/shop/ghee" },
-      { label: "Honey & sweeteners", href: "/shop/honey" },
-      { label: "Millets & grains", href: "/shop/millets" },
-      { label: "Superfoods", href: "/shop/superfoods" },
-      { label: "Gifting hampers", href: "/shop/gifting" },
+      { label: "Cold-Pressed Oils", href: "/shop/oils" },
+      { label: "Ghee", href: "/shop/ghee" },
+      { label: "Honey", href: "/shop/honey" },
     ],
   },
   {
