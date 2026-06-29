@@ -137,6 +137,7 @@ export default function AdminInventory() {
         stock: Math.max(0, Math.round(Number(draft.stock) || 0)),
         status: draft.status,
         description: draft.description.trim() || null,
+        imageUrl: draft.imageUrl.trim() || null,
       };
       try {
         if (editing) {
