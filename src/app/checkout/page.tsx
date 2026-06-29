@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { useCommerceRules } from "@/lib/commerce";
 import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
+import { fetchServiceable } from "@/lib/serviceability";
 import { COUPONS, LOYALTY_LEDGER } from "@/components/ng/data";
 import type { Coupon } from "@/types/nutrigreenz";
 import { FloatIn, MagneticHover, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
@@ -98,6 +99,8 @@ export default function CheckoutPage() {
   // without an extra click; the shopper can still untick to opt out.
   const [acknowledged, setAcknowledged] = useState(true);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // Serviceability of the selected delivery pincode (null = not yet checked).
+  const [serviceable, setServiceable] = useState<boolean | null>(null);
 
   // Gate: require sign-in BEFORE checkout. If auth has settled and the visitor
   // isn't signed in, bounce them to /auth and bring them right back here.
@@ -136,6 +139,24 @@ export default function CheckoutPage() {
   const selectedSlot =
     rules.deliverySlots.find((s) => s.id === resolvedSlotId) ?? null;
 
+  // Check the selected address's pincode against the live serviceable-areas list.
+  const selectedPincode = selectedAddress?.pincode ?? null;
+  useEffect(() => {
+    if (!selectedPincode) {
+      setServiceable(null);
+      return;
+    }
+    let cancelled = false;
+    setServiceable(null);
+    fetchServiceable(selectedPincode).then((ok) => {
+      if (!cancelled) setServiceable(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPincode]);
+  const notServiceable = serviceable === false;
+
   const couponDiscount = applied?.discount ?? 0;
   // Loyalty redemption uses the Super-Admin-configured ratio + limits.
   const meetsMinRedeem = loyaltyAvailable >= loyalty.minRedeemPoints;
@@ -172,7 +193,8 @@ export default function CheckoutPage() {
     !!selectedSlot &&
     !!payment &&
     acknowledged &&
-    !belowMinimum;
+    !belowMinimum &&
+    !notServiceable;
 
   function handlePlaceOrder() {
     if (!canPlace || !selectedAddress || !selectedSlot || !payment) {
@@ -180,6 +202,8 @@ export default function CheckoutPage() {
         toast.error(`Minimum order value is ${INR(rules.minOrderValue)}.`);
       } else if (!selectedAddress) {
         toast.error("Please select a delivery address.");
+      } else if (notServiceable) {
+        toast.error(`We don't deliver to ${selectedAddress.pincode} yet.`);
       } else if (!payment) {
         toast.error("Please choose a payment method.");
       } else if (!acknowledged) {
@@ -199,6 +223,7 @@ export default function CheckoutPage() {
       loyaltyPoints: loyaltyPointsUsed,
       loyaltyDiscount,
       shipping: totals.shipping,
+      tax: totals.tax,
       total: totals.total,
       taxInclusive: totals.taxInclusive,
       payment,
@@ -321,6 +346,21 @@ export default function CheckoutPage() {
               </StaggerItem>
             ) : null}
 
+            {notServiceable && selectedAddress ? (
+              <StaggerItem>
+                <div className="flex items-center gap-3 rounded-2xl border border-ng-danger/40 bg-ng-danger/10 p-4 text-[14px] text-ng-danger">
+                  <Icon name="map-point-bold" size={20} />
+                  <span>
+                    We don&apos;t deliver to{" "}
+                    <span className="font-semibold tabular-nums">
+                      {selectedAddress.pincode}
+                    </span>{" "}
+                    yet. Pick a different delivery address to continue.
+                  </span>
+                </div>
+              </StaggerItem>
+            ) : null}
+
             <StaggerItem>
               <AddressPicker
                 addresses={addresses}
@@ -415,6 +455,10 @@ export default function CheckoutPage() {
               {!isAuthed ? (
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
                   Sign in or create an account to complete your purchase.
+                </p>
+              ) : notServiceable && selectedAddress ? (
+                <p className="mt-3 text-center text-[12px] text-ng-danger">
+                  We don&apos;t deliver to {selectedAddress.pincode} yet.
                 </p>
               ) : !acknowledged ? (
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">

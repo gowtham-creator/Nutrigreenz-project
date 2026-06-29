@@ -92,6 +92,40 @@ export function validateCoupon(
   return { ok: true, coupon, discount };
 }
 
+/**
+ * Delivery fee for a given subtotal, honouring the live commerce rules:
+ * - "zero" shipping type → always free
+ * - at/above the free-delivery threshold → free
+ * - "slab" → the fee of the first slab whose `upto` ≥ subtotal (else the flat fee)
+ * - otherwise → the flat fee
+ */
+export function computeShipping(subtotal: number, rules: CommerceRules): number {
+  if (rules.shippingType === "zero") return 0;
+  if (subtotal >= rules.freeDeliveryThreshold) return 0;
+
+  if (rules.shippingType === "slab" && rules.shippingSlabs && rules.shippingSlabs.length > 0) {
+    const slabs = [...rules.shippingSlabs].sort((a, b) => a.upto - b.upto);
+    for (const slab of slabs) {
+      if (subtotal <= slab.upto) return Math.max(0, Math.round(slab.fee));
+    }
+    // Above every configured slab — fall back to the flat fee.
+    return Math.max(0, Math.round(rules.shippingFlat));
+  }
+
+  return Math.max(0, Math.round(rules.shippingFlat));
+}
+
+/**
+ * Tax added on top of the taxable base. Only "exclusive" tax mode adds a line;
+ * "inclusive" pricing already bakes tax into the displayed prices (returns 0).
+ */
+export function computeTax(taxableBase: number, rules: CommerceRules): number {
+  if (rules.taxMode !== "exclusive") return 0;
+  const bps = rules.taxRateBps ?? 0;
+  if (bps <= 0) return 0;
+  return Math.round((Math.max(0, taxableBase) * bps) / 10000);
+}
+
 export interface OrderTotals {
   subtotal: number;
   couponDiscount: number;
@@ -99,13 +133,18 @@ export interface OrderTotals {
   shipping: number;
   /** Free shipping threshold from commerce rules. */
   freeDeliveryThreshold: number;
+  /** Tax added on top (₹) — 0 when prices are tax-inclusive. */
+  tax: number;
+  /** Tax rate in basis points (for the tax-line label). */
+  taxRateBps: number;
   total: number;
   taxInclusive: boolean;
 }
 
 /**
  * Compute the order total. Coupon + loyalty are subtracted from the subtotal;
- * shipping is free at/above the free-delivery threshold, else the flat fee.
+ * shipping follows the commerce rule (flat/slab/zero, free above the threshold);
+ * exclusive tax is added on the discounted goods.
  */
 export function computeTotals(args: {
   subtotal: number;
@@ -114,16 +153,18 @@ export function computeTotals(args: {
   rules: CommerceRules;
 }): OrderTotals {
   const { subtotal, couponDiscount, loyaltyDiscount, rules } = args;
-  const shipping =
-    subtotal >= rules.freeDeliveryThreshold ? 0 : rules.shippingFlat;
+  const shipping = computeShipping(subtotal, rules);
   const discounted = Math.max(0, subtotal - couponDiscount - loyaltyDiscount);
-  const total = discounted + shipping;
+  const tax = computeTax(discounted, rules);
+  const total = discounted + shipping + tax;
   return {
     subtotal,
     couponDiscount,
     loyaltyDiscount,
     shipping,
     freeDeliveryThreshold: rules.freeDeliveryThreshold,
+    tax,
+    taxRateBps: rules.taxMode === "exclusive" ? rules.taxRateBps ?? 0 : 0,
     total,
     taxInclusive: rules.taxMode === "inclusive",
   };

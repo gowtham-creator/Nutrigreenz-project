@@ -30,7 +30,11 @@ export function SlotPicker({
       <div className="grid items-stretch gap-3 sm:grid-cols-3">
         {slots.map((slot) => {
           const selected = slot.id === selectedId;
-          const [name, time] = slot.label.split(" · ");
+          // Live-config slots carry a separate `windowText`; legacy slots fold the
+          // window into the label as "Name · Window".
+          const [labelName, labelTime] = slot.label.split(" · ");
+          const name = slot.windowText ? slot.label : labelName;
+          const time = slot.windowText ?? labelTime;
           return (
             <button
               key={slot.id}
@@ -57,10 +61,12 @@ export function SlotPicker({
                   {time}
                 </div>
               ) : null}
-              <div className="mt-2 text-[11px] uppercase tracking-wider text-ng-ink-soft">
-                Order by{" "}
-                <span className="font-mono tabular-nums normal-case">{slot.cutoff}</span>
-              </div>
+              {slot.cutoff ? (
+                <div className="mt-2 text-[11px] uppercase tracking-wider text-ng-ink-soft">
+                  Order by{" "}
+                  <span className="font-mono tabular-nums normal-case">{slot.cutoff}</span>
+                </div>
+              ) : null}
             </button>
           );
         })}

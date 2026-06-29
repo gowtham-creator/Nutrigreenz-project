@@ -205,6 +205,8 @@ function SuccessContent() {
                   loyaltyDiscount: receipt.loyaltyDiscount,
                   shipping: receipt.shipping,
                   freeDeliveryThreshold: 599,
+                  tax: receipt.tax ?? 0,
+                  taxRateBps: 0,
                   total: receipt.total,
                   taxInclusive: receipt.taxInclusive,
                 }}

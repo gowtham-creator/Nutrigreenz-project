@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { MagneticHover } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useCommerceRules } from "@/lib/commerce";
+import { computeShipping, computeTax } from "@/components/ng/checkout/order-math";
 import { useAuth } from "@/lib/auth";
 
 /**
@@ -16,7 +17,8 @@ import { useAuth } from "@/lib/auth";
  */
 export function OrderSummary() {
   const { subtotal } = useCart();
-  const { minOrderValue, freeDeliveryThreshold, shippingFlat, taxMode } = useCommerceRules();
+  const rules = useCommerceRules();
+  const { minOrderValue, freeDeliveryThreshold, taxMode } = rules;
   const { isAuthed } = useAuth();
   // Pre-acknowledged by default (client request); shopper can still untick it.
   const [acknowledged, setAcknowledged] = useState(true);
@@ -26,8 +28,11 @@ export function OrderSummary() {
   const checkoutHref = isAuthed ? "/checkout" : "/auth?next=/checkout";
 
   const qualifiesFreeDelivery = subtotal >= freeDeliveryThreshold;
-  const shipping = qualifiesFreeDelivery ? 0 : shippingFlat;
-  const total = subtotal + shipping;
+  // Honour the live shipping rule (flat / slab / zero) from the Super-Admin config.
+  const shipping = computeShipping(subtotal, rules);
+  // Cart has no coupon/loyalty yet, so the taxable base is the subtotal.
+  const tax = computeTax(subtotal, rules);
+  const total = subtotal + shipping + tax;
 
   const amountToFreeDelivery = Math.max(0, freeDeliveryThreshold - subtotal);
   const freeDeliveryProgress = Math.min(100, (subtotal / freeDeliveryThreshold) * 100);
@@ -104,9 +109,15 @@ export function OrderSummary() {
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-ng-ink-muted">Tax</dt>
-              <dd className="text-[13px] text-ng-ink-soft">
-                {taxMode === "inclusive" ? "incl. GST" : "added at checkout"}
-              </dd>
+              {taxMode === "inclusive" ? (
+                <dd className="text-[13px] text-ng-ink-soft">incl. GST</dd>
+              ) : tax > 0 ? (
+                <dd className="font-mono font-medium tabular-nums text-ng-ink">
+                  ₹{tax.toLocaleString("en-IN")}
+                </dd>
+              ) : (
+                <dd className="text-[13px] text-ng-ink-soft">added at checkout</dd>
+              )}
             </div>
           </dl>
 
@@ -206,7 +217,10 @@ export function OrderSummary() {
             {[
               { icon: "lock-keyhole-minimalistic-bold", label: "Secure payment" },
               { icon: "qr-code-bold", label: "Lot-traceable" },
-              { icon: "delivery-bold", label: "Free over ₹599" },
+              {
+                icon: "delivery-bold",
+                label: `Free over ₹${freeDeliveryThreshold.toLocaleString("en-IN")}`,
+              },
             ].map((r) => (
               <li key={r.label} className="flex flex-col items-center gap-1.5">
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-sage/40 text-ng-forest">

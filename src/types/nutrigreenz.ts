@@ -191,12 +191,25 @@ export interface CartItem extends OrderItem {
 export interface DeliverySlot {
   id: string;
   label: string; // e.g. "Morning · 7–10 AM"
-  cutoff: string; // order-by time, e.g. "22:00" (prev day) or ISO
+  cutoff: string; // order-by time, e.g. "22:00" (prev day) or ISO — may be "" for live config slots
+  /** Optional time-window text (e.g. "7–10 AM") supplied by the live config. */
+  windowText?: string;
+}
+
+/** How delivery is charged below the free-delivery threshold. */
+export type ShippingType = "flat" | "slab" | "zero";
+
+/** A progressive shipping slab: subtotal up to `upto` (₹) costs `fee` (₹). */
+export interface ShippingSlab {
+  upto: number;
+  fee: number;
 }
 
 /**
- * Storefront commerce configuration. Mocked in the front-end now; a Super Admin
- * edits these values from the admin portal later.
+ * Storefront commerce configuration. The live values are owned by the Super
+ * Admin (Supabase `commerce_rules`) and read by the storefront via the public
+ * `/api/commerce-rules` endpoint. Monetary fields here are whole rupees (the
+ * server stores paise and the client store converts at the edge).
  */
 export interface CommerceRules {
   /** Minimum cart subtotal (₹) required to place an order. */
@@ -208,6 +221,14 @@ export interface CommerceRules {
   /** Whether displayed prices already include tax. */
   taxMode: "inclusive" | "exclusive";
   deliverySlots: DeliverySlot[];
+  /** How shipping is charged (live config). Defaults to "flat" when absent. */
+  shippingType?: ShippingType;
+  /** Progressive shipping slabs (₹) — used when `shippingType` is "slab". */
+  shippingSlabs?: ShippingSlab[];
+  /** Tax rate in basis points (e.g. 500 = 5%). Applied when `taxMode` is "exclusive". */
+  taxRateBps?: number;
+  /** ISO currency code (e.g. "INR"). */
+  currency?: string;
 }
 
 /** A discount code redeemable at checkout. */

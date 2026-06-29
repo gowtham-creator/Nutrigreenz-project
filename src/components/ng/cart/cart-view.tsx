@@ -5,19 +5,21 @@ import { Section } from "@/components/ng/section";
 import { Icon } from "@/components/ui/icon";
 import { Stagger, StaggerItem } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
+import { useCommerceRules } from "@/lib/commerce";
 import { CartLineItem } from "./cart-line-item";
 import { CartEmpty } from "./cart-empty";
 import { OrderSummary } from "./order-summary";
 
-const TRUST: { icon: string; label: string }[] = [
-  { icon: "lock-keyhole-minimalistic-bold", label: "Secure payment" },
-  { icon: "qr-code-bold", label: "Lot-traceable" },
-  { icon: "delivery-bold", label: "Free delivery over ₹599" },
-];
-
 /** Cart page body — empty state, or line items + order summary. */
 export function CartView() {
   const { items, count } = useCart();
+  const { freeDeliveryThreshold } = useCommerceRules();
+  const freeDeliveryLabel = `₹${freeDeliveryThreshold.toLocaleString("en-IN")}`;
+  const trust: { icon: string; label: string }[] = [
+    { icon: "lock-keyhole-minimalistic-bold", label: "Secure payment" },
+    { icon: "qr-code-bold", label: "Lot-traceable" },
+    { icon: "delivery-bold", label: `Free delivery over ${freeDeliveryLabel}` },
+  ];
 
   if (items.length === 0) {
     return (
@@ -45,7 +47,7 @@ export function CartView() {
           </em>
         </>
       }
-      description="Review your items, then proceed to checkout. Free delivery above ₹599."
+      description={`Review your items, then proceed to checkout. Free delivery above ${freeDeliveryLabel}.`}
     >
       <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
         <div className="space-y-5">
@@ -60,7 +62,7 @@ export function CartView() {
           {/* Trust strip + keep-shopping link */}
           <div className="flex flex-col gap-4 rounded-2xl border border-ng-line-soft bg-ng-cream/40 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {TRUST.map((t) => (
+              {trust.map((t) => (
                 <li
                   key={t.label}
                   className="inline-flex items-center gap-2 text-[12.5px] font-medium text-ng-forest"

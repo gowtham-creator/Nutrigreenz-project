@@ -17,6 +17,8 @@ export interface OrderReceipt {
   loyaltyPoints: number;
   loyaltyDiscount: number;
   shipping: number;
+  /** Tax added on top (₹) — 0/absent when prices are tax-inclusive. */
+  tax?: number;
   total: number;
   taxInclusive: boolean;
   payment: PaymentSelection;

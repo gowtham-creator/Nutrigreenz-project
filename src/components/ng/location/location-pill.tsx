@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { useLocation } from "@/lib/location";
+import { fetchServiceable } from "@/lib/serviceability";
 import { cn } from "@/lib/utils";
 import { ChangeLocationSheet } from "./change-location-sheet";
 
@@ -18,13 +19,32 @@ interface LocationPillProps {
  * a saved zone isn't currently serviceable.
  */
 export function LocationPill({ className, variant = "pill" }: LocationPillProps) {
-  const { zone, isServiceable } = useLocation();
+  const { zone } = useLocation();
   const [open, setOpen] = useState(false);
+  // Live serviceability of the active zone, checked against the Super-Admin
+  // serviceable-areas list via the public API. `null` = not yet checked.
+  const [liveServiceable, setLiveServiceable] = useState<boolean | null>(null);
+
+  const zonePincode = zone?.pincode ?? "";
+  useEffect(() => {
+    if (!/^\d{6}$/.test(zonePincode)) {
+      setLiveServiceable(null);
+      return;
+    }
+    let cancelled = false;
+    fetchServiceable(zonePincode).then((ok) => {
+      if (!cancelled) setLiveServiceable(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [zonePincode]);
 
   const hasZone = zone !== null;
-  // Only flag "not serviceable" when we have a complete pincode that isn't covered;
-  // a detected area without a postcode just shows the area name.
-  const serviceable = !hasZone || !zone.pincode || isServiceable(zone.pincode);
+  // Only flag "not serviceable" when we have a complete pincode that the live list
+  // doesn't cover; a detected area without a postcode just shows the area name.
+  // Defaults to serviceable while the check is in flight (fail-open).
+  const serviceable = !hasZone || !zone.pincode || (liveServiceable ?? true);
   const label = hasZone
     ? zone.pincode
       ? `${zone.area}, ${zone.pincode}`

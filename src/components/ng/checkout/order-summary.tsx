@@ -103,6 +103,16 @@ export function OrderSummary({
           label="Shipping"
           value={totals.shipping === 0 ? "Free" : INR(totals.shipping)}
         />
+        {!totals.taxInclusive && totals.tax > 0 ? (
+          <SummaryRow
+            label={
+              totals.taxRateBps > 0
+                ? `Tax (${(totals.taxRateBps / 100).toLocaleString("en-IN")}%)`
+                : "Tax"
+            }
+            value={INR(totals.tax)}
+          />
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-baseline justify-between border-t border-ng-line-soft pt-4">
