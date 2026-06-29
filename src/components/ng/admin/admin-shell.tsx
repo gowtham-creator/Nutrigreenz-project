@@ -15,12 +15,12 @@ const NAV: NavItem[] = [
   { href: "/admin/catalog", label: "Catalog", icon: "bag-4-bold" },
   { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold" },
   { href: "/admin/inventory", label: "Inventory", icon: "box-minimalistic-bold" },
-  { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold" },
+  { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", superadminOnly: true },
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
   { href: "/admin/reports", label: "Reports", icon: "chart-2-bold" },
   // DEDUPED canonical customer directory (one row per real person).
   { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold" },
-  { href: "/admin/people", label: "People", icon: "users-group-rounded-bold" },
+  { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
   { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold" },
   // Super Admin control center — gated below; only superadmins see this item.

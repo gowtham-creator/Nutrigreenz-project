@@ -28,8 +28,9 @@ import { verifyToken } from "@/lib/admin-session";
  */
 const ADMIN_HOST_PREFIX = "admin.";
 
-/** Super-admin-only route prefix (the global config / control center). */
-const SUPERADMIN_ROUTE_PREFIX = "/admin/config";
+/** Super-admin-only route prefixes: control center, admin/role management, and
+ *  marketing config (coupons/loyalty/referral — Super Admin Controls per §3.2). */
+const SUPERADMIN_ROUTE_PREFIXES = ["/admin/config", "/admin/people", "/admin/marketing"];
 
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -70,8 +71,9 @@ export default async function proxy(req: NextRequest) {
   if (
     session &&
     session.role !== "superadmin" &&
-    (adminRoute === SUPERADMIN_ROUTE_PREFIX ||
-      adminRoute.startsWith(`${SUPERADMIN_ROUTE_PREFIX}/`))
+    SUPERADMIN_ROUTE_PREFIXES.some(
+      (p) => adminRoute === p || adminRoute.startsWith(`${p}/`),
+    )
   ) {
     return NextResponse.redirect(new URL(isAdminHost ? "/" : "/admin", req.nextUrl));
   }
