@@ -21,6 +21,8 @@ interface BuyPanelProps {
   coins: number;
   /** coupon code + final best price after the coupon */
   coupon: { code: string; bestPrice: number; off: number };
+  /** when true, the product is sold out — add-to-cart / buy-now are disabled */
+  outOfStock?: boolean;
 }
 
 /**
@@ -29,7 +31,7 @@ interface BuyPanelProps {
  * best-price strip · variant tiles · offer banner · qty + Add to cart + Buy Now.
  * Cart wiring uses the real `useCart` hook; Buy Now adds then routes to checkout.
  */
-export function BuyPanel({ product, categoryTitle, credentials, variants, initialIndex = 0, coins, coupon }: BuyPanelProps) {
+export function BuyPanel({ product, categoryTitle, credentials, variants, initialIndex = 0, coins, coupon, outOfStock = false }: BuyPanelProps) {
   const { addItem } = useCart();
   const router = useRouter();
   const [variantIdx, setVariantIdx] = useState(Math.min(initialIndex, variants.length - 1));
@@ -43,6 +45,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
   // dimension yet, so we keep the existing single-SKU wiring intact and surface
   // the chosen variant in the toast.)
   const add = () => {
+    if (outOfStock) return;
     addItem(product, qty);
     toast.success("Added to bag", {
       description: `${qty} × ${product.title} · ${variant.size}`,
@@ -50,6 +53,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
   };
 
   const buyNow = () => {
+    if (outOfStock) return;
     addItem(product, qty);
     toast.success("Added — taking you to checkout", { description: `${qty} × ${product.title} · ${variant.size}` });
     router.push("/checkout");
@@ -166,40 +170,53 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       </div>
 
       {/* Qty + Add to cart */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-stretch gap-3">
-          <div className="flex items-center rounded-full border border-ng-line">
-            <button
-              type="button"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              aria-label="Decrease quantity"
-              disabled={qty <= 1}
-              className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage disabled:opacity-40"
-            >
-              <Icon name="minus-square-linear" size={18} />
-            </button>
-            <span className="w-8 text-center text-[15px] font-semibold text-ng-forest-deep" aria-live="polite">
-              {qty}
-            </span>
-            <button
-              type="button"
-              onClick={() => setQty((q) => Math.min(20, q + 1))}
-              aria-label="Increase quantity"
-              className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage"
-            >
-              <Icon name="add-square-linear" size={18} />
-            </button>
+      {outOfStock ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-ng-line bg-ng-cream/60 px-4 py-3.5 text-[14px] font-medium text-ng-ink">
+            <Icon name="bag-cross-bold" size={20} className="shrink-0 text-ng-clay" />
+            Currently sold out — we&apos;re restocking from the farm soon.
           </div>
-          <Button onClick={add} size="lg" fullWidth className="flex-1 cursor-pointer">
+          <Button disabled size="lg" fullWidth>
             <Icon name="bag-4-bold" size={18} />
-            Add to cart · ₹{lineTotal.toLocaleString()}
+            Out of stock
           </Button>
         </div>
-        <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
-          <Icon name="bolt-bold" size={18} />
-          Buy Now
-        </Button>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-stretch gap-3">
+            <div className="flex items-center rounded-full border border-ng-line">
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Decrease quantity"
+                disabled={qty <= 1}
+                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage disabled:opacity-40"
+              >
+                <Icon name="minus-square-linear" size={18} />
+              </button>
+              <span className="w-8 text-center text-[15px] font-semibold text-ng-forest-deep" aria-live="polite">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQty((q) => Math.min(20, q + 1))}
+                aria-label="Increase quantity"
+                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage"
+              >
+                <Icon name="add-square-linear" size={18} />
+              </button>
+            </div>
+            <Button onClick={add} size="lg" fullWidth className="flex-1 cursor-pointer">
+              <Icon name="bag-4-bold" size={18} />
+              Add to cart · ₹{lineTotal.toLocaleString()}
+            </Button>
+          </div>
+          <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
+            <Icon name="bolt-bold" size={18} />
+            Buy Now
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

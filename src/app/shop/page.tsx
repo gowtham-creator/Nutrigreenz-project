@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Icon } from "@/components/ui/icon";
-import { PRODUCTS, CATEGORIES } from "@/components/ng/data";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
+import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 
 export const metadata: Metadata = {
   title: "Shop the pantry — Nutri Greenz",
@@ -12,15 +12,21 @@ export const metadata: Metadata = {
     "Browse the whole pantry — cold-pressed oils, A2 ghee, raw honey, millets, spices and more. Single-origin, lab-tested, fairly sourced.",
 };
 
-export default function ShopPage() {
-  const avgRating = (
-    PRODUCTS.reduce((sum, p) => sum + p.rating, 0) / PRODUCTS.length
-  ).toFixed(1);
+// Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
+// stock, new SKUs, status) appear on the live shop without a redeploy.
+export const revalidate = 60;
+
+export default async function ShopPage() {
+  const { products, categories, categoryTags } = await getStorefrontCatalog();
+  const avgRating =
+    products.length > 0
+      ? (products.reduce((sum, p) => sum + p.rating, 0) / products.length).toFixed(1)
+      : "5.0";
 
   return (
     <PageShell>
       <PageHero
-        eyebrow={`The full harvest · ${PRODUCTS.length} SKUs across ${CATEGORIES.length} categories`}
+        eyebrow={`The full harvest · ${products.length} SKUs across ${categories.length} categories`}
         title={
           <>
             Browse the <em className="italic text-ng-leaf">whole pantry.</em>
@@ -57,7 +63,7 @@ export default function ShopPage() {
       </PageHero>
 
       <ShopTrustStrip />
-      <ProductListing />
+      <ProductListing products={products} categoryTags={categoryTags} />
     </PageShell>
   );
 }

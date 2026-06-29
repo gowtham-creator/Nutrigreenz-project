@@ -22,6 +22,22 @@ const PAGE_SIZE = 8;
 interface ProductListingProps {
   /** When set, the listing is locked to this category slug (category page). */
   categorySlug?: string;
+  /**
+   * The products to display. Defaults to the bundled sample data so existing
+   * callers keep working; the live shop passes the mapped real catalog here.
+   */
+  products?: ProductCardType[];
+  /**
+   * Category facets for the chip-strip + filter panel. Defaults to the bundled
+   * `CATEGORY_TAGS`; the live shop passes facets built from the real categories.
+   */
+  categoryTags?: { tag: string; label: string }[];
+  /**
+   * Maps a category slug → the product tags it contains. Defaults to the bundled
+   * `SLUG_TO_TAGS`. For the live catalog each product is tagged with its own
+   * category slug, so the identity mapping (slug → [slug]) applies.
+   */
+  slugToTags?: Record<string, string[]>;
 }
 
 function isInStock(p: ProductCardType): boolean {
@@ -29,13 +45,18 @@ function isInStock(p: ProductCardType): boolean {
   return (p.badge ?? "").toLowerCase() !== "sold out";
 }
 
-export function ProductListing({ categorySlug }: ProductListingProps) {
+export function ProductListing({
+  categorySlug,
+  products = PRODUCTS,
+  categoryTags = CATEGORY_TAGS,
+  slugToTags = SLUG_TO_TAGS,
+}: ProductListingProps) {
   // The pool of products the page operates over (pre-filtered for category routes).
   const pool = useMemo<ProductCardType[]>(() => {
-    if (!categorySlug) return PRODUCTS;
-    const lockedTags = SLUG_TO_TAGS[categorySlug] ?? [];
-    return PRODUCTS.filter((p) => p.tags?.some((t) => lockedTags.includes(t)));
-  }, [categorySlug]);
+    if (!categorySlug) return products;
+    const lockedTags = slugToTags[categorySlug] ?? [categorySlug];
+    return products.filter((p) => p.tags?.some((t) => lockedTags.includes(t)));
+  }, [categorySlug, products, slugToTags]);
 
   const bounds = useMemo(() => {
     if (pool.length === 0) return { min: 0, max: 5000 };
@@ -120,6 +141,7 @@ export function ProductListing({ categorySlug }: ProductListingProps) {
       }}
       bounds={bounds}
       tagCounts={tagCounts}
+      categoryTags={categoryTags}
       totalCount={pool.length}
       hideCategories={Boolean(categorySlug)}
       onReset={resetFilters}
@@ -154,7 +176,7 @@ export function ProductListing({ categorySlug }: ProductListingProps) {
             <Chip active={activeChip === null} onClick={() => selectChip(null)}>
               All
             </Chip>
-            {CATEGORY_TAGS.map(({ tag, label }) =>
+            {categoryTags.map(({ tag, label }) =>
               (tagCounts[tag] ?? 0) > 0 ? (
                 <Chip key={tag} active={activeChip === tag} onClick={() => selectChip(tag)}>
                   {label}

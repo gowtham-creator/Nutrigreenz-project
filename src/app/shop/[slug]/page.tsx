@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Chip } from "@/components/ng/chip";
 import { Icon } from "@/components/ui/icon";
-import { CATEGORIES, PRODUCTS } from "@/components/ng/data";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
-import { SLUG_TO_TAGS } from "@/components/ng/shop/types";
+import { getStorefrontCatalog } from "@/lib/storefront-catalog";
+
+// Re-fetch the catalog at most once a minute so Inventory-Portal edits surface
+// on category pages without a redeploy.
+export const revalidate = 60;
 
 const CATEGORY_BLURBS: Record<string, string> = {
   oils: "Single-press, never refined. Each bottle traceable to the village ghani and the harvest lot it came from.",
@@ -22,17 +25,14 @@ const CATEGORY_BLURBS: Record<string, string> = {
   gifting: "Curated hampers of our best-loved jars — ready to give, fully traceable.",
 };
 
-export function generateStaticParams() {
-  return CATEGORIES.map((c) => ({ slug: c.slug }));
-}
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const cat = CATEGORIES.find((c) => c.slug === slug);
+  const { categories } = await getStorefrontCatalog();
+  const cat = categories.find((c) => c.slug === slug);
   if (!cat) return { title: "Category not found — Nutri Greenz" };
   return {
     title: `${cat.title} — Nutri Greenz`,
@@ -46,11 +46,11 @@ export default async function ShopCategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const cat = CATEGORIES.find((c) => c.slug === slug);
+  const { products, categories, categoryTags } = await getStorefrontCatalog();
+  const cat = categories.find((c) => c.slug === slug);
   if (!cat) notFound();
 
-  const tags = SLUG_TO_TAGS[slug] ?? [];
-  const count = PRODUCTS.filter((p) => p.tags?.some((t) => tags.includes(t))).length;
+  const count = products.filter((p) => p.tags?.includes(slug)).length;
   const words = cat.title.split(" ");
 
   return (
@@ -90,7 +90,7 @@ export default async function ShopCategoryPage({
           <Link href="/shop">
             <Chip>All</Chip>
           </Link>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <Link key={c.id} href={`/shop/${c.slug}`}>
               <Chip active={c.slug === slug}>{c.title}</Chip>
             </Link>
@@ -99,7 +99,7 @@ export default async function ShopCategoryPage({
       </PageHero>
 
       <ShopTrustStrip />
-      <ProductListing categorySlug={slug} />
+      <ProductListing products={products} categoryTags={categoryTags} categorySlug={slug} />
     </PageShell>
   );
 }

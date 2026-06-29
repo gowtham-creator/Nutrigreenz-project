@@ -11,6 +11,8 @@ interface FilterPanelProps {
   bounds: { min: number; max: number };
   /** count of products per tag, for the facet badges */
   tagCounts: Record<string, number>;
+  /** the category facets to render; defaults to the bundled `CATEGORY_TAGS` */
+  categoryTags?: { tag: string; label: string }[];
   /** total products in the pool, for the "All categories" badge */
   totalCount?: number;
   /** when true, the category facet is hidden (e.g. on a category page) */
@@ -26,6 +28,7 @@ export function FilterPanel({
   onChange,
   bounds,
   tagCounts,
+  categoryTags = CATEGORY_TAGS,
   totalCount,
   hideCategories,
   onReset,
@@ -88,7 +91,7 @@ export function FilterPanel({
               </label>
             );
           })()}
-          {CATEGORY_TAGS.map(({ tag, label }) => {
+          {categoryTags.map(({ tag, label }) => {
             const count = tagCounts[tag] ?? 0;
             if (count === 0) return null;
             const checked = filters.tags.includes(tag);

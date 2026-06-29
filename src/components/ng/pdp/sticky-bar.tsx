@@ -13,13 +13,15 @@ import type { ProductCard } from "@/types/nutrigreenz";
 interface StickyBarProps {
   product: ProductCard;
   price: number;
+  /** when true, the product is sold out — add-to-cart / buy-now are disabled */
+  outOfStock?: boolean;
 }
 
 /**
  * StickyBar — bottom add-to-cart bar that slides in once the user scrolls past
  * the hero. Product thumb + title + price + Add to cart + Buy Now (useCart).
  */
-export function StickyBar({ product, price }: StickyBarProps) {
+export function StickyBar({ product, price, outOfStock = false }: StickyBarProps) {
   const { addItem } = useCart();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
@@ -48,10 +50,12 @@ export function StickyBar({ product, price }: StickyBarProps) {
   const visible = scrolled && !footerVisible;
 
   const add = () => {
+    if (outOfStock) return;
     addItem(product, 1);
     toast.success("Added to bag", { description: product.title });
   };
   const buyNow = () => {
+    if (outOfStock) return;
     addItem(product, 1);
     router.push("/checkout");
   };
@@ -73,17 +77,26 @@ export function StickyBar({ product, price }: StickyBarProps) {
           <p className="truncate text-[13px] font-semibold text-ng-forest-deep">{product.title}</p>
           <p className="text-[13px] font-bold tabular-nums text-ng-forest">₹{price.toLocaleString()}</p>
         </div>
-        <Button onClick={add} variant="secondary" size="md" className="cursor-pointer hidden sm:inline-flex">
-          <Icon name="bag-4-bold" size={16} />
-          Add to cart
-        </Button>
-        <Button onClick={add} variant="secondary" size="icon" aria-label="Add to cart" className="cursor-pointer sm:hidden">
-          <Icon name="bag-4-bold" size={18} />
-        </Button>
-        <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
-          <Icon name="bolt-bold" size={16} />
-          Buy Now
-        </Button>
+        {outOfStock ? (
+          <Button disabled variant="secondary" size="md">
+            <Icon name="bag-4-bold" size={16} />
+            Out of stock
+          </Button>
+        ) : (
+          <>
+            <Button onClick={add} variant="secondary" size="md" className="cursor-pointer hidden sm:inline-flex">
+              <Icon name="bag-4-bold" size={16} />
+              Add to cart
+            </Button>
+            <Button onClick={add} variant="secondary" size="icon" aria-label="Add to cart" className="cursor-pointer sm:hidden">
+              <Icon name="bag-4-bold" size={18} />
+            </Button>
+            <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
+              <Icon name="bolt-bold" size={16} />
+              Buy Now
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -5,8 +5,9 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { ProductCard } from "@/components/ng/product-card";
 import { Reveal, Parallax } from "@/components/ng/motion";
-import { PRODUCTS, CATEGORIES } from "@/components/ng/data";
+import { CATEGORIES } from "@/components/ng/data";
 import type { ProductCard as Product } from "@/types/nutrigreenz";
+import { getStorefrontCatalog, getStorefrontProductBySlug } from "@/lib/storefront-catalog";
 import { Gallery } from "@/components/ng/pdp/gallery";
 import { BuyPanel } from "@/components/ng/pdp/buy-panel";
 import { TrustRow } from "@/components/ng/pdp/trust-row";
@@ -33,8 +34,18 @@ const COUPON_MAX = 150;
 /* ---------------------------------- data helpers ---------------------------------- */
 
 function getCategoryMeta(p: Product, categoryId: string) {
-  const cat = CATEGORIES.find((c) => c.id === categoryId || c.slug === categoryId);
-  return { slug: cat?.slug ?? categoryId, title: cat?.title ?? "Pantry" };
+  // Prefer the product's own category (its `tags` carry the real category slug
+  // for live catalog rows); fall back to the sample category lookup by id/slug.
+  const tagSlug = p.tags?.[0];
+  const cat =
+    CATEGORIES.find((c) => c.slug === tagSlug) ??
+    CATEGORIES.find((c) => c.id === categoryId || c.slug === categoryId);
+  if (cat) return { slug: cat.slug, title: cat.title };
+  if (tagSlug) {
+    const title = tagSlug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    return { slug: tagSlug, title };
+  }
+  return { slug: categoryId, title: "Pantry" };
 }
 
 /** Parse a numeric size + unit out of "500ml · Junagadh" → { qty: 500, unit: "ml" }. */
@@ -138,13 +149,15 @@ const SAMPLE_REVIEWS: Review[] = [
 
 /* ---------------------------------- SEO ---------------------------------- */
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
-}
+// Re-fetch the product at most once a minute so Inventory-Portal edits (price,
+// stock, status) appear on the PDP without a redeploy. Pages render on-demand
+// and are cached/revalidated rather than pre-built, since live SKUs aren't known
+// at build time.
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const p = PRODUCTS.find((x) => x.slug === slug);
+  const p = await getStorefrontProductBySlug(slug);
   if (!p) return { title: "Product not found · Nutri Greenz" };
 
   const { categoryId } = getPdpContent(p);
@@ -178,8 +191,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const p = PRODUCTS.find((x) => x.slug === slug);
+  const [p, catalog] = await Promise.all([
+    getStorefrontProductBySlug(slug),
+    getStorefrontCatalog(),
+  ]);
   if (!p) notFound();
+
+  // The mapper stamps a "Sold out" badge when on-hand stock is depleted; that's
+  // the storefront's stock signal, so add-to-cart is disabled in that state.
+  const outOfStock = (p.badge ?? "").toLowerCase() === "sold out";
 
   const { categoryId, content } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
@@ -195,8 +215,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const bestPrice = basePrice - couponOff;
 
   // Related rail — same category first, fill from the rest.
-  const sameCat = PRODUCTS.filter((x) => x.id !== p.id && getPdpContent(x).categoryId === categoryId);
-  const others = PRODUCTS.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
+  const allProducts = catalog.products;
+  const sameCat = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId === categoryId);
+  const others = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
   const images = [
@@ -220,7 +241,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       url: `${SITE}/products/${p.slug}`,
       priceCurrency: "INR",
       price: p.price,
-      availability: "https://schema.org/InStock",
+      availability: outOfStock
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
     },
     aggregateRating: {
@@ -282,6 +305,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               initialIndex={baseIndex}
               coins={coins}
               coupon={{ code: COUPON_CODE, bestPrice, off: COUPON_PERCENT }}
+              outOfStock={outOfStock}
             />
           </Reveal>
         </div>
@@ -374,7 +398,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </Section>
 
       {/* Sticky bottom add-to-cart bar */}
-      <StickyBar product={p} price={basePrice} />
+      <StickyBar product={p} price={basePrice} outOfStock={outOfStock} />
     </PageShell>
   );
 }

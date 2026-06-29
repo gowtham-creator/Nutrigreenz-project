@@ -236,6 +236,16 @@ export async function getProduct(id: string): Promise<ProductRecord | null> {
   return data ? toProduct(data as ProductRow) : null;
 }
 
+/** A single product by its URL slug (with category + inventory), or null. */
+export async function getProductBySlug(slug: string): Promise<ProductRecord | null> {
+  const { data } = await supabaseAdmin()
+    .from("products")
+    .select(PRODUCT_COLS)
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ? toProduct(data as ProductRow) : null;
+}
+
 export interface NewProductInput {
   name: string;
   slug?: string;
