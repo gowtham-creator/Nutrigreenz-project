@@ -18,6 +18,7 @@ import {
   type Kpi,
 } from "@/components/ng/admin/super/command-center";
 import { CouponCampaignBuilder } from "@/components/ng/admin/super/coupon-campaign-builder";
+import { CommerceConfigPanel } from "@/components/ng/admin/super/commerce-config";
 import { ReferralConfigSection } from "@/components/ng/admin/super/referral-config";
 import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
 import { useCommerceConfig } from "@/lib/commerce";
@@ -54,6 +55,7 @@ const INITIAL_FEATURES: { key: string; label: string; desc: string; on: boolean 
 ];
 
 const SUB_NAV = [
+  "Commerce",
   "Rules",
   "Loyalty",
   "Referrals",
@@ -182,6 +184,7 @@ function ConfigContent() {
         <span className="h-px flex-1 bg-gradient-to-r from-ng-clay/40 to-transparent" />
       </div>
 
+      <CommerceConfigPanel />
       <CommerceRulesSection rules={rules} updateRules={updateRules} resetRules={resetRules} />
       <LoyaltySection
         loyalty={loyalty}
