@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listVariants, createVariant } from "@/lib/catalog";
 
@@ -31,6 +31,12 @@ export async function POST(request: Request): Promise<Response> {
   const label = String(body.label ?? "").trim();
   if (!productId || !label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
+  // Price is a super-admin-only field. A plain admin may create a variant, but
+  // any price they supply is ignored and defaults to 0 (set later by a super-admin).
+  const pricePaise = (await isSuperAdmin())
+    ? Math.max(0, Math.round(Number(body.pricePaise) || 0))
+    : 0;
+
   try {
     const variant = await createVariant({
       productId,
@@ -41,7 +47,7 @@ export async function POST(request: Request): Promise<Response> {
           ? Number(body.sizeValue)
           : null,
       sizeUnit: body.sizeUnit != null && String(body.sizeUnit).trim() ? String(body.sizeUnit) : null,
-      pricePaise: Math.max(0, Math.round(Number(body.pricePaise) || 0)),
+      pricePaise,
       sku: body.sku != null ? String(body.sku) : null,
       stock: Math.max(0, Math.round(Number(body.stock) || 0)),
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),

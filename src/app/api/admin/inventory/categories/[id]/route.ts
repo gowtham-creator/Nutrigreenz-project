@@ -1,12 +1,15 @@
-import { isSignedInAdmin } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertCategory, deleteCategory } from "@/lib/catalog";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** PATCH — rename a category or change its sort order. */
+/** PATCH — rename a category or change its sort order. Super-admin only. */
 export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -32,9 +35,12 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 }
 
-/** DELETE — remove a category (products keep their rows, category goes null). */
+/** DELETE — remove a category (products keep their rows, category goes null). Super-admin only. */
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }

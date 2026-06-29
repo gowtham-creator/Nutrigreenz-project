@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
 
@@ -10,9 +10,12 @@ export async function GET(): Promise<Response> {
   return Response.json({ ok: true, categories });
 }
 
-/** POST — create a category. */
+/** POST — create a category. Super-admin only. */
 export async function POST(request: Request): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }

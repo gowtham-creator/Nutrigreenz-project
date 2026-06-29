@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateVariant, deleteVariant } from "@/lib/catalog";
 
@@ -15,6 +15,12 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
     return Response.json({ ok: false }, { status: 400 });
+  }
+
+  // Changing a variant price is super-admin-only. A plain admin may still edit
+  // size/pack/active, but a PATCH that carries a price is rejected outright.
+  if (bodyHasPrice(body) && !(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
   }
 
   const patch: Parameters<typeof updateVariant>[1] = {};
@@ -38,9 +44,12 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 }
 
-/** DELETE — remove a variant. */
+/** DELETE — remove a variant. Super-admin only. */
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
   await deleteVariant(id);

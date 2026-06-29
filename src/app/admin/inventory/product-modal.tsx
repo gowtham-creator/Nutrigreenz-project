@@ -35,6 +35,7 @@ export function ProductModal({
   product,
   categories,
   saving,
+  isSuper,
   onClose,
   onSave,
 }: {
@@ -42,6 +43,7 @@ export function ProductModal({
   product: Product | null;
   categories: readonly Category[];
   saving: boolean;
+  isSuper: boolean;
   onClose: () => void;
   onSave: (draft: ProductDraft) => void;
 }) {
@@ -123,11 +125,15 @@ export function ProductModal({
                 type="number"
                 min={0}
                 step="0.01"
-                className={FIELD}
+                disabled={!isSuper}
+                className={`${FIELD} disabled:cursor-not-allowed disabled:opacity-60`}
                 value={draft.priceRupees}
                 onChange={(e) => set("priceRupees", e.target.value)}
                 placeholder="89.00"
               />
+              {!isSuper && (
+                <p className="mt-1 text-[10.5px] font-medium text-ng-ink-muted">Set by Super Admin</p>
+              )}
             </div>
             <div>
               <label className={LABEL} htmlFor="np-stock">Stock</label>

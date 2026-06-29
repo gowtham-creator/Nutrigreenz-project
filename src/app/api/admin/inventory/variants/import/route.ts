@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { importVariantsCsv, type VariantCsvRow } from "@/lib/catalog";
 import { parseCsv } from "@/lib/csv";
@@ -70,6 +70,10 @@ function buildPreview(text: string): PreviewRow[] {
  */
 export async function POST(request: Request): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  // Variant CSV import can change prices in bulk → super-admin only (preview included).
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }

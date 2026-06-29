@@ -13,3 +13,24 @@ export async function isSignedInAdmin(): Promise<boolean> {
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
   return Boolean(session);
 }
+
+/**
+ * True ONLY when a valid signed-in **super-admin** session is present. Mirrors
+ * the `verifyToken(cookie) → role === "superadmin"` check used by
+ * `/api/admin/admins`. Used to gate price changes, deletes, category edits and
+ * CSV imports, which are reserved for super-admins.
+ */
+export async function isSuperAdmin(): Promise<boolean> {
+  const c = await cookies();
+  const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
+  return session?.role === "superadmin";
+}
+
+/**
+ * True when a request body carries a price field — either camelCase
+ * `pricePaise` or snake_case `price_paise`. Setting/changing a price is a
+ * super-admin-only action, so callers use this to decide whether to gate.
+ */
+export function bodyHasPrice(body: Record<string, unknown>): boolean {
+  return body.pricePaise !== undefined || body.price_paise !== undefined;
+}

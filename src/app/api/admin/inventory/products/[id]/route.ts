@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, updateProduct, deleteProduct, type ProductStatus } from "@/lib/catalog";
 
@@ -34,6 +34,12 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
+  // Changing a price is super-admin-only. A plain admin may still edit every
+  // other field, but a PATCH that carries a price is rejected outright.
+  if (bodyHasPrice(body) && !(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
+
   const patch: Parameters<typeof updateProduct>[1] = {};
   if (body.name !== undefined) patch.name = String(body.name);
   if (body.slug !== undefined) patch.slug = String(body.slug);
@@ -57,9 +63,12 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 }
 
-/** DELETE — remove a product (its inventory row cascades). */
+/** DELETE — remove a product (its inventory row cascades). Super-admin only. */
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
+  if (!(await isSuperAdmin())) {
+    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
+  }
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
   await deleteProduct(id);

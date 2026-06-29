@@ -49,11 +49,13 @@ const LABEL = "block text-[10.5px] font-semibold uppercase tracking-wider text-n
 export function VariantModal({
   open,
   product,
+  isSuper,
   onClose,
   onChanged,
 }: {
   open: boolean;
   product: Product | null;
+  isSuper: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -104,9 +106,13 @@ export function VariantModal({
     if (!edit) return;
     setBusy(true);
     try {
-      const pricePaise = Math.max(0, Math.round((Number(edit.priceRupees) || 0) * 100));
       const stock = Math.max(0, Math.round(Number(edit.stock) || 0));
-      await api(`/api/admin/inventory/variants/${v.id}`, "PATCH", { pricePaise });
+      // Price is super-admin-only — a plain admin saves stock only (a price PATCH
+      // would 403). Super-admins push the edited price alongside the stock.
+      if (isSuper) {
+        const pricePaise = Math.max(0, Math.round((Number(edit.priceRupees) || 0) * 100));
+        await api(`/api/admin/inventory/variants/${v.id}`, "PATCH", { pricePaise });
+      }
       await api(`/api/admin/inventory/variants/${v.id}/stock`, "PUT", { stock });
       toast.success("Variant saved", { description: v.sku ?? v.label });
       await load();
@@ -238,14 +244,20 @@ export function VariantModal({
                       ) : null}
                     </span>
                     <span className="font-mono text-[11.5px] text-ng-ink-muted truncate">{v.sku ?? "—"}</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={edit.priceRupees}
-                      onChange={(e) => setEdit(v.id, "priceRupees", e.target.value)}
-                      className={FIELD}
-                    />
+                    <div>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        disabled={!isSuper}
+                        value={edit.priceRupees}
+                        onChange={(e) => setEdit(v.id, "priceRupees", e.target.value)}
+                        className={`${FIELD} disabled:cursor-not-allowed disabled:opacity-60`}
+                      />
+                      {!isSuper && (
+                        <p className="mt-0.5 text-[9.5px] font-medium text-ng-ink-muted">Set by Super Admin</p>
+                      )}
+                    </div>
                     <input
                       type="number"
                       min={0}
@@ -273,15 +285,17 @@ export function VariantModal({
                       >
                         <Icon name={v.isActive ? "eye-bold" : "eye-closed-bold"} size={15} />
                       </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void remove(v)}
-                        aria-label="Delete variant"
-                        className="text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        <Icon name="trash-bin-trash-bold" size={14} />
-                      </button>
+                      {isSuper && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void remove(v)}
+                          aria-label="Delete variant"
+                          className="text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <Icon name="trash-bin-trash-bold" size={14} />
+                        </button>
+                      )}
                     </div>
                   </li>
                 );
@@ -322,7 +336,10 @@ export function VariantModal({
               </div>
               <div>
                 <label className={LABEL} htmlFor="nv-price">Price (₹)</label>
-                <input id="nv-price" type="number" min={0} step="0.01" className={FIELD} value={draft.priceRupees} onChange={(e) => set("priceRupees", e.target.value)} placeholder="0.00" />
+                <input id="nv-price" type="number" min={0} step="0.01" disabled={!isSuper} className={`${FIELD} disabled:cursor-not-allowed disabled:opacity-60`} value={draft.priceRupees} onChange={(e) => set("priceRupees", e.target.value)} placeholder="0.00" />
+                {!isSuper && (
+                  <p className="mt-1 text-[9.5px] font-medium text-ng-ink-muted">Set by Super Admin</p>
+                )}
               </div>
               <div>
                 <label className={LABEL} htmlFor="nv-stock">Stock</label>

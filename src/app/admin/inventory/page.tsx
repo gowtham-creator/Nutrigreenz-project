@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getAdminRole } from "@/lib/admin-auth";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { StockMeter } from "@/components/ng/admin/viz";
@@ -46,6 +47,14 @@ export default function AdminInventory() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+
+  // Super-admin gate (UI mirror of the server rules). Read from the readable
+  // `ng_admin_role` cookie after mount to avoid a hydration mismatch; until then
+  // we treat the operator as a plain admin so restricted controls stay hidden.
+  const [isSuper, setIsSuper] = useState(false);
+  useEffect(() => {
+    setIsSuper(getAdminRole() === "superadmin");
+  }, []);
 
   // ── modal state ───────────────────────────────────────────────────
   const [productOpen, setProductOpen] = useState(false);
@@ -122,7 +131,9 @@ export default function AdminInventory() {
         name: draft.name.trim(),
         sku: draft.sku.trim() || null,
         categoryId: draft.categoryId || null,
-        pricePaise: Math.round((Number(draft.priceRupees) || 0) * 100),
+        // Price is super-admin-only: a plain admin never sends it (the server
+        // would 403 a PATCH that carries a price, and defaults it to 0 on create).
+        ...(isSuper ? { pricePaise: Math.round((Number(draft.priceRupees) || 0) * 100) } : {}),
         stock: Math.max(0, Math.round(Number(draft.stock) || 0)),
         status: draft.status,
         description: draft.description.trim() || null,
@@ -146,7 +157,7 @@ export default function AdminInventory() {
         setSaving(false);
       }
     },
-    [editing, loadProducts],
+    [editing, isSuper, loadProducts],
   );
 
   const removeProduct = useCallback(
@@ -242,22 +253,26 @@ export default function AdminInventory() {
       subtitle="Manage products, stock and categories from one place."
       actions={
         <>
-          <button
-            type="button"
-            onClick={() => setCategoryOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
-          >
-            <Icon name="tag-bold" size={15} className="text-ng-forest" />
-            Categories
-          </button>
-          <button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
-          >
-            <Icon name="import-bold" size={15} className="text-ng-forest" />
-            Import CSV
-          </button>
+          {isSuper && (
+            <button
+              type="button"
+              onClick={() => setCategoryOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            >
+              <Icon name="tag-bold" size={15} className="text-ng-forest" />
+              Categories
+            </button>
+          )}
+          {isSuper && (
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            >
+              <Icon name="import-bold" size={15} className="text-ng-forest" />
+              Import CSV
+            </button>
+          )}
           <a
             href="/api/admin/inventory/export"
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
@@ -265,14 +280,16 @@ export default function AdminInventory() {
             <Icon name="export-bold" size={15} className="text-ng-forest" />
             Export CSV
           </a>
-          <button
-            type="button"
-            onClick={() => setVariantImportOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
-          >
-            <Icon name="import-bold" size={15} className="text-ng-clay" />
-            Import variants
-          </button>
+          {isSuper && (
+            <button
+              type="button"
+              onClick={() => setVariantImportOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            >
+              <Icon name="import-bold" size={15} className="text-ng-clay" />
+              Import variants
+            </button>
+          )}
           <a
             href="/api/admin/inventory/variants/export"
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
@@ -414,14 +431,16 @@ export default function AdminInventory() {
                       <Icon name="pen-2-bold" size={13} />
                       Edit
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void removeProduct(p)}
-                      aria-label={`Delete ${p.name}`}
-                      className="text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer"
-                    >
-                      <Icon name="trash-bin-trash-bold" size={14} />
-                    </button>
+                    {isSuper && (
+                      <button
+                        type="button"
+                        onClick={() => void removeProduct(p)}
+                        aria-label={`Delete ${p.name}`}
+                        className="text-ng-terracotta hover:text-ng-terracotta/80 transition-colors cursor-pointer"
+                      >
+                        <Icon name="trash-bin-trash-bold" size={14} />
+                      </button>
+                    )}
                   </div>
                 </li>
               );
@@ -436,6 +455,7 @@ export default function AdminInventory() {
         product={editing}
         categories={categories}
         saving={saving}
+        isSuper={isSuper}
         onClose={() => setProductOpen(false)}
         onSave={saveProduct}
       />
@@ -456,6 +476,7 @@ export default function AdminInventory() {
       <VariantModal
         open={variantProduct !== null}
         product={variantProduct}
+        isSuper={isSuper}
         onClose={() => setVariantProduct(null)}
         onChanged={() => void loadProducts()}
       />

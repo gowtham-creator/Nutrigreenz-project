@@ -1,4 +1,4 @@
-import { isSignedInAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listProducts, createProduct, type ProductStatus, type ProductFilter } from "@/lib/catalog";
 
@@ -46,7 +46,11 @@ export async function POST(request: Request): Promise<Response> {
   const name = String(body.name ?? "").trim();
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
-  const pricePaise = Math.max(0, Math.round(Number(body.pricePaise) || 0));
+  // Price is a super-admin-only field. A plain admin may create a product, but
+  // any price they supply is ignored and defaults to 0 (set later by a super-admin).
+  const pricePaise = (await isSuperAdmin())
+    ? Math.max(0, Math.round(Number(body.pricePaise) || 0))
+    : 0;
   const stock = Math.max(0, Math.round(Number(body.stock) || 0));
 
   try {
