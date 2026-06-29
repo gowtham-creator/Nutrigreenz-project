@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
-import { useCart } from "@/lib/cart";
-import { cn } from "@/lib/utils";
+import { useCart, type CartVariantInput } from "@/lib/cart";
 import type { ProductCard } from "@/types/nutrigreenz";
 import { VariantSelector, type PdpVariant } from "./variant-selector";
+import { usePdpVariant } from "./variant-context";
 
 interface BuyPanelProps {
   product: ProductCard;
@@ -34,28 +34,41 @@ interface BuyPanelProps {
 export function BuyPanel({ product, categoryTitle, credentials, variants, initialIndex = 0, coins, coupon, outOfStock = false }: BuyPanelProps) {
   const { addItem } = useCart();
   const router = useRouter();
-  const [variantIdx, setVariantIdx] = useState(Math.min(initialIndex, variants.length - 1));
+  // Selection is shared with the sticky bar via context; fall back to local
+  // state if the panel is ever rendered outside a <PdpVariantProvider>.
+  const shared = usePdpVariant();
+  const [localIdx, setLocalIdx] = useState(Math.min(initialIndex, variants.length - 1));
+  const vlist = shared ? shared.variants : variants;
+  const variantIdx = shared ? shared.index : localIdx;
+  const setVariantIdx = shared ? shared.setIndex : setLocalIdx;
   const [qty, setQty] = useState(1);
 
-  const variant = variants[variantIdx] ?? variants[0];
+  const variant = vlist[variantIdx] ?? vlist[0];
   const lineTotal = variant.price * qty;
   const discount = variant.mrp && variant.mrp > variant.price ? Math.round((1 - variant.price / variant.mrp) * 100) : 0;
 
-  // The cart stores the base product; we pass qty through. (Cart has no variant
-  // dimension yet, so we keep the existing single-SKU wiring intact and surface
-  // the chosen variant in the toast.)
+  // A specific variant can be sold out even when the product as a whole isn't.
+  const variantOut = outOfStock || variant.inStock === false;
+  // Human label carried into the bag, e.g. "1L · glass".
+  const variantLabel = variant.pack ? `${variant.size} · ${variant.pack}` : variant.size;
+  // Only DB-backed variants (with an id) attach to the cart line; derived demo
+  // variants keep the legacy single-SKU add (base product price).
+  const cartVariant: CartVariantInput | undefined = variant.id
+    ? { id: variant.id, sku: variant.sku, label: variantLabel, price: variant.price }
+    : undefined;
+
   const add = () => {
-    if (outOfStock) return;
-    addItem(product, qty);
+    if (variantOut) return;
+    addItem(product, qty, cartVariant);
     toast.success("Added to bag", {
-      description: `${qty} × ${product.title} · ${variant.size}`,
+      description: `${qty} × ${product.title} · ${variantLabel}`,
     });
   };
 
   const buyNow = () => {
-    if (outOfStock) return;
-    addItem(product, qty);
-    toast.success("Added — taking you to checkout", { description: `${qty} × ${product.title} · ${variant.size}` });
+    if (variantOut) return;
+    addItem(product, qty, cartVariant);
+    toast.success("Added — taking you to checkout", { description: `${qty} × ${product.title} · ${variantLabel}` });
     router.push("/checkout");
   };
 
@@ -158,7 +171,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       </div>
 
       {/* Variant tiles */}
-      <VariantSelector variants={variants} activeIndex={variantIdx} onSelect={setVariantIdx} />
+      <VariantSelector variants={vlist} activeIndex={variantIdx} onSelect={setVariantIdx} />
 
       {/* Offer banner */}
       <div className="flex items-center gap-3 overflow-hidden rounded-2xl bg-ng-forest-deep px-4 py-3 text-ng-cream">
@@ -170,7 +183,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       </div>
 
       {/* Qty + Add to cart */}
-      {outOfStock ? (
+      {variantOut ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2.5 rounded-2xl border border-ng-line bg-ng-cream/60 px-4 py-3.5 text-[14px] font-medium text-ng-ink">
             <Icon name="bag-cross-bold" size={20} className="shrink-0 text-ng-clay" />

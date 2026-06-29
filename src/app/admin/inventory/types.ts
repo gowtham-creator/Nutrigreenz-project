@@ -27,6 +27,26 @@ export interface Product {
   updatedAt: string;
 }
 
+export interface Variant {
+  id: string;
+  productId: string;
+  label: string;
+  pack: string | null;
+  sizeValue: number | null;
+  sizeUnit: string | null;
+  pricePaise: number;
+  sku: string | null;
+  stock: number;
+  reserved: number;
+  isActive: boolean;
+  sort: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Packaging options offered in the variant editor. */
+export const PACK_OPTIONS: readonly string[] = ["glass", "plastic", "tin", "bag"];
+
 export interface ImportPreviewRow {
   line: number;
   name: string;

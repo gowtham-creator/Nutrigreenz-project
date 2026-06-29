@@ -19,6 +19,27 @@ export interface ProductBadge {
   tone?: Tone;
 }
 
+/**
+ * A purchasable size × pack variant of a base product (storefront-facing).
+ * Price is in whole rupees; `inStock` already accounts for reserved units.
+ */
+export interface ProductVariantOption {
+  id: string;
+  sku: string;
+  /** Size label shown to shoppers, e.g. "1L", "500g". */
+  label: string;
+  /** Packaging: "glass" | "plastic" | "tin" | "bag" | null. */
+  pack: string | null;
+  /** Numeric size value (1, 500, 10 …), when known. */
+  sizeValue: number | null;
+  /** Size unit ("L", "ml", "g", "kg"), when known. */
+  sizeUnit: string | null;
+  /** Variant price in whole rupees. */
+  price: number;
+  /** True when at least one sellable unit remains (stock − reserved > 0). */
+  inStock: boolean;
+}
+
 export interface ProductCard {
   id: string;
   slug: string;
@@ -34,6 +55,10 @@ export interface ProductCard {
   badgeTone?: Tone;
   href?: string;
   tags?: string[];
+  /** When true, `price` is the minimum across active variants → render "from ₹X". */
+  priceFrom?: boolean;
+  /** Purchasable size × pack variants (empty for legacy/demo single-SKU products). */
+  variants?: ProductVariantOption[];
 }
 
 export interface Category {
@@ -144,6 +169,18 @@ export interface User {
 
 export interface CartItem extends OrderItem {
   subscribe?: { frequency: "weekly" | "biweekly" | "monthly"; discount: number };
+  /**
+   * Stable cart-line key. For a variant line it is `productId::variantId`; for a
+   * legacy/simple line it equals `productId`. Two different variants of the same
+   * product are therefore distinct cart lines.
+   */
+  lineId?: string;
+  /** Selected variant id (when the line carries a size × pack variant). */
+  variantId?: string;
+  /** Selected variant SKU, e.g. "OIL-GROUNDNUT-1L-GLASS". */
+  variantSku?: string;
+  /** Human variant label shown in the bag, e.g. "1L · glass". */
+  variantLabel?: string;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

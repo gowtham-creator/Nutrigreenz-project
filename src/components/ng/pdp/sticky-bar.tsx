@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
-import { useCart } from "@/lib/cart";
+import { useCart, type CartVariantInput } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import type { ProductCard } from "@/types/nutrigreenz";
+import { usePdpVariant } from "./variant-context";
 
 interface StickyBarProps {
   product: ProductCard;
@@ -24,6 +25,20 @@ interface StickyBarProps {
 export function StickyBar({ product, price, outOfStock = false }: StickyBarProps) {
   const { addItem } = useCart();
   const router = useRouter();
+  // Mirror the BuyPanel's selection so the sticky bar adds exactly what's chosen.
+  const shared = usePdpVariant();
+  const selected = shared?.selected;
+  const displayPrice = selected ? selected.price : price;
+  const variantLabel = selected
+    ? selected.pack
+      ? `${selected.size} · ${selected.pack}`
+      : selected.size
+    : undefined;
+  const cartVariant: CartVariantInput | undefined =
+    selected && selected.id && variantLabel
+      ? { id: selected.id, sku: selected.sku, label: variantLabel, price: selected.price }
+      : undefined;
+  const variantOut = outOfStock || selected?.inStock === false;
   const [scrolled, setScrolled] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
 
@@ -50,13 +65,15 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
   const visible = scrolled && !footerVisible;
 
   const add = () => {
-    if (outOfStock) return;
-    addItem(product, 1);
-    toast.success("Added to bag", { description: product.title });
+    if (variantOut) return;
+    addItem(product, 1, cartVariant);
+    toast.success("Added to bag", {
+      description: variantLabel ? `${product.title} · ${variantLabel}` : product.title,
+    });
   };
   const buyNow = () => {
-    if (outOfStock) return;
-    addItem(product, 1);
+    if (variantOut) return;
+    addItem(product, 1, cartVariant);
     router.push("/checkout");
   };
 
@@ -74,10 +91,13 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
           <Image src={product.image || "/images/placeholder.svg"} alt={product.title} fill className="object-contain p-1.5" sizes="48px" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-ng-forest-deep">{product.title}</p>
-          <p className="text-[13px] font-bold tabular-nums text-ng-forest">₹{price.toLocaleString()}</p>
+          <p className="truncate text-[13px] font-semibold text-ng-forest-deep">
+            {product.title}
+            {variantLabel ? <span className="text-ng-ink-muted"> · {variantLabel}</span> : null}
+          </p>
+          <p className="text-[13px] font-bold tabular-nums text-ng-forest">₹{displayPrice.toLocaleString()}</p>
         </div>
-        {outOfStock ? (
+        {variantOut ? (
           <Button disabled variant="secondary" size="md">
             <Icon name="bag-4-bold" size={16} />
             Out of stock

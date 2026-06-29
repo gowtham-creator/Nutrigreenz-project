@@ -49,7 +49,7 @@ export function OrderSummary({
 
       <ul className="space-y-4">
         {items.map((item) => (
-          <li key={item.productId} className="flex gap-3">
+          <li key={item.lineId ?? item.productId} className="flex gap-3">
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-ng-cream-deep">
               <Image
                 src={item.image}

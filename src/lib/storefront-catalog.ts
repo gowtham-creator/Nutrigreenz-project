@@ -15,8 +15,12 @@ import {
   getProductBySlug,
   listProducts,
   listCategories,
+  listVariants,
+  listVariantsForProducts,
+  variantStats,
   type CategoryRecord,
   type ProductRecord,
+  type ProductVariantRecord,
 } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -24,7 +28,7 @@ import {
   CATEGORIES as SAMPLE_CATEGORIES,
 } from "@/components/ng/data";
 import { CATEGORY_TAGS as SAMPLE_CATEGORY_TAGS } from "@/components/ng/shop/types";
-import type { Category, ProductCard } from "@/types/nutrigreenz";
+import type { Category, ProductCard, ProductVariantOption } from "@/types/nutrigreenz";
 
 /** A facet entry for the category chip-strip / filter panel. */
 export interface CategoryTag {
@@ -67,19 +71,49 @@ function deriveSocialProof(seed: string): { rating: number; reviewCount: number 
   return { rating: Number(rating.toFixed(1)), reviewCount };
 }
 
+/** Map a single catalog variant → its storefront option (price in rupees). */
+function mapVariantOption(v: ProductVariantRecord): ProductVariantOption {
+  return {
+    id: v.id,
+    sku: v.sku ?? "",
+    label: v.label,
+    pack: v.pack,
+    sizeValue: v.sizeValue,
+    sizeUnit: v.sizeUnit,
+    price: paiseToRupees(v.pricePaise),
+    inStock: v.stock - v.reserved > 0,
+  };
+}
+
 /**
  * Map a catalog row → the storefront `ProductCard`. The product's category slug
  * is carried in `tags` so the existing tag-driven filters and PDP content engine
  * keep working; an out-of-stock product surfaces a "Sold out" badge, which the
  * listing's existing `isInStock` check already understands.
+ *
+ * When `variants` are supplied, the listing PRICE + availability are derived
+ * from the ACTIVE variants (min active price → "from ₹X"; in-stock when any
+ * active variant has a sellable unit). With no variants we fall back to the
+ * product's own price/stock so the bundled demo data keeps rendering.
  */
 export function mapRecordToProductCard(
   record: ProductRecord,
   categorySlug: string | null,
+  variants?: readonly ProductVariantRecord[],
 ): ProductCard {
-  const inStock = record.stock - record.reserved > 0;
   const { rating, reviewCount } = deriveSocialProof(record.id);
   const tag = categorySlug ?? "";
+
+  const activeVariants = (variants ?? []).filter((v) => v.isActive);
+  const hasVariants = activeVariants.length > 0;
+  const stats = variantStats(variants ?? []);
+
+  const price = hasVariants
+    ? paiseToRupees(stats.minActivePricePaise ?? record.pricePaise)
+    : paiseToRupees(record.pricePaise);
+  const inStock = hasVariants ? stats.inStock : record.stock - record.reserved > 0;
+
+  const options = activeVariants.map(mapVariantOption);
 
   return {
     id: record.id,
@@ -89,14 +123,17 @@ export function mapRecordToProductCard(
     image: record.imageUrl || PLACEHOLDER,
     rating,
     reviewCount,
-    price: paiseToRupees(record.pricePaise),
-    // The catalog carries no pack-size; show the category as the unit caption so
-    // the card/PDP have a sensible label instead of an empty slot.
+    price,
+    // More than one variant → the card/PDP show a "from ₹X" lead price.
+    priceFrom: stats.activeCount > 1,
+    // The catalog carries no per-product pack-size; show the category as the unit
+    // caption so the card/PDP have a sensible label instead of an empty slot.
     unit: record.categoryName ?? undefined,
     badge: inStock ? undefined : "Sold out",
     badgeTone: inStock ? undefined : "terracotta",
     href: `/products/${record.slug}`,
     tags: tag ? [tag] : [],
+    variants: options,
   };
 }
 
@@ -140,8 +177,16 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
     const slugById = new Map<string, string>();
     for (const c of categoryRecords) slugById.set(c.id, c.slug);
 
+    // Pull every listed product's variants in one round-trip, then derive each
+    // card's "from" price + availability from its active variants.
+    const variantsByProduct = await listVariantsForProducts(records.map((r) => r.id));
+
     const products = records.map((r) =>
-      mapRecordToProductCard(r, r.categoryId ? slugById.get(r.categoryId) ?? null : null),
+      mapRecordToProductCard(
+        r,
+        r.categoryId ? slugById.get(r.categoryId) ?? null : null,
+        variantsByProduct.get(r.id) ?? [],
+      ),
     );
 
     // Only surface categories that actually have an active product, and label
@@ -184,7 +229,8 @@ export async function getStorefrontProductBySlug(
           const categories = await listCategories();
           categorySlug = categories.find((c) => c.id === record.categoryId)?.slug ?? null;
         }
-        return mapRecordToProductCard(record, categorySlug);
+        const variants = await listVariants(record.id);
+        return mapRecordToProductCard(record, categorySlug, variants);
       }
     } catch {
       /* fall through to the bundled sample */

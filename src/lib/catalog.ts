@@ -366,6 +366,219 @@ export async function adjustStock(productId: string, delta: number): Promise<Pro
   return getProduct(productId);
 }
 
+/* ── variants (size × pack) ───────────────────────────────────────────── */
+
+export interface ProductVariantRecord {
+  id: string;
+  productId: string;
+  label: string;
+  pack: string | null;
+  sizeValue: number | null;
+  sizeUnit: string | null;
+  pricePaise: number;
+  sku: string | null;
+  stock: number;
+  reserved: number;
+  isActive: boolean;
+  sort: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface VariantRow {
+  id: string;
+  product_id: string;
+  label: string;
+  pack: string | null;
+  size_value: number | string | null;
+  size_unit: string | null;
+  price_paise: number;
+  sku: string | null;
+  stock: number;
+  reserved: number;
+  is_active: boolean;
+  sort: number;
+  created_at: string;
+  updated_at: string;
+}
+
+const VARIANT_COLS =
+  "id, product_id, label, pack, size_value, size_unit, price_paise, sku, stock, reserved, is_active, sort, created_at, updated_at";
+
+function toVariant(r: VariantRow): ProductVariantRecord {
+  return {
+    id: r.id,
+    productId: r.product_id,
+    label: r.label,
+    pack: r.pack,
+    sizeValue: r.size_value === null ? null : Number(r.size_value),
+    sizeUnit: r.size_unit,
+    pricePaise: r.price_paise,
+    sku: r.sku,
+    stock: r.stock,
+    reserved: r.reserved,
+    isActive: r.is_active,
+    sort: r.sort,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+/** All variants for a single product, ordered by sort then label. */
+export async function listVariants(productId: string): Promise<ProductVariantRecord[]> {
+  const { data } = await supabaseAdmin()
+    .from("product_variants")
+    .select(VARIANT_COLS)
+    .eq("product_id", productId)
+    .order("sort", { ascending: true })
+    .order("label", { ascending: true });
+  return ((data as VariantRow[] | null) ?? []).map(toVariant);
+}
+
+/** Variants for many products at once, grouped by product id (batch listing read). */
+export async function listVariantsForProducts(
+  productIds: readonly string[],
+): Promise<Map<string, ProductVariantRecord[]>> {
+  const grouped = new Map<string, ProductVariantRecord[]>();
+  if (productIds.length === 0) return grouped;
+  const { data } = await supabaseAdmin()
+    .from("product_variants")
+    .select(VARIANT_COLS)
+    .in("product_id", productIds as string[])
+    .order("sort", { ascending: true })
+    .order("label", { ascending: true });
+  for (const row of (data as VariantRow[] | null) ?? []) {
+    const v = toVariant(row);
+    const list = grouped.get(v.productId);
+    if (list) list.push(v);
+    else grouped.set(v.productId, [v]);
+  }
+  return grouped;
+}
+
+export interface VariantStats {
+  /** Minimum price (paise) across ACTIVE variants, or null when there are none. */
+  minActivePricePaise: number | null;
+  /** True when any active variant has a sellable unit (stock − reserved > 0). */
+  inStock: boolean;
+  /** Number of active variants. */
+  activeCount: number;
+}
+
+/** Derive listing-level price/stock signals from a product's variants. */
+export function variantStats(variants: readonly ProductVariantRecord[]): VariantStats {
+  let min: number | null = null;
+  let inStock = false;
+  let activeCount = 0;
+  for (const v of variants) {
+    if (!v.isActive) continue;
+    activeCount += 1;
+    if (min === null || v.pricePaise < min) min = v.pricePaise;
+    if (v.stock - v.reserved > 0) inStock = true;
+  }
+  return { minActivePricePaise: min, inStock, activeCount };
+}
+
+export interface NewVariantInput {
+  productId: string;
+  label: string;
+  pack?: string | null;
+  sizeValue?: number | null;
+  sizeUnit?: string | null;
+  pricePaise?: number;
+  sku?: string | null;
+  stock?: number;
+  reserved?: number;
+  isActive?: boolean;
+  sort?: number;
+}
+
+/** Create a variant for a product and return the fresh record. */
+export async function createVariant(input: NewVariantInput): Promise<ProductVariantRecord> {
+  const { data, error } = await supabaseAdmin()
+    .from("product_variants")
+    .insert({
+      product_id: input.productId,
+      label: input.label.trim(),
+      pack: input.pack?.trim() || null,
+      size_value: input.sizeValue ?? null,
+      size_unit: input.sizeUnit?.trim() || null,
+      price_paise: Math.max(0, Math.round(input.pricePaise ?? 0)),
+      sku: input.sku?.trim() || null,
+      stock: Math.max(0, Math.round(input.stock ?? 0)),
+      reserved: Math.max(0, Math.round(input.reserved ?? 0)),
+      is_active: input.isActive ?? true,
+      sort: Math.round(input.sort ?? 0),
+    })
+    .select(VARIANT_COLS)
+    .single();
+  if (error || !data) throw new Error(error?.message || "Failed to create variant.");
+  return toVariant(data as VariantRow);
+}
+
+export interface VariantUpdateInput {
+  label?: string;
+  pack?: string | null;
+  sizeValue?: number | null;
+  sizeUnit?: string | null;
+  pricePaise?: number;
+  sku?: string | null;
+  isActive?: boolean;
+  sort?: number;
+}
+
+/** Apply an editable subset of fields to a variant and return the fresh record. */
+export async function updateVariant(
+  id: string,
+  input: VariantUpdateInput,
+): Promise<ProductVariantRecord | null> {
+  const db = supabaseAdmin();
+  const patch: Record<string, string | number | boolean | null> = {};
+  if (input.label !== undefined) patch.label = input.label.trim();
+  if (input.pack !== undefined) patch.pack = input.pack?.trim() || null;
+  if (input.sizeValue !== undefined) patch.size_value = input.sizeValue;
+  if (input.sizeUnit !== undefined) patch.size_unit = input.sizeUnit?.trim() || null;
+  if (input.pricePaise !== undefined) patch.price_paise = Math.max(0, Math.round(input.pricePaise));
+  if (input.sku !== undefined) patch.sku = input.sku?.trim() || null;
+  if (input.isActive !== undefined) patch.is_active = input.isActive;
+  if (input.sort !== undefined) patch.sort = Math.round(input.sort);
+  if (Object.keys(patch).length === 0) {
+    const { data } = await db.from("product_variants").select(VARIANT_COLS).eq("id", id).maybeSingle();
+    return data ? toVariant(data as VariantRow) : null;
+  }
+  const { data, error } = await db
+    .from("product_variants")
+    .update(patch)
+    .eq("id", id)
+    .select(VARIANT_COLS)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toVariant(data as VariantRow) : null;
+}
+
+/** Set absolute stock (and optionally reserved) for a variant. */
+export async function setVariantStock(
+  id: string,
+  stock: number,
+  reserved?: number,
+): Promise<ProductVariantRecord | null> {
+  const patch: Record<string, number> = { stock: Math.max(0, Math.round(stock)) };
+  if (reserved !== undefined) patch.reserved = Math.max(0, Math.round(reserved));
+  const { data, error } = await supabaseAdmin()
+    .from("product_variants")
+    .update(patch)
+    .eq("id", id)
+    .select(VARIANT_COLS)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toVariant(data as VariantRow) : null;
+}
+
+/** Delete a variant. */
+export async function deleteVariant(id: string): Promise<void> {
+  await supabaseAdmin().from("product_variants").delete().eq("id", id);
+}
+
 /* ── CSV import / export ──────────────────────────────────────────────── */
 
 export interface ProductCsvRow {
@@ -485,5 +698,130 @@ export async function exportProductsCsv(): Promise<string> {
       p.status,
       p.slug,
     ]),
+  );
+}
+
+/* ── variant CSV import / export ──────────────────────────────────────── */
+
+export interface VariantCsvRow {
+  sku: string;
+  /** Product slug or name — only needed when creating a brand-new variant. */
+  product?: string;
+  label?: string;
+  pack?: string;
+  pricePaise?: number;
+  stock?: number;
+}
+
+/**
+ * Import variant rows. Existing variants (matched by SKU) get their price/stock
+ * (and label/pack when supplied) updated; unknown SKUs are created against the
+ * product named in the `product` column (matched by slug, then name). Per-row
+ * failures are collected, not thrown.
+ */
+export async function importVariantsCsv(rows: readonly VariantCsvRow[]): Promise<ImportResult> {
+  const result: ImportResult = { created: 0, updated: 0, skipped: 0, errors: [] };
+  const db = supabaseAdmin();
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const lineNo = i + 1;
+    const sku = row.sku?.trim();
+    if (!sku) {
+      result.skipped++;
+      result.errors.push(`Row ${lineNo}: missing SKU — skipped.`);
+      continue;
+    }
+
+    try {
+      const pricePaise = Math.max(0, Math.round(row.pricePaise ?? 0));
+      const stock = Math.max(0, Math.round(row.stock ?? 0));
+
+      const { data: existingRow } = await db
+        .from("product_variants")
+        .select("id")
+        .eq("sku", sku)
+        .maybeSingle();
+      const existing = (existingRow as { id: string } | null) ?? null;
+
+      if (existing) {
+        const patch: Record<string, string | number | null> = { price_paise: pricePaise, stock };
+        if (row.label?.trim()) patch.label = row.label.trim();
+        if (row.pack !== undefined) patch.pack = row.pack.trim() || null;
+        const { error } = await db.from("product_variants").update(patch).eq("id", existing.id);
+        if (error) throw new Error(error.message);
+        result.updated++;
+      } else {
+        const productKey = (row.product ?? "").trim();
+        if (!productKey) {
+          result.skipped++;
+          result.errors.push(`Row ${lineNo}: ${sku} not found and no product given — skipped.`);
+          continue;
+        }
+        let product: { id: string } | null = null;
+        {
+          const { data } = await db
+            .from("products")
+            .select("id")
+            .eq("slug", slugify(productKey))
+            .maybeSingle();
+          product = (data as { id: string } | null) ?? null;
+        }
+        if (!product) {
+          const { data } = await db
+            .from("products")
+            .select("id")
+            .ilike("name", productKey)
+            .maybeSingle();
+          product = (data as { id: string } | null) ?? null;
+        }
+        if (!product) {
+          result.skipped++;
+          result.errors.push(`Row ${lineNo}: product "${productKey}" not found — skipped.`);
+          continue;
+        }
+        await createVariant({
+          productId: product.id,
+          label: row.label?.trim() || sku,
+          pack: row.pack?.trim() || null,
+          pricePaise,
+          sku,
+          stock,
+        });
+        result.created++;
+      }
+    } catch (err) {
+      result.skipped++;
+      const message = err instanceof Error ? err.message : "unknown error";
+      result.errors.push(`Row ${lineNo}: ${message} — skipped.`);
+    }
+  }
+
+  return result;
+}
+
+/** Export all variants as a CSV string (SKU, product slug, label, pack, price, stock). */
+export async function exportVariantsCsv(): Promise<string> {
+  const { data } = await supabaseAdmin()
+    .from("product_variants")
+    .select(`${VARIANT_COLS}, products(name, slug)`)
+    .order("sku", { ascending: true });
+  type Row = VariantRow & {
+    products: { name: string; slug: string } | { name: string; slug: string }[] | null;
+  };
+  const rows = (data as Row[] | null) ?? [];
+  return toCsv(
+    ["sku", "product", "label", "pack", "price", "stock"],
+    rows.map((r) => {
+      const product = firstOf(r.products);
+      return [
+        r.sku ?? "",
+        product?.slug ?? "",
+        r.label,
+        r.pack ?? "",
+        (r.price_paise / 100).toFixed(2),
+        r.stock,
+      ];
+    }),
   );
 }

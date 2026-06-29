@@ -21,7 +21,17 @@ interface Props {
 export function ProductCard({ product, variant = "default", className }: Props) {
   const { addItem, updateQty, items } = useCart();
   const { has, toggle } = useWishlist();
-  const qty = items.find((item) => item.productId === product.id)?.qty ?? 0;
+
+  // Variant-aware quick-add: a product with MULTIPLE size×pack variants must be
+  // configured on the PDP (so the shopper picks a size/pack); a product with a
+  // single variant adds it directly; a legacy/demo product (no variants) adds
+  // the base SKU. The qty stepper tracks the exact line we'd add to.
+  const variants = product.variants ?? [];
+  const hasChoices = variants.length > 1;
+  const singleVariant = variants.length === 1 ? variants[0] : undefined;
+  const lineId = singleVariant ? `${product.id}::${singleVariant.id}` : product.id;
+  const qty = items.find((item) => (item.lineId ?? item.productId) === lineId)?.qty ?? 0;
+
   const saved = has(product.id);
   const href = product.href ?? `/products/${product.slug}`;
   const discount = product.mrp && product.mrp > product.price
@@ -30,12 +40,24 @@ export function ProductCard({ product, variant = "default", className }: Props) 
   const savings = product.mrp && product.mrp > product.price ? product.mrp - product.price : 0;
 
   const handleAddToBag = () => {
-    addItem(product);
+    if (singleVariant) {
+      const label = singleVariant.pack
+        ? `${singleVariant.label} · ${singleVariant.pack}`
+        : singleVariant.label;
+      addItem(product, 1, {
+        id: singleVariant.id,
+        sku: singleVariant.sku,
+        label,
+        price: singleVariant.price,
+      });
+    } else {
+      addItem(product);
+    }
     toast.success("Added to bag", { description: product.title });
   };
 
-  const decQty = () => updateQty(product.id, qty - 1);
-  const incQty = () => updateQty(product.id, qty + 1);
+  const decQty = () => updateQty(lineId, qty - 1);
+  const incQty = () => updateQty(lineId, qty + 1);
 
   const handleToggleWishlist = () => {
     toggle(product);
@@ -64,7 +86,10 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-ng-ink line-clamp-2">{product.title}</p>
-          <p className="text-[13px] font-semibold text-ng-forest mt-0.5">₹{product.price.toLocaleString("en-IN")}</p>
+          <p className="text-[13px] font-semibold text-ng-forest mt-0.5">
+            {product.priceFrom ? <span className="font-normal text-ng-ink-soft">from </span> : null}
+            ₹{product.price.toLocaleString("en-IN")}
+          </p>
         </div>
       </Link>
     );
@@ -142,6 +167,9 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1.5 pt-1">
+          {product.priceFrom ? (
+            <span className="text-[12px] font-medium text-ng-ink-soft">from</span>
+          ) : null}
           <span className="font-display text-[19px] sm:text-[21px] font-semibold text-ng-forest-deep tabular-nums">
             ₹{product.price.toLocaleString("en-IN")}
           </span>
@@ -157,7 +185,14 @@ export function ProductCard({ product, variant = "default", className }: Props) 
           ) : null}
         </div>
 
-        {qty === 0 ? (
+        {hasChoices ? (
+          <Button asChild variant="secondary" size="sm" fullWidth className="mt-2.5">
+            <Link href={href}>
+              <Icon name="bag-4-linear" size={16} />
+              Select options
+            </Link>
+          </Button>
+        ) : qty === 0 ? (
           <Button variant="secondary" size="sm" fullWidth className="mt-2.5" onClick={handleAddToBag}>
             <Icon name="bag-4-linear" size={16} />
             Add to bag

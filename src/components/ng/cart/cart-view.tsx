@@ -51,7 +51,7 @@ export function CartView() {
         <div className="space-y-5">
           <Stagger className="space-y-4">
             {items.map((item) => (
-              <StaggerItem key={item.productId}>
+              <StaggerItem key={item.lineId ?? item.productId}>
                 <CartLineItem item={item} />
               </StaggerItem>
             ))}

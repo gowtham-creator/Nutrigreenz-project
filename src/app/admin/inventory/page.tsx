@@ -8,6 +8,8 @@ import { StockMeter } from "@/components/ng/admin/viz";
 import { ProductModal, type ProductDraft } from "./product-modal";
 import { CategoryModal } from "./category-modal";
 import { ImportModal } from "./import-modal";
+import { VariantModal } from "./variant-modal";
+import { VariantImportModal } from "./variant-import-modal";
 import {
   formatPaise,
   STATUS_TONE,
@@ -52,6 +54,9 @@ export default function AdminInventory() {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryBusy, setCategoryBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // ── variant management ────────────────────────────────────────────
+  const [variantProduct, setVariantProduct] = useState<Product | null>(null);
+  const [variantImportOpen, setVariantImportOpen] = useState(false);
 
   // ── inline stock edit ─────────────────────────────────────────────
   const [stockEditId, setStockEditId] = useState<string | null>(null);
@@ -262,6 +267,21 @@ export default function AdminInventory() {
           </a>
           <button
             type="button"
+            onClick={() => setVariantImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="import-bold" size={15} className="text-ng-clay" />
+            Import variants
+          </button>
+          <a
+            href="/api/admin/inventory/variants/export"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+          >
+            <Icon name="export-bold" size={15} className="text-ng-clay" />
+            Export variants
+          </a>
+          <button
+            type="button"
             onClick={openAdd}
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
           >
@@ -378,6 +398,15 @@ export default function AdminInventory() {
                   <div className="flex items-center justify-end gap-2.5">
                     <button
                       type="button"
+                      onClick={() => setVariantProduct(p)}
+                      aria-label={`Manage variants for ${p.name}`}
+                      className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-clay-deep hover:text-ng-clay transition-colors cursor-pointer"
+                    >
+                      <Icon name="layers-minimalistic-bold" size={13} />
+                      Variants
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEdit(p)}
                       aria-label={`Edit ${p.name}`}
                       className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
@@ -422,6 +451,17 @@ export default function AdminInventory() {
       <ImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        onCommitted={() => void loadProducts()}
+      />
+      <VariantModal
+        open={variantProduct !== null}
+        product={variantProduct}
+        onClose={() => setVariantProduct(null)}
+        onChanged={() => void loadProducts()}
+      />
+      <VariantImportModal
+        open={variantImportOpen}
+        onClose={() => setVariantImportOpen(false)}
         onCommitted={() => void loadProducts()}
       />
     </AdminShell>

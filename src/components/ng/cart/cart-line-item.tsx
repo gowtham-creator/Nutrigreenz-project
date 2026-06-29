@@ -12,6 +12,8 @@ const PLACEHOLDER = "/images/placeholder.svg";
 export function CartLineItem({ item }: { item: CartItem }) {
   const { updateQty, removeItem } = useCart();
   const lineTotal = item.price * item.qty;
+  // Operate on the stable line id so two variants of one product stay distinct.
+  const lineId = item.lineId ?? item.productId;
 
   return (
     <article className="group relative flex gap-4 overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-paper p-4 shadow-[var(--shadow-ng-card)] transition-all duration-300 hover:-translate-y-0.5 hover:border-ng-leaf/60 hover:shadow-[var(--shadow-ng-float)] sm:gap-5 sm:p-5">
@@ -59,7 +61,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
           <button
             type="button"
             aria-label={`Remove ${item.title}`}
-            onClick={() => removeItem(item.productId)}
+            onClick={() => removeItem(lineId)}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ng-ink-muted transition-colors hover:bg-ng-danger/10 hover:text-ng-danger"
           >
             <Icon name="trash-bin-trash-linear" size={18} />
@@ -71,7 +73,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
             <button
               type="button"
               aria-label="Decrease quantity"
-              onClick={() => updateQty(item.productId, item.qty - 1)}
+              onClick={() => updateQty(lineId, item.qty - 1)}
               className="grid h-9 w-9 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95"
             >
               <Icon name="minus-circle-linear" size={18} />
@@ -85,7 +87,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
             <button
               type="button"
               aria-label="Increase quantity"
-              onClick={() => updateQty(item.productId, item.qty + 1)}
+              onClick={() => updateQty(lineId, item.qty + 1)}
               className="grid h-9 w-9 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95"
             >
               <Icon name="add-circle-linear" size={18} />

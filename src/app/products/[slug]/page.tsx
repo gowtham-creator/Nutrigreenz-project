@@ -6,10 +6,11 @@ import { Section } from "@/components/ng/section";
 import { ProductCard } from "@/components/ng/product-card";
 import { Reveal, Parallax } from "@/components/ng/motion";
 import { CATEGORIES } from "@/components/ng/data";
-import type { ProductCard as Product } from "@/types/nutrigreenz";
+import type { ProductCard as Product, ProductVariantOption } from "@/types/nutrigreenz";
 import { getStorefrontCatalog, getStorefrontProductBySlug } from "@/lib/storefront-catalog";
 import { Gallery } from "@/components/ng/pdp/gallery";
 import { BuyPanel } from "@/components/ng/pdp/buy-panel";
+import { PdpVariantProvider } from "@/components/ng/pdp/variant-context";
 import { TrustRow } from "@/components/ng/pdp/trust-row";
 import { StorySection } from "@/components/ng/pdp/story-section";
 import { TheWay } from "@/components/ng/pdp/the-way";
@@ -119,6 +120,42 @@ function deriveVariants(p: Product): { variants: PdpVariant[]; baseIndex: number
   return { variants, baseIndex };
 }
 
+/** Map a real catalog variant → the PDP's selector/cart variant shape. */
+function toBuyVariant(v: ProductVariantOption): PdpVariant {
+  const each = v.sizeValue && v.sizeValue > 0 ? v.price / v.sizeValue : null;
+  const unit = v.sizeUnit ?? "";
+  const perUnit =
+    each !== null && unit
+      ? `₹${each < 10 ? each.toFixed(2) : Math.round(each)} / ${unit}`
+      : v.pack
+        ? v.pack.charAt(0).toUpperCase() + v.pack.slice(1)
+        : "Best value";
+  return {
+    id: v.id,
+    sku: v.sku || undefined,
+    size: v.label,
+    pack: v.pack,
+    price: v.price,
+    perUnit,
+    inStock: v.inStock,
+  };
+}
+
+/**
+ * Resolve the PDP's variant list. DB-backed products drive the selector from
+ * their real size × pack variants (cheapest in-stock pre-selected); demo/legacy
+ * products with no variants fall back to deterministically derived sizes.
+ */
+function resolveVariants(p: Product): { variants: PdpVariant[]; baseIndex: number } {
+  const real = p.variants ?? [];
+  if (real.length > 0) {
+    const variants = real.map(toBuyVariant);
+    const firstInStock = variants.findIndex((v) => v.inStock !== false);
+    return { variants, baseIndex: firstInStock >= 0 ? firstInStock : 0 };
+  }
+  return deriveVariants(p);
+}
+
 function getIntro(p: Product, categoryId: string): string {
   const byCat: Record<string, string> = {
     oils: "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
@@ -204,7 +241,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { categoryId, content } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
   const intro = getIntro(p, categoryId);
-  const { variants, baseIndex } = deriveVariants(p);
+  const { variants, baseIndex } = resolveVariants(p);
   const basePrice = variants[baseIndex]?.price ?? p.price;
   const discount = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
 
@@ -258,6 +295,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <PageShell>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+      {/* Share the selected size × pack between the buy panel and the sticky bar. */}
+      <PdpVariantProvider variants={variants} initialIndex={baseIndex}>
 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="border-b border-ng-line-soft bg-ng-paper">
@@ -399,6 +439,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {/* Sticky bottom add-to-cart bar */}
       <StickyBar product={p} price={basePrice} outOfStock={outOfStock} />
+
+      </PdpVariantProvider>
     </PageShell>
   );
 }
