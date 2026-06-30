@@ -1,22 +1,22 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { StatusStepper } from "../status-stepper";
 import {
-  getOrder,
+  customerLabel,
+  formatDateTime,
+  formatPaise,
   itemCount,
-  INR,
+  PAYMENT_LABEL,
+  PAYMENT_TONE,
+  snapshotRows,
+  STATUS_LABEL,
   STATUS_TONE,
-  type OrderStatus,
-} from "@/components/ng/admin/orders-data";
-import { StatusPipeline } from "@/components/ng/admin/order-detail/status-pipeline";
-import { StatusActions } from "@/components/ng/admin/order-detail/status-actions";
-import { LineItems } from "@/components/ng/admin/order-detail/line-items";
-import { CustomerDeliveryCard, PaymentCard } from "@/components/ng/admin/order-detail/info-cards";
-import { InvoiceActions } from "@/components/ng/admin/order-detail/invoice-actions";
-import { ActivityTimeline } from "@/components/ng/admin/order-detail/activity-timeline";
+  type Order,
+} from "../portal-data";
 
 const backAction = (
   <Link
@@ -28,21 +28,67 @@ const backAction = (
   </Link>
 );
 
-export default function AdminOrderDetail({ params }: { params: Promise<{ id: string }> }) {
+type LoadState =
+  | { phase: "loading" }
+  | { phase: "missing" }
+  | { phase: "ready"; order: Order };
+
+export default function AdminOrderDetail({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
-  const order = getOrder(id);
+  const [state, setState] = useState<LoadState>({ phase: "loading" });
 
-  // Local, optimistic status — drives both the pill and the pipeline stepper.
-  const [status, setStatus] = useState<OrderStatus | null>(order ? order.status : null);
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`);
+    if (!res.ok) {
+      setState({ phase: "missing" });
+      return;
+    }
+    const data = (await res.json()) as { ok: boolean; order?: Order };
+    if (data.ok && data.order) setState({ phase: "ready", order: data.order });
+    else setState({ phase: "missing" });
+  }, [id]);
 
-  if (!order || status === null) {
+  useEffect(() => {
+    let active = true;
+    // Defer the fetch (which sets state) off the synchronous effect body to
+    // avoid cascading renders; ignore the result if the effect has cleaned up.
+    queueMicrotask(() => {
+      if (active) void load();
+    });
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  if (state.phase === "loading") {
     return (
-      <AdminShell active="/admin/orders" title="Order not found" subtitle={id} actions={backAction}>
+      <AdminShell active="/admin/orders" title="Order" subtitle={id} actions={backAction}>
+        <Card className="text-center py-16">
+          <p className="text-[13px] font-medium text-ng-ink-muted">Loading order…</p>
+        </Card>
+      </AdminShell>
+    );
+  }
+
+  if (state.phase === "missing") {
+    return (
+      <AdminShell
+        active="/admin/orders"
+        title="Order not found"
+        subtitle={id}
+        actions={backAction}
+      >
         <Card className="text-center py-16">
           <div className="mx-auto size-12 rounded-full bg-ng-cream flex items-center justify-center text-ng-ink-soft mb-4">
             <Icon name="box-minimalistic-broken" size={24} />
           </div>
-          <h2 className="font-display text-[20px] text-ng-forest-deep">We couldn&rsquo;t find that order</h2>
+          <h2 className="font-display text-[20px] text-ng-forest-deep">
+            We couldn&rsquo;t find that order
+          </h2>
           <p className="text-[13px] font-medium text-ng-ink-muted mt-2">
             No order matches <span className="font-mono font-semibold text-ng-ink">{id}</span>.
           </p>
@@ -57,67 +103,231 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
     );
   }
 
-  const subtotal = order.items.reduce((sum, it) => sum + it.price * it.qty, 0);
+  const { order } = state;
+  const addressRows = snapshotRows(order.addressSnapshot);
+  const slotRows = snapshotRows(order.slotSnapshot);
+  const onAdvanced = (updated: Order) => setState({ phase: "ready", order: updated });
 
   return (
     <AdminShell
       active="/admin/orders"
-      title={order.id}
-      subtitle={`${order.customer.name} · placed ${order.placedAt}`}
+      title={order.orderNumber}
+      subtitle={`${customerLabel(order)} · placed ${formatDateTime(order.placedAt)}`}
       actions={backAction}
     >
       <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
         {/* Main column */}
         <div className="space-y-6 min-w-0">
-          {/* Status pipeline + actions */}
+          {/* Status pipeline + forward-only action */}
           <Card
-            title="Status"
-            action={<Pill tone={STATUS_TONE[status]}>{status}</Pill>}
+            title="Fulfilment status"
+            action={<Pill tone={STATUS_TONE[order.status]}>{STATUS_LABEL[order.status]}</Pill>}
           >
-            <div className="pt-2 pb-1">
-              <StatusPipeline status={status} />
-            </div>
-            <div className="mt-7 pt-5 border-t border-ng-line-soft">
-              <StatusActions status={status} onChange={setStatus} />
+            <div className="pt-3 pb-1">
+              <StatusStepper order={order} onAdvanced={onAdvanced} />
             </div>
           </Card>
 
-          {/* Line items + lot assignment */}
-          <Card title="Line items">
-            <LineItems items={order.items} />
+          {/* Line items */}
+          <Card className="!p-0 overflow-hidden">
+            <header className="px-6 pt-6 pb-4">
+              <h2 className="font-display text-[18px] text-ng-forest-deep">
+                Line items ({itemCount(order)})
+              </h2>
+            </header>
+            {order.items.length === 0 ? (
+              <div className="px-6 pb-6 text-[13px] font-medium text-ng-ink-muted">
+                This order has no line items.
+              </div>
+            ) : (
+              <ul>
+                {order.items.map((it) => (
+                  <li
+                    key={it.id}
+                    className="flex items-center gap-4 px-6 py-3.5 border-t border-ng-line-soft text-[13px]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-ng-ink truncate">{it.title}</div>
+                      <div className="text-[11.5px] font-medium text-ng-ink-muted mt-0.5 font-mono truncate">
+                        {it.variantSku ?? "—"}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="tabular-nums text-ng-ink-muted">
+                        {it.qty} × {formatPaise(it.unitPricePaise)}
+                      </div>
+                      <div className="tabular-nums font-semibold text-ng-ink mt-0.5">
+                        {formatPaise(it.lineTotalPaise)}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
-          {/* Customer & payment */}
+          {/* Customer + delivery snapshot */}
           <div className="grid md:grid-cols-2 gap-6">
-            <CustomerDeliveryCard order={order} />
-            <PaymentCard order={order} />
+            <Card title="Customer">
+              <dl className="space-y-2.5 text-[13px]">
+                <Row label="Name" value={customerLabel(order)} />
+                <Row label="Email" value={order.userEmail ?? "—"} mono />
+                <Row label="Phone" value={order.userPhone ?? "—"} mono />
+                <Row
+                  label="Account"
+                  value={order.customerId ? "Registered" : "Guest"}
+                />
+              </dl>
+            </Card>
+
+            <Card title="Delivery address">
+              {addressRows.length === 0 ? (
+                <p className="text-[13px] font-medium text-ng-ink-muted">
+                  No address snapshot on this order.
+                </p>
+              ) : (
+                <dl className="space-y-2.5 text-[13px]">
+                  {addressRows.map((r) => (
+                    <Row key={r.label} label={r.label} value={r.value} />
+                  ))}
+                </dl>
+              )}
+            </Card>
           </div>
+
+          {/* Delivery slot snapshot */}
+          {slotRows.length > 0 ? (
+            <Card title="Delivery slot">
+              <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 text-[13px]">
+                {slotRows.map((r) => (
+                  <Row key={r.label} label={r.label} value={r.value} />
+                ))}
+              </dl>
+            </Card>
+          ) : null}
         </div>
 
         {/* Side column */}
         <div className="space-y-6">
-          {/* Order summary */}
+          {/* Totals breakdown */}
           <Card title="Summary">
             <dl className="space-y-2.5 text-[13px]">
-              <div className="flex justify-between">
-                <dt className="font-medium text-ng-ink-muted">Items ({itemCount(order)})</dt>
-                <dd className="tabular-nums font-semibold text-ng-ink">{INR(subtotal)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="font-medium text-ng-ink-muted">Delivery</dt>
-                <dd className="text-ng-success font-semibold">Free</dd>
-              </div>
+              <Row label={`Subtotal (${itemCount(order)} items)`} value={formatPaise(order.subtotalPaise)} valueClass="font-semibold text-ng-ink" />
+              {order.discountPaise > 0 ? (
+                <Row
+                  label={order.couponCode ? `Discount (${order.couponCode})` : "Discount"}
+                  value={`− ${formatPaise(order.discountPaise)}`}
+                  valueClass="font-semibold text-ng-success"
+                />
+              ) : null}
+              {order.loyaltyRedeemedPaise > 0 ? (
+                <Row
+                  label="Loyalty redeemed"
+                  value={`− ${formatPaise(order.loyaltyRedeemedPaise)}`}
+                  valueClass="font-semibold text-ng-success"
+                />
+              ) : null}
+              <Row
+                label="Delivery"
+                value={order.shippingPaise > 0 ? formatPaise(order.shippingPaise) : "Free"}
+                valueClass={order.shippingPaise > 0 ? "font-semibold text-ng-ink" : "font-semibold text-ng-success"}
+              />
+              {order.taxPaise > 0 ? (
+                <Row label="Tax" value={formatPaise(order.taxPaise)} valueClass="font-semibold text-ng-ink" />
+              ) : null}
               <div className="flex justify-between pt-2.5 border-t border-ng-line-soft text-[15px]">
                 <dt className="font-display text-ng-forest-deep">Total</dt>
-                <dd className="font-display text-ng-forest-deep tabular-nums">{INR(order.total)}</dd>
+                <dd className="font-display text-ng-forest-deep tabular-nums">
+                  {formatPaise(order.totalPaise)}
+                </dd>
               </div>
             </dl>
           </Card>
 
-          <InvoiceActions order={order} />
-          <ActivityTimeline timeline={order.timeline} />
+          {/* Payment */}
+          <Card title="Payment">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[12px] font-medium text-ng-ink-muted">Status</span>
+              <Pill tone={PAYMENT_TONE[order.paymentStatus]}>
+                {PAYMENT_LABEL[order.paymentStatus]}
+              </Pill>
+            </div>
+            <dl className="space-y-2.5 text-[13px]">
+              <Row label="Provider" value={order.paymentProvider} />
+              <Row label="Reference" value={order.paymentRef ?? "—"} mono />
+              <Row label="Currency" value={order.currency} />
+            </dl>
+          </Card>
+
+          {/* Status timeline */}
+          <Card title="Status timeline">
+            {order.events.length === 0 ? (
+              <p className="text-[13px] font-medium text-ng-ink-muted">No status events yet.</p>
+            ) : (
+              <ol className="space-y-4">
+                {order.events.map((ev, idx) => {
+                  const isLast = idx === order.events.length - 1;
+                  return (
+                    <li key={ev.id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={
+                            isLast
+                              ? "size-3 rounded-full bg-ng-forest-deep mt-1"
+                              : "size-3 rounded-full bg-ng-forest/40 mt-1"
+                          }
+                        />
+                        {!isLast ? <span className="w-px flex-1 bg-ng-line-soft mt-1" /> : null}
+                      </div>
+                      <div className="pb-1 min-w-0">
+                        <div className="text-[13px] font-semibold text-ng-forest-deep">
+                          {STATUS_LABEL[ev.status]}
+                        </div>
+                        <div className="text-[11.5px] font-medium text-ng-ink-muted mt-0.5">
+                          {formatDateTime(ev.at)} · {ev.by}
+                        </div>
+                        {ev.note ? (
+                          <div className="text-[12px] font-medium text-ng-ink-soft mt-1">
+                            {ev.note}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </Card>
         </div>
       </div>
     </AdminShell>
+  );
+}
+
+/** A label/value row inside a definition list. */
+function Row({
+  label,
+  value,
+  mono,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="font-medium text-ng-ink-muted shrink-0">{label}</dt>
+      <dd
+        className={[
+          "text-right min-w-0 truncate",
+          mono ? "font-mono text-[12px] text-ng-ink" : "text-ng-ink",
+          valueClass ?? "",
+        ].join(" ")}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }

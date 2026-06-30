@@ -1,174 +1,202 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
-  ADMIN_ORDERS,
+  customerContact,
+  customerLabel,
+  formatPaise,
   itemCount,
-  lotsInBox,
-  INR,
+  ORDER_STATUS_FLOW,
+  PAYMENT_LABEL,
+  PAYMENT_TONE,
+  relativeTime,
+  STATUS_LABEL,
   STATUS_TONE,
-  type AdminOrder,
+  type Order,
   type OrderStatus,
-} from "@/components/ng/admin/orders-data";
+} from "./portal-data";
 
-/** Filter chips → the set of statuses each chip matches. */
-type FilterKey = "All" | "Paid" | "Packed" | "Shipped" | "Delivered" | "Refund req." | "Failed";
-
-const FILTERS: { key: FilterKey; match: (s: OrderStatus) => boolean }[] = [
-  { key: "All", match: () => true },
-  { key: "Paid", match: (s) => s === "Paid" },
-  { key: "Packed", match: (s) => s === "Packed" },
-  { key: "Shipped", match: (s) => s === "Shipped" || s === "Out for delivery" },
-  { key: "Delivered", match: (s) => s === "Delivered" },
-  { key: "Refund req.", match: (s) => s === "Refund req." },
-  { key: "Failed", match: (s) => s === "Payment failed" },
+/** Status filter chips: "all" plus each fulfilment stage. */
+type StatusFilter = "all" | OrderStatus;
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "All orders" },
+  ...ORDER_STATUS_FLOW.map((s) => ({ key: s, label: STATUS_LABEL[s] })),
 ];
 
-const COLS = "grid grid-cols-[1fr_1.4fr_2.4fr_0.7fr_0.9fr_1.1fr_1.1fr_0.6fr] gap-4";
-
-function matchesSearch(o: AdminOrder, q: string): boolean {
-  if (!q) return true;
-  const needle = q.toLowerCase();
-  return (
-    o.id.toLowerCase().includes(needle) ||
-    o.customer.name.toLowerCase().includes(needle) ||
-    o.address.community.toLowerCase().includes(needle) ||
-    o.items.some((it) => it.lot.toLowerCase().includes(needle))
-  );
-}
+const COLS = "grid grid-cols-[1.1fr_1.8fr_0.6fr_0.9fr_1fr_1fr_0.6fr] gap-4";
 
 export default function AdminOrders() {
-  const [filter, setFilter] = useState<FilterKey>("All");
-  const [query, setQuery] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
 
-  const activeFilter = FILTERS.find((f) => f.key === filter) ?? FILTERS[0];
-
-  const rows = useMemo(
-    () => ADMIN_ORDERS.filter((o) => activeFilter.match(o.status) && matchesSearch(o, query)),
-    [activeFilter, query],
-  );
-
-  // Stat tiles computed from data.
-  const stats = useMemo(() => {
-    const count = (pred: (s: OrderStatus) => boolean) => ADMIN_ORDERS.filter((o) => pred(o.status)).length;
-    return {
-      awaiting: count((s) => s === "Awaiting payment"),
-      toPack: count((s) => s === "Paid" || s === "Packed"),
-      outForDelivery: count((s) => s === "Out for delivery" || s === "Shipped"),
-      refundQueue: count((s) => s === "Refund req."),
+  const load = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (search.trim()) params.set("search", search.trim());
+    params.set("limit", "100");
+    const res = await fetch(`/api/admin/orders?${params.toString()}`);
+    const data = (await res.json()) as {
+      ok: boolean;
+      orders?: Order[];
+      total?: number;
     };
-  }, []);
+    if (data.ok) {
+      setOrders(data.orders ?? []);
+      setTotal(data.total ?? 0);
+    }
+  }, [statusFilter, search]);
+
+  useEffect(() => {
+    let active = true;
+    // Debounce filter/search changes; the loading flag is set inside the timer
+    // (not synchronously in the effect body) to avoid cascading renders.
+    const t = setTimeout(() => {
+      if (!active) return;
+      setLoading(true);
+      void load().finally(() => {
+        if (active) setLoading(false);
+      });
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [load]);
+
+  // Stat tiles from the current page (server is the source of truth for `total`).
+  const stats = useMemo(() => {
+    const count = (s: OrderStatus) => orders.filter((o) => o.status === s).length;
+    const pendingPay = orders.filter((o) => o.paymentStatus === "pending").length;
+    return {
+      placed: count("placed"),
+      toPack: count("confirmed") + count("packed"),
+      shipped: count("shipped"),
+      pendingPay,
+    };
+  }, [orders]);
 
   return (
     <AdminShell
       active="/admin/orders"
       title="Orders"
-      subtitle={`Today · ${ADMIN_ORDERS.length} orders · ${stats.awaiting + stats.refundQueue} needing attention`}
+      subtitle={`${total} order${total === 1 ? "" : "s"} · forward-only fulfilment pipeline`}
       actions={
-        <>
-          <Link
-            href="/admin/orders/bundles"
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors"
-          >
-            <Icon name="box-bold" size={15} className="text-ng-forest" />
-            Community bundles
-            <Icon name="arrow-right-linear" size={14} />
-          </Link>
-          <button className="rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors">
-            Export
-          </button>
-          <button className="rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors">
-            Create manual order
-          </button>
-        </>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors"
+        >
+          <Icon name="refresh-bold" size={15} className="text-ng-forest" />
+          Refresh
+        </button>
       }
     >
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatTile label="Awaiting payment" value={String(stats.awaiting)} />
+        <StatTile label="New (placed)" value={String(stats.placed)} />
         <StatTile label="To pack" value={String(stats.toPack)} />
-        <StatTile label="Out for delivery" value={String(stats.outForDelivery)} delta="on time" trend="up" />
-        <StatTile label="Refund queue" value={String(stats.refundQueue)} delta="SLA 4h" trend="flat" />
+        <StatTile label="Shipped" value={String(stats.shipped)} />
+        <StatTile label="Payment pending" value={String(stats.pendingPay)} />
       </div>
 
       {/* Filter row */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <span className="text-[12px] font-medium text-ng-ink-soft mr-2">Filter:</span>
-        {FILTERS.map((f) => (
+        {STATUS_FILTERS.map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-3.5 py-1.5 rounded-full text-[12px] transition-colors ${
-              filter === f.key
+            type="button"
+            onClick={() => setStatusFilter(f.key)}
+            className={cn(
+              "px-3.5 py-1.5 rounded-full text-[12px] transition-colors",
+              statusFilter === f.key
                 ? "bg-ng-forest-deep text-ng-cream font-semibold"
-                : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream"
-            }`}
+                : "bg-ng-paper border border-ng-line-soft text-ng-ink-muted font-medium hover:bg-ng-cream",
+            )}
           >
-            {f.key}
+            {f.label}
           </button>
         ))}
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto">
           <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search order, customer, lot…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search order #, email, phone…"
             className="rounded-full bg-ng-paper border border-ng-line-soft px-4 py-1.5 text-[12.5px] w-72 outline-none focus:border-ng-forest"
           />
-          <select className="rounded-full bg-ng-paper border border-ng-line-soft px-3 py-1.5 text-[12.5px] outline-none">
-            <option>Last 24 hours</option>
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-          </select>
         </div>
       </div>
 
       {/* Orders table */}
       <Card className="!p-0 overflow-hidden">
         <div
-          className={`${COLS} px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold`}
+          className={cn(
+            COLS,
+            "px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold",
+          )}
         >
           <span>Order</span>
           <span>Customer</span>
-          <span>Lots in box</span>
           <span>Items</span>
           <span>Total</span>
           <span>Status</span>
-          <span>Channel</span>
+          <span>Payment</span>
           <span />
         </div>
-        {rows.length === 0 ? (
+
+        {loading ? (
+          <div className="px-5 py-14 text-center text-[13px] font-medium text-ng-ink-muted">
+            Loading orders…
+          </div>
+        ) : orders.length === 0 ? (
           <div className="px-5 py-14 text-center text-[13px] font-medium text-ng-ink-muted">
             No orders match this filter or search.
           </div>
         ) : (
           <ul>
-            {rows.map((o) => (
+            {orders.map((o) => (
               <li
                 key={o.id}
-                className={`${COLS} px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors`}
+                className={cn(
+                  COLS,
+                  "px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors",
+                )}
               >
-                <div>
-                  <div className="font-mono font-semibold text-[12.5px] text-ng-forest-deep">{o.id}</div>
-                  <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{o.placedAgo}</div>
-                </div>
                 <div className="min-w-0">
-                  <div className="truncate font-semibold text-ng-ink">{o.customer.name}</div>
-                  <div className="text-[11.5px] font-medium text-ng-ink-muted truncate">
-                    {o.address.community} · {o.address.pincode}
+                  <div className="font-mono font-semibold text-[12.5px] text-ng-forest-deep truncate">
+                    {o.orderNumber}
+                  </div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">
+                    {relativeTime(o.placedAt)}
                   </div>
                 </div>
-                <span className="text-[11.5px] font-mono font-medium text-ng-ink-muted truncate">{lotsInBox(o)}</span>
+                <div className="min-w-0">
+                  <div className="truncate font-semibold text-ng-ink">{customerLabel(o)}</div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-muted truncate">
+                    {customerContact(o) || "—"}
+                  </div>
+                </div>
                 <span className="tabular-nums font-semibold text-ng-ink">{itemCount(o)}</span>
-                <span className="font-semibold text-ng-ink tabular-nums">{INR(o.total)}</span>
-                <span>
-                  <Pill tone={STATUS_TONE[o.status]}>{o.status}</Pill>
+                <span className="font-semibold text-ng-ink tabular-nums">
+                  {formatPaise(o.totalPaise)}
                 </span>
-                <span className="text-[11.5px] font-medium text-ng-ink-muted truncate">{o.channel}</span>
+                <span>
+                  <Pill tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Pill>
+                </span>
+                <span>
+                  <Pill tone={PAYMENT_TONE[o.paymentStatus]}>
+                    {PAYMENT_LABEL[o.paymentStatus]}
+                  </Pill>
+                </span>
                 <Link
-                  href={`/admin/orders/${o.id}`}
+                  href={`/admin/orders/${o.orderNumber}`}
                   className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors"
                 >
                   Open →
@@ -178,36 +206,6 @@ export default function AdminOrders() {
           </ul>
         )}
       </Card>
-
-      {/* Bottom cards */}
-      <div className="grid lg:grid-cols-2 gap-6 mt-6">
-        <Card title="Top failing payments">
-          <ul className="space-y-3 text-[13px]">
-            <li className="flex justify-between">
-              <span className="font-medium text-ng-ink-muted">HDFC Credit · 3D-Secure timeout</span>
-              <span className="text-ng-terracotta font-semibold tabular-nums">42%</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="font-medium text-ng-ink-muted">UPI · UPI ID typo</span>
-              <span className="text-ng-terracotta font-semibold tabular-nums">28%</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="font-medium text-ng-ink-muted">ICICI Debit · insufficient funds</span>
-              <span className="text-ng-terracotta font-semibold tabular-nums">16%</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="font-medium text-ng-ink-muted">Card · expired</span>
-              <span className="text-ng-ink-muted font-semibold tabular-nums">14%</span>
-            </li>
-          </ul>
-        </Card>
-        <Card title="Refund SLA last 30d">
-          <div className="font-display text-[44px] text-ng-forest-deep leading-none">3h 12m</div>
-          <p className="text-[13px] font-medium text-ng-ink-muted mt-3">
-            Avg time-to-resolution. Target: under 4h. 96% within SLA.
-          </p>
-        </Card>
-      </div>
     </AdminShell>
   );
 }
