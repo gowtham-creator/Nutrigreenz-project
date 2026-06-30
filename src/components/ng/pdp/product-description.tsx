@@ -15,9 +15,7 @@ interface ProductDescriptionProps {
 export function ProductDescription({ paragraphs, heading = "Product description" }: ProductDescriptionProps) {
   return (
     <Reveal className="flex max-w-3xl flex-col gap-4">
-      <h2 className="font-display text-[15px] font-semibold uppercase tracking-[0.18em] text-ng-forest-deep">
-        {heading}
-      </h2>
+      <h2 className="ng-eyebrow">{heading}</h2>
       <div className="flex flex-col gap-3">
         {paragraphs.map((p) => (
           <p key={p} className="text-[15px] leading-relaxed text-ng-ink">

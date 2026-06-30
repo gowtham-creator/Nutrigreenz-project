@@ -18,7 +18,7 @@ interface StoryBenefitHeroProps {
  */
 export function StoryBenefitHero({ data, produceIcon }: StoryBenefitHeroProps) {
   return (
-    <div className="grid items-center gap-8 rounded-[28px] border border-ng-line-soft bg-ng-cream p-5 md:grid-cols-2 md:gap-12 md:p-10">
+    <div className="grid items-center gap-8 rounded-[28px] border border-ng-line-soft bg-ng-cream p-5 shadow-[var(--shadow-ng-card)] md:grid-cols-2 md:gap-12 md:p-10">
       <Reveal>
         <div className="relative aspect-square overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-cream-deep">
           {isPlaceholderSrc(data.image.src) ? (

@@ -104,7 +104,7 @@ const GHEE_STORY: ProductStoryContent = {
   sections: [
     {
       kind: "benefit-hero",
-      heading: "The Nutri Greenz Way",
+      heading: "Verified A2, naturally nourishing",
       sub: "A2 protein, verified at source — a ghee that earns its place in your kitchen by doing more for your body, not less.",
       image: { src: `${GHEE_DIR}/ghee-05-card-benefits.png`, alt: "A2 Bilona Ghee benefits", label: "Benefits" },
       bullets: [
@@ -194,7 +194,7 @@ const HONEY_STORY = minimalStory(
     "No added sugar, no syrup, no shortcuts. Just honey, the way the hive made it.",
   ],
   {
-    heading: "The Nutri Greenz Way",
+    heading: "Pure by every measure",
     sub: "Living, raw honey traced to a single forest harvest.",
     bullets: [
       { icon: "shield-check-linear", label: "Raw & unheated" },
@@ -215,7 +215,7 @@ const RICE_STORY = minimalStory(
     "No polishing for looks, no shortcuts for shelf-life. Just honest rice that cooks the way it should.",
   ],
   {
-    heading: "The Nutri Greenz Way",
+    heading: "Pure by every measure",
     sub: "Naturally grown, minimally milled, single-origin rice.",
     bullets: [
       { icon: "shield-check-linear", label: "Lightly milled" },
@@ -236,7 +236,7 @@ const OILS_STORY = minimalStory(
     "Bottled in UV-protected glass so the aroma reaches your kitchen exactly as it left the press.",
   ],
   {
-    heading: "The Nutri Greenz Way",
+    heading: "Pure by every measure",
     sub: "Cold-pressed below 40°C, from a single farm lot.",
     bullets: [
       { icon: "shield-check-linear", label: "Cold-pressed" },

@@ -19,7 +19,7 @@ export function StorySplit2Up({ data, produceIcon }: StorySplit2UpProps) {
     <div className="grid gap-5 md:grid-cols-2 md:gap-6">
       {data.cards.map((card, i) => (
         <Reveal key={card.heading} delay={i * 0.08} className="h-full">
-          <article className="flex h-full flex-col overflow-hidden rounded-[28px] border border-ng-line-soft bg-ng-paper">
+          <article className="flex h-full flex-col overflow-hidden rounded-[28px] border border-ng-line-soft bg-ng-paper shadow-[var(--shadow-ng-card)]">
             <div className="relative aspect-square overflow-hidden bg-ng-cream-deep">
               {isPlaceholderSrc(card.image.src) ? (
                 <PhotoPlaceholder icon={produceIcon} variant="main" label={card.image.label ?? card.image.alt} />
