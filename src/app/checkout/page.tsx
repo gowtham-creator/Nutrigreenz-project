@@ -76,7 +76,7 @@ function CheckoutStepper() {
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clear } = useCart();
-  const { isAuthed, loading: authLoading } = useAuth();
+  const { isAuthed, account, loading: authLoading } = useAuth();
   const rules = useCommerceRules();
   const { config: loyalty } = useLoyaltyConfig();
   const { addresses, defaultAddress } = useAddresses();
@@ -99,6 +99,8 @@ export default function CheckoutPage() {
   // without an extra click; the shopper can still untick to opt out.
   const [acknowledged, setAcknowledged] = useState(true);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // Guards the place-order button while the order is being persisted server-side.
+  const [placing, setPlacing] = useState(false);
   // Serviceability of the selected delivery pincode (null = not yet checked).
   const [serviceable, setServiceable] = useState<boolean | null>(null);
 
@@ -196,7 +198,8 @@ export default function CheckoutPage() {
     !belowMinimum &&
     !notServiceable;
 
-  function handlePlaceOrder() {
+  async function handlePlaceOrder() {
+    if (placing) return;
     if (!canPlace || !selectedAddress || !selectedSlot || !payment) {
       if (belowMinimum) {
         toast.error(`Minimum order value is ${INR(rules.minOrderValue)}.`);
@@ -212,9 +215,61 @@ export default function CheckoutPage() {
       return;
     }
 
-    const id = generateOrderId();
+    setPlacing(true);
+
+    // Persist the order server-side. The backend re-prices every line from the
+    // catalog + live commerce rules (client totals are ignored) and returns the
+    // canonical NG-YY-XXXX order number. Money crosses the wire as integer paise.
+    let orderNumber = generateOrderId();
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            productId: i.productId ?? null,
+            variantId: i.variantId ?? null,
+            variantSku: i.variantSku ?? null,
+            title: i.title,
+            qty: i.qty,
+            snapshot: {
+              image: i.image,
+              unit: i.unit,
+              price: i.price,
+              variantLabel: i.variantLabel,
+              lineId: i.lineId,
+            },
+          })),
+          couponCode: applied?.coupon.code ?? null,
+          discountPaise: Math.round(couponDiscount * 100),
+          loyaltyRedeemedPaise: Math.round(loyaltyDiscount * 100),
+          addressSnapshot: selectedAddress,
+          slotSnapshot: selectedSlot,
+          userEmail: account?.email ?? null,
+          userPhone: account?.phone ?? null,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { orderNumber?: string };
+        if (data?.orderNumber) orderNumber = data.orderNumber;
+      } else if (res.status === 401) {
+        // Session expired between gate and submit — send them to re-auth.
+        toast.error("Please sign in again to place your order.");
+        setPlacing(false);
+        router.replace("/auth?next=/checkout");
+        return;
+      }
+      // For any other non-OK (503 Supabase-unconfigured, 500…), fall through:
+      // we still confirm the order client-side so the UX never dead-ends. The
+      // success page reads the local receipt; payment stays pending regardless.
+    } catch {
+      // Network error — keep the customer's purchase flow intact via the receipt.
+    }
+
+    // Local receipt powers the confirmation, history-detail and invoice views.
+    // Keyed by the SAME order number the backend persisted, so they line up.
     saveReceipt({
-      id,
+      id: orderNumber,
       placedAt: new Date().toISOString(),
       items,
       subtotal,
@@ -234,7 +289,7 @@ export default function CheckoutPage() {
 
     clear();
     clearCheckoutDraft();
-    router.push(`/checkout/success?order=${id}`);
+    router.push(`/checkout/success?order=${orderNumber}`);
   }
 
   /* ── Auth gate ───────────────────────────────────────────────── */
@@ -428,12 +483,19 @@ export default function CheckoutPage() {
                     variant="primary"
                     size="lg"
                     fullWidth
+                    disabled={placing}
                     onClick={handlePlaceOrder}
                   >
-                    <Icon name="lock-keyhole-minimalistic-bold" size={18} />
-                    {payment
-                      ? `Pay ${INR(totals.total)} · ${payment.label}`
-                      : `Place order · ${INR(totals.total)}`}
+                    <Icon
+                      name={placing ? "refresh-bold" : "lock-keyhole-minimalistic-bold"}
+                      size={18}
+                      className={placing ? "animate-spin" : undefined}
+                    />
+                    {placing
+                      ? "Placing order…"
+                      : payment
+                        ? `Pay ${INR(totals.total)} · ${payment.label}`
+                        : `Place order · ${INR(totals.total)}`}
                   </Button>
                 </MagneticHover>
               ) : (

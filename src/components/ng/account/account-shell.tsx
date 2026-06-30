@@ -16,7 +16,7 @@ type AccountSection =
 
 const NAV: { key: AccountSection; href: string; label: string; icon: string }[] = [
   { key: "overview", href: "/account", label: "Overview", icon: "widget-5-bold" },
-  { key: "orders", href: "/orders", label: "Orders", icon: "box-bold" },
+  { key: "orders", href: "/account/orders", label: "Orders", icon: "box-bold" },
   { key: "wishlist", href: "/wishlist", label: "Wishlist", icon: "heart-bold" },
   { key: "addresses", href: "/account/addresses", label: "Addresses", icon: "map-point-bold" },
   { key: "loyalty", href: "/loyalty", label: "Loyalty", icon: "wallet-money-bold" },
