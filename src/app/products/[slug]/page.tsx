@@ -11,7 +11,9 @@ import { getStorefrontCatalog, getStorefrontProductBySlug } from "@/lib/storefro
 import { Gallery } from "@/components/ng/pdp/gallery";
 import { BuyPanel } from "@/components/ng/pdp/buy-panel";
 import { PdpVariantProvider } from "@/components/ng/pdp/variant-context";
-import { TrustRow } from "@/components/ng/pdp/trust-row";
+import { TrustBar } from "@/components/ng/pdp/trust-bar";
+import { ProductDescription } from "@/components/ng/pdp/product-description";
+import { ProductStorySections } from "@/components/ng/pdp/product-story-sections";
 import { StorySection } from "@/components/ng/pdp/story-section";
 import { TheWay } from "@/components/ng/pdp/the-way";
 import { Uses } from "@/components/ng/pdp/uses";
@@ -24,6 +26,7 @@ import { StickyBar } from "@/components/ng/pdp/sticky-bar";
 import type { Review } from "@/components/ng/pdp/reviews";
 import type { PdpVariant } from "@/components/ng/pdp/variant-selector";
 import { getPdpContent } from "@/components/ng/pdp/pdp-content";
+import { getProductStory } from "@/components/ng/pdp/pdp-story";
 
 const SITE = "https://nutrigreenz.in";
 const PLACEHOLDER = "/images/placeholder.svg";
@@ -241,6 +244,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { categoryId, content } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
   const intro = getIntro(p, categoryId);
+  // Per-category editorial story (Anveshan-style blocks). Null when the category
+  // has no story authored yet — the page then degrades to the generic sections.
+  const story = getProductStory(categoryId, cat.slug);
   const { variants, baseIndex } = resolveVariants(p);
   const basePrice = variants[baseIndex]?.price ?? p.price;
   const discount = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
@@ -257,12 +263,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const others = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
-  const images = [
-    { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
-    { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
-    { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
-    { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
-  ];
+  // Gallery — prefer the category's curated marketing renders when available,
+  // otherwise fall back to the single product image plus branded placeholders.
+  const images =
+    story?.gallery && story.gallery.length > 0
+      ? story.gallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label }))
+      : [
+          { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
+          { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
+          { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
+          { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
+        ];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -353,22 +364,33 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {/* 2 · Product description */}
       <Section className="!pt-0">
-        <Reveal className="flex max-w-3xl flex-col gap-4">
-          <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
-          <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
-          <p className="text-[15px] leading-relaxed text-ng-ink">
-            Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
-            reaches your kitchen is exactly what left the field, with nothing hidden in between.
-          </p>
+        {story ? (
+          <ProductDescription paragraphs={story.description} />
+        ) : (
+          <Reveal className="flex max-w-3xl flex-col gap-4">
+            <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
+            <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
+            <p className="text-[15px] leading-relaxed text-ng-ink">
+              Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
+              reaches your kitchen is exactly what left the field, with nothing hidden in between.
+            </p>
+          </Reveal>
+        )}
+      </Section>
+
+      {/* 3 · Trust bar — live free-delivery threshold, no return/refund promise */}
+      <Section className="!pt-0">
+        <Reveal>
+          <TrustBar checks={content.checks} />
         </Reveal>
       </Section>
 
-      {/* 3 · Trust row */}
-      <Section className="!pt-0">
-        <Reveal>
-          <TrustRow checks={content.checks} />
-        </Reveal>
-      </Section>
+      {/* 3b · Editorial story blocks — only when the category has story content */}
+      {story ? (
+        <Section className="!pt-0">
+          <ProductStorySections story={story} />
+        </Section>
+      ) : null}
 
       {/* 4 · Brand story */}
       <Section className="bg-ng-sage/15">
