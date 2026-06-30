@@ -1,0 +1,137 @@
+/**
+ * POST /api/orders — place an order (the checkout place-order seam).
+ * GET  /api/orders — list the signed-in customer's own orders (newest first).
+ *
+ * Auth is the signed `ng_session` cookie, resolved to the canonical
+ * `customer_id` via {@link getCustomerSession}. Totals are RECOMPUTED server-side
+ * from the persisted variant/product prices + the live commerce rules — the
+ * client-supplied amounts are never trusted. The order is persisted as
+ * `status = 'placed'`, `payment_status = 'pending'`; the payment seam
+ * (src/lib/payments-razorpay.ts) is a no-op today and leaves it pending.
+ */
+import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { getCustomerSession } from "@/lib/customer-session";
+import { getCustomerById } from "@/lib/customer-identity";
+import {
+  createOrder,
+  listOrdersForCustomer,
+  type OrderLineInput,
+} from "@/lib/orders";
+import { createPaymentIntent } from "@/lib/payments-razorpay";
+
+// supabase-admin + firebase-admin (jose, via session) need the Node runtime.
+export const runtime = "nodejs";
+
+function str(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function int(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
+}
+
+/** Coerce one untrusted line into a typed OrderLineInput (price is server-side). */
+function parseLine(raw: unknown): OrderLineInput | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const o = raw as Record<string, unknown>;
+  const qty = int(o.qty);
+  if (qty <= 0) return null;
+  const title = str(o.title) ?? str(o.variantLabel) ?? "Item";
+  return {
+    productId: str(o.productId),
+    variantId: str(o.variantId),
+    variantSku: str(o.variantSku),
+    title,
+    qty,
+    snapshot: typeof o.snapshot === "object" && o.snapshot !== null
+      ? (o.snapshot as Record<string, unknown>)
+      : (raw as Record<string, unknown>),
+  };
+}
+
+export async function GET(): Promise<Response> {
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: true, orders: [] });
+  }
+  const session = await getCustomerSession();
+  if (!session) {
+    return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });
+  }
+  const orders = await listOrdersForCustomer(session.customerId);
+  return Response.json({ ok: true, orders });
+}
+
+export async function POST(request: Request): Promise<Response> {
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "unavailable" }, { status: 503 });
+  }
+  const session = await getCustomerSession();
+  if (!session) {
+    return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ ok: false, error: "bad-request" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null) {
+    return Response.json({ ok: false, error: "bad-request" }, { status: 400 });
+  }
+  const b = body as Record<string, unknown>;
+
+  const rawItems = Array.isArray(b.items) ? b.items : [];
+  const items = rawItems
+    .map(parseLine)
+    .filter((l): l is OrderLineInput => l !== null);
+  if (items.length === 0) {
+    return Response.json({ ok: false, error: "empty-cart" }, { status: 400 });
+  }
+
+  // Snapshot the customer's contact for attribution even if the FK is later cleared.
+  const customer = await getCustomerById(session.customerId);
+
+  try {
+    const order = await createOrder({
+      customerId: session.customerId,
+      userEmail: customer?.primaryEmail ?? str(b.userEmail),
+      userPhone: customer?.primaryPhone ?? str(b.userPhone),
+      items,
+      couponCode: str(b.couponCode),
+      discountPaise: int(b.discountPaise),
+      loyaltyRedeemedPaise: int(b.loyaltyRedeemedPaise),
+      addressSnapshot:
+        typeof b.addressSnapshot === "object" && b.addressSnapshot !== null
+          ? (b.addressSnapshot as Record<string, unknown>)
+          : null,
+      slotSnapshot:
+        typeof b.slotSnapshot === "object" && b.slotSnapshot !== null
+          ? (b.slotSnapshot as Record<string, unknown>)
+          : null,
+    });
+
+    // Payment seam: open an intent when the gateway is configured. Today this is
+    // a no-op (returns null) and the order stays `pending` — we never fake paid.
+    const payment = await createPaymentIntent({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      totalPaise: order.totalPaise,
+      currency: order.currency,
+    });
+
+    return Response.json(
+      {
+        ok: true,
+        orderNumber: order.orderNumber,
+        order,
+        payment,
+      },
+      { status: 201 },
+    );
+  } catch {
+    return Response.json({ ok: false, error: "create-failed" }, { status: 500 });
+  }
+}
