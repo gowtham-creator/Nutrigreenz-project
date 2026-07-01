@@ -149,9 +149,9 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       </div>
 
       {/* Coins earn banner */}
-      <div className="flex items-center gap-3 rounded-2xl border border-ng-clay/40 bg-ng-clay/[0.08] px-4 py-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ng-clay/20 text-ng-clay-deep">
-          <Icon name="medal-ribbons-star-bold" size={20} />
+      <div className="flex items-center gap-3 rounded-xl border border-ng-clay/35 bg-ng-clay/[0.07] px-3.5 py-2.5">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-clay/20 text-ng-clay-deep">
+          <Icon name="medal-ribbons-star-bold" size={18} />
         </span>
         <p className="text-[13px] text-ng-soil">
           Buy now &amp; earn <span className="font-semibold text-ng-forest-deep">{coins} Harvest Coins</span> — redeem on your next order.
@@ -159,7 +159,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       </div>
 
       {/* Best price with coupon strip */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-ng-leaf bg-ng-leaf/[0.07] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-ng-leaf bg-ng-leaf/[0.07] px-3.5 py-2.5">
         <Icon name="tag-price-bold" size={18} className="text-ng-leaf" />
         <p className="text-[13px] text-ng-soil">
           Best Price <span className="font-bold tabular-nums text-ng-forest-deep">₹{coupon.bestPrice.toLocaleString()}</span> with coupon
@@ -173,14 +173,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       {/* Variant tiles */}
       <VariantSelector variants={vlist} activeIndex={variantIdx} onSelect={setVariantIdx} />
 
-      {/* Offer banner */}
-      <div className="flex items-center gap-3 overflow-hidden rounded-2xl bg-ng-forest-deep px-4 py-3 text-ng-cream">
-        <Icon name="ticket-sale-bold" size={22} className="shrink-0 text-ng-clay" />
-        <p className="text-[13px] leading-snug">
-          <span className="font-semibold">{coupon.off}% off over ₹599</span> — use code{" "}
-          <span className="font-mono font-bold text-ng-clay">{coupon.code}</span> at checkout.
-        </p>
-      </div>
+      {/* Offer callout removed — redundant with the coupon strip above and its ₹ was hardcoded */}
 
       {/* Qty + Add to cart */}
       {variantOut ? (

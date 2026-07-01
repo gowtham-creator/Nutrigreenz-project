@@ -58,11 +58,11 @@ function VariantTile({
       disabled={soldOut}
       aria-pressed={active}
       className={cn(
-        "relative flex cursor-pointer flex-col items-start gap-0.5 rounded-2xl border px-3.5 py-3 text-left transition-all duration-200",
+        "relative flex cursor-pointer flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200",
         active
-          ? "border-ng-forest bg-ng-forest/[0.04] ring-1 ring-ng-forest"
-          : "border-ng-line hover:border-ng-leaf hover:-translate-y-0.5",
-        soldOut && "cursor-not-allowed opacity-45 hover:translate-y-0 hover:border-ng-line",
+          ? "border-ng-forest bg-ng-forest/[0.06]"
+          : "border-ng-line hover:border-ng-leaf hover:bg-ng-sage/10",
+        soldOut && "cursor-not-allowed opacity-45 hover:border-ng-line hover:bg-transparent",
       )}
     >
       {discount > 0 && !soldOut ? (

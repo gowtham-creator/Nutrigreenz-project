@@ -362,27 +362,26 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </Section>
 
-      {/* 2 · Product description */}
+      {/* 2 · Product description + trust bar (one tight block) */}
       <Section className="!pt-0">
-        {story ? (
-          <ProductDescription paragraphs={story.description} />
-        ) : (
-          <Reveal className="flex max-w-3xl flex-col gap-4">
-            <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
-            <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
-            <p className="text-[15px] leading-relaxed text-ng-ink">
-              Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
-              reaches your kitchen is exactly what left the field, with nothing hidden in between.
-            </p>
+        <div className="flex flex-col gap-8">
+          {story ? (
+            <ProductDescription paragraphs={story.description} />
+          ) : (
+            <Reveal className="flex max-w-3xl flex-col gap-4">
+              <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
+              <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
+              <p className="text-[15px] leading-relaxed text-ng-ink">
+                Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
+                reaches your kitchen is exactly what left the field, with nothing hidden in between.
+              </p>
+            </Reveal>
+          )}
+          {/* Trust bar — live free-delivery threshold, no return/refund promise (§3.9) */}
+          <Reveal>
+            <TrustBar checks={content.checks} />
           </Reveal>
-        )}
-      </Section>
-
-      {/* 3 · Trust bar — live free-delivery threshold, no return/refund promise */}
-      <Section className="!pt-0">
-        <Reveal>
-          <TrustBar checks={content.checks} />
-        </Reveal>
+        </div>
       </Section>
 
       {/* 3b · Editorial story blocks — only when the category has story content */}

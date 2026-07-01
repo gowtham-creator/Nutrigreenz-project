@@ -31,14 +31,11 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
   ];
 
   return (
-    <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-7 border-t border-ng-line-soft pt-8 lg:grid-cols-4">
       {items.map((t) => (
-        <li
-          key={t.label}
-          className="flex h-full flex-col items-center gap-2.5 rounded-2xl border border-ng-line-soft bg-ng-paper px-3 py-6 text-center"
-        >
-          <span className="grid h-12 w-12 place-items-center rounded-full border border-ng-forest/15 bg-ng-sage/20 text-ng-forest">
-            <Icon name={t.icon} size={24} className="text-ng-forest" />
+        <li key={t.label} className="flex flex-col items-center gap-2 px-1 text-center">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-ng-sage/25 text-ng-forest">
+            <Icon name={t.icon} size={22} className="text-ng-forest" />
           </span>
           <span className="text-[13px] font-semibold text-ng-forest-deep">{t.label}</span>
           <span className="text-[11px] leading-snug text-ng-ink-muted">{t.sub}</span>
