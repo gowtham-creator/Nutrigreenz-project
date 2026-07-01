@@ -1,6 +1,7 @@
 import type { ProductStoryContent } from "./pdp-story";
 import { StoryBenefitHero } from "./story-benefit-hero";
 import { StorySplit2Up } from "./story-split-2up";
+import { StoryTileRows } from "./story-tile-rows";
 import { StoryWideBanner } from "./story-wide-banner";
 
 interface ProductStorySectionsProps {
@@ -9,10 +10,14 @@ interface ProductStorySectionsProps {
 
 /**
  * ProductStorySections — maps the per-category story model onto the reusable
- * layout components (benefit hero, split 2-up, wide banner) in order. The
- * structure is generic for every category; only the content differs.
+ * layout components in order. Categories with finished art tiles (headline
+ * typeset on the image) render as stacked StoryTileRows; the rest fall back
+ * to the HTML-text section layouts until their tiles are produced.
  */
 export function ProductStorySections({ story }: ProductStorySectionsProps) {
+  if (story.tiles && story.tiles.length > 0) {
+    return <StoryTileRows rows={story.tiles} />;
+  }
   return (
     <div className="flex flex-col gap-14 md:gap-20">
       {story.sections.map((section, i) => {

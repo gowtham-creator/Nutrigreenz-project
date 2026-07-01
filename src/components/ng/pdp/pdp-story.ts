@@ -74,6 +74,15 @@ export type ProductStorySection =
   | Split2UpSection
   | WideBannerSection;
 
+/**
+ * A row of finished art tiles (headline typeset ON the image, Anveshan-style):
+ * "full" = one 16:9 banner, "2up" = two 4:5 tiles side by side.
+ */
+export interface StoryTileRow {
+  layout: "full" | "2up";
+  images: StoryImage[];
+}
+
 export interface ProductStoryContent {
   /** Category accent glyph used by image placeholders. */
   produceIcon: ProduceIconName;
@@ -83,6 +92,11 @@ export interface ProductStoryContent {
   gallery?: StoryImage[];
   /** Ordered story blocks rendered below the description + trust bar. */
   sections: ProductStorySection[];
+  /**
+   * Finished story tiles with the copy baked into the artwork. When present
+   * they REPLACE `sections` on the page (rendered as stacked image rows).
+   */
+  tiles?: StoryTileRow[];
 }
 
 /* ──────────────────────────────────── GHEE ──────────────────────────────────── */
@@ -97,9 +111,33 @@ const GHEE_STORY: ProductStoryContent = {
   ],
   gallery: [
     { src: `${GHEE_DIR}/ghee-hero.webp`, alt: "A2 Bilona Ghee jar", label: "Front of pack" },
-    { src: `${GHEE_DIR}/ghee-nothing-else.webp`, alt: "A2 Bilona Ghee jar and bowl", label: "Jar & bowl" },
+    { src: `${GHEE_DIR}/tile-comparison.webp`, alt: "Nutri Greenz A2 Ghee vs ordinary ghee", label: "Ours vs ordinary" },
+    { src: `${GHEE_DIR}/ghee-jar-bowl.webp`, alt: "A2 Bilona Ghee jar and bowl", label: "Jar & bowl" },
     { src: `${GHEE_DIR}/ghee-lifestyle.webp`, alt: "A2 Bilona Ghee poured in an Indian kitchen", label: "In the kitchen" },
-    { src: `${GHEE_DIR}/ghee-benefit-bowl.webp`, alt: "A bowl of grainy golden A2 Bilona Ghee", label: "Daanedaar texture" },
+  ],
+  tiles: [
+    {
+      layout: "full",
+      images: [{ src: `${GHEE_DIR}/tile-a2-verified.webp`, alt: "A2 protein verified — easily digestible, antioxidant-rich, nutrient-dense" }],
+    },
+    {
+      layout: "2up",
+      images: [
+        { src: `${GHEE_DIR}/tile-curd-culture.webp`, alt: "Our own curd culture — your gut's best friend" },
+        { src: `${GHEE_DIR}/tile-farm.webp`, alt: "Farm to spoon — sourced from trusted Indian farms" },
+      ],
+    },
+    {
+      layout: "full",
+      images: [{ src: `${GHEE_DIR}/tile-tastes-like-home.webp`, alt: "Tastes like home — daanedaar texture, delicious taste" }],
+    },
+    {
+      layout: "2up",
+      images: [
+        { src: `${GHEE_DIR}/tile-expert-approved.webp`, alt: "Expert approved — 70+ quality checks, no shortcuts" },
+        { src: `${GHEE_DIR}/tile-adulteration-never.webp`, alt: "Adulteration? Never — hormone-free, dalda-free, heavy-metal free" },
+      ],
+    },
   ],
   sections: [
     {
