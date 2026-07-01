@@ -54,7 +54,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             {isPlaceholderSrc(img.src) ? (
               <PhotoPlaceholder icon={produceIcon} variant="thumb" />
             ) : (
-              <Image src={img.src} alt={img.alt} fill className="object-contain p-2" sizes="80px" />
+              <Image src={img.src} alt={img.alt} fill className="scale-[1.08] object-contain p-1" sizes="80px" />
             )}
           </button>
         ))}
@@ -79,7 +79,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
               fill
               priority
               sizes="(max-width: 768px) 100vw, 50vw"
-              className="relative object-contain p-10 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:scale-[1.04]"
+              className="relative scale-[1.12] object-contain p-3 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.17]"
             />
           )}
           <div className="absolute left-5 top-5 z-10 flex flex-col gap-2">

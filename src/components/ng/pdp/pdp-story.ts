@@ -96,17 +96,17 @@ const GHEE_STORY: ProductStoryContent = {
     "Light on the gut and rich in nutrients and heart-healthy fats, it carries no hidden ingredients and takes no shortcuts. Just slow, traditional craft, the way ghee was always meant to be made.",
   ],
   gallery: [
-    { src: `${GHEE_DIR}/ghee-hero-logoabove-1.png`, alt: "A2 Bilona Ghee jar", label: "Front of pack" },
-    { src: `${GHEE_DIR}/ghee-02-side-view.png`, alt: "A2 Bilona Ghee — side view", label: "Pack & label" },
-    { src: `${GHEE_DIR}/ghee-04-lifestyle.png`, alt: "A2 Bilona Ghee in the kitchen", label: "In the kitchen" },
-    { src: `${GHEE_DIR}/ghee-09-card-nothing-else.png`, alt: "A2 Bilona Ghee — nothing else added", label: "Nothing else added" },
+    { src: `${GHEE_DIR}/ghee-hero-logoabove-1.webp`, alt: "A2 Bilona Ghee jar", label: "Front of pack" },
+    { src: `${GHEE_DIR}/ghee-02-side-view.webp`, alt: "A2 Bilona Ghee — side view", label: "Pack & label" },
+    { src: `${GHEE_DIR}/ghee-04-lifestyle.webp`, alt: "A2 Bilona Ghee in the kitchen", label: "In the kitchen" },
+    { src: `${GHEE_DIR}/ghee-09-card-nothing-else.webp`, alt: "A2 Bilona Ghee — nothing else added", label: "Nothing else added" },
   ],
   sections: [
     {
       kind: "benefit-hero",
       heading: "Verified A2, naturally nourishing",
       sub: "A2 protein, verified at source — a ghee that earns its place in your kitchen by doing more for your body, not less.",
-      image: { src: `${GHEE_DIR}/ghee-05-card-benefits.png`, alt: "A2 Bilona Ghee benefits", label: "Benefits" },
+      image: { src: `${GHEE_DIR}/ghee-05-card-benefits.webp`, alt: "A2 Bilona Ghee benefits", label: "Benefits" },
       bullets: [
         { icon: "shield-check-linear", label: "Easily digestible" },
         { icon: "leaf-linear", label: "Antioxidant-rich" },
@@ -119,12 +119,12 @@ const GHEE_STORY: ProductStoryContent = {
         {
           heading: "Our Own Curd Culture",
           sub: "Your gut's best friend. We set fresh curd in-house with our own living culture, then churn — so the ghee is gentle and easy to digest.",
-          image: { src: `${GHEE_DIR}/ghee-06-card-usage.png`, alt: "Curd cultured the traditional way", label: "Curd culture" },
+          image: { src: `${GHEE_DIR}/ghee-06-card-usage.webp`, alt: "Curd cultured the traditional way", label: "Curd culture" },
         },
         {
           heading: "Farm to Spoon",
           sub: "Sourced straight from the fields of trusted Indian farms — milk to spoon, with nothing anonymous in between.",
-          image: { src: `${GHEE_DIR}/ghee-02-side-view.png`, alt: "A2 Bilona Ghee sourced from Indian farms", label: "Farm sourced" },
+          image: { src: `${GHEE_DIR}/ghee-02-side-view.webp`, alt: "A2 Bilona Ghee sourced from Indian farms", label: "Farm sourced" },
         },
       ],
     },
@@ -132,7 +132,7 @@ const GHEE_STORY: ProductStoryContent = {
       kind: "wide-banner",
       heading: "Tastes Like Home",
       sub: "Daanedaar texture. Delicious taste. The grainy, golden ghee you remember from childhood kitchens — made the same slow way.",
-      image: { src: `${GHEE_DIR}/ghee-04-lifestyle.png`, alt: "A2 Bilona Ghee, grainy and golden", label: "Daanedaar texture" },
+      image: { src: `${GHEE_DIR}/ghee-04-lifestyle.webp`, alt: "A2 Bilona Ghee, grainy and golden", label: "Daanedaar texture" },
       imageSide: "left",
     },
     {
@@ -141,12 +141,12 @@ const GHEE_STORY: ProductStoryContent = {
         {
           heading: "Expert Approved",
           sub: "70+ quality checks and not a single shortcut. Every batch is screened end-to-end before it is ever sealed.",
-          image: { src: `${GHEE_DIR}/ghee-07-card-comparison.png`, alt: "A2 Bilona Ghee passes 70+ quality checks", label: "Quality checks" },
+          image: { src: `${GHEE_DIR}/ghee-07-card-comparison.webp`, alt: "A2 Bilona Ghee passes 70+ quality checks", label: "Quality checks" },
         },
         {
           heading: "Adulteration? Never",
           sub: "Hormone-free. Dalda-free. Heavy-metal-free. Just pure A2 ghee — exactly as nature, and tradition, intended.",
-          image: { src: `${GHEE_DIR}/ghee-08-card-trust.png`, alt: "A2 Bilona Ghee, free from adulteration", label: "Pure & trusted" },
+          image: { src: `${GHEE_DIR}/ghee-08-card-trust.webp`, alt: "A2 Bilona Ghee, free from adulteration", label: "Pure & trusted" },
         },
       ],
     },
