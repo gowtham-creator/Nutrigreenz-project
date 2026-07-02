@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 import { useAddresses, type AddressInput } from "@/lib/addresses";
+import { useAuth } from "@/lib/auth";
 import type { Address } from "@/types/nutrigreenz";
 import { AddressCard } from "./address-card";
 import { AddressForm } from "./address-form";
@@ -16,7 +17,35 @@ type Editor =
 
 export function AddressBook() {
   const { addresses, add, update, remove, setDefault } = useAddresses();
+  const { account, importGoogleProfile } = useAuth();
   const [editor, setEditor] = useState<Editor>({ mode: "closed" });
+  const [importing, setImporting] = useState(false);
+
+  // On-demand Google import — deterministic fallback for the sign-in-time
+  // enrichment (usable whenever the Google account gains an address later).
+  const canImportFromGoogle = account?.method === "google";
+
+  async function handleImportFromGoogle() {
+    setImporting(true);
+    try {
+      const result = await importGoogleProfile();
+      if (result && result.addressesAdded > 0) {
+        toast.success(
+          `Imported ${result.addressesAdded} address${result.addressesAdded > 1 ? "es" : ""} from your Google account`,
+        );
+      } else if (result) {
+        toast.info(
+          "No new address found on your Google profile — add one at myaccount.google.com → Personal info → Addresses, then try again.",
+        );
+      } else {
+        toast.info(
+          "Couldn't read your Google profile — approve the address permission in the popup and try again.",
+        );
+      }
+    } finally {
+      setImporting(false);
+    }
+  }
 
   const open = editor.mode !== "closed";
 
@@ -63,14 +92,27 @@ export function AddressBook() {
           {addresses.length} saved
           {addresses.length > 0 ? " · 1 default" : ""}
         </p>
-        <Button
-          variant="primary"
-          onClick={() => setEditor({ mode: "add" })}
-          aria-label="Add a new address"
-        >
-          <Icon name="add-circle-linear" size={18} />
-          Add new address
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {canImportFromGoogle ? (
+            <Button
+              variant="secondary"
+              onClick={handleImportFromGoogle}
+              disabled={importing}
+              aria-label="Import your address from Google"
+            >
+              <Icon name="cloud-download-linear" size={18} />
+              {importing ? "Importing…" : "Import from Google"}
+            </Button>
+          ) : null}
+          <Button
+            variant="primary"
+            onClick={() => setEditor({ mode: "add" })}
+            aria-label="Add a new address"
+          >
+            <Icon name="add-circle-linear" size={18} />
+            Add new address
+          </Button>
+        </div>
       </div>
 
       {addresses.length === 0 ? (
@@ -85,7 +127,13 @@ export function AddressBook() {
             Add a delivery address to check out faster next time. We&apos;ll keep your home, work
             and other spots ready for one-tap orders.
           </p>
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+            {canImportFromGoogle ? (
+              <Button variant="secondary" onClick={handleImportFromGoogle} disabled={importing}>
+                <Icon name="cloud-download-linear" size={18} />
+                {importing ? "Importing…" : "Import from Google"}
+              </Button>
+            ) : null}
             <Button variant="primary" onClick={() => setEditor({ mode: "add" })}>
               <Icon name="add-circle-linear" size={18} />
               Add your first address

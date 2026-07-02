@@ -44,9 +44,11 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
  * cookie right after the sign-in popup, so a 401 here usually just means "cookie
  * not set yet" — retry briefly until the session lands instead of giving up.
  */
-export async function runGoogleEnrich(accessToken: string | null | undefined): Promise<void> {
-  if (typeof window === "undefined") return;
-  if (!accessToken) return;
+export async function runGoogleEnrich(
+  accessToken: string | null | undefined,
+): Promise<GoogleEnrichDetail | null> {
+  if (typeof window === "undefined") return null;
+  if (!accessToken) return null;
   try {
     let res: Response | null = null;
     for (let attempt = 0; attempt < 6; attempt++) {
@@ -58,9 +60,9 @@ export async function runGoogleEnrich(accessToken: string | null | undefined): P
       });
       if (res.status !== 401) break; // 401 = session cookie not minted yet — retry
     }
-    if (!res || !res.ok) return;
+    if (!res || !res.ok) return null;
     const data = (await res.json()) as EnrichResponse;
-    if (!data.enriched) return;
+    if (!data.enriched) return null;
 
     const detail: GoogleEnrichDetail = {
       addressesAdded: data.addressesAdded ?? 0,
@@ -72,7 +74,9 @@ export async function runGoogleEnrich(accessToken: string | null | undefined): P
         new CustomEvent<GoogleEnrichDetail>(GOOGLE_ENRICH_EVENT, { detail }),
       );
     }
+    return detail;
   } catch {
     /* best-effort — never block sign-in */
+    return null;
   }
 }

@@ -13,6 +13,7 @@ import {
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  reauthenticateWithPopup,
   signOut,
   onAuthStateChanged,
   RecaptchaVerifier,
@@ -21,7 +22,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { runGoogleEnrich } from "@/lib/google-enrich-client";
+import { runGoogleEnrich, type GoogleEnrichDetail } from "@/lib/google-enrich-client";
 
 const NOT_CONFIGURED =
   "Authentication isn't configured yet — add your Firebase keys to .env.local.";
@@ -59,6 +60,13 @@ interface AuthContextValue {
   updateProfile: (patch: Partial<NgAccount>) => void;
   /** Google Sign-In (real popup when configured, demo account otherwise). */
   signInWithGoogle: () => Promise<void>;
+  /**
+   * On-demand re-import of the signed-in Google account's profile data
+   * (addresses + phone) via a fresh consent popup — independent of the
+   * sign-in-time enrichment. Resolves with the enrich outcome, or null when
+   * nothing was imported / the popup was dismissed.
+   */
+  importGoogleProfile: () => Promise<GoogleEnrichDetail | null>;
   /** Send an SMS OTP to a phone number (E.164, e.g. "+9198XXXXXXXX"). */
   sendOtp: (phone: string, recaptchaContainerId?: string) => Promise<void>;
   /** Confirm the SMS OTP code; resolves the session. */
@@ -251,6 +259,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const importGoogleProfile = useCallback(async (): Promise<GoogleEnrichDetail | null> => {
+    if (!auth?.currentUser) return null;
+    const provider = new GoogleAuthProvider();
+    provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
+    provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
+    try {
+      // Re-consent against the SAME account — yields a fresh OAuth access token
+      // whenever the user asks, with no dependence on sign-in timing.
+      const result = await reauthenticateWithPopup(auth.currentUser, provider);
+      const accessToken =
+        GoogleAuthProvider.credentialFromResult(result)?.accessToken ?? null;
+      return await runGoogleEnrich(accessToken);
+    } catch {
+      // Popup closed / scope denied — nothing imported.
+      return null;
+    }
+  }, []);
+
   const sendOtp = useCallback(
     async (phone: string, recaptchaContainerId = "recaptcha-container") => {
       if (!auth) {
@@ -320,6 +346,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthed: account != null,
       updateProfile,
       signInWithGoogle,
+      importGoogleProfile,
       sendOtp,
       verifyOtp,
       signOutUser,
@@ -330,6 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       account,
       updateProfile,
       signInWithGoogle,
+      importGoogleProfile,
       sendOtp,
       verifyOtp,
       signOutUser,
