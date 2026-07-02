@@ -5,6 +5,7 @@ import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import type { AddressInput } from "@/lib/addresses";
 import {
   autocompleteAddress,
@@ -35,7 +36,8 @@ interface FormState {
   phone: string;
   line1: string; // Building / Floor / Flat
   line2: string; // Road / Street
-  landmark: string; // Area / Landmark
+  area: string; // Area / Locality (autofilled by search)
+  landmark: string; // Landmark — optional
   city: string;
   pincode: string;
   region: string;
@@ -51,6 +53,7 @@ function toFormState(a?: Address): FormState {
     phone: a?.phone ?? "",
     line1: a?.line1 ?? "",
     line2: a?.line2 ?? "",
+    area: "",
     landmark: a?.landmark ?? "",
     city: a?.city ?? "",
     pincode: a?.pincode ?? "",
@@ -65,8 +68,20 @@ function toFormState(a?: Address): FormState {
 type Errors = Partial<Record<keyof FormState, string>>;
 
 export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
+  const { account } = useAuth();
   const [form, setForm] = useState<FormState>(() => toFormState(initial));
   const [errors, setErrors] = useState<Errors>({});
+
+  // Prefill the recipient from the signed-in account (Google name / login
+  // phone) on a fresh add — still editable for gifting to someone else.
+  useEffect(() => {
+    if (initial) return;
+    setForm((prev) => ({
+      ...prev,
+      fullName: prev.fullName || account?.name || "",
+      phone: prev.phone || account?.phone || "",
+    }));
+  }, [account, initial]);
 
   // ── Google Places search (optional; renders only when a key is configured).
   // One session token per search→pick cycle keeps billing on the cheap
@@ -104,10 +119,18 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
     // A pick ends the billing session — mint a fresh token for the next search.
     sessionRef.current = newSessionToken();
     if (!parsed) return;
+    // Building / society name: Google's premise component when present, else
+    // the suggestion's leading segment (e.g. "Saraswathi Nilayam, …") as long
+    // as it isn't just the road repeated.
+    const lead = s.text.split(",")[0]?.trim() ?? "";
+    const building =
+      parsed.building ||
+      (lead && lead !== parsed.street && lead !== parsed.area && lead !== parsed.city ? lead : "");
     setForm((prev) => ({
       ...prev,
-      line2: parsed.street || parsed.area || prev.line2,
-      landmark: parsed.street ? parsed.area || prev.landmark : prev.landmark,
+      line1: prev.line1 || building,
+      line2: parsed.street || prev.line2,
+      area: parsed.area || prev.area,
       city: parsed.city || prev.city,
       state: parsed.state || prev.state,
       pincode: parsed.pincode || prev.pincode,
@@ -140,8 +163,8 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    // Fold the optional Region into line2 so we keep the shared Address shape.
-    const street = [form.line2.trim(), form.region.trim()]
+    // Fold the Area + optional Region into line2 so we keep the shared Address shape.
+    const street = [form.line2.trim(), form.area.trim(), form.region.trim()]
       .filter(Boolean)
       .join(", ");
     const input: AddressInput = {
@@ -269,10 +292,18 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
       />
 
       <Input
-        label="Area / Landmark"
+        label="Area / Locality"
+        placeholder="Mathrusree Nagar, Hafeezpet"
+        value={form.area}
+        onChange={(e) => set("area", e.target.value)}
+      />
+
+      <Input
+        label="Landmark"
         placeholder="Opposite Jyoti Nivas College"
         value={form.landmark}
         onChange={(e) => set("landmark", e.target.value)}
+        hint="Optional"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">

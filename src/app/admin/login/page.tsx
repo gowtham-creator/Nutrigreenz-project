@@ -474,29 +474,32 @@ function LoginForm() {
           backgroundPosition: "center",
         }}
       >
-        {/* Legibility wash — keeps the photo light and airy while text stays crisp */}
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ng-cream/70 via-ng-cream/35 to-ng-cream/75" />
+        {/* Whisper of a wash — the photo keeps its depth; copy gets a glass card */}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ng-cream/25 via-transparent to-ng-cream/30" />
 
-        <Link href="/" className="relative z-10 flex items-center gap-2.5">
-          <Logo variant="mark" className="h-9" />
-          <span className="font-display text-[18px] text-ng-forest-deep">Nutri Greenz</span>
+        <Link
+          href="/"
+          className="relative z-10 flex w-fit items-center gap-2.5 rounded-full bg-ng-paper/75 px-3.5 py-2 backdrop-blur-md"
+        >
+          <Logo variant="mark" className="h-8" />
+          <span className="font-display text-[17px] text-ng-forest-deep">Nutri Greenz</span>
         </Link>
 
-        <div className="relative z-10 hidden lg:block max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-paper/80 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay-deep backdrop-blur-sm">
+        <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
+          <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
             <Icon name="shield-keyhole-bold" size={14} />
             Admin · v0.4.1
           </div>
-          <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-6">
+          <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
             Operator console
           </h2>
-          <p className="font-sans text-[14px] font-medium text-ng-forest/90 mt-3 leading-relaxed">
+          <p className="font-sans text-[14px] font-medium text-ng-ink-muted mt-3 leading-relaxed">
             Manage catalog, orders, inventory and marketing for the Nutri Greenz
             storefront. Restricted to authorised operators.
           </p>
         </div>
 
-        <p className="relative z-10 font-mono text-[11.5px] font-medium text-ng-forest/80">
+        <p className="relative z-10 w-fit rounded-full bg-ng-paper/75 px-3.5 py-1.5 font-mono text-[11.5px] font-medium text-ng-forest backdrop-blur-md">
           Secured area — activity may be monitored.
         </p>
       </aside>

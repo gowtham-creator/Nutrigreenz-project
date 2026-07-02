@@ -8,10 +8,12 @@ import { Button } from "../button";
 import { FARMS } from "../data";
 import { cn } from "@/lib/utils";
 
+// Order matches FARMS: dryland groundnut (Anantapur) · Gir dairy (Junagadh) ·
+// bee co-op (Nilgiris) — each photo tells that farm's actual story.
 const FARM_IMAGES = [
+  "/images/farm/dryland-farm.webp",
   "/images/farm/gir-farm.webp",
-  "/images/farm/farmer-cows.webp",
-  "/images/farm/gir-farm-2.webp",
+  "/images/farm/bee-coop.webp",
 ];
 
 export function Farms() {

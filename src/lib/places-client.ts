@@ -26,6 +26,8 @@ export interface PlaceSuggestion {
 
 /** The parsed, form-ready parts of a picked place. */
 export interface PlaceAddress {
+  /** Premise / building / society name when Google knows it. */
+  building: string;
   street: string;
   area: string;
   city: string;
@@ -117,6 +119,9 @@ export async function fetchPlaceAddress(
     if (!res.ok) return null;
     const json = (await res.json()) as { addressComponents?: AddressComponent[] };
     const c = json.addressComponents ?? [];
+    const building = [pick(c, "subpremise"), pick(c, "premise")]
+      .filter(Boolean)
+      .join(", ");
     const street = [pick(c, "street_number"), pick(c, "route")]
       .filter(Boolean)
       .join(", ");
@@ -124,6 +129,7 @@ export async function fetchPlaceAddress(
       .filter(Boolean)
       .join(", ");
     return {
+      building,
       street,
       area,
       city: pick(c, "locality") || pick(c, "administrative_area_level_3"),

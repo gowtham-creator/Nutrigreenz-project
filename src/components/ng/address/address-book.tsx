@@ -160,7 +160,7 @@ export function AddressBook() {
         // grows the wrapper and the whole modal scrolls — so the top (heading)
         // and bottom (Save/Cancel) are always reachable, on mobile and desktop.
         <div
-          className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-ng-soil/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-ng-soil/40 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
         >
