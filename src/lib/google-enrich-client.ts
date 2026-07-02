@@ -33,21 +33,32 @@ interface EnrichResponse {
   prefillPhone?: string;
 }
 
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /**
  * POST the Google access token to the enrich endpoint, then broadcast the result.
  * Resolves silently on ANY error — enrichment is additive and must never break
  * the established Google session. A null/blank token is a graceful no-op.
+ *
+ * The enrich call races the `POST /api/auth/session` that mints the `ng_session`
+ * cookie right after the sign-in popup, so a 401 here usually just means "cookie
+ * not set yet" — retry briefly until the session lands instead of giving up.
  */
 export async function runGoogleEnrich(accessToken: string | null | undefined): Promise<void> {
   if (typeof window === "undefined") return;
   if (!accessToken) return;
   try {
-    const res = await fetch("/api/auth/google-enrich", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ accessToken }),
-    });
-    if (!res.ok) return;
+    let res: Response | null = null;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (attempt > 0) await wait(900);
+      res = await fetch("/api/auth/google-enrich", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ accessToken }),
+      });
+      if (res.status !== 401) break; // 401 = session cookie not minted yet — retry
+    }
+    if (!res || !res.ok) return;
     const data = (await res.json()) as EnrichResponse;
     if (!data.enriched) return;
 
