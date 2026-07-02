@@ -264,6 +264,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
     provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
+    // Force the consent screen to re-appear: Google REMEMBERS a previously
+    // unticked sensitive scope and silently omits it forever otherwise. This
+    // gives the user a fresh chance to grant the address/phone checkboxes.
+    provider.setCustomParameters({ prompt: "consent" });
     try {
       // Re-consent against the SAME account — yields a fresh OAuth access token
       // whenever the user asks, with no dependence on sign-in timing.
