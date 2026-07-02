@@ -9,9 +9,9 @@ import { FARMS } from "../data";
 import { cn } from "@/lib/utils";
 
 const FARM_IMAGES = [
-  "/images/placeholder.svg",
-  "/images/placeholder.svg",
-  "/images/placeholder.svg",
+  "/images/farm/gir-farm.webp",
+  "/images/farm/farmer-cows.webp",
+  "/images/farm/gir-farm-2.webp",
 ];
 
 export function Farms() {

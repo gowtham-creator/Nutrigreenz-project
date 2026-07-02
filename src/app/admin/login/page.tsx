@@ -465,28 +465,38 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
-      {/* Brand panel — mirrors the admin's dark sidebar */}
-      <aside className="bg-ng-forest-deep text-ng-cream/80 lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo variant="mark" tone="white" className="h-9" />
-          <span className="font-display text-[18px] text-ng-cream">Nutri Greenz</span>
+      {/* Brand panel — a light misty forest backdrop with a soft cream wash */}
+      <aside
+        className="relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12"
+        style={{
+          backgroundImage: "url(/images/admin/forest-panel.webp)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Legibility wash — keeps the photo light and airy while text stays crisp */}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ng-cream/70 via-ng-cream/35 to-ng-cream/75" />
+
+        <Link href="/" className="relative z-10 flex items-center gap-2.5">
+          <Logo variant="mark" className="h-9" />
+          <span className="font-display text-[18px] text-ng-forest-deep">Nutri Greenz</span>
         </Link>
 
-        <div className="hidden lg:block max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay">
+        <div className="relative z-10 hidden lg:block max-w-sm">
+          <div className="inline-flex items-center gap-2 rounded-full bg-ng-paper/80 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay-deep backdrop-blur-sm">
             <Icon name="shield-keyhole-bold" size={14} />
             Admin · v0.4.1
           </div>
-          <h2 className="font-display text-[34px] leading-tight text-ng-cream mt-6">
+          <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-6">
             Operator console
           </h2>
-          <p className="font-sans text-[14px] font-medium text-ng-cream/85 mt-3 leading-relaxed">
+          <p className="font-sans text-[14px] font-medium text-ng-forest/90 mt-3 leading-relaxed">
             Manage catalog, orders, inventory and marketing for the Nutri Greenz
             storefront. Restricted to authorised operators.
           </p>
         </div>
 
-        <p className="font-mono text-[11.5px] font-medium text-ng-cream/85">
+        <p className="relative z-10 font-mono text-[11.5px] font-medium text-ng-forest/80">
           Secured area — activity may be monitored.
         </p>
       </aside>

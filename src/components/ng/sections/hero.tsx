@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
@@ -38,9 +39,10 @@ const BENEFITS = [
   "Every lot lab-tested — zero adulterants",
 ];
 
-type SlideId = "sale" | "brand" | "harvest";
+type SlideId = "launch" | "sale" | "brand" | "harvest";
 
 const SLIDE_META: { id: SlideId; label: string }[] = [
+  { id: "launch", label: "New launch" },
   { id: "sale", label: "Harvest Sale" },
   { id: "brand", label: "Our promise" },
   { id: "harvest", label: "New harvest" },
@@ -121,6 +123,7 @@ export function Hero() {
               aria-label={`${index + 1} of ${count}: ${current.label}`}
               aria-labelledby={labelId}
             >
+              {current.id === "launch" && <LaunchSlide />}
               {current.id === "sale" && <SaleSlide reduce={reduce} />}
               {current.id === "brand" && <BrandSlide reduce={reduce} />}
               {current.id === "harvest" && <HarvestSlide reduce={reduce} />}
@@ -176,6 +179,75 @@ export function Hero() {
         </div>
       </div>
     </section>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Launch slide — light sage ad banner: real product scene photo on the right,
+   HTML copy on the left (Anveshan-format: tag → Hinglish headline → sub →
+   dashed tagline → Shop Now).
+   ────────────────────────────────────────────────────────────────────────── */
+function LaunchSlide() {
+  return (
+    <div className="relative flex h-full min-h-[inherit] overflow-hidden bg-[#E3EEDF]">
+      <Image
+        src="/images/hero/launch-ghee.webp"
+        alt="Nutri Greenz A2 Desi Cow Ghee — made from curd, 100% A2 milk"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-right"
+      />
+      {/* Left legibility wash — stronger on mobile where the jar sits behind copy */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-r from-[#E7F1E4]/95 via-[#E7F1E4]/70 to-transparent md:from-[#E7F1E4]/80 md:via-transparent"
+      />
+
+      {/* NEW LAUNCH corner tag */}
+      <div className="absolute left-0 top-0 z-10 rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-clay">
+        <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
+          New
+          <br />
+          Launch
+        </span>
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-2xl flex-col justify-center gap-5 p-8 pt-16 sm:p-12 md:p-14 lg:pl-16">
+        <FloatIn delay={0.05}>
+          <p className="font-sans text-[clamp(18px,2vw,26px)] font-semibold text-ng-forest">Ghar jaisa ghee?</p>
+          <h2 className="mt-1 font-display text-[clamp(40px,5.5vw,72px)] leading-[0.95] text-ng-forest-deep">
+            A2 Bilona{" "}
+            <em className="relative italic text-ng-forest">
+              Ab&nbsp;Hoga.
+              <span aria-hidden className="absolute -bottom-1.5 left-0 h-[3px] w-full rounded-full bg-ng-clay" />
+            </em>
+          </h2>
+        </FloatIn>
+
+        <FloatIn delay={0.15}>
+          <p className="font-sans text-[clamp(15px,1.6vw,20px)] font-medium text-ng-forest">
+            Introducing A2 Desi Cow Ghee&ensp;|&ensp;Bilona-churned
+          </p>
+        </FloatIn>
+
+        <FloatIn delay={0.22}>
+          <div className="inline-flex rounded-xl border border-dashed border-ng-forest/60 px-5 py-2.5">
+            <span className="font-sans text-[clamp(14px,1.4vw,18px)] font-medium text-ng-forest-deep">
+              Your family&apos;s daily dose of purity
+            </span>
+          </div>
+        </FloatIn>
+
+        <FloatIn delay={0.3}>
+          <MagneticHover>
+            <Button variant="gold" size="lg" asChild className="w-fit">
+              <Link href="/products/pure-ghee">Shop Now</Link>
+            </Button>
+          </MagneticHover>
+        </FloatIn>
+      </div>
+    </div>
   );
 }
 
