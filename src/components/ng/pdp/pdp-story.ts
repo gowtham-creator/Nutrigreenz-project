@@ -225,26 +225,38 @@ function minimalStory(
   };
 }
 
-const HONEY_STORY = minimalStory(
-  "honey",
-  [
+const HONEY_DIR = "/images/products/honey";
+
+const HONEY_STORY: ProductStoryContent = {
+  produceIcon: "honey",
+  description: [
     "Raw, single-forest honey — strained, never heated — so the pollen, enzymes and aroma the bees built stay exactly where they belong: in the jar.",
     "No added sugar, no syrup, no shortcuts. Just honey, the way the hive made it.",
   ],
-  {
-    heading: "Pure by every measure",
-    sub: "Living, raw honey traced to a single forest harvest.",
-    bullets: [
-      { icon: "shield-check-linear", label: "Raw & unheated" },
-      { icon: "leaf-linear", label: "Single-forest source" },
-      { icon: "verified-check-linear", label: "No added sugar" },
-    ],
-  },
-  {
-    a: { heading: "Strained, Never Boiled", sub: "Gently strained so the natural enzymes and pollen stay alive in every spoon." },
-    b: { heading: "Traced to the Forest", sub: "Each jar comes from one forest harvest, never bulk-blended from many sources." },
-  },
-);
+  gallery: [
+    { src: `${HONEY_DIR}/honey-hero.webp`, alt: "Wild Raw Honey jar", label: "Front of pack" },
+    { src: `${HONEY_DIR}/honey-comparison.webp`, alt: "Nutri Greenz raw honey vs commercial honey", label: "Ours vs commercial" },
+    { src: `${HONEY_DIR}/honey-jar-dipper.webp`, alt: "Wild Raw Honey jar with dipper and honeycomb", label: "Jar & dipper" },
+  ],
+  sections: [],
+  tiles: [
+    {
+      layout: "full",
+      images: [{ src: `${HONEY_DIR}/tile-raw.webp`, alt: "Raw, unheated, alive — natural enzymes intact, no added sugar, naturally crystallises" }],
+    },
+    {
+      layout: "2up",
+      images: [
+        { src: `${HONEY_DIR}/tile-forests.webp`, alt: "From wild forests — ethically harvested from forest hives" },
+        { src: `${HONEY_DIR}/tile-nosugar.webp`, alt: "No added sugar, ever — just honey, as the bees made it" },
+      ],
+    },
+    {
+      layout: "full",
+      images: [{ src: `${HONEY_DIR}/tile-sweetener.webp`, alt: "Nature's own sweetener — straight from forest hives" }],
+    },
+  ],
+};
 
 const RICE_STORY = minimalStory(
   "grain",
