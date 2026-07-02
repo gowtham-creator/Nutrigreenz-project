@@ -55,6 +55,14 @@ export async function autocompleteAddress(
         sessionToken,
         includedRegionCodes: ["in"],
         languageCode: "en",
+        // Bias (not restrict) matches toward the Hyderabad delivery area so
+        // local societies/streets rank above same-named places elsewhere.
+        locationBias: {
+          circle: {
+            center: { latitude: 17.4485, longitude: 78.3908 },
+            radius: 50000,
+          },
+        },
       }),
     });
     if (!res.ok) return [];
