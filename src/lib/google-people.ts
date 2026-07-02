@@ -75,11 +75,23 @@ async function fetchPerson(accessToken: string): Promise<PeoplePerson | null> {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Diagnostic only — status + error reason, never profile data.
+      console.error("[google-enrich] people api", res.status, (await res.text()).slice(0, 300));
+      return null;
+    }
     const json: unknown = await res.json();
     if (typeof json !== "object" || json === null) return null;
-    return json as PeoplePerson;
-  } catch {
+    const person = json as PeoplePerson;
+    console.log(
+      "[google-enrich] people api ok — addresses:",
+      person.addresses?.length ?? 0,
+      "phones:",
+      person.phoneNumbers?.length ?? 0,
+    );
+    return person;
+  } catch (err) {
+    console.error("[google-enrich] people api fetch failed", err);
     return null;
   }
 }
@@ -239,7 +251,10 @@ export async function enrichFromGoogle(
   customerId: string,
   accessToken: string,
 ): Promise<EnrichResult> {
-  if (!accessToken) return NO_OP;
+  if (!accessToken) {
+    console.log("[google-enrich] skipped — no access token in request");
+    return NO_OP;
+  }
 
   const person = await fetchPerson(accessToken);
   if (!person) return NO_OP;
@@ -254,8 +269,10 @@ export async function enrichFromGoogle(
         person.addresses,
         fullName,
       );
-    } catch {
+      console.log("[google-enrich] addresses imported:", addressesAdded);
+    } catch (err) {
       // Address import is best-effort; never let it break enrichment.
+      console.error("[google-enrich] address import failed", err);
       addressesAdded = 0;
     }
   }
