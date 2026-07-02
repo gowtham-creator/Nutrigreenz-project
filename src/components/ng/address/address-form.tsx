@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import type { AddressInput } from "@/lib/addresses";
+import {
+  autocompleteAddress,
+  fetchPlaceAddress,
+  isPlacesConfigured,
+  newSessionToken,
+  type PlaceSuggestion,
+} from "@/lib/places-client";
 import type { Address } from "@/types/nutrigreenz";
 
 type AddressType = Address["type"];
@@ -61,6 +68,53 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(initial));
   const [errors, setErrors] = useState<Errors>({});
 
+  // ── Google Places search (optional; renders only when a key is configured).
+  // One session token per search→pick cycle keeps billing on the cheap
+  // session SKU; picking a suggestion autofills street/area/city/pincode/state.
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const sessionRef = useRef<string>(newSessionToken());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isPlacesConfigured) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        setSuggestions(await autocompleteAddress(query, sessionRef.current));
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
+
+  async function pickSuggestion(s: PlaceSuggestion) {
+    setSuggestions([]);
+    setQuery(s.text);
+    const parsed = await fetchPlaceAddress(s.placeId, sessionRef.current);
+    // A pick ends the billing session — mint a fresh token for the next search.
+    sessionRef.current = newSessionToken();
+    if (!parsed) return;
+    setForm((prev) => ({
+      ...prev,
+      line2: parsed.street || parsed.area || prev.line2,
+      landmark: parsed.street ? parsed.area || prev.landmark : prev.landmark,
+      city: parsed.city || prev.city,
+      state: parsed.state || prev.state,
+      pincode: parsed.pincode || prev.pincode,
+    }));
+    setErrors((prev) => ({ ...prev, city: undefined, state: undefined, pincode: undefined }));
+  }
+
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -111,6 +165,35 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
       <h3 className="font-display text-[22px] text-ng-forest-deep">
         {initial ? "Edit address" : "Add a new address"}
       </h3>
+
+      {/* Address search — Google Places autocomplete (only when configured) */}
+      {isPlacesConfigured ? (
+        <div className="relative">
+          <Input
+            label="Search your address"
+            placeholder="Start typing your street, area or society…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            hint={searching ? "Searching…" : "Pick a match to autofill the fields below"}
+          />
+          {suggestions.length > 0 ? (
+            <ul className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-2xl border border-ng-line bg-ng-paper shadow-[0_16px_40px_rgba(20,51,31,0.18)]">
+              {suggestions.map((s) => (
+                <li key={s.placeId}>
+                  <button
+                    type="button"
+                    onClick={() => void pickSuggestion(s)}
+                    className="flex w-full cursor-pointer items-start gap-2.5 px-4 py-3 text-left text-[14px] text-ng-ink transition-colors hover:bg-ng-sage/40"
+                  >
+                    <Icon name="map-point-linear" size={16} className="mt-0.5 shrink-0 text-ng-forest" />
+                    {s.text}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Type selector */}
       <fieldset className="flex flex-col gap-2">
