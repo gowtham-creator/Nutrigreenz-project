@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
@@ -154,12 +155,16 @@ export function AddressBook() {
         </div>
       )}
 
-      {open ? (
+      {open && typeof document !== "undefined" ? (
+        // PORTALED to <body>: ancestor transform/opacity wrappers (Reveal etc.)
+        // create stacking contexts that would trap the overlay UNDER the sticky
+        // header no matter its z-index — rendering at the body root sidesteps
+        // that entirely.
         // Scroll lives on the OUTER overlay; centring on an inner `min-h-full`
         // wrapper. Keeping the two separate means a form taller than the screen
         // grows the wrapper and the whole modal scrolls — so the top (heading)
         // and bottom (Save/Cancel) are always reachable, on mobile and desktop.
-        <div
+        createPortal(<div
           className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-ng-soil/40 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -178,7 +183,7 @@ export function AddressBook() {
               />
             </div>
           </div>
-        </div>
+        </div>, document.body)
       ) : null}
     </div>
   );
