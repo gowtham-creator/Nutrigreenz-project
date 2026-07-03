@@ -299,11 +299,10 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
       />
 
       <Input
-        label="Landmark"
+        label="Landmark (optional)"
         placeholder="Opposite Jyoti Nivas College"
         value={form.landmark}
         onChange={(e) => set("landmark", e.target.value)}
-        hint="Optional"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -329,11 +328,10 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
 
       <div className="grid sm:grid-cols-2 gap-4">
         <Input
-          label="Region / District"
+          label="Region / District (optional)"
           placeholder="Hyderabad"
           value={form.region}
           onChange={(e) => set("region", e.target.value)}
-          hint="Optional"
         />
         <Input
           label="State"

@@ -284,6 +284,15 @@
   pointer-events: none;
 }
 .aurora::after { animation-duration: 24s; animation-direction: alternate-reverse; opacity: 0.7; }
+
+/* Green-only aurora — same drift, sage/leaf/mint blobs, zero gold. */
+.aurora.aurora-green::before, .aurora.aurora-green::after {
+  background:
+    radial-gradient(circle at 18% 28%, rgba(111,170,62,0.22), transparent 42%),
+    radial-gradient(circle at 82% 72%, rgba(102,191,115,0.16), transparent 46%),
+    radial-gradient(circle at 62% 14%, rgba(184,212,154,0.22), transparent 50%);
+}
+
 @keyframes auroraDrift {
   0%   { transform: translate3d(0,0,0) scale(1);   }
   50%  { transform: translate3d(2%, -3%, 0) scale(1.05); }

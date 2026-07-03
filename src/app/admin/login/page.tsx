@@ -504,10 +504,10 @@ function LoginForm() {
         </p>
       </aside>
 
-      {/* Form panel */}
-      <main className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-sm">
-          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-clay flex items-center justify-center mb-6">
+      {/* Form panel — soft drifting green aurora ties it to the forest panel */}
+      <main className="aurora aurora-green flex-1 flex items-center justify-center p-8 lg:p-12">
+        <div className="relative z-10 w-full max-w-sm">
+          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <Icon name="lock-keyhole-bold" size={24} />
           </div>
 
@@ -575,7 +575,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={resetMfa}
-                className="self-start text-[12px] font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep cursor-pointer"
+                className="self-start text-[12px] font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
               >
                 Back to sign in
               </button>
@@ -601,7 +601,7 @@ function LoginForm() {
                   type="button"
                   disabled={mailSending}
                   onClick={() => void sendMailCode()}
-                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:text-ng-ink-soft cursor-pointer"
+                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:text-ng-ink-soft cursor-pointer"
                 >
                   {mailSending ? "Sending…" : "Resend code"}
                 </button>
@@ -636,7 +636,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
-                className="text-[12px] font-sans font-semibold text-ng-clay transition-colors hover:text-ng-clay-deep cursor-pointer"
+                className="text-[12px] font-sans font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
               >
                 {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
               </button>
@@ -664,7 +664,7 @@ function LoginForm() {
                   type="button"
                   disabled={resendIn > 0 || resending || submitting}
                   onClick={() => (otpPhone ? void requestCode(true, otpPhone) : undefined)}
-                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
+                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
                 >
                   {resending
                     ? "Sending…"
@@ -770,7 +770,7 @@ function LoginForm() {
                   type="button"
                   disabled={resendIn > 0 || resending || submitting}
                   onClick={() => void requestCode(true)}
-                  className="text-ng-clay transition-colors hover:text-ng-clay-deep disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft"
+                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft"
                 >
                   {resending
                     ? "Sending…"
