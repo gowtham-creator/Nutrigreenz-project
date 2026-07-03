@@ -465,17 +465,30 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
-      {/* Brand panel — a light misty forest backdrop with a soft cream wash */}
-      <aside
-        className="relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12"
-        style={{
-          backgroundImage: "url(/images/admin/forest-panel.webp)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {/* Whisper of a wash — the photo keeps its depth; copy gets a glass card */}
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-ng-cream/25 via-transparent to-ng-cream/30" />
+      {/* Brand panel — moving forest gradient + floating glows + rising
+          particles (NXT-style motion, Nutri Greenz palette); the forest photo
+          remains as a faint texture layer underneath. */}
+      <aside className="login-gradient relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.16] mix-blend-luminosity"
+          style={{
+            backgroundImage: "url(/images/admin/forest-panel.webp)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        <span aria-hidden className="login-glow login-glow--a" />
+        <span aria-hidden className="login-glow login-glow--b" />
+        <span aria-hidden className="login-glow login-glow--c" />
+        {[8, 22, 37, 51, 64, 78, 90, 15, 45, 70, 30, 58].map((left, i) => (
+          <span
+            key={left}
+            aria-hidden
+            className="login-particle"
+            style={{ left: `${left}%`, "--pd": `${11 + (i % 5) * 2.6}s`, "--pdelay": `${(i * 1.7) % 12}s` } as React.CSSProperties}
+          />
+        ))}
 
         <Link
           href="/"
