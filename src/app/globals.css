@@ -328,6 +328,15 @@
   50% { transform: translate(-120px, -80px) scale(1.4); opacity: 1; }
   100% { transform: translate(0) scale(1); opacity: 0.55; }
 }
+/* Light twin of .login-gradient — same pan, pastel sage tones, for the form
+   panel option where inputs stay on a light field. */
+.login-gradient-light {
+  background: linear-gradient(135deg, #F2F6EC, #DFEDD8 46%, #CBE3BE 74%, #EAF2E2);
+  background-size: 240% 240%;
+  animation: ngBgPan 16s ease-in-out infinite;
+}
+.login-glow--soft { opacity: 0.55; }
+
 .login-particle {
   position: absolute; bottom: -8px; width: 4px; height: 4px; border-radius: 9999px;
   background: rgba(245, 242, 224, 0.75); pointer-events: none;

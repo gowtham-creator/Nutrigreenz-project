@@ -36,6 +36,10 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/admin";
+  // Form-panel background sample toggle: ?bg=dark mirrors the brand panel's
+  // deep forest gradient (form floats on a paper card); default is the light
+  // pastel-sage pan. Used to pick between the two treatments.
+  const bgDark = params.get("bg") === "dark";
 
   const [method, setMethod] = useState<Method>("passcode");
   const [error, setError] = useState<string | null>(null);
@@ -517,9 +521,34 @@ function LoginForm() {
         </p>
       </aside>
 
-      {/* Form panel — soft drifting green aurora ties it to the forest panel */}
-      <main className="aurora aurora-green flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="relative z-10 w-full max-w-sm">
+      {/* Form panel — NXT-style moving gradient here too. Two samples, picked
+          via ?bg=: "light" (default) pans pastel sage; "dark" mirrors the brand
+          panel's deep forest and floats the form on a paper card. */}
+      <main
+        className={`relative flex-1 flex items-center justify-center overflow-hidden p-8 lg:p-12 ${
+          bgDark ? "login-gradient" : "login-gradient-light"
+        }`}
+      >
+        <span aria-hidden className="login-glow login-glow--a login-glow--soft" />
+        <span aria-hidden className="login-glow login-glow--b login-glow--soft" />
+        {bgDark ? (
+          <>
+            <span aria-hidden className="login-glow login-glow--c" />
+            {[12, 34, 55, 74, 88, 24, 63].map((left, i) => (
+              <span
+                key={left}
+                aria-hidden
+                className="login-particle"
+                style={{ left: `${left}%`, "--pd": `${12 + (i % 4) * 2.4}s`, "--pdelay": `${(i * 2.1) % 11}s` } as React.CSSProperties}
+              />
+            ))}
+          </>
+        ) : null}
+        <div
+          className={`relative z-10 w-full max-w-sm ${
+            bgDark ? "rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[0_24px_64px_rgba(10,31,18,0.38)] backdrop-blur-md sm:p-8" : ""
+          }`}
+        >
           <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <Icon name="lock-keyhole-bold" size={24} />
           </div>
