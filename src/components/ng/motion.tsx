@@ -167,9 +167,9 @@ export function MagneticHover({
 }: { children: ReactNode; className?: string; strength?: number }) {
   return (
     <motion.div
-      whileHover={{ y: -strength * 0.25, scale: 1.015 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+      whileHover={{ y: -strength * 0.18, scale: 1.006 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ duration: 0.45, ease: [0.25, 0.6, 0.2, 1] }}
       className={cn("inline-block", className)}
     >
       {children}
