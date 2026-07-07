@@ -7,25 +7,20 @@ import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { cn } from "@/lib/utils";
 import type { Coupon } from "@/types/nutrigreenz";
-import {
-  COUPON_ERROR_MESSAGE,
-  INR,
-  POINTS_PER_RUPEE,
-  validateCoupon,
-} from "./order-math";
+import { INR, POINTS_PER_RUPEE } from "./order-math";
+import { couponReasonMessage, validateCouponApi } from "@/lib/rewards-client";
 
 export function RewardsPanel({
   subtotal,
-  coupons,
   appliedCoupon,
   onApplyCoupon,
   onRemoveCoupon,
   loyaltyAvailable,
   loyaltyRedeemed,
   onToggleLoyalty,
+  redeemPointsPerRupee = POINTS_PER_RUPEE,
 }: {
   subtotal: number;
-  coupons: Coupon[];
   appliedCoupon: { coupon: Coupon; discount: number } | null;
   onApplyCoupon: (coupon: Coupon, discount: number) => void;
   onRemoveCoupon: () => void;
@@ -34,24 +29,42 @@ export function RewardsPanel({
   /** Points currently being redeemed (0 when off). */
   loyaltyRedeemed: number;
   onToggleLoyalty: (on: boolean) => void;
+  /** Admin-configured points→₹ ratio, so the copy matches the real discount. */
+  redeemPointsPerRupee?: number;
 }) {
   const [code, setCode] = useState("");
-  const loyaltyRupees = Math.floor(loyaltyAvailable / POINTS_PER_RUPEE);
+  const [applying, setApplying] = useState(false);
+  const ratio = redeemPointsPerRupee > 0 ? redeemPointsPerRupee : POINTS_PER_RUPEE;
+  const loyaltyRupees = Math.floor(loyaltyAvailable / ratio);
   const loyaltyOn = loyaltyRedeemed > 0;
 
-  function handleApply() {
-    const result = validateCoupon(code, subtotal, coupons);
-    if (!result.ok || !result.coupon) {
-      toast.error(
-        result.error
-          ? COUPON_ERROR_MESSAGE[result.error]
-          : "That code isn't valid.",
-      );
-      return;
+  async function handleApply() {
+    if (applying) return;
+    setApplying(true);
+    try {
+      // Server-validated against the live coupon catalogue (the authoritative
+      // charge is re-checked again when the order is actually placed).
+      const result = await validateCouponApi(code, Math.round(subtotal * 100));
+      if (!result.valid || !result.code) {
+        toast.error(couponReasonMessage(result.reason));
+        return;
+      }
+      const discount = Math.round(result.discountPaise) / 100;
+      // A lightweight Coupon shape for display; the code is what the order path
+      // re-validates, so the synthesized fields are presentational only.
+      const coupon: Coupon = {
+        code: result.code,
+        description: `Applied — you saved ${INR(discount)}`,
+        type: "flat",
+        value: discount,
+        active: true,
+      };
+      onApplyCoupon(coupon, discount);
+      toast.success(`${result.code} applied — you saved ${INR(discount)}`);
+      setCode("");
+    } finally {
+      setApplying(false);
     }
-    onApplyCoupon(result.coupon, result.discount);
-    toast.success(`${result.coupon.code} applied — you saved ${INR(result.discount)}`);
-    setCode("");
   }
 
   return (
@@ -120,11 +133,11 @@ export function RewardsPanel({
             type="button"
             variant="secondary"
             size="md"
-            onClick={handleApply}
-            disabled={code.trim().length === 0}
+            onClick={() => void handleApply()}
+            disabled={code.trim().length === 0 || applying}
             className="h-12"
           >
-            Apply
+            {applying ? "Checking…" : "Apply"}
           </Button>
         </div>
       )}
@@ -155,7 +168,7 @@ export function RewardsPanel({
               </div>
               <div className="text-[12px] text-ng-ink-muted">
                 {loyaltyRupees > 0
-                  ? `Available balance · ${loyaltyAvailable} pts · 10 pts = ₹1`
+                  ? `Available balance · ${loyaltyAvailable} pts · ${ratio} pts = ₹1`
                   : "Earn points on every order to redeem later"}
               </div>
             </div>

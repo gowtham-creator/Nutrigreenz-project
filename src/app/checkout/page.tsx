@@ -14,7 +14,7 @@ import { useCommerceRules } from "@/lib/commerce";
 import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
 import { fetchServiceable } from "@/lib/serviceability";
-import { COUPONS, LOYALTY_LEDGER } from "@/components/ng/data";
+import { fetchRewards } from "@/lib/rewards-client";
 import type { Coupon } from "@/types/nutrigreenz";
 import { FloatIn, MagneticHover, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { AddressPicker } from "@/components/ng/checkout/address-picker";
@@ -35,7 +35,6 @@ import {
   computeTotals,
   generateOrderId,
   INR,
-  loyaltyBalance,
   maxRedeemableRupees,
   pointsEarned,
 } from "@/components/ng/checkout/order-math";
@@ -81,7 +80,22 @@ export default function CheckoutPage() {
   const { config: loyalty } = useLoyaltyConfig();
   const { addresses, defaultAddress } = useAddresses();
 
-  const loyaltyAvailable = useMemo(() => loyaltyBalance(LOYALTY_LEDGER), []);
+  // Live Harvest-Coins balance from the append-only ledger (0 until loaded /
+  // when signed out). Refetched when auth settles so the wallet is accurate.
+  const [loyaltyAvailable, setLoyaltyAvailable] = useState(0);
+  useEffect(() => {
+    if (!isAuthed) {
+      setLoyaltyAvailable(0);
+      return;
+    }
+    let live = true;
+    void fetchRewards().then((r) => {
+      if (live) setLoyaltyAvailable(r.balance);
+    });
+    return () => {
+      live = false;
+    };
+  }, [isAuthed]);
 
   const [addressId, setAddressId] = useState<string | null>(
     defaultAddress?.id ?? null,
@@ -435,7 +449,6 @@ export default function CheckoutPage() {
             <StaggerItem>
               <RewardsPanel
                 subtotal={subtotal}
-                coupons={COUPONS}
                 appliedCoupon={applied}
                 onApplyCoupon={(coupon, discount) =>
                   setApplied({ coupon, discount })
@@ -444,6 +457,7 @@ export default function CheckoutPage() {
                 loyaltyAvailable={loyaltyAvailable}
                 loyaltyRedeemed={loyaltyPointsUsed}
                 onToggleLoyalty={setRedeemLoyalty}
+                redeemPointsPerRupee={loyalty.redeemPointsPerRupee}
               />
             </StaggerItem>
 
