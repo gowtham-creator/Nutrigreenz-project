@@ -1,29 +1,51 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
-import { INR } from "@/components/ng/admin/orders-data";
-import { BundleCard } from "./bundle-card";
-import { bundleDeliveryDates, buildBundleGroups, formatDeliveryDate } from "./bundle-data";
+import { formatPaise } from "@/app/admin/orders/portal-data";
+import { BundleCard, formatDeliveryDate } from "./bundle-card";
+import type { BundlesResult } from "@/lib/order-bundles";
 
 /**
- * Interactive Community-Bundle view (§3.11). Builds groups from the shared
- * dataset, exposes a delivery-date chip filter, and renders one BundleCard per
- * gated-community + delivery-date group (soonest date first).
+ * Interactive Community-Bundle view (§3.11). Loads the real pre-dispatch
+ * bundle groups from `GET /api/admin/orders/bundles`, exposes a delivery-date
+ * chip filter, and renders one BundleCard per gated-community + delivery-date
+ * group (soonest date first). No mock data.
  */
 export function BundlesView() {
-  const allGroups = useMemo(() => buildBundleGroups(), []);
-  const dates = useMemo(() => bundleDeliveryDates(allGroups), [allGroups]);
+  const [data, setData] = useState<BundlesResult | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeDate, setActiveDate] = useState<string | null>(null);
 
-  const groups = useMemo(
-    () => (activeDate ? allGroups.filter((g) => g.deliveryDate === activeDate) : allGroups),
-    [allGroups, activeDate],
-  );
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const res = await fetch("/api/admin/orders/bundles");
+      const json = (await res.json()) as { ok: boolean } & Partial<BundlesResult>;
+      if (active && json.ok) {
+        setData({
+          groups: json.groups ?? [],
+          deliveryDates: json.deliveryDates ?? [],
+          totals: json.totals ?? { groups: 0, orders: 0, bundleTotalPaise: 0 },
+        });
+      }
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const bundledOrders = groups.reduce((n, g) => n + g.orders.length, 0);
-  const bundledValue = groups.reduce((n, g) => n + g.bundleTotal, 0);
+  const dates = data?.deliveryDates ?? [];
+
+  const groups = useMemo(() => {
+    const all = data?.groups ?? [];
+    return activeDate ? all.filter((g) => g.deliveryDate === activeDate) : all;
+  }, [data, activeDate]);
+
+  const bundledOrders = groups.reduce((n, g) => n + g.orderCount, 0);
+  const bundledValue = groups.reduce((n, g) => n + g.bundleTotalPaise, 0);
 
   return (
     <>
@@ -31,7 +53,7 @@ export function BundlesView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatTile label="Active bundles" value={String(groups.length)} />
         <StatTile label="Orders bundled" value={String(bundledOrders)} />
-        <StatTile label="Bundled value" value={INR(bundledValue)} />
+        <StatTile label="Bundled value" value={formatPaise(bundledValue)} />
         <StatTile label="Delivery dates" value={String(dates.length)} />
       </div>
 
@@ -69,7 +91,7 @@ export function BundlesView() {
       {/* Bundle cards */}
       {groups.length === 0 ? (
         <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] font-medium text-ng-ink-muted">
-          No confirmed orders to bundle for this date.
+          {loading ? "Loading community bundles…" : "No pre-dispatch orders to bundle for this date."}
         </div>
       ) : (
         <div className="space-y-6">

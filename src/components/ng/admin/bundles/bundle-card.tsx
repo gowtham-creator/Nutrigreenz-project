@@ -1,16 +1,33 @@
 import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
-import { INR, itemCount, STATUS_TONE } from "@/components/ng/admin/orders-data";
-import { formatDeliveryDate } from "./bundle-data";
-import type { BundleGroup } from "./bundle-data";
+import { formatPaise, STATUS_LABEL, STATUS_TONE } from "@/app/admin/orders/portal-data";
+import type { BundleGroup } from "@/lib/order-bundles";
 
 /**
  * One gated-community + delivery-date bundle. Informational/operational only:
  * shows the customers in the group, the consolidated SKU pick-list the operator
  * packs against, and the summed value. No re-pricing or auto-merging happens.
+ *
+ * Driven by the real `GET /api/admin/orders/bundles` aggregation.
  */
+
+/** Friendly date label, e.g. "Thu 4 Jun". Date-only, no timezone surprises. */
+export function formatDeliveryDate(iso: string | null): string {
+  if (!iso) return "Undated";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return dt.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
 export function BundleCard({ group }: { group: BundleGroup }) {
   const single = group.orders.length === 1;
+  const location = [group.area, group.pincode, group.city].filter(Boolean);
 
   return (
     <Card className="!p-0 overflow-hidden">
@@ -21,13 +38,17 @@ export function BundleCard({ group }: { group: BundleGroup }) {
             <Icon name="home-2-bold" size={18} className="text-ng-forest" />
             <h2 className="font-display text-[20px] text-ng-forest-deep leading-tight">{group.community}</h2>
           </div>
-          <div className="text-[12px] font-medium text-ng-ink-muted mt-1.5">
-            {group.area} · <span className="font-mono">{group.pincode}</span> · {group.city}
-          </div>
+          {location.length > 0 ? (
+            <div className="text-[12px] font-medium text-ng-ink-muted mt-1.5">
+              {group.area ? <span>{group.area}</span> : null}
+              {group.pincode ? <> · <span className="font-mono">{group.pincode}</span></> : null}
+              {group.city ? <> · {group.city}</> : null}
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Pill tone="info">{formatDeliveryDate(group.deliveryDate)}</Pill>
-          {group.slots.map((s) => (
+          {group.slotLabels.map((s) => (
             <span
               key={s}
               className="inline-flex items-center gap-1 rounded-full bg-ng-paper border border-ng-line-soft px-2.5 py-1 text-[11px] font-semibold text-ng-ink-muted"
@@ -55,15 +76,15 @@ export function BundleCard({ group }: { group: BundleGroup }) {
                 className="flex items-center gap-3 py-2.5 border-b border-ng-line-soft last:border-0 text-[13px]"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold text-ng-ink">{o.customer.name}</div>
-                  <div className="font-mono text-[11px] font-medium text-ng-ink-muted mt-0.5">{o.id}</div>
+                  <div className="truncate font-semibold text-ng-ink">{o.customerName ?? "Guest"}</div>
+                  <div className="font-mono text-[11px] font-medium text-ng-ink-muted mt-0.5">{o.orderNumber}</div>
                 </div>
                 <span className="text-[11.5px] font-medium text-ng-ink-muted whitespace-nowrap tabular-nums">
-                  {itemCount(o)} {itemCount(o) === 1 ? "item" : "items"}
+                  {o.itemCount} {o.itemCount === 1 ? "item" : "items"}
                 </span>
-                <span className="font-semibold text-ng-ink whitespace-nowrap w-20 text-right tabular-nums">{INR(o.total)}</span>
+                <span className="font-semibold text-ng-ink whitespace-nowrap w-24 text-right tabular-nums">{formatPaise(o.totalPaise)}</span>
                 <span className="w-28 flex justify-end">
-                  <Pill tone={STATUS_TONE[o.status]}>{o.status}</Pill>
+                  <Pill tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Pill>
                 </span>
               </li>
             ))}
@@ -78,11 +99,11 @@ export function BundleCard({ group }: { group: BundleGroup }) {
           </div>
           <ul className="space-y-2">
             {group.consolidated.map((c) => (
-              <li key={`${c.sku}-${c.unit}`} className="flex items-center justify-between gap-3 text-[12.5px]">
+              <li key={c.key} className="flex items-center justify-between gap-3 text-[12.5px]">
                 <span className="min-w-0">
-                  <span className="font-semibold text-ng-ink">{c.title}</span>{" "}
-                  <span className="font-medium text-ng-ink-muted">{c.unit}</span>
-                  <span className="block font-mono text-[11px] font-medium text-ng-ink-soft">{c.sku}</span>
+                  <span className="font-semibold text-ng-ink">{c.title}</span>
+                  {c.unit ? <> <span className="font-medium text-ng-ink-muted">{c.unit}</span></> : null}
+                  {c.sku ? <span className="block font-mono text-[11px] font-medium text-ng-ink-soft">{c.sku}</span> : null}
                 </span>
                 <span className="font-display text-[15px] text-ng-forest-deep whitespace-nowrap tabular-nums">×{c.qty}</span>
               </li>
@@ -102,7 +123,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         </p>
         <div className="text-right">
           <div className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">Bundle value</div>
-          <div className="font-display text-[22px] text-ng-forest-deep leading-none mt-0.5 tabular-nums">{INR(group.bundleTotal)}</div>
+          <div className="font-display text-[22px] text-ng-forest-deep leading-none mt-0.5 tabular-nums">{formatPaise(group.bundleTotalPaise)}</div>
         </div>
       </footer>
     </Card>
