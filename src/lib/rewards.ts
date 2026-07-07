@@ -14,16 +14,160 @@
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 
-/* ── program constants (mirror LOYALTY_CONFIG in src/lib/loyalty-config) ── */
+/* ── program defaults ──────────────────────────────────────────────────────
+ * FALLBACK values only. The live programme config is read from the DB row
+ * `public.loyalty_config` via {@link getLoyaltyConfig}; these constants are used
+ * solely when Supabase is unconfigured or the row is missing (see
+ * {@link DEFAULT_LOYALTY_CONFIG}). REDEEM_PAISE_PER_POINT is also the coarse
+ * conversion the create-order route uses to turn a client-sent paise amount back
+ * into points before the server re-clamps everything against the live config.
+ */
 
-/** Earn: 1 point per whole ₹10 (1000 paise) of the payable order total. */
-export const EARN_PAISE_PER_POINT = 1000;
-/** Redeem: 10 points = ₹1, i.e. 1 point = 10 paise. */
+/** Default redeem rate: 10 points = ₹1, i.e. 1 point = 10 paise. */
 export const REDEEM_PAISE_PER_POINT = 10;
-/** A redemption needs at least this many points banked. */
+/** Default floor: a redemption needs at least this many points banked. */
 export const MIN_REDEEM_POINTS = 100;
-/** A redemption may cover at most this percentage of the order subtotal. */
+/** Default cap: a redemption may cover at most this percentage of the subtotal. */
 export const MAX_REDEEM_PERCENT = 20;
+
+/* ── loyalty programme config (DB-backed, single row) ─────────────────────── */
+
+/**
+ * The loyalty programme economics the checkout points engine runs on. Read from
+ * the `public.loyalty_config` singleton so a Super Admin edit takes effect
+ * server-side for everyone (replacing the old per-browser localStorage config).
+ */
+export interface LoyaltyProgramConfig {
+  /** Points credited per ₹1 of the payable order total. */
+  earnPointsPerRupee: number;
+  /** Points needed to redeem ₹1 off (10 pts = ₹1). */
+  redeemPointsPerRupee: number;
+  /** Minimum points balance required before any redemption is allowed. */
+  minRedeemPoints: number;
+  /** Max share of the order subtotal (%) that loyalty can cover. */
+  maxRedeemPercent: number;
+  /** Months until earned points expire. */
+  expiryMonths: number;
+  /** Whether customers currently earn points on orders. */
+  earnEnabled: boolean;
+}
+
+/** Fallback config (mirrors the migration's column defaults + LOYALTY_CONFIG). */
+export const DEFAULT_LOYALTY_CONFIG: LoyaltyProgramConfig = {
+  earnPointsPerRupee: 1,
+  redeemPointsPerRupee: 10,
+  minRedeemPoints: MIN_REDEEM_POINTS,
+  maxRedeemPercent: MAX_REDEEM_PERCENT,
+  expiryMonths: 12,
+  earnEnabled: true,
+};
+
+/** The customer-facing subset the public /api/loyalty-config endpoint returns. */
+export interface PublicLoyaltyConfig {
+  earnPointsPerRupee: number;
+  redeemPointsPerRupee: number;
+  minRedeemPoints: number;
+  maxRedeemPercent: number;
+  earnEnabled: boolean;
+}
+
+interface LoyaltyConfigRow {
+  earn_points_per_rupee: number;
+  redeem_points_per_rupee: number;
+  min_redeem_points: number;
+  max_redeem_percent: number;
+  expiry_months: number;
+  earn_enabled: boolean;
+}
+
+const LOYALTY_CONFIG_COLS =
+  "earn_points_per_rupee, redeem_points_per_rupee, min_redeem_points, max_redeem_percent, expiry_months, earn_enabled";
+
+/** A non-negative integer, or the fallback when the stored value is unusable. */
+function nonNegInt(raw: unknown, fallback: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+}
+
+function toLoyaltyConfig(r: LoyaltyConfigRow): LoyaltyProgramConfig {
+  return {
+    // Rates must be >= 1 to avoid divide-by-zero / zero-point rounding.
+    earnPointsPerRupee: Math.max(1, nonNegInt(r.earn_points_per_rupee, DEFAULT_LOYALTY_CONFIG.earnPointsPerRupee)),
+    redeemPointsPerRupee: Math.max(
+      1,
+      nonNegInt(r.redeem_points_per_rupee, DEFAULT_LOYALTY_CONFIG.redeemPointsPerRupee),
+    ),
+    minRedeemPoints: nonNegInt(r.min_redeem_points, DEFAULT_LOYALTY_CONFIG.minRedeemPoints),
+    maxRedeemPercent: Math.min(100, nonNegInt(r.max_redeem_percent, DEFAULT_LOYALTY_CONFIG.maxRedeemPercent)),
+    expiryMonths: nonNegInt(r.expiry_months, DEFAULT_LOYALTY_CONFIG.expiryMonths),
+    earnEnabled: typeof r.earn_enabled === "boolean" ? r.earn_enabled : DEFAULT_LOYALTY_CONFIG.earnEnabled,
+  };
+}
+
+/**
+ * Read the singleton loyalty programme config. Returns the built-in defaults
+ * when the DB is unconfigured or the row is missing, so callers never crash and
+ * the points engine keeps working with sane values.
+ */
+export async function getLoyaltyConfig(): Promise<LoyaltyProgramConfig> {
+  if (!isSupabaseConfigured) return DEFAULT_LOYALTY_CONFIG;
+  const { data } = await supabaseAdmin()
+    .from("loyalty_config")
+    .select(LOYALTY_CONFIG_COLS)
+    .eq("id", 1)
+    .maybeSingle();
+  return data ? toLoyaltyConfig(data as LoyaltyConfigRow) : DEFAULT_LOYALTY_CONFIG;
+}
+
+/** The customer-facing rate/min/max slice for the storefront checkout. */
+export async function getPublicLoyaltyConfig(): Promise<PublicLoyaltyConfig> {
+  const c = await getLoyaltyConfig();
+  return {
+    earnPointsPerRupee: c.earnPointsPerRupee,
+    redeemPointsPerRupee: c.redeemPointsPerRupee,
+    minRedeemPoints: c.minRedeemPoints,
+    maxRedeemPercent: c.maxRedeemPercent,
+    earnEnabled: c.earnEnabled,
+  };
+}
+
+export interface LoyaltyConfigPatch {
+  earnPointsPerRupee?: number;
+  redeemPointsPerRupee?: number;
+  minRedeemPoints?: number;
+  maxRedeemPercent?: number;
+  expiryMonths?: number;
+  earnEnabled?: boolean;
+}
+
+/**
+ * Apply an editable subset of fields to the singleton row (upserting id = 1 so
+ * the row is recreated if it was ever cleared), and return the fresh config.
+ */
+export async function updateLoyaltyConfig(patch: LoyaltyConfigPatch): Promise<LoyaltyProgramConfig> {
+  const db = supabaseAdmin();
+  const row: Record<string, unknown> = { id: 1 };
+  if (patch.earnPointsPerRupee !== undefined) row.earn_points_per_rupee = Math.max(0, Math.round(patch.earnPointsPerRupee));
+  if (patch.redeemPointsPerRupee !== undefined) row.redeem_points_per_rupee = Math.max(1, Math.round(patch.redeemPointsPerRupee));
+  if (patch.minRedeemPoints !== undefined) row.min_redeem_points = Math.max(0, Math.round(patch.minRedeemPoints));
+  if (patch.maxRedeemPercent !== undefined)
+    row.max_redeem_percent = Math.min(100, Math.max(0, Math.round(patch.maxRedeemPercent)));
+  if (patch.expiryMonths !== undefined) row.expiry_months = Math.max(0, Math.round(patch.expiryMonths));
+  if (patch.earnEnabled !== undefined) row.earn_enabled = patch.earnEnabled;
+
+  const { data, error } = await db
+    .from("loyalty_config")
+    .upsert(row, { onConflict: "id" })
+    .select(LOYALTY_CONFIG_COLS)
+    .single();
+  if (error || !data) throw new Error(error?.message || "Failed to save loyalty config.");
+  return toLoyaltyConfig(data as LoyaltyConfigRow);
+}
+
+/** Paise redeemed per point, derived from the live redeem rate (₹1 = 100 paise). */
+function redeemPaisePerPoint(config: LoyaltyProgramConfig): number {
+  return Math.max(1, Math.round(100 / config.redeemPointsPerRupee));
+}
 
 /* ── types ────────────────────────────────────────────────────────────── */
 
@@ -306,10 +450,11 @@ export async function listLoyaltyLedger(
 }
 
 /**
- * Accrue earn points for a placed order: 1 point per whole ₹10 of the PAYABLE
- * total (post-discount, incl. shipping/tax) — never the pre-discount subtotal.
- * Appends an `order_earn` row and returns the points credited (0 on any error,
- * so a bookkeeping hiccup can't void an already-placed order).
+ * Accrue earn points for a placed order at the live `earnPointsPerRupee` rate on
+ * the PAYABLE total (post-discount, incl. shipping/tax) — never the pre-discount
+ * subtotal. No-ops when earning is switched off in the config. Appends an
+ * `order_earn` row and returns the points credited (0 on any error, so a
+ * bookkeeping hiccup can't void an already-placed order).
  */
 export async function earnPointsForOrder(
   customerId: string,
@@ -317,7 +462,10 @@ export async function earnPointsForOrder(
   totalPaise: number,
 ): Promise<number> {
   if (!customerId || !isSupabaseConfigured) return 0;
-  const points = Math.floor(Math.max(0, Math.round(totalPaise)) / EARN_PAISE_PER_POINT);
+  const config = await getLoyaltyConfig();
+  if (!config.earnEnabled) return 0;
+  // earnPointsPerRupee is points per ₹1 (= per 100 paise).
+  const points = Math.floor((Math.max(0, Math.round(totalPaise)) * config.earnPointsPerRupee) / 100);
   if (points <= 0) return 0;
   const { error } = await supabaseAdmin().from("loyalty_ledger").insert({
     customer_id: customerId,
@@ -329,11 +477,12 @@ export async function earnPointsForOrder(
 }
 
 /**
- * Clamp a requested redemption WITHOUT writing anything. Guardrails:
- *   - the customer must have banked at least {@link MIN_REDEEM_POINTS};
+ * Clamp a requested redemption WITHOUT writing anything. Guardrails come from
+ * the live loyalty config ({@link getLoyaltyConfig}):
+ *   - the customer must have banked at least `minRedeemPoints`;
  *   - never more points than the live balance (no negative balances);
- *   - the paise value may cover at most {@link MAX_REDEEM_PERCENT}% of the
- *     subtotal, and never more than what a coupon left on the table
+ *   - the paise value may cover at most `maxRedeemPercent`% of the subtotal,
+ *     and never more than what a coupon left on the table
  *     (`reservedDiscountPaise`) — coupon + loyalty can't exceed the subtotal.
  * The create-order path quotes first (totals need the number before the order
  * row exists), then commits via {@link redeemPoints} with the order id.
@@ -348,18 +497,20 @@ export async function quoteLoyaltyRedemption(
   const requested = Math.floor(Math.max(0, requestedPoints));
   if (!customerId || requested <= 0 || !isSupabaseConfigured) return none;
 
+  const config = await getLoyaltyConfig();
   const balance = await loyaltyBalance(customerId);
-  if (balance < MIN_REDEEM_POINTS) return none;
+  if (balance < config.minRedeemPoints) return none;
 
   const subtotal = Math.max(0, Math.round(subtotalPaise));
   const reserved = Math.max(0, Math.round(reservedDiscountPaise));
+  const paisePerPoint = redeemPaisePerPoint(config);
   const capPaise = Math.min(
-    Math.floor((subtotal * MAX_REDEEM_PERCENT) / 100),
+    Math.floor((subtotal * config.maxRedeemPercent) / 100),
     Math.max(0, subtotal - reserved),
   );
-  const points = Math.min(requested, balance, Math.floor(capPaise / REDEEM_PAISE_PER_POINT));
+  const points = Math.min(requested, balance, Math.floor(capPaise / paisePerPoint));
   if (points <= 0) return none;
-  return { points, discountPaise: points * REDEEM_PAISE_PER_POINT };
+  return { points, discountPaise: points * paisePerPoint };
 }
 
 /**
