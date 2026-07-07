@@ -90,6 +90,12 @@ export interface ProductStoryContent {
   description: string[];
   /** Optional real marketing shots that drive the hero gallery (main + thumbs). */
   gallery?: StoryImage[];
+  /**
+   * Category-level detail shots appended AFTER the product's own hero image
+   * when the category has no per-product `gallery` — e.g. the oils range shares
+   * one set of pack/label/lifestyle shots across all six varieties.
+   */
+  sharedGallery?: StoryImage[];
   /** Ordered story blocks rendered below the description + trust bar. */
   sections: ProductStorySection[];
   /**
@@ -279,35 +285,54 @@ const RICE_STORY = minimalStory(
   },
 );
 
-const OILS_STORY = minimalStory(
-  "oil",
-  [
-    "Single-farm seed, pressed slow and cold on a wooden ghani — no heat, no hexane, no refining — so the oil still tastes of the seed it came from.",
-    "Bottled in UV-protected glass so the aroma reaches your kitchen exactly as it left the press.",
+const OILS_DIR = "/images/products/oils";
+
+const OILS_STORY: ProductStoryContent = {
+  produceIcon: "oil",
+  description: [
+    "Cold-pressed the traditional way — seeds crushed slowly on a wooden ghani, never heated or refined — so the oil keeps the aroma, colour and nutrients of the seed it came from.",
+    "No bleaching, no deodorising, no chemicals at any step. Just small batches of unrefined oil, bottled as it leaves the press.",
   ],
-  {
-    heading: "Pure by every measure",
-    sub: "Cold-pressed below 40°C, from a single farm lot.",
-    bullets: [
-      { icon: "shield-check-linear", label: "Cold-pressed" },
-      { icon: "leaf-linear", label: "No refining" },
-      { icon: "verified-check-linear", label: "Glass-bottled" },
-    ],
-  },
-  {
-    a: { heading: "Slow, Cold Press", sub: "Pressed below 40°C so the natural antioxidants and vitamin E survive intact." },
-    b: { heading: "One Farm, One Lot", sub: "Never blended across regions — scan the lot code to see the exact farm and press date." },
-  },
-);
+  sharedGallery: [
+    { src: `${OILS_DIR}/groundnut-side.webp`, alt: "Cold-pressed oil bottle — pack and label detail", label: "Pack & label" },
+    { src: `${OILS_DIR}/oils-infographic.webp`, alt: "Why our cold-pressed oil — first press, cholesterol free, rich in omega 6", label: "Why our oil" },
+    { src: `${OILS_DIR}/oils-lifestyle.webp`, alt: "Cold-pressed oil poured in an Indian kitchen", label: "In the kitchen" },
+    { src: `${OILS_DIR}/oils-tile-sizes.webp`, alt: "Every pack size — bottles, jars and the 15L tin", label: "All pack sizes" },
+  ],
+  sections: [],
+  tiles: [
+    {
+      layout: "full",
+      images: [{ src: `${OILS_DIR}/oils-tile-why.webp`, alt: "Why cold-pressed — zero trans fat, nutrients kept alive, no chemicals" }],
+    },
+    {
+      layout: "2up",
+      images: [
+        { src: `${OILS_DIR}/oils-tile-comparison.webp`, alt: "Nutri Greenz cold-pressed vs refined oil" },
+        { src: `${OILS_DIR}/oils-tile-woodpress.webp`, alt: "Wood-pressed slowly on a traditional ghani" },
+      ],
+    },
+    {
+      layout: "full",
+      images: [{ src: `${OILS_DIR}/oils-tile-range.webp`, alt: "The Nutri Greenz cold-pressed oil range — six varieties" }],
+    },
+  ],
+};
 
 /* ──────────────────────────────── the registry ──────────────────────────────── */
 
-/** Per-category story content, keyed by category slug. */
+/**
+ * Per-category story content, keyed by category slug. Oils are registered under
+ * both the resolved category id (`oils`, the live catalog category slug) and the
+ * "cold-pressed-oils" alias, so the story resolves regardless of which slug the
+ * PDP passes to `getProductStory(categoryId, cat.slug)`.
+ */
 export const PRODUCT_STORY: Record<string, ProductStoryContent> = {
   ghee: GHEE_STORY,
   honey: HONEY_STORY,
   rice: RICE_STORY,
   oils: OILS_STORY,
+  "cold-pressed-oils": OILS_STORY,
 };
 
 /**

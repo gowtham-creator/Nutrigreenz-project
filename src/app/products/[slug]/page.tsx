@@ -263,17 +263,26 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const others = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
-  // Gallery — prefer the category's curated marketing renders when available,
-  // otherwise fall back to the single product image plus branded placeholders.
+  // Gallery — prefer the category's curated per-product renders. Otherwise, when
+  // the category ships a shared detail set (e.g. all six cold-pressed oils share
+  // one pack/label/why/kitchen/sizes set) and the product has a real hero image,
+  // lead with that hero and append the shared shots. Failing both, fall back to
+  // the single product image plus branded placeholders.
+  const hasRealImage = p.image.length > 0 && p.image !== PLACEHOLDER;
   const images =
     story?.gallery && story.gallery.length > 0
       ? story.gallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label }))
-      : [
-          { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
-          { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
-          { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
-          { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
-        ];
+      : story?.sharedGallery && story.sharedGallery.length > 0 && hasRealImage
+        ? [
+            { src: p.image, alt: p.title, label: "Front of pack" },
+            ...story.sharedGallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label })),
+          ]
+        : [
+            { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
+            { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
+            { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
+            { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
+          ];
 
   const jsonLd = {
     "@context": "https://schema.org",
