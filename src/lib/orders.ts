@@ -20,6 +20,14 @@
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getCommerceRules, type CommerceRulesRecord } from "@/lib/commerce-rules";
+import {
+  validateCouponServer,
+  quoteLoyaltyRedemption,
+  recordCouponUse,
+  redeemPoints,
+  earnPointsForOrder,
+  CouponInvalidError,
+} from "@/lib/rewards";
 
 /* ── status model ─────────────────────────────────────────────────────── */
 
@@ -295,11 +303,20 @@ export interface CreateOrderInput {
   userEmail?: string | null;
   userPhone?: string | null;
   items: OrderLineInput[];
+  /**
+   * The coupon code the customer applied, if any. It is RE-VALIDATED here
+   * against the server-owned catalogue + this customer's usage history — the
+   * client's claimed discount amount is ignored. An invalid code throws a
+   * {@link CouponInvalidError} so the caller can answer 400 with the reason.
+   */
   couponCode?: string | null;
-  /** Coupon discount in paise (validated upstream); clamped to subtotal here. */
-  discountPaise?: number;
-  /** Loyalty redemption in paise; clamped so total never goes negative. */
-  loyaltyRedeemedPaise?: number;
+  /**
+   * The number of loyalty points the customer asked to redeem. The server
+   * clamps this to the live ledger balance and the program guardrails (min
+   * points, max-percent, coupon headroom) before any paisa comes off — the
+   * client can only ever request, never assert, a redemption value.
+   */
+  loyaltyPoints?: number;
   addressSnapshot?: Record<string, unknown> | null;
   slotSnapshot?: Record<string, unknown> | null;
   paymentProvider?: string;
@@ -355,11 +372,16 @@ async function priceLines(
 }
 
 /**
- * Create an order: price every line from the catalog, recompute the totals from
- * the live commerce rules, insert the order + its items, and write the initial
- * `placed` status event. Returns the full order with detail.
+ * Create an order: price every line from the catalog, RE-VALIDATE the coupon and
+ * loyalty redemption server-side (the client's claimed amounts are ignored),
+ * recompute the totals from the live commerce rules, insert the order + its
+ * items, write the initial `placed` status event, then commit the reward
+ * side-effects (coupon use, points burn, points earn) now that the order id
+ * exists. Returns the full order with detail.
  *
- * Payment stays `pending` — the payment seam flips it only on a verified charge.
+ * Throws {@link CouponInvalidError} when a claimed coupon fails re-validation so
+ * the caller can answer 400 with the concrete reason. Payment stays `pending` —
+ * the payment seam flips it only on a verified charge.
  */
 export async function createOrder(input: CreateOrderInput): Promise<OrderWithDetail> {
   const db = supabaseAdmin();
@@ -374,10 +396,36 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   }));
   const subtotalPaise = lineTotals.reduce((sum, l) => sum + l.lineTotalPaise, 0);
 
-  // 2. Recompute discounts + shipping + tax from the live rules.
+  // 2. Recompute discounts + shipping + tax from the live rules — never trusting
+  //    the client's claimed amounts.
   const rules = await getCommerceRules();
-  const couponDiscount = Math.max(0, Math.round(input.discountPaise ?? 0));
-  const loyaltyRedeemed = Math.max(0, Math.round(input.loyaltyRedeemedPaise ?? 0));
+
+  // 2a. Coupon: re-validate against the server catalogue + this customer's usage
+  //     history. An invalid code aborts the order (the caller maps it to a 400).
+  let couponDiscount = 0;
+  let validatedCouponCode: string | null = null;
+  const requestedCode = input.couponCode?.trim().toUpperCase() || null;
+  if (requestedCode) {
+    const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId);
+    if (!check.valid) throw new CouponInvalidError(check.reason ?? "not-found");
+    couponDiscount = check.discountPaise;
+    validatedCouponCode = check.coupon?.code ?? requestedCode;
+  }
+
+  // 2b. Loyalty: QUOTE the redemption (no ledger write yet) so the totals and the
+  //     stored order row agree; the actual burn is committed once the order id
+  //     exists. The quote clamps to the live balance + program guardrails and
+  //     leaves the coupon its headroom (coupon + loyalty can't exceed subtotal).
+  const loyaltyQuote = input.customerId
+    ? await quoteLoyaltyRedemption(
+        input.customerId,
+        Math.max(0, Math.round(input.loyaltyPoints ?? 0)),
+        subtotalPaise,
+        couponDiscount,
+      )
+    : { points: 0, discountPaise: 0 };
+  const loyaltyRedeemed = loyaltyQuote.discountPaise;
+
   const discountPaise = Math.min(couponDiscount + loyaltyRedeemed, subtotalPaise);
   const discountedBase = Math.max(0, subtotalPaise - discountPaise);
   const shippingPaise = shippingPaiseFor(subtotalPaise, rules);
@@ -401,7 +449,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
       shipping_paise: shippingPaise,
       tax_paise: taxPaise,
       total_paise: totalPaise,
-      coupon_code: input.couponCode?.trim() || null,
+      coupon_code: validatedCouponCode,
       loyalty_redeemed_paise: loyaltyRedeemed,
       currency: rules.currency || "INR",
       address_snapshot: input.addressSnapshot ?? null,
@@ -442,6 +490,33 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
     .insert({ order_id: order.id, status: "placed", by: "system", note: "Order placed" })
     .select(EVENT_COLS);
   const events = ((eventData as OrderEventRow[] | null) ?? []).map(toEvent);
+
+  // 6. Commit the reward side-effects now the order id exists. All best-effort:
+  //    a bookkeeping hiccup must never void an order that is already placed.
+  if (input.customerId) {
+    // Record the coupon redemption (backs per-customer limits + used_count).
+    if (validatedCouponCode && couponDiscount > 0) {
+      try {
+        await recordCouponUse(validatedCouponCode, input.customerId, order.id);
+      } catch {
+        /* best-effort — the order is already placed */
+      }
+    }
+    // Burn the redeemed points against the ledger (re-clamps to live balance).
+    if (loyaltyQuote.points > 0) {
+      try {
+        await redeemPoints(input.customerId, order.id, loyaltyQuote.points, subtotalPaise, couponDiscount);
+      } catch {
+        /* best-effort — the order is already placed */
+      }
+    }
+    // Accrue earn points on the PAYABLE total (post-discount, incl shipping/tax).
+    try {
+      await earnPointsForOrder(input.customerId, order.id, totalPaise);
+    } catch {
+      /* best-effort — the order is already placed */
+    }
+  }
 
   return { ...order, items, events };
 }

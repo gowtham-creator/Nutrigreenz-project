@@ -17,6 +17,7 @@ import {
   listOrdersForCustomer,
   type OrderLineInput,
 } from "@/lib/orders";
+import { CouponInvalidError, REDEEM_PAISE_PER_POINT } from "@/lib/rewards";
 import { createPaymentIntent } from "@/lib/payments-razorpay";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
@@ -94,6 +95,15 @@ export async function POST(request: Request): Promise<Response> {
   // Snapshot the customer's contact for attribution even if the FK is later cleared.
   const customer = await getCustomerById(session.customerId);
 
+  // The client may request a redemption as points (`loyaltyPoints`) or, for the
+  // current checkout, as a paise value — either way the server RE-CLAMPS it to
+  // the live balance + guardrails, so this is only a request, never a claim.
+  const directPoints = int(b.loyaltyPoints);
+  const requestedPoints =
+    directPoints > 0
+      ? directPoints
+      : Math.max(0, Math.floor(int(b.loyaltyRedeemedPaise) / REDEEM_PAISE_PER_POINT));
+
   try {
     const order = await createOrder({
       customerId: session.customerId,
@@ -101,8 +111,7 @@ export async function POST(request: Request): Promise<Response> {
       userPhone: customer?.primaryPhone ?? str(b.userPhone),
       items,
       couponCode: str(b.couponCode),
-      discountPaise: int(b.discountPaise),
-      loyaltyRedeemedPaise: int(b.loyaltyRedeemedPaise),
+      loyaltyPoints: requestedPoints,
       addressSnapshot:
         typeof b.addressSnapshot === "object" && b.addressSnapshot !== null
           ? (b.addressSnapshot as Record<string, unknown>)
@@ -131,7 +140,15 @@ export async function POST(request: Request): Promise<Response> {
       },
       { status: 201 },
     );
-  } catch {
+  } catch (err) {
+    // A coupon that failed server re-validation is a client error, not a 500 —
+    // surface the concrete reason so checkout can explain why it was dropped.
+    if (err instanceof CouponInvalidError) {
+      return Response.json(
+        { ok: false, error: "coupon-invalid", reason: err.reason },
+        { status: 400 },
+      );
+    }
     return Response.json({ ok: false, error: "create-failed" }, { status: 500 });
   }
 }
