@@ -1,6 +1,7 @@
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { Sparkline, HBars, TrendChip, type VizTone } from "@/components/ng/admin/viz";
+import { LiveCouponsPanel } from "@/components/ng/admin/super/live-coupons-panel";
 
 const CAMPAIGNS = [
   { name: "Harvest letter #142", channel: "Email", segment: "All subscribers (28,412)", sent: "12 May", opens: 13642, ctr: 8.4, revenue: 184200, roi: "6.4×", status: "Sent", tone: "success" as const },
@@ -66,6 +67,9 @@ export default function AdminMarketing() {
         <StatTile label="Avg CTR" value="9.2%" delta="industry 2.1%" trend="up" />
         <StatTile label="Coupon ROAS" value="6.4×" delta="₹3.8L spend" trend="up" />
       </div>
+
+      {/* Live coupons — the real, redeemable coupon catalogue */}
+      <LiveCouponsPanel />
 
       {/* Campaigns */}
       <Card
