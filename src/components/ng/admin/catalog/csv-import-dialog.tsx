@@ -99,7 +99,7 @@ export function CsvImportDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="relative w-full max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[0_24px_64px_rgba(31,77,46,0.22)]"
+        className="relative w-full max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[var(--shadow-ng-modal)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-paper">

@@ -28,6 +28,12 @@ export interface AdminSession {
   role: AdminRole;
 }
 
+/** Decoded, verified pre-auth MFA ticket payload (email + authenticated role). */
+export interface MfaTicket {
+  email: string;
+  role: AdminRole;
+}
+
 const encoder = new TextEncoder();
 
 function getSecret(): string | null {
@@ -149,32 +155,37 @@ export async function verifyToken(
 }
 
 /**
- * Mint a short-lived pre-auth MFA ticket binding an email plus an expiry. The
- * signed payload is `${email}|mfa|${expiresAtMs}` — the literal `mfa` tag (not a
- * real role) means {@link verifyToken} can never accept this as a session, so a
- * leaked ticket can't be replayed as `ng_admin`. Throws if the secret is unset.
+ * Mint a short-lived pre-auth MFA ticket binding an email, the AUTHENTICATED
+ * role, and an expiry. The signed payload is `${email}|mfa|${role}|${expiresAtMs}`
+ * — the literal `mfa` tag (never a real role) sits between the email and the
+ * role, so {@link verifyToken} can never accept this as a session and a leaked
+ * ticket can't be replayed as `ng_admin`. Carrying the role means the second
+ * factor mints a session for EXACTLY the identity that cleared the passcode
+ * step, so completing 2FA can never elevate a plain `admin` to `superadmin`.
+ * Throws if the secret is unset.
  */
 export async function createMfaTicket(
   email: string,
+  role: AdminRole,
   ttlMs = 5 * 60 * 1000,
 ): Promise<string> {
   const secret = getSecret();
   if (!secret) {
     throw new Error("ADMIN_SESSION_SECRET is not configured");
   }
-  const claims = `${email}|mfa|${Date.now() + ttlMs}`;
+  const claims = `${email}|mfa|${role}|${Date.now() + ttlMs}`;
   const mac = await sign(claims, secret);
   return `${toBase64Url(encoder.encode(claims))}.${toBase64Url(mac)}`;
 }
 
 /**
- * Verify a pre-auth MFA ticket and return the bound email, or null if missing,
- * malformed, badly signed, not `mfa`-tagged, or expired. Fails closed when the
- * secret is unconfigured.
+ * Verify a pre-auth MFA ticket and return the bound `{ email, role }`, or null
+ * if missing, malformed, badly signed, not `mfa`-tagged, carrying an unknown
+ * role, or expired. Fails closed when the secret is unconfigured.
  */
 export async function verifyMfaTicket(
   token: string | undefined,
-): Promise<string | null> {
+): Promise<MfaTicket | null> {
   const secret = getSecret();
   if (!secret || !token) return null;
 
@@ -189,17 +200,22 @@ export async function verifyMfaTicket(
   const expectedSig = await sign(claims, secret);
   if (!timingSafeEqual(providedSig, expectedSig)) return null;
 
-  // Parse `${email}|mfa|${expiresAt}` from the right (emails may contain "|").
-  const lastSep = claims.lastIndexOf("|");
-  if (lastSep <= 0) return null;
-  const expiresAt = Number(claims.slice(lastSep + 1));
-  const rest = claims.slice(0, lastSep);
-  const tagSep = rest.lastIndexOf("|");
-  if (tagSep <= 0) return null;
-  const tag = rest.slice(tagSep + 1);
-  const email = rest.slice(0, tagSep);
-  if (tag !== "mfa" || !email) return null;
+  // Parse `${email}|mfa|${role}|${expiresAt}` from the right (emails may
+  // contain "|"), so the three trailing segments stay unambiguous.
+  const sepExpiry = claims.lastIndexOf("|");
+  if (sepExpiry <= 0) return null;
+  const expiresAt = Number(claims.slice(sepExpiry + 1));
+  const beforeExpiry = claims.slice(0, sepExpiry);
+  const sepRole = beforeExpiry.lastIndexOf("|");
+  if (sepRole <= 0) return null;
+  const role = beforeExpiry.slice(sepRole + 1);
+  const beforeRole = beforeExpiry.slice(0, sepRole);
+  const sepTag = beforeRole.lastIndexOf("|");
+  if (sepTag <= 0) return null;
+  const tag = beforeRole.slice(sepTag + 1);
+  const email = beforeRole.slice(0, sepTag);
+  if (tag !== "mfa" || !email || !isAdminRole(role)) return null;
   if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
 
-  return email;
+  return { email, role };
 }

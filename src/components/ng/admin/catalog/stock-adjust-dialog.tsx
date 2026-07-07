@@ -100,7 +100,7 @@ export function StockAdjustDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="relative w-full max-w-[420px] rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[0_24px_64px_rgba(31,77,46,0.22)] overflow-hidden"
+        className="relative w-full max-w-[420px] rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[var(--shadow-ng-modal)] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-paper">

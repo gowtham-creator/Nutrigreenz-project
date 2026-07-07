@@ -203,7 +203,8 @@ export default function AdminOverview() {
     >
       {/* ── attention banner (only when there is something to triage) ─────── */}
       {needAttention > 0 ? (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-clay/10 border border-ng-clay/25 px-5 py-3.5">
+        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-forest/[0.05] border border-ng-forest/15 px-5 py-3.5">
+          {/* Neutral forest surface; the gold bell is the single gold accent. */}
           <span className="size-8 rounded-full bg-ng-clay/20 flex items-center justify-center shrink-0">
             <Icon name="bell-bing-bold" size={17} className="text-ng-clay-deep" />
           </span>
@@ -211,7 +212,7 @@ export default function AdminOverview() {
             <span className="font-semibold text-ng-forest-deep tabular-nums">{needAttention} order{needAttention === 1 ? "" : "s"}</span>{" "}
             {needAttention === 1 ? "is" : "are"} awaiting or failed payment and need review.
           </p>
-          <Link href="/admin/orders" className="ml-auto shrink-0 text-[12.5px] font-semibold text-ng-clay-deep hover:underline">
+          <Link href="/admin/orders" className="ml-auto shrink-0 text-[12.5px] font-semibold text-ng-forest hover:text-ng-forest-deep hover:underline">
             Triage queue →
           </Link>
         </div>

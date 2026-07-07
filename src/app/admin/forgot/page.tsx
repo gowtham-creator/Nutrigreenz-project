@@ -13,6 +13,11 @@ import { Icon } from "@/components/ui/icon";
  * "Send reset link" validates the email locally and fires a success toast;
  * there is NO API call. Real reset-link delivery (Firebase / Brevo) ships in
  * Milestone 2. This page is intentionally pre-login and publicly reachable.
+ *
+ * Chrome matches /admin/login exactly (the animated `.login-gradient` brand +
+ * form panels, floating glows, rising particles, the paper card, and the
+ * leaf-accented auth badge) so moving between the two auth screens reads as one
+ * continuous flow rather than two different products.
  */
 export default function AdminForgotPage() {
   const [email, setEmail] = useState("");
@@ -41,36 +46,74 @@ export default function AdminForgotPage() {
 
   return (
     <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
-      {/* Brand panel — mirrors the admin's dark sidebar */}
-      <aside className="bg-ng-forest-deep text-ng-cream/80 lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo variant="mark" tone="white" className="h-9" />
-          <span className="font-display text-[18px] text-ng-cream">Nutri Greenz</span>
+      {/* Brand panel — moving forest gradient + floating glows + rising
+          particles (mirrors /admin/login); the forest photo remains a faint
+          texture layer underneath. */}
+      <aside className="login-gradient relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.16] mix-blend-luminosity"
+          style={{
+            backgroundImage: "url(/images/admin/forest-panel.webp)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        <span aria-hidden className="login-glow login-glow--a" />
+        <span aria-hidden className="login-glow login-glow--b" />
+        <span aria-hidden className="login-glow login-glow--c" />
+        {[8, 22, 37, 51, 64, 78, 90, 15, 45, 70, 30, 58].map((left, i) => (
+          <span
+            key={left}
+            aria-hidden
+            className="login-particle"
+            style={{ left: `${left}%`, "--pd": `${11 + (i % 5) * 2.6}s`, "--pdelay": `${(i * 1.7) % 12}s` } as React.CSSProperties}
+          />
+        ))}
+
+        <Link
+          href="/"
+          className="relative z-10 flex w-fit items-center gap-2.5 rounded-full bg-ng-paper/75 px-3.5 py-2 backdrop-blur-md"
+        >
+          <Logo variant="mark" className="h-8" />
+          <span className="font-display text-[17px] text-ng-forest-deep">Nutri Greenz</span>
         </Link>
 
-        <div className="hidden lg:block max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-clay">
+        <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
+          <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
             <Icon name="shield-keyhole-bold" size={14} />
             Admin · v0.4.1
           </div>
-          <h2 className="font-display text-[34px] leading-tight text-ng-cream mt-6">
+          <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
             Reset your access
           </h2>
-          <p className="font-sans text-[14px] font-medium text-ng-cream/85 mt-3 leading-relaxed">
+          <p className="font-sans text-[14px] font-medium text-ng-ink-muted mt-3 leading-relaxed">
             We’ll email a secure link to reset your operator passcode. For
             security, the link expires shortly after it’s sent.
           </p>
         </div>
 
-        <p className="font-mono text-[11.5px] font-medium text-ng-cream/85">
+        <p className="relative z-10 w-fit rounded-full bg-ng-paper/75 px-3.5 py-1.5 font-mono text-[11.5px] font-medium text-ng-forest backdrop-blur-md">
           Secured area — activity may be monitored.
         </p>
       </aside>
 
-      {/* Form panel */}
-      <main className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-sm">
-          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-clay flex items-center justify-center mb-6">
+      {/* Form panel — the deep forest moving gradient continues across the
+          whole screen; the form floats on a cream paper card (matches login). */}
+      <main className="login-gradient relative flex-1 flex items-center justify-center overflow-hidden p-8 lg:p-12">
+        <span aria-hidden className="login-glow login-glow--a login-glow--soft" />
+        <span aria-hidden className="login-glow login-glow--b login-glow--soft" />
+        <span aria-hidden className="login-glow login-glow--c" />
+        {[12, 34, 55, 74, 88, 24, 63].map((left, i) => (
+          <span
+            key={left}
+            aria-hidden
+            className="login-particle"
+            style={{ left: `${left}%`, "--pd": `${12 + (i % 4) * 2.4}s`, "--pdelay": `${(i * 2.1) % 11}s` } as React.CSSProperties}
+          />
+        ))}
+        <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
+          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <Icon name="key-minimalistic-bold" size={24} />
           </div>
 

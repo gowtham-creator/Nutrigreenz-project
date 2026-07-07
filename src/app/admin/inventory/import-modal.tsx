@@ -92,7 +92,7 @@ export function ImportModal({
       aria-modal="true"
       aria-label="Import products from CSV"
     >
-      <div className="w-full max-w-2xl rounded-2xl bg-ng-paper border border-ng-line-soft shadow-[0_24px_64px_rgba(31,77,46,0.18)] max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-2xl bg-ng-paper border border-ng-line-soft shadow-[var(--shadow-ng-modal)] max-h-[90vh] overflow-y-auto">
         <header className="flex items-center justify-between gap-4 px-6 pt-6 pb-4 border-b border-ng-line-soft">
           <h2 className="font-display text-[19px] text-ng-forest-deep">Import products</h2>
           <button

@@ -13,10 +13,11 @@ import { isEmailConfigured, sendEmail, otpEmailHtml } from "@/lib/email";
  */
 export async function POST(): Promise<Response> {
   const c = await cookies();
-  const email = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
-  if (!email) {
+  const ticket = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
+  if (!ticket) {
     return Response.json({ ok: false, restart: true }, { status: 401 });
   }
+  const { email } = ticket;
   if (!isEmailConfigured()) {
     return Response.json({ ok: false, error: "email-unavailable" }, { status: 503 });
   }

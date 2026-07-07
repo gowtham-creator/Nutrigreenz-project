@@ -31,7 +31,7 @@ export function KpiChip({
 }) {
   return (
     <div className="flex items-center gap-2.5 rounded-xl bg-ng-cream/[0.08] border border-ng-cream/15 px-3.5 py-2.5 min-w-0 h-full">
-      <span className="grid place-items-center size-8 shrink-0 rounded-lg bg-ng-cream/10 text-ng-clay">
+      <span className="grid place-items-center size-8 shrink-0 rounded-lg bg-ng-cream/10 text-ng-cream/90">
         <Icon name={icon} size={16} />
       </span>
       <span className="min-w-0 leading-tight">
@@ -74,26 +74,28 @@ export function CommandCenterHero({
     // then re-pad inside. Forest→deep gradient with a faint gold top hairline.
     <header className="-mx-8 -mt-8 mb-7">
       <div className="relative overflow-hidden bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep text-ng-cream">
-        {/* Gold top hairline + soft radial glow for depth. */}
+        {/* Single gold top hairline (the one permitted gold accent besides the
+            crown); the depth glow is neutral cream so gold stays rare. */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ng-clay/70 to-transparent" />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-ng-clay/10 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-ng-cream/10 blur-3xl"
         />
         <div className="relative px-8 py-7">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
+                {/* The crown is the SINGLE gold accent icon on this surface. */}
                 <span className="grid place-items-center size-11 rounded-2xl bg-ng-clay/20 ring-1 ring-ng-clay/40 text-ng-clay shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <Icon name="crown-bold" size={22} />
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/20 ring-1 ring-ng-clay/30 text-ng-clay font-bold px-3 py-1 text-[11px] uppercase tracking-[0.14em]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-cream/[0.08] ring-1 ring-ng-cream/20 text-ng-cream/90 font-bold px-3 py-1 text-[11px] uppercase tracking-[0.14em]">
                   <Icon name="shield-check-bold" size={12} />
                   Control Center
                 </span>
               </div>
               <h1 className="font-display text-[30px] sm:text-[34px] leading-[1.05] tracking-[-0.01em] mt-3.5">
-                Super <em className="not-italic text-ng-clay">Admin</em>
+                Super <em className="not-italic text-ng-cream">Admin</em>
                 <span className="text-ng-cream/60 font-sans font-normal text-[20px] align-middle mx-2">·</span>
                 <span className="text-ng-cream/90">Control Center</span>
               </h1>
@@ -102,7 +104,7 @@ export function CommandCenterHero({
                 loyalty &amp; growth levers.
               </p>
               <div className="mt-3.5 flex items-center gap-2 text-[11.5px] font-medium text-ng-cream/85">
-                <Icon name="user-circle-bold" size={14} className="text-ng-clay/80" />
+                <Icon name="user-circle-bold" size={14} className="text-ng-cream/70" />
                 <span>Operator</span>
                 <span className="font-mono font-semibold text-ng-cream truncate max-w-[220px]">
                   {operator ?? "admin"}
@@ -194,13 +196,14 @@ export function PrimarySection({
   children: React.ReactNode;
   className?: string;
 }) {
-  // A subtle gold left-accent marks the headline (primary) super-admin
-  // controls so they read as authoritative above the secondary sections.
+  // A subtle forest left-accent marks the headline (primary) super-admin
+  // controls so they read as authoritative above the secondary sections —
+  // neutral rather than gold, keeping gold reserved for the crown accent.
   return (
     <section
       id={id}
       className={cn(
-        "scroll-mt-32 mb-6 rounded-2xl bg-gradient-to-r from-ng-clay/45 to-transparent p-px",
+        "scroll-mt-32 mb-6 rounded-2xl bg-gradient-to-r from-ng-forest/25 to-transparent p-px",
         "shadow-[0_2px_18px_rgba(31,77,46,0.07)]",
         className,
       )}

@@ -35,6 +35,13 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/** Treat "1"/"true"/"yes"/"on" (case-insensitive) as an enabled boolean flag. */
+function envFlagEnabled(value: string | undefined): boolean {
+  if (!value) return false;
+  const v = value.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
 /**
  * POST /api/admin/login
  *
@@ -153,10 +160,25 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
+  // Fail-closed MFA guard for the highest-privilege role. When ADMIN_REQUIRE_MFA
+  // is enabled, a superadmin may ONLY sign in by completing a second factor — if
+  // none is configured (no admin_security row AND no env ADMIN_TOTP_SECRET) we
+  // refuse here rather than mint a passcode-only superadmin session. The flag
+  // defaults OFF so the demo keeps working on the passcode alone; set
+  // ADMIN_REQUIRE_MFA=1 in production so the super-admin is never fail-open.
+  if (
+    role === "superadmin" &&
+    factors.length === 0 &&
+    envFlagEnabled(process.env.ADMIN_REQUIRE_MFA)
+  ) {
+    return Response.json({ ok: false, error: "mfa_required" }, { status: 403 });
+  }
+
   // One or more factors → defer the session: stash a short-lived signed ticket
-  // and ask the client to complete ANY one factor (verified by login-2fa).
+  // (bound to email + role) and ask the client to complete ANY one factor
+  // (verified by login-2fa, which mints the session for the ticket's role).
   if (factors.length > 0) {
-    const ticket = await createMfaTicket(normalizedEmail);
+    const ticket = await createMfaTicket(normalizedEmail, role);
     const secure = process.env.NODE_ENV === "production";
     const c = await cookies();
     c.set({

@@ -531,7 +531,7 @@ function LoginForm() {
             style={{ left: `${left}%`, "--pd": `${12 + (i % 4) * 2.4}s`, "--pdelay": `${(i * 2.1) % 11}s` } as React.CSSProperties}
           />
         ))}
-        <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[0_24px_64px_rgba(10,31,18,0.38)] backdrop-blur-md sm:p-8">
+        <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
           <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <Icon name="lock-keyhole-bold" size={24} />
           </div>

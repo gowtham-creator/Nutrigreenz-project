@@ -20,13 +20,15 @@ const MAX_AGE = 60 * 60 * 12;
  * Second factor for super-admin sign-in. The client reaches here only after
  * `/api/admin/login` accepted the passcode and returned `{ mfaRequired: true }`,
  * setting a short-lived httpOnly `ng_admin_mfa` ticket. We:
- *   1. Verify that ticket (signed, unexpired, carries the `mfa` tag).
+ *   1. Verify that ticket (signed, unexpired, carries the `mfa` tag + role).
  *   2. Verify the submitted 6-digit code against `ADMIN_TOTP_SECRET`.
- *   3. On success, mint the real `ng_admin` session (superadmin) and consume
- *      the one-time MFA ticket.
+ *   3. On success, mint the real `ng_admin` session for the ROLE carried by the
+ *      ticket (never hardcoded), and consume the one-time MFA ticket.
  *
  * The ticket uses a distinct `mfa` payload tag, so it can never be replayed as
- * an `ng_admin` session token even if copied into that cookie.
+ * an `ng_admin` session token even if copied into that cookie. Minting the
+ * session with the ticket's own role means the second factor can never elevate
+ * a plain `admin` into a `superadmin`.
  */
 export async function POST(request: Request): Promise<Response> {
   let code: unknown;
@@ -48,11 +50,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const c = await cookies();
-  const email = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
-  if (!email) {
+  const ticket = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
+  if (!ticket) {
     // Missing/expired/forged ticket — make the client restart at the passcode.
     return Response.json({ ok: false, restart: true }, { status: 401 });
   }
+  // The identity AND role were fixed at the passcode step; carry them forward.
+  const { email, role } = ticket;
 
   let ok = false;
   if (factor === "totp") {
@@ -78,7 +82,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  const token = await createToken(email, "superadmin");
+  const token = await createToken(email, role);
   const secure = process.env.NODE_ENV === "production";
 
   c.set({
@@ -101,7 +105,7 @@ export async function POST(request: Request): Promise<Response> {
   });
   c.set({
     name: ADMIN_ROLE_COOKIE,
-    value: "superadmin",
+    value: role,
     httpOnly: false,
     secure,
     sameSite: "lax",
@@ -122,7 +126,7 @@ export async function POST(request: Request): Promise<Response> {
   // Best-effort audit of the completed (second-factor) sign-in.
   await logActivity({
     actorEmail: email,
-    actorRole: "superadmin",
+    actorRole: role,
     action: "admin.signin",
     meta: { method: factor },
   });
