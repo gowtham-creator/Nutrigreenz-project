@@ -20,7 +20,7 @@ import { FloatIn, MagneticHover } from "../motion";
  * prev/next arrows. Keyed crossfade via framer-motion.
  */
 
-const AUTO_MS = 7000;
+const AUTO_MS = 4800;
 
 interface PromoSlideDef {
   id: string;
@@ -54,7 +54,7 @@ const SLIDES: PromoSlideDef[] = [
     script: "Ab Hoga.",
     sub: "Introducing A2 Desi Cow Ghee | Bilona-churned",
     tagline: "Your family's daily dose of purity",
-    cta: { label: "Shop Now", href: "/products/pure-ghee" },
+    cta: { label: "Shop Ghee", href: "/shop/ghee" },
     wash: "#E7F1E4",
   },
   {
@@ -68,7 +68,7 @@ const SLIDES: PromoSlideDef[] = [
     script: "Apnao.",
     sub: "Six wood-pressed oils | Groundnut to coconut",
     tagline: "Nothing added. Nothing refined.",
-    cta: { label: "Shop Oils", href: "/shop/cold-pressed-oils" },
+    cta: { label: "Shop Oils", href: "/shop/oils" },
     // Warm golden-wheat — matches the oils artwork and reads distinctly from
     // the ghee slide's sage green (no two banners share a wash now).
     wash: "#F3E9C9",
@@ -84,7 +84,7 @@ const SLIDES: PromoSlideDef[] = [
     script: "Ab Hoga.",
     sub: "Wild Raw Honey | Unheated · Unfiltered",
     tagline: "No added sugar. Ever.",
-    cta: { label: "Shop Honey", href: "/products/raw-honey" },
+    cta: { label: "Shop Honey", href: "/shop/honey" },
     wash: "#F4EFE0",
   },
   {
