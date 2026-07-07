@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "../button";
 import { Icon } from "@/components/ui/icon";
 import { FloatIn, MagneticHover } from "../motion";
@@ -113,7 +113,6 @@ export function Hero() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
-  const labelId = useId();
 
   const count = SLIDES.length;
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
@@ -141,8 +140,6 @@ export function Hero() {
     else if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
   };
 
-  const current = SLIDES[index];
-
   return (
     <section
       ref={rootRef}
@@ -158,44 +155,50 @@ export function Hero() {
       onKeyDown={onKeyDown}
     >
       <div className="relative overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px]">
-        {/* Equal-height stage — the height is fixed by the banner clamp so slides
-            never shift layout. The active slide is absolutely overlaid via
-            AnimatePresence; a hidden sizer reserves the height. */}
-        <div className="relative min-h-[clamp(472px,64vh,600px)]">
+        {/* Equal-height stage — height fixed by the banner clamp so slides never
+            shift layout. ALL slides stay mounted and are cross-faded by opacity,
+            so every image preloads up-front (no lazy pop-in when the carousel
+            advances); a hidden sizer reserves the height. */}
+        <div className="relative min-h-[clamp(440px,60vh,600px)]">
           {/* Invisible sizer: keeps the tallest reasonable banner height reserved. */}
           <div aria-hidden className="invisible">
-            <PromoSlide slide={SLIDES[0]} />
+            <PromoSlide slide={SLIDES[0]} priority />
           </div>
 
-          <AnimatePresence initial={false} mode="sync">
-            <motion.div
-              key={current.id}
-              className="absolute inset-0"
-              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.012 }}
-              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.992 }}
-              transition={{ duration: reduce ? 0.3 : 0.7, ease: [0.16, 1, 0.3, 1] }}
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${index + 1} of ${count}: ${current.label}`}
-              aria-labelledby={labelId}
-            >
-              <PromoSlide slide={current} />
-            </motion.div>
-          </AnimatePresence>
+          {SLIDES.map((s, i) => {
+            const active = i === index;
+            return (
+              <motion.div
+                key={s.id}
+                className="absolute inset-0"
+                initial={false}
+                animate={{ opacity: active ? 1 : 0 }}
+                transition={{ duration: reduce ? 0.2 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+                style={{ pointerEvents: active ? "auto" : "none" }}
+                aria-hidden={!active}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${count}: ${s.label}`}
+              >
+                <PromoSlide slide={s} priority={i === 0} />
+              </motion.div>
+            );
+          })}
 
-          {/* Controls — prev · dots · next grouped into one pill at the bottom. */}
-          <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-ng-forest-deep/65 px-1.5 py-1.5 shadow-[0_8px_24px_rgba(20,40,24,0.42)] ring-1 ring-white/25 backdrop-blur-md md:bottom-5">
+          {/* Controls — prev · dots · next in one slim glass pill at the bottom.
+              Compact and light so it sits over the art without dominating it;
+              44px touch targets are preserved via padding on the hit area. */}
+          <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-ng-forest-deep/45 px-1 py-1 shadow-[0_6px_18px_rgba(20,40,24,0.28)] ring-1 ring-white/15 backdrop-blur-md md:bottom-5">
             <button
               type="button"
               onClick={prev}
               aria-label="Previous banner"
-              className="grid h-11 w-11 lg:h-9 lg:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-9 w-9 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-white active:scale-95"
             >
-              <Icon name="alt-arrow-left-linear" size={18} />
+              <Icon name="alt-arrow-left-linear" size={17} />
             </button>
 
-            <div role="tablist" aria-label="Choose banner" className="flex items-center gap-2.5 px-1">
+            <div role="tablist" aria-label="Choose banner" className="flex items-center gap-1.5 px-0.5">
               {SLIDES.map((s, i) => {
                 const active = i === index;
                 return (
@@ -206,11 +209,11 @@ export function Hero() {
                     aria-selected={active}
                     aria-label={`Go to ${s.label} banner`}
                     onClick={() => go(i)}
-                    className="group grid place-items-center p-1 min-h-[44px] min-w-[44px]"
+                    className="group grid h-9 min-w-[22px] place-items-center px-1"
                   >
                     <span
-                      className={`block h-2 rounded-full transition-all duration-300 ${
-                        active ? "w-7 bg-ng-cream" : "w-2 bg-ng-cream/70 group-hover:bg-ng-cream/95"
+                      className={`block h-1.5 rounded-full transition-all duration-300 ${
+                        active ? "w-5 bg-ng-cream" : "w-1.5 bg-ng-cream/60 group-hover:bg-ng-cream/90"
                       }`}
                     />
                   </button>
@@ -222,9 +225,9 @@ export function Hero() {
               type="button"
               onClick={next}
               aria-label="Next banner"
-              className="grid h-11 w-11 lg:h-9 lg:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-9 w-9 place-items-center rounded-full text-ng-cream/90 transition-colors hover:bg-ng-cream/15 hover:text-white active:scale-95"
             >
-              <Icon name="alt-arrow-right-linear" size={18} />
+              <Icon name="alt-arrow-right-linear" size={17} />
             </button>
           </div>
         </div>
@@ -238,21 +241,24 @@ export function Hero() {
    (Anveshan format: tag → Hinglish headline → sub → dashed tagline → orange
    Shop Now).
    ────────────────────────────────────────────────────────────────────────── */
-function PromoSlide({ slide }: { slide: PromoSlideDef }) {
+function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {
   return (
     <div className="relative flex h-full min-h-[inherit] overflow-hidden" style={{ backgroundColor: slide.wash }}>
+      {/* object-position: on mobile the wide 21:9 art is zoom-cropped hard, so we
+          bias the crop toward the product (centre-right) instead of the far-right
+          edge — otherwise only the badge/props survive. Desktop shows the full
+          right composition. */}
       <Image
         src={slide.img}
         alt={slide.alt}
         fill
-        priority={slide.id === SLIDES[0].id}
+        priority={priority}
         sizes="100vw"
-        className="object-cover object-right"
+        className="object-cover object-[62%_center] sm:object-right"
       />
       {/* Left legibility wash. Desktop: a gentle fade so the product still shows.
-          Mobile (sm:hidden): a near-solid wash across most of the width so the
-          headline never collides with the baked-in product art / claim badges;
-          the product just peeks on the right edge. */}
+          Mobile (sm:hidden): opaque under the copy on the left, then fades by
+          mid-frame so the product stays clearly visible on the right. */}
       <div
         aria-hidden
         className="absolute inset-0 hidden sm:block"
@@ -264,7 +270,7 @@ function PromoSlide({ slide }: { slide: PromoSlideDef }) {
         aria-hidden
         className="absolute inset-0 sm:hidden"
         style={{
-          background: `linear-gradient(to right, ${slide.wash}FA 0%, ${slide.wash}FA 58%, ${slide.wash}D9 74%, transparent 100%)`,
+          background: `linear-gradient(to right, ${slide.wash}F7 0%, ${slide.wash}EE 38%, ${slide.wash}99 60%, transparent 82%)`,
         }}
       />
 
