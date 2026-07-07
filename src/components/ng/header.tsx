@@ -50,7 +50,8 @@ export function Header() {
         {/* Logo + delivery location */}
         <div className="flex items-center gap-3">
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
-            <Logo className="h-10" priority />
+            <Logo variant="mark" className="h-8 md:hidden" priority />
+            <Logo className="hidden h-10 md:block" priority />
           </Link>
           <LocationPill className="hidden md:inline-flex" />
         </div>
@@ -106,18 +107,20 @@ export function Header() {
         <div className="flex items-center gap-2 ml-auto">
           <button
             aria-label="Search"
-            className="hidden xl:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="hidden xl:inline-flex shrink-0 h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.3-4.3" />
             </svg>
           </button>
-          <ProfileMenu />
+          <div className="shrink-0">
+            <ProfileMenu />
+          </div>
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="relative inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8Z" />
@@ -131,7 +134,7 @@ export function Header() {
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
@@ -149,7 +152,7 @@ export function Header() {
           </Button>
           <button
             aria-label="Open menu"
-            className="min-[1152px]:hidden inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
+            className="min-[1152px]:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -176,20 +179,35 @@ export function Header() {
       >
         <nav className="px-5 py-4 flex flex-col gap-1">
           {NAV.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "rounded-xl px-3 py-3 text-[15px] font-medium transition-colors",
-                isActive(item.href)
-                  ? "bg-ng-forest text-ng-cream"
-                  : "text-ng-ink hover:bg-ng-sage/50 hover:text-ng-forest-deep",
-              )}
-              onClick={() => setMobileOpen(false)}
-            >
-              {item.label}
-            </Link>
+            <div key={item.label} className="flex flex-col gap-1">
+              <Link
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "rounded-xl px-3 py-3 text-[15px] font-medium transition-colors",
+                  isActive(item.href)
+                    ? "bg-ng-forest text-ng-cream"
+                    : "text-ng-ink hover:bg-ng-sage/50 hover:text-ng-forest-deep",
+                )}
+                onClick={() => setMobileOpen(false)}
+              >
+                {item.label}
+              </Link>
+              {item.mega ? (
+                <div className="ml-3 flex flex-col gap-1 border-l border-ng-line-soft pl-3">
+                  {item.mega.map((m) => (
+                    <Link
+                      key={m.href}
+                      href={m.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-xl px-3 py-2.5 text-[14px] text-ng-ink-soft hover:bg-ng-sage/50 hover:text-ng-forest-deep transition-colors"
+                    >
+                      {m.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ))}
         </nav>
       </div>

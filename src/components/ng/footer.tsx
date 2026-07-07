@@ -48,7 +48,7 @@ const NAV_GROUPS = [
 export function Footer() {
   return (
     <footer
-      className="relative text-ng-cream pt-14 md:pt-20 pb-44 md:pb-52 overflow-hidden"
+      className="relative text-ng-cream pt-14 md:pt-20 pb-56 md:pb-52 overflow-hidden"
       style={{
         background:
           "linear-gradient(180deg, var(--ng-forest-deep) 0%, var(--ng-forest-deep) 38%, var(--ng-forest) 100%)",
@@ -159,11 +159,11 @@ export function Footer() {
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[12px] text-ng-cream/70">
           <p>© {new Date().getFullYear()} Nutrigreenz Farm Pvt. Ltd. — FSSAI 10822005000123</p>
-          <ul className="flex gap-6">
-            <li><Link href="/policies/privacy" className="hover:text-ng-cream">Privacy</Link></li>
-            <li><Link href="/policies/terms" className="hover:text-ng-cream">Terms</Link></li>
-            <li><Link href="/policies/cookies" className="hover:text-ng-cream">Cookies</Link></li>
-            <li><Link href="/sitemap" className="hover:text-ng-cream">Sitemap</Link></li>
+          <ul className="flex flex-wrap gap-x-5 gap-y-1">
+            <li><Link href="/policies/privacy" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Privacy</Link></li>
+            <li><Link href="/policies/terms" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Terms</Link></li>
+            <li><Link href="/policies/cookies" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Cookies</Link></li>
+            <li><Link href="/sitemap" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Sitemap</Link></li>
           </ul>
         </div>
       </div>

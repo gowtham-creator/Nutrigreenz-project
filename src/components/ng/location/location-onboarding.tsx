@@ -123,7 +123,7 @@ export function LocationOnboarding() {
             type="button"
             onClick={dismiss}
             aria-label="Skip for now"
-            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-ng-paper/80 hover:bg-ng-paper/15 hover:text-ng-paper transition-colors"
+            className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-ng-paper/80 hover:bg-ng-paper/15 hover:text-ng-paper transition-colors"
           >
             <Icon name="close-circle-linear" size={20} />
           </button>

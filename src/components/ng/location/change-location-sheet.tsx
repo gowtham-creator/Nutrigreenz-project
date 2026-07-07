@@ -146,7 +146,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 -mr-1.5 inline-flex h-9 w-9 items-center justify-center rounded-full text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-forest transition-colors"
+            className="shrink-0 -mr-1.5 inline-flex h-11 w-11 items-center justify-center rounded-full text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-forest transition-colors"
           >
             <Icon name="close-circle-linear" size={22} />
           </button>
@@ -207,7 +207,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
               {pinFeedback === "ok" ? (
                 <Icon name="check-circle-bold" size={20} className="text-ng-leaf" />
               ) : null}
-              <Button type="submit" size="sm" disabled={!pinServiceable} className="-mr-2">
+              <Button type="submit" size="md" disabled={!pinServiceable} className="-mr-2">
                 Apply
               </Button>
             </div>
