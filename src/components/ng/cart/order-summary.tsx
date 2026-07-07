@@ -232,6 +232,47 @@ export function OrderSummary() {
           </ul>
         </div>
       </div>
+
+      {/* Mobile/tablet persistent checkout bar — the summary above is only sticky
+          at lg, so below it we pin the total + primary CTA to the viewport bottom
+          so checkout is always reachable without scrolling past every line item. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ng-line-soft bg-ng-paper/95 px-5 py-3 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-7xl items-center gap-4">
+          <div className="min-w-0 shrink-0">
+            <p className="text-[11px] leading-none text-ng-ink-soft">Total</p>
+            <p className="mt-0.5 font-display text-[20px] leading-none tabular-nums text-ng-forest-deep">
+              ₹{total.toLocaleString("en-IN")}
+            </p>
+          </div>
+          {canCheckout ? (
+            <Button variant="primary" size="lg" className="min-w-0 flex-1" asChild>
+              <Link href={checkoutHref}>
+                {isAuthed ? (
+                  <>
+                    <span className="truncate">Proceed to checkout</span>
+                    <Icon name="arrow-right-linear" size={18} />
+                  </>
+                ) : (
+                  <>
+                    <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                    <span className="truncate">Sign in to checkout</span>
+                  </>
+                )}
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              className="min-w-0 flex-1"
+              disabled
+              aria-disabled="true"
+            >
+              <span className="truncate">Proceed to checkout</span>
+            </Button>
+          )}
+        </div>
+      </div>
     </aside>
   );
 }

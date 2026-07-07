@@ -140,7 +140,7 @@ export function FilterPanel({
           onChange={(e) =>
             onChange({ ...filters, priceMin: Math.min(Number(e.target.value), filters.priceMax) })
           }
-          className="w-full accent-ng-forest"
+          className="w-full touch-manipulation accent-ng-forest max-lg:h-6 max-lg:[&::-webkit-slider-thumb]:h-5 max-lg:[&::-webkit-slider-thumb]:w-5 max-lg:[&::-moz-range-thumb]:h-5 max-lg:[&::-moz-range-thumb]:w-5"
         />
         <input
           type="range"
@@ -151,8 +151,42 @@ export function FilterPanel({
           onChange={(e) =>
             onChange({ ...filters, priceMax: Math.max(Number(e.target.value), filters.priceMin) })
           }
-          className="w-full accent-ng-forest"
+          className="w-full touch-manipulation accent-ng-forest max-lg:h-6 max-lg:[&::-webkit-slider-thumb]:h-5 max-lg:[&::-webkit-slider-thumb]:w-5 max-lg:[&::-moz-range-thumb]:h-5 max-lg:[&::-moz-range-thumb]:w-5"
         />
+        {/* Numeric fallback for precise bounds on touch — sliders alone are hard
+            to set exactly on a phone. Hidden on desktop where the sidebar is shown. */}
+        <div className="grid grid-cols-2 gap-3 lg:hidden">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={bounds.min}
+            max={bounds.max}
+            value={filters.priceMin}
+            aria-label="Minimum price"
+            onChange={(e) =>
+              onChange({
+                ...filters,
+                priceMin: Math.min(Number(e.target.value) || bounds.min, filters.priceMax),
+              })
+            }
+            className="h-11 w-full rounded-xl border border-ng-line bg-ng-paper px-3 text-[14px] tabular-nums text-ng-ink"
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={bounds.min}
+            max={bounds.max}
+            value={filters.priceMax}
+            aria-label="Maximum price"
+            onChange={(e) =>
+              onChange({
+                ...filters,
+                priceMax: Math.max(Number(e.target.value) || bounds.max, filters.priceMin),
+              })
+            }
+            className="h-11 w-full rounded-xl border border-ng-line bg-ng-paper px-3 text-[14px] tabular-nums text-ng-ink"
+          />
+        </div>
       </fieldset>
 
       {/* Rating */}

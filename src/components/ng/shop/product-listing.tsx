@@ -6,6 +6,7 @@ import { Button } from "@/components/ng/button";
 import { Chip } from "@/components/ng/chip";
 import { Icon } from "@/components/ui/icon";
 import { PRODUCTS } from "@/components/ng/data";
+import { cn } from "@/lib/utils";
 import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
 import { SearchBar } from "./search-bar";
 import { SortMenu } from "./sort-menu";
@@ -168,7 +169,7 @@ export function ProductListing({
 
       {/* Sticky category chip strip — only on the all-products view */}
       {!categorySlug ? (
-        <div className="sticky top-[60px] z-30 -mt-px glass-strong border-y border-ng-line-soft">
+        <div className="sticky top-[68px] z-30 -mt-px glass-strong border-y border-ng-line-soft">
           <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-5 py-3 md:px-8 scrollbar-hide">
             <span className="hidden shrink-0 pr-1 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted md:inline">
               Browse
@@ -199,7 +200,16 @@ export function ProductListing({
           {/* Main column */}
           <div>
             {/* Sticky toolbar: search + result count + sort + filter trigger */}
-            <div className="sticky top-[60px] z-20 mb-6 rounded-2xl border border-ng-line-soft bg-ng-paper/85 p-3 shadow-[var(--shadow-ng-card)] backdrop-blur-md lg:top-[120px]">
+            <div
+              className={cn(
+                "sticky z-20 mb-6 rounded-2xl border border-ng-line-soft bg-ng-paper/85 p-3 shadow-[var(--shadow-ng-card)] backdrop-blur-md",
+                // Below lg the chip strip is only present on the all-products view;
+                // clear it (68px header + ~56px strip) so the toolbar never slides
+                // under it. On a category page there is no strip, so pin to header.
+                categorySlug ? "top-[68px]" : "top-[124px]",
+                "lg:top-[120px]",
+              )}
+            >
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <SearchBar value={search} onChange={(v) => { setSearch(v); setVisible(PAGE_SIZE); }} className="md:flex-1" />
                 <div className="flex items-center gap-2">

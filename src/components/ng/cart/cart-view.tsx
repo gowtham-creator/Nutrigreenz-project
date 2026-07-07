@@ -49,7 +49,7 @@ export function CartView() {
       }
       description={`Review your items, then proceed to checkout. Free delivery above ${freeDeliveryLabel}.`}
     >
-      <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
+      <div className="grid gap-8 pb-24 lg:grid-cols-[1fr_380px] lg:gap-10 lg:pb-0">
         <div className="space-y-5">
           <Stagger className="space-y-4">
             {items.map((item) => (

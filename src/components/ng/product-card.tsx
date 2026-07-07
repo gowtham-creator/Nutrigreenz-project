@@ -143,7 +143,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         aria-pressed={saved}
         aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
         className={cn(
-          "absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full backdrop-blur-sm transition-all duration-200 active:scale-90",
+          "absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full backdrop-blur-sm transition-all duration-200 active:scale-90 lg:h-9 lg:w-9",
           saved
             ? "bg-ng-paper/95 text-ng-danger shadow-[0_2px_12px_rgba(0,0,0,0.14)]"
             : "bg-ng-paper/75 text-ng-ink-soft hover:bg-ng-paper hover:text-ng-danger hover:scale-105",
@@ -198,12 +198,12 @@ export function ProductCard({ product, variant = "default", className }: Props) 
             Add to bag
           </Button>
         ) : (
-          <div className="mt-2.5 flex h-9 w-full items-center justify-between rounded-full bg-ng-forest px-1.5 text-ng-cream shadow-[0_4px_14px_rgba(31,77,46,0.25)]">
+          <div className="mt-2.5 flex h-11 w-full items-center justify-between rounded-full bg-ng-forest px-1.5 text-ng-cream shadow-[0_4px_14px_rgba(31,77,46,0.25)] lg:h-9">
             <button
               type="button"
               onClick={decQty}
               aria-label={`Decrease quantity of ${product.title}`}
-              className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-ng-cream/15 active:scale-90"
+              className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-ng-cream/15 active:scale-90 lg:h-7 lg:w-7"
             >
               <Icon name="minus-circle-linear" size={19} />
             </button>
@@ -212,7 +212,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
               type="button"
               onClick={incQty}
               aria-label={`Increase quantity of ${product.title}`}
-              className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-ng-cream/15 active:scale-90"
+              className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-ng-cream/15 active:scale-90 lg:h-7 lg:w-7"
             >
               <Icon name="add-circle-linear" size={19} />
             </button>

@@ -62,7 +62,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
             type="button"
             aria-label={`Remove ${item.title}`}
             onClick={() => removeItem(lineId)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ng-ink-muted transition-colors hover:bg-ng-danger/10 hover:text-ng-danger"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-ng-ink-muted transition-colors hover:bg-ng-danger/10 hover:text-ng-danger lg:h-9 lg:w-9"
           >
             <Icon name="trash-bin-trash-linear" size={18} />
           </button>
@@ -74,7 +74,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
               type="button"
               aria-label="Decrease quantity"
               onClick={() => updateQty(lineId, item.qty - 1)}
-              className="grid h-9 w-9 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95"
+              className="grid h-11 w-11 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95 lg:h-9 lg:w-9"
             >
               <Icon name="minus-circle-linear" size={18} />
             </button>
@@ -88,7 +88,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
               type="button"
               aria-label="Increase quantity"
               onClick={() => updateQty(lineId, item.qty + 1)}
-              className="grid h-9 w-9 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95"
+              className="grid h-11 w-11 place-items-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage active:scale-95 lg:h-9 lg:w-9"
             >
               <Icon name="add-circle-linear" size={18} />
             </button>

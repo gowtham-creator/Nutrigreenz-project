@@ -69,7 +69,7 @@ export function PageHero({
       ) : null}
       <div className={cn("relative z-10 mx-auto max-w-7xl px-5 md:px-8 py-16 md:py-24", align === "center" && "text-center")}>
         {eyebrow ? <span className={cn("ng-eyebrow", eyebrowColor)}>{eyebrow}</span> : null}
-        <h1 className={cn("font-display text-[clamp(40px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl", titleColor, align === "center" && "mx-auto")}>
+        <h1 className={cn("font-display text-[clamp(30px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl text-balance break-words", titleColor, align === "center" && "mx-auto")}>
           {title}
         </h1>
         {description ? (
