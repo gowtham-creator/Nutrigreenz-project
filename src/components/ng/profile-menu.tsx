@@ -56,10 +56,10 @@ export function ProfileMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+        className="inline-flex h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
       >
         {isAuthed && initial ? (
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-ng-forest font-display text-[13px] font-semibold text-ng-cream">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-ng-forest/10 font-display text-[13px] font-semibold text-ng-forest-deep ring-1 ring-inset ring-ng-forest/20">
             {initial}
           </span>
         ) : (
@@ -91,7 +91,7 @@ export function ProfileMenu() {
                 href="/account"
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-medium text-ng-ink hover:bg-ng-sage/50 transition-colors"
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-medium text-ng-ink hover:bg-ng-forest/[0.06] hover:text-ng-forest-deep transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-7 8-7s8 3 8 7" /></svg>
                 View profile
@@ -111,7 +111,7 @@ export function ProfileMenu() {
               href={signInHref}
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-medium text-ng-ink hover:bg-ng-sage/50 transition-colors"
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[14px] font-medium text-ng-ink hover:bg-ng-forest/[0.06] hover:text-ng-forest-deep transition-colors"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>
               Sign in

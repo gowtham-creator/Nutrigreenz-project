@@ -51,18 +51,18 @@ const SLUG_ICONS: Record<string, keyof typeof PRODUCE_ICONS> = {
  * to cream cleanly — something a fixed-colour image could never do.
  */
 const CAT_COLORS: Record<string, { tint: string; ring: string }> = {
-  all: { tint: "text-ng-leaf", ring: "bg-ng-leaf/12" },
-  oils: { tint: "text-ng-amber", ring: "bg-ng-amber/15" },
-  ghee: { tint: "text-ng-clay-deep", ring: "bg-ng-clay/20" },
-  honey: { tint: "text-ng-clay", ring: "bg-ng-clay/15" },
-  rice: { tint: "text-ng-clay-deep", ring: "bg-ng-clay-deep/12" },
-  millets: { tint: "text-ng-soil", ring: "bg-ng-soil/12" },
-  spices: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/15" },
-  superfoods: { tint: "text-ng-green-bright", ring: "bg-ng-green-bright/15" },
-  pulses: { tint: "text-ng-soil", ring: "bg-ng-soil/12" },
-  flours: { tint: "text-ng-clay", ring: "bg-ng-clay/15" },
-  fruits: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/15" },
-  gifting: { tint: "text-ng-forest", ring: "bg-ng-forest/12" },
+  all: { tint: "text-ng-forest-soft", ring: "bg-ng-leaf/20" },
+  oils: { tint: "text-ng-clay-deep", ring: "bg-ng-amber/20" },
+  ghee: { tint: "text-ng-clay-deep", ring: "bg-ng-clay/24" },
+  honey: { tint: "text-ng-clay", ring: "bg-ng-amber/20" },
+  rice: { tint: "text-ng-clay-deep", ring: "bg-ng-clay-deep/16" },
+  millets: { tint: "text-ng-soil", ring: "bg-ng-soil/16" },
+  spices: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/20" },
+  superfoods: { tint: "text-ng-green-bright", ring: "bg-ng-green-bright/20" },
+  pulses: { tint: "text-ng-soil", ring: "bg-ng-soil/16" },
+  flours: { tint: "text-ng-clay", ring: "bg-ng-clay/20" },
+  fruits: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/20" },
+  gifting: { tint: "text-ng-forest", ring: "bg-ng-forest/16" },
 };
 
 /** Highest-rated products first — the live mapper sets no "Best seller" badge. */
@@ -159,7 +159,9 @@ export function ShopByCategory({ categories, products, className }: Props) {
                 <span
                   className={cn(
                     "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
-                    isActive ? cn("bg-ng-cream", color.tint) : cn(color.ring, color.tint),
+                    isActive
+                      ? cn("bg-ng-cream", color.tint)
+                      : cn("ring-1 ring-inset ring-black/[0.05]", color.ring, color.tint),
                   )}
                 >
                   <Icon size={18} />

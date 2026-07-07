@@ -69,9 +69,9 @@ interface Treatment {
 }
 
 const TREATMENTS: Record<Variant, Treatment> = {
-  // 01 — bold filled hero card: deep forest gradient, cream text.
+  // 01 — bold filled hero card: deep forest gradient, cream text, soft leaf inner glow.
   forest: {
-    card: "bg-gradient-to-br from-ng-forest via-ng-forest to-ng-forest-deep border-ng-forest-deep/60",
+    card: "bg-gradient-to-br from-ng-forest via-ng-forest to-ng-forest-deep border-ng-forest-deep/70 ring-1 ring-inset ring-ng-leaf/12",
     blob: "bg-ng-leaf/25",
     badge: "bg-ng-leaf text-ng-forest-deep shadow-[0_8px_24px_-8px_rgba(102,191,115,0.7)]",
     eyebrow: "text-ng-leaf",
@@ -79,19 +79,19 @@ const TREATMENTS: Record<Variant, Treatment> = {
     body: "text-ng-cream/75",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(10,31,18,0.55)]",
   },
-  // 02 — warm gold / clay block.
+  // 02 — warm gold / clay block: deliberate tint with a firm edge, not a wash.
   clay: {
-    card: "bg-gradient-to-br from-ng-clay/20 via-ng-clay/12 to-ng-cream-deep/50 border-ng-clay/35",
-    blob: "bg-ng-clay/25",
+    card: "bg-gradient-to-br from-ng-clay/[0.16] via-ng-cream-deep/70 to-ng-cream-deep border-ng-clay/40 ring-1 ring-inset ring-ng-clay/12",
+    blob: "bg-ng-clay/28",
     badge: "bg-ng-clay text-ng-cream shadow-[0_8px_24px_-8px_rgba(181,134,47,0.6)]",
     eyebrow: "text-ng-clay-deep",
     title: "text-ng-forest-deep",
     body: "text-ng-ink",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(138,100,32,0.4)]",
   },
-  // 03 — fresh leaf green block.
+  // 03 — fresh leaf green block, saturated enough to read as a designed surface.
   leaf: {
-    card: "bg-gradient-to-br from-ng-leaf/22 via-ng-leaf/12 to-ng-sage/25 border-ng-leaf/35",
+    card: "bg-gradient-to-br from-ng-leaf/28 via-ng-sage/35 to-ng-cream-deep/55 border-ng-forest-soft/30 ring-1 ring-inset ring-ng-leaf/15",
     blob: "bg-ng-leaf/40",
     badge: "bg-ng-forest-soft text-ng-cream shadow-[0_8px_24px_-8px_rgba(31,77,46,0.6)]",
     eyebrow: "text-ng-forest-soft",
@@ -99,10 +99,10 @@ const TREATMENTS: Record<Variant, Treatment> = {
     body: "text-ng-ink",
     shadow: "hover:shadow-[0_28px_60px_-24px_rgba(31,77,46,0.4)]",
   },
-  // 04 — warm terracotta / amber block.
+  // 04 — warm terracotta block: clay-free warmth so gold stays sparing.
   terracotta: {
-    card: "bg-gradient-to-br from-ng-terracotta/16 via-ng-amber/10 to-ng-cream-deep/45 border-ng-terracotta/30",
-    blob: "bg-ng-amber/35",
+    card: "bg-gradient-to-br from-ng-terracotta/20 via-ng-cream-deep/60 to-ng-cream-deep border-ng-terracotta/35 ring-1 ring-inset ring-ng-terracotta/12",
+    blob: "bg-ng-terracotta/30",
     badge: "bg-ng-terracotta text-ng-cream shadow-[0_8px_24px_-8px_rgba(199,77,51,0.6)]",
     eyebrow: "text-ng-terracotta",
     title: "text-ng-terracotta",

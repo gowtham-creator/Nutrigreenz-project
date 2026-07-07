@@ -104,6 +104,16 @@ export function ProductInFocus({
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
   };
 
+  // Resting icon-disc tint per family, so the sub-category chips read as a
+  // coherent, intentionally-coloured set instead of one flat sage placeholder.
+  const ACCENT_DISC: Record<NonNullable<Props["accent"]>, string> = {
+    amber: "bg-ng-amber/18 text-ng-clay-deep",
+    gold: "bg-ng-clay/18 text-ng-clay-deep",
+    honey: "bg-ng-amber/18 text-ng-clay",
+    forest: "bg-ng-leaf/18 text-ng-forest",
+  };
+  const restingDisc = accent ? ACCENT_DISC[accent] : "bg-ng-sage/55 text-ng-forest";
+
   const ACCENT_WASH: Record<NonNullable<Props["accent"]>, string> = {
     amber:
       "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(242,158,18,0.10), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(181,134,47,0.08), transparent 62%)",
@@ -162,7 +172,7 @@ export function ProductInFocus({
                           "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
                           isActive
                             ? "bg-ng-cream/15 text-ng-cream"
-                            : "bg-ng-sage/60 text-ng-forest",
+                            : cn("ring-1 ring-inset ring-black/[0.05]", restingDisc),
                         )}
                       >
                         <Icon size={18} />

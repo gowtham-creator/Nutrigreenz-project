@@ -13,29 +13,33 @@ import { Reveal } from "../motion";
 const POINTS = [
   {
     icon: "leaf-bold",
-    tint: "text-ng-leaf",
-    bg: "bg-ng-sage/45",
+    tint: "text-ng-forest-soft",
+    bg: "bg-ng-leaf/18",
+    ring: "ring-ng-leaf/30",
     title: "Cold-pressed fresh",
     sub: "Pressed within 7 days of dispatch",
   },
   {
     icon: "shield-check-bold",
     tint: "text-ng-forest",
-    bg: "bg-ng-leaf/15",
+    bg: "bg-ng-forest/[0.08]",
+    ring: "ring-ng-forest/15",
     title: "Lab-tested purity",
     sub: "Every lot — zero adulterants",
   },
   {
-    icon: "routing-2-bold",
+    icon: "delivery-bold",
     tint: "text-ng-clay-deep",
-    bg: "bg-ng-clay/15",
+    bg: "bg-ng-clay/16",
+    ring: "ring-ng-clay/25",
     title: "Free shipping",
     sub: "On all orders over ₹599",
   },
   {
-    icon: "medal-ribbons-star-bold",
-    tint: "text-ng-amber",
-    bg: "bg-ng-amber/15",
+    icon: "verified-check-bold",
+    tint: "text-ng-green-bright",
+    bg: "bg-ng-green-bright/14",
+    ring: "ring-ng-green-bright/28",
     title: "FSSAI certified",
     sub: "ISO 22000 quality assured",
   },
@@ -52,7 +56,9 @@ export function AssuranceStrip() {
                 key={p.title}
                 className="flex items-center gap-3.5 bg-ng-paper px-5 py-5 transition-colors hover:bg-ng-cream/60 md:px-6 md:py-6"
               >
-                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${p.bg} ${p.tint}`}>
+                <span
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1 ring-inset ${p.bg} ${p.tint} ${p.ring}`}
+                >
                   <Icon name={p.icon} size={24} />
                 </span>
                 <div className="min-w-0">
