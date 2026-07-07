@@ -30,7 +30,7 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
       {/* Hero */}
       <section className="relative">
         <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
-          <Image src={FARM_GALLERY[0]!} alt={farm.name} fill className="object-cover" sizes="100vw" priority />
+          <Image src={farm.image ?? FARM_GALLERY[0]!} alt={farm.name} fill className="object-cover" sizes="100vw" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep/85 via-ng-forest-deep/30 to-transparent" />
           <div className="absolute inset-0 flex items-end">
             <div className="mx-auto max-w-7xl w-full px-5 md:px-8 pb-10 md:pb-16 text-ng-cream">

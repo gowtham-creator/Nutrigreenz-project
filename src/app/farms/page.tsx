@@ -5,12 +5,6 @@ import { Section } from "@/components/ng/section";
 import { Chip } from "@/components/ng/chip";
 import { FARMS } from "@/components/ng/data";
 
-const FARM_IMAGES = [
-  "/images/placeholder.svg",
-  "/images/placeholder.svg",
-  "/images/placeholder.svg",
-];
-
 const REGIONS = ["All regions", "Andhra Pradesh", "Telangana", "Tamil Nadu", "Kerala", "Gujarat", "Maharashtra"];
 const PRACTICES = ["All practices", "Organic", "A2 dairy", "Cooperative", "Biodynamic", "Rainwater harvesting"];
 
@@ -47,7 +41,7 @@ export default function FarmsPage() {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
-                  src={FARM_IMAGES[i % FARM_IMAGES.length]!}
+                  src={f.image ?? "/images/placeholder.svg"}
                   alt={f.name}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"

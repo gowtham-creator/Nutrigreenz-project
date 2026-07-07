@@ -94,6 +94,7 @@ export const FARMS: Farm[] = [
     partneredSince: "2019-04-12",
     farmerName: "K. Subbaiah",
     story: "Three generations of dryland farming. We helped them transition 9 acres from groundnut monoculture to mixed cropping in 2021.",
+    image: "/images/farm/dryland-farm.webp",
   },
   {
     id: "f-junagadh",
@@ -104,6 +105,7 @@ export const FARMS: Farm[] = [
     partneredSince: "2020-08-22",
     farmerName: "Hetal Pateel",
     story: "18 Gir cows, no synthetic feed, hand-milking only. Bilona ghee made the same day milk is collected.",
+    image: "/images/farm/gir-farm.webp",
   },
   {
     id: "f-nilgiri",
@@ -113,6 +115,7 @@ export const FARMS: Farm[] = [
     partneredSince: "2021-01-15",
     farmerName: "23-member co-op",
     story: "Honey harvested without smoke or queen-killing. Each lot tested for purity at our Hyderabad lab.",
+    image: "/images/farm/bee-coop.webp",
   },
 ];
 
@@ -123,10 +126,10 @@ export const TESTIMONIALS: Testimonial[] = [
 ];
 
 export const JOURNAL: JournalArticle[] = [
-  { id: "j1", slug: "why-bilona-matters", title: "Why bilona is the only ghee method we'll ever use", excerpt: "Three days of hand-churning. Eleven liters of milk per liter of ghee. The science behind why slow makes everything better.", cover: "/images/placeholder.svg", category: "science", readMinutes: 8, publishedAt: "2026-04-12" },
-  { id: "j2", slug: "anantapur-rains", title: "Field notes: the rains came late this year", excerpt: "Climate volatility is changing how our partner farms plan. A dispatch from our agronomist after a visit to the groundnut belt.", cover: "/images/placeholder.svg", category: "field-notes", readMinutes: 6, publishedAt: "2026-03-28" },
-  { id: "j3", slug: "millet-pongal", title: "Foxtail millet pongal — Subbaiah's mother's recipe", excerpt: "A staple from the Anantapur kitchen, captured between harvests. Twenty minutes start to finish.", cover: "/images/placeholder.svg", category: "recipes", readMinutes: 5, publishedAt: "2026-03-15" },
-  { id: "j4", slug: "what-lab-tests-mean", title: "What our lab tests actually tell you", excerpt: "Heavy metals, aflatoxin, pesticide residue — the three numbers every honest brand should put on the label.", cover: "/images/placeholder.svg", category: "guides", readMinutes: 10, publishedAt: "2026-02-20" },
+  { id: "j1", slug: "why-bilona-matters", title: "Why bilona is the only ghee method we'll ever use", excerpt: "Three days of hand-churning. Eleven liters of milk per liter of ghee. The science behind why slow makes everything better.", cover: "/images/journal/why-bilona-matters.webp", category: "science", readMinutes: 8, publishedAt: "2026-04-12" },
+  { id: "j2", slug: "anantapur-rains", title: "Field notes: the rains came late this year", excerpt: "Climate volatility is changing how our partner farms plan. A dispatch from our agronomist after a visit to the groundnut belt.", cover: "/images/journal/anantapur-rains.webp", category: "field-notes", readMinutes: 6, publishedAt: "2026-03-28" },
+  { id: "j3", slug: "millet-pongal", title: "Foxtail millet pongal — Subbaiah's mother's recipe", excerpt: "A staple from the Anantapur kitchen, captured between harvests. Twenty minutes start to finish.", cover: "/images/journal/millet-pongal.webp", category: "recipes", readMinutes: 5, publishedAt: "2026-03-15" },
+  { id: "j4", slug: "what-lab-tests-mean", title: "What our lab tests actually tell you", excerpt: "Heavy metals, aflatoxin, pesticide residue — the three numbers every honest brand should put on the label.", cover: "/images/journal/what-lab-tests-mean.webp", category: "guides", readMinutes: 10, publishedAt: "2026-02-20" },
 ];
 
 /* ──────────────────────────────────────────────────────────────────────────

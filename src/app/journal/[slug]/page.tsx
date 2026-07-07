@@ -21,16 +21,18 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <PageShell>
-      {/* Hero */}
+      {/* Hero — image banner sits above the heading, which lives in its own block (no overlap) */}
       <article>
-        <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
-          <Image src={article.cover} alt={article.title} fill className="object-cover" sizes="100vw" priority />
-          <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep via-ng-forest-deep/30 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 mx-auto max-w-3xl px-5 md:px-8 pb-10 md:pb-16 text-ng-cream">
+        <header className="bg-ng-forest-deep text-ng-cream">
+          <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
+            <Image src={article.cover} alt={article.title} fill className="object-cover" sizes="100vw" priority />
+            <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep/80 via-ng-forest-deep/10 to-transparent" />
+          </div>
+          <div className="mx-auto max-w-3xl px-5 md:px-8 py-10 md:py-14">
             <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${CATEGORY_TONE[article.category]}`}>
               {article.category.replace("-", " ")}
             </span>
-            <h1 className="font-display text-[clamp(36px,5vw,64px)] leading-[1.05] tracking-tight mt-4 max-w-3xl">
+            <h1 className="font-display text-[clamp(36px,5vw,64px)] leading-[1.05] tracking-tight mt-4">
               {article.title}
             </h1>
             <div className="flex items-center gap-4 mt-5 text-[13px] text-ng-cream/70">
@@ -41,7 +43,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               <span>By Nutrigreenz Field Desk</span>
             </div>
           </div>
-        </div>
+        </header>
 
         <Section className="!pt-12">
           <div className="mx-auto max-w-3xl prose-article">
