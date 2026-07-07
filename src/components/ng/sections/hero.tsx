@@ -69,7 +69,9 @@ const SLIDES: PromoSlideDef[] = [
     sub: "Six wood-pressed oils | Groundnut to coconut",
     tagline: "Nothing added. Nothing refined.",
     cta: { label: "Shop Oils", href: "/shop/cold-pressed-oils" },
-    wash: "#E7F1E4",
+    // Warm golden-wheat — matches the oils artwork and reads distinctly from
+    // the ghee slide's sage green (no two banners share a wash now).
+    wash: "#F3E9C9",
   },
   {
     id: "honey",
@@ -97,7 +99,9 @@ const SLIDES: PromoSlideDef[] = [
     sub: "Extra-long grain | Naturally aged for aroma",
     tagline: "From Indian paddies to your kitchen",
     cta: { label: "Explore the pantry", href: "/shop" },
-    wash: "#E9F0E2",
+    // Cool pale mint — kept clearly lighter/cooler than the ghee sage so all
+    // four banner gradients are visually distinct.
+    wash: "#EAF3EC",
   },
 ];
 
