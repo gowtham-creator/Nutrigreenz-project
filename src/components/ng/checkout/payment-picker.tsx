@@ -382,7 +382,7 @@ export function PaymentPicker({
           open={open === "upi"}
           onToggle={() => toggle("upi")}
         >
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
             {UPI_APPS.map((app) => {
               const id = `upi-${app.key}`;
               return (
@@ -405,8 +405,9 @@ export function PaymentPicker({
                       : "border-ng-line-soft hover:border-ng-leaf",
                   )}
                 >
-                  <PaymentLogo provider={app.key} size={36} />
-                  <span className="text-[10px] font-medium text-ng-ink-muted">
+                  <PaymentLogo provider={app.key} size={28} className="sm:hidden" />
+                  <PaymentLogo provider={app.key} size={36} className="hidden sm:grid" />
+                  <span className="max-w-full truncate text-[10px] font-medium text-ng-ink-muted">
                     {app.label.split(" ")[0]}
                   </span>
                 </button>
@@ -726,7 +727,7 @@ export function PaymentPicker({
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ng-ink-soft">
             Netbanking
           </p>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
             {BANKS.map((b) => {
               const id = `netbanking-${b.key}`;
               return (
@@ -749,8 +750,9 @@ export function PaymentPicker({
                       : "border-ng-line-soft hover:border-ng-leaf",
                   )}
                 >
-                  <PaymentLogo provider={b.key} size={34} />
-                  <span className="text-[10px] font-medium text-ng-ink-muted">
+                  <PaymentLogo provider={b.key} size={26} className="sm:hidden" />
+                  <PaymentLogo provider={b.key} size={34} className="hidden sm:grid" />
+                  <span className="max-w-full truncate text-[10px] font-medium text-ng-ink-muted">
                     {b.key.toUpperCase()}
                   </span>
                 </button>

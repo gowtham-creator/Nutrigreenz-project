@@ -78,11 +78,11 @@ export function AddressCard({
         </p>
       </div>
 
-      <footer className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ng-line-soft pt-4 text-[13px] font-medium">
+      <footer className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-ng-line-soft pt-3 text-[13px] font-medium">
         <button
           type="button"
           onClick={() => onEdit(address)}
-          className="inline-flex items-center gap-1.5 text-ng-forest hover:text-ng-forest-deep transition-colors"
+          className="-my-1.5 inline-flex min-h-[44px] items-center gap-1.5 py-1.5 text-ng-forest hover:text-ng-forest-deep transition-colors"
         >
           <Icon name="pen-2-linear" size={15} />
           Edit
@@ -90,7 +90,7 @@ export function AddressCard({
         <button
           type="button"
           onClick={() => onDelete(address.id)}
-          className="inline-flex items-center gap-1.5 text-ng-ink-muted hover:text-ng-danger transition-colors"
+          className="-my-1.5 inline-flex min-h-[44px] items-center gap-1.5 py-1.5 text-ng-ink-muted hover:text-ng-danger transition-colors"
         >
           <Icon name="trash-bin-trash-linear" size={15} />
           Delete
@@ -99,7 +99,7 @@ export function AddressCard({
           <button
             type="button"
             onClick={() => onSetDefault(address.id)}
-            className="ml-auto inline-flex items-center gap-1.5 text-ng-leaf hover:text-ng-forest transition-colors"
+            className="-my-1.5 ml-auto inline-flex min-h-[44px] items-center gap-1.5 py-1.5 text-ng-leaf hover:text-ng-forest transition-colors"
           >
             <Icon name="check-circle-bold" size={15} />
             Set as default

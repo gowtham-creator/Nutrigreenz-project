@@ -60,7 +60,7 @@ function CheckoutStepper() {
                 {i + 1}
               </span>
               <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
-              {step.label}
+              <span className="hidden sm:inline">{step.label}</span>
             </span>
             {i < CHECKOUT_STEPS.length - 1 ? (
               <span aria-hidden className="h-px w-3 bg-ng-line sm:w-5" />
@@ -390,7 +390,7 @@ export default function CheckoutPage() {
       >
         <CheckoutStepper />
 
-        <div className="relative grid gap-8 lg:grid-cols-[1fr_400px]">
+        <div className="relative grid gap-8 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_400px]">
           {/* Soft background blooms behind the columns */}
           <span
             aria-hidden
@@ -474,7 +474,7 @@ export default function CheckoutPage() {
           </Stagger>
 
           {/* Right column — summary + CTA */}
-          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <aside className="space-y-5 md:sticky md:top-24 md:self-start lg:top-24">
             <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-float)]">
               <OrderSummary
                 items={items}

@@ -50,7 +50,7 @@ export function AccountShell({
           <aside className="min-w-0 lg:sticky lg:top-[84px] h-fit">
             <AccountIdentity />
 
-            <nav className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-ng-line-soft lg:bg-ng-paper/70 lg:p-2 lg:backdrop-blur-sm lg:shadow-[var(--shadow-ng-card)]">
+            <nav className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] lg:mx-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-ng-line-soft lg:bg-ng-paper/70 lg:p-2 lg:backdrop-blur-sm lg:shadow-[var(--shadow-ng-card)] lg:[mask-image:none]">
               {NAV.map((n) => {
                 const isActive = n.key === active;
                 return (
@@ -59,7 +59,7 @@ export function AccountShell({
                     href={n.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-[14px] font-medium transition-all duration-200",
+                      "group flex min-h-[44px] items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3 text-[14px] font-medium transition-all duration-200",
                       isActive
                         ? "bg-ng-forest text-ng-cream shadow-[0_6px_18px_-8px_rgba(20,51,31,0.6)]"
                         : "text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-ink hover:translate-x-0.5",

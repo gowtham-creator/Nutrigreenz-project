@@ -114,13 +114,13 @@ export default function LoyaltyPage() {
         {/* Tiers — ladder */}
         <Reveal className="mb-16">
           <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mb-7">Three tiers. <em className="italic text-ng-leaf">No tricks.</em></h2>
-          <Stagger className="grid md:grid-cols-3 gap-5 md:items-end">
+          <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:items-end">
             {TIERS.map((t) => (
               <StaggerItem key={t.name}>
                 <article
                   className={`relative h-full rounded-3xl p-7 transition-all ${
                     t.featured
-                      ? "bg-ng-forest-deep text-ng-cream shadow-[var(--shadow-ng-float)] ring-1 ring-ng-clay/25 md:scale-[1.04]"
+                      ? "bg-ng-forest-deep text-ng-cream shadow-[var(--shadow-ng-float)] ring-1 ring-ng-clay/25 lg:scale-[1.04]"
                       : "ng-float bg-ng-paper text-ng-ink border border-ng-line-soft"
                   }`}
                 >

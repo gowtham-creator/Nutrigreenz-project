@@ -223,7 +223,7 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
         <legend className="text-[13px] font-medium text-ng-ink-muted mb-1">
           Address type
         </legend>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {TYPE_OPTIONS.map((opt) => {
             const active = form.type === opt.value;
             return (

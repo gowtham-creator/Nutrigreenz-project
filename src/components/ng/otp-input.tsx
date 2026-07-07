@@ -22,7 +22,7 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
   }
 
   return (
-    <div className={cn("flex gap-2 sm:gap-3", className)}>
+    <div className={cn("flex gap-1.5 sm:gap-3", className)}>
       {chars.map((c, i) => (
         <input
           key={i}
@@ -49,7 +49,7 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
               refs.current[Math.min(txt.length, length - 1)]?.focus();
             }
           }}
-          className="h-14 w-11 sm:w-14 rounded-xl border border-ng-line bg-ng-paper text-center font-display text-[22px] font-semibold text-ng-forest-deep outline-none transition-all duration-200 focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(102,191,115,0.25)]"
+          className="h-14 w-full min-w-0 max-w-[52px] flex-1 rounded-xl border border-ng-line bg-ng-paper text-center font-display text-[22px] font-semibold text-ng-forest-deep outline-none transition-all duration-200 focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(102,191,115,0.25)]"
         />
       ))}
     </div>

@@ -62,7 +62,7 @@ export function SignOutButton() {
         await signOutUser();
         router.push("/auth");
       }}
-      className="flex items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-[14px] font-medium text-ng-danger transition-colors hover:bg-ng-danger/10 lg:mt-2"
+      className="flex min-h-[44px] items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3 text-left text-[14px] font-medium text-ng-danger transition-colors hover:bg-ng-danger/10 lg:mt-2"
     >
       <Icon name="logout-2-linear" size={18} />
       Sign out
