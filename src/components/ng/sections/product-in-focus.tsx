@@ -180,7 +180,7 @@ export function ProductInFocus({
                 type="button"
                 aria-label="Scroll left"
                 onClick={() => scrollBy(-1)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-ng-line text-ng-ink transition-colors hover:bg-ng-sage/40"
+                className="grid h-11 w-11 lg:h-10 lg:w-10 place-items-center rounded-full border border-ng-line text-ng-ink transition-colors hover:bg-ng-sage/40"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M15 18l-6-6 6-6" />
@@ -190,7 +190,7 @@ export function ProductInFocus({
                 type="button"
                 aria-label="Scroll right"
                 onClick={() => scrollBy(1)}
-                className="grid h-10 w-10 place-items-center rounded-full border border-ng-line text-ng-ink transition-colors hover:bg-ng-sage/40"
+                className="grid h-11 w-11 lg:h-10 lg:w-10 place-items-center rounded-full border border-ng-line text-ng-ink transition-colors hover:bg-ng-sage/40"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M9 6l6 6-6 6" />

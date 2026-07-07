@@ -186,7 +186,7 @@ export function Hero() {
               type="button"
               onClick={prev}
               aria-label="Previous banner"
-              className="grid h-11 w-11 sm:h-9 sm:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-11 w-11 lg:h-9 lg:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-left-linear" size={18} />
             </button>
@@ -202,7 +202,7 @@ export function Hero() {
                     aria-selected={active}
                     aria-label={`Go to ${s.label} banner`}
                     onClick={() => go(i)}
-                    className="group grid place-items-center p-1 min-h-[44px] min-w-[28px]"
+                    className="group grid place-items-center p-1 min-h-[44px] min-w-[44px]"
                   >
                     <span
                       className={`block h-2 rounded-full transition-all duration-300 ${
@@ -218,7 +218,7 @@ export function Hero() {
               type="button"
               onClick={next}
               aria-label="Next banner"
-              className="grid h-11 w-11 sm:h-9 sm:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
+              className="grid h-11 w-11 lg:h-9 lg:w-9 place-items-center rounded-full text-ng-cream transition-colors hover:bg-ng-cream/20 hover:text-white active:scale-95"
             >
               <Icon name="alt-arrow-right-linear" size={18} />
             </button>
@@ -245,12 +245,22 @@ function PromoSlide({ slide }: { slide: PromoSlideDef }) {
         sizes="100vw"
         className="object-cover object-right"
       />
-      {/* Left legibility wash — stronger on mobile where the art sits behind copy */}
+      {/* Left legibility wash. Desktop: a gentle fade so the product still shows.
+          Mobile (sm:hidden): a near-solid wash across most of the width so the
+          headline never collides with the baked-in product art / claim badges;
+          the product just peeks on the right edge. */}
       <div
         aria-hidden
-        className="absolute inset-0"
+        className="absolute inset-0 hidden sm:block"
         style={{
           background: `linear-gradient(to right, ${slide.wash}F2 0%, ${slide.wash}B3 42%, transparent 68%)`,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 sm:hidden"
+        style={{
+          background: `linear-gradient(to right, ${slide.wash}FA 0%, ${slide.wash}FA 58%, ${slide.wash}D9 74%, transparent 100%)`,
         }}
       />
 
@@ -263,10 +273,10 @@ function PromoSlide({ slide }: { slide: PromoSlideDef }) {
         </span>
       </div>
 
-      <div className="relative z-10 flex w-full max-w-2xl flex-col justify-center gap-5 p-8 pt-16 sm:p-12 md:p-14 lg:pl-16">
+      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-4 p-6 pt-14 sm:gap-5 sm:p-12 sm:pt-16 md:p-14 lg:pl-16">
         <FloatIn delay={0.05}>
-          <p className="font-sans text-[clamp(18px,2vw,26px)] font-semibold text-ng-forest">{slide.kicker}</p>
-          <h2 className="mt-1 font-display text-[clamp(38px,5.2vw,68px)] leading-[0.98] text-ng-forest-deep">
+          <p className="font-sans text-[clamp(15px,2vw,26px)] font-semibold text-ng-forest">{slide.kicker}</p>
+          <h2 className="mt-1 font-display text-[clamp(30px,5.4vw,68px)] leading-[0.98] text-ng-forest-deep">
             {slide.title}{" "}
             <em className="relative whitespace-nowrap italic text-ng-forest">
               {slide.script}

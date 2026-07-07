@@ -145,9 +145,9 @@ export function Traceability() {
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 sm:gap-6 pb-3 border-b border-ng-cream/10 last:border-0">
-      <dt className="text-[12px] uppercase tracking-wider text-ng-cream/60 shrink-0 w-24 sm:w-32">{label}</dt>
-      <dd className={`text-right text-ng-cream font-display text-[14px] leading-snug ${highlight ? "text-ng-success font-medium" : ""}`}>
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-6 pb-3 border-b border-ng-cream/10 last:border-0">
+      <dt className="text-[12px] uppercase tracking-wider text-ng-cream/60 shrink-0 sm:w-32">{label}</dt>
+      <dd className={`text-left sm:text-right text-ng-cream font-display text-[14px] leading-snug ${highlight ? "text-ng-success font-medium" : ""}`}>
         {value}
       </dd>
     </div>
