@@ -7,8 +7,6 @@ import { Icon } from "@/components/ui/icon";
 import {
   NumberField,
   Toggle,
-  SegToggle,
-  TextField,
   SaveBar,
 } from "@/components/ng/admin/super/controls";
 import {
@@ -21,11 +19,8 @@ import { CouponCampaignBuilder } from "@/components/ng/admin/super/coupon-campai
 import { CommerceConfigPanel } from "@/components/ng/admin/super/commerce-config";
 import { ReferralConfigSection } from "@/components/ng/admin/super/referral-config";
 import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
-import { useCommerceConfig } from "@/lib/commerce";
-import { useLoyaltyConfig, type LoyaltyConfig } from "@/lib/loyalty-config";
+import { LOYALTY_CONFIG, type LoyaltyConfig } from "@/lib/loyalty-config";
 import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
-import { COUPONS } from "@/components/ng/data";
-import type { CommerceRules, DeliverySlot } from "@/types/nutrigreenz";
 
 /* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
@@ -46,17 +41,8 @@ const PAYMENT = [
   { method: "COD", on: false, fee: "—", note: "Disabled · pilferage rate too high" },
 ];
 
-/* ---- Feature toggles (UI state only; demo) ----------------------------- */
-const INITIAL_FEATURES: { key: string; label: string; desc: string; on: boolean }[] = [
-  { key: "subscriptions", label: "Subscriptions", desc: "Recurring boxes with pause / skip", on: true },
-  { key: "referrals", label: "Referrals", desc: "Refer-a-friend rewards programme", on: true },
-  { key: "community_bundles", label: "Community bundles", desc: "Captain-led group orders", on: true },
-  { key: "captain_network", label: "Captain network", desc: "Field-pickup captain PWA", on: false },
-];
-
 const SUB_NAV = [
   "Commerce",
-  "Rules",
   "Loyalty",
   "Referrals",
   "Coupons",
@@ -109,30 +95,99 @@ function AccessRequired() {
   );
 }
 
-function ConfigContent() {
-  const { rules, updateRules, resetRules } = useCommerceConfig();
-  const { config: loyalty, updateConfig: updateLoyalty, resetConfig: resetLoyalty } =
-    useLoyaltyConfig();
+/** Live figures behind the hero KPI strip — all read from the real backends. */
+interface KpiData {
+  minOrderPaise: number;
+  freeDeliveryThresholdPaise: number;
+  shippingType: string;
+  shippingFlatPaise: number;
+  earnPointsPerRupee: number;
+  activeCoupons: number;
+  slotCount: number;
+}
 
+function ConfigContent() {
   // The operator identity for the hero — resolved client-side from the session
   // cookie (same source the guard uses). Null on the server pass.
   const [operator, setOperator] = useState<string | null>(null);
   useEffect(() => setOperator(getAdminEmail()), []);
 
-  // Live KPI strip — every figure reads straight from the stores so the hero
-  // mirrors exactly what's driving the storefront right now.
-  const activeCoupons = COUPONS.filter((c) => c.active).length;
+  // Live KPI strip — every figure is fetched from the real backends (commerce
+  // rules, loyalty config, the coupons catalogue and the delivery slots) so the
+  // hero mirrors exactly what's driving the storefront right now.
+  const [kpiData, setKpiData] = useState<KpiData | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const getJson = async <T,>(url: string): Promise<T | null> => {
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) return null;
+          return (await res.json()) as T;
+        } catch {
+          return null;
+        }
+      };
+      const [commerce, loyalty, couponsRes, slotsRes] = await Promise.all([
+        getJson<{ rules?: { minOrderPaise?: number; freeDeliveryThresholdPaise?: number; shippingType?: string; shippingFlatPaise?: number } }>(
+          "/api/admin/config/commerce",
+        ),
+        getJson<{ config?: { earnPointsPerRupee?: number } }>("/api/admin/config/loyalty"),
+        getJson<{ coupons?: { active: boolean }[] }>("/api/admin/marketing/coupons"),
+        getJson<{ slots?: unknown[] }>("/api/admin/config/commerce/slots"),
+      ]);
+      if (cancelled) return;
+      setKpiData({
+        minOrderPaise: commerce?.rules?.minOrderPaise ?? 0,
+        freeDeliveryThresholdPaise: commerce?.rules?.freeDeliveryThresholdPaise ?? 0,
+        shippingType: commerce?.rules?.shippingType ?? "flat",
+        shippingFlatPaise: commerce?.rules?.shippingFlatPaise ?? 0,
+        earnPointsPerRupee: loyalty?.config?.earnPointsPerRupee ?? LOYALTY_CONFIG.earnPointsPerRupee,
+        activeCoupons: (couponsRes?.coupons ?? []).filter((c) => c.active).length,
+        slotCount: (slotsRes?.slots ?? []).length,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const freeShipping = kpiData
+    ? kpiData.shippingType === "zero" || kpiData.shippingFlatPaise === 0
+    : false;
   const kpis: Kpi[] = [
-    { icon: "cart-large-2-bold", label: "Min order", value: INR(rules.minOrderValue), accent: true },
-    { icon: "delivery-bold", label: "Free delivery ≥", value: INR(rules.freeDeliveryThreshold) },
+    {
+      icon: "cart-large-2-bold",
+      label: "Min order",
+      value: kpiData ? INR(kpiData.minOrderPaise / 100) : "—",
+      accent: true,
+    },
+    {
+      icon: "delivery-bold",
+      label: "Free delivery ≥",
+      value: kpiData ? INR(kpiData.freeDeliveryThresholdPaise / 100) : "—",
+    },
     {
       icon: "wad-of-money-bold",
       label: "Shipping",
-      value: rules.shippingFlat === 0 ? "Free" : INR(rules.shippingFlat),
+      value: kpiData ? (freeShipping ? "Free" : INR(kpiData.shippingFlatPaise / 100)) : "—",
     },
-    { icon: "star-bold", label: "Points ratio", value: `${loyalty.earnPointsPerRupee} pt/₹`, accent: true },
-    { icon: "ticket-sale-bold", label: "Active coupons", value: String(activeCoupons) },
-    { icon: "clock-circle-bold", label: "Delivery slots", value: String(rules.deliverySlots.length) },
+    {
+      icon: "star-bold",
+      label: "Points ratio",
+      value: kpiData ? `${kpiData.earnPointsPerRupee} pt/₹` : "—",
+      accent: true,
+    },
+    {
+      icon: "ticket-sale-bold",
+      label: "Active coupons",
+      value: kpiData ? String(kpiData.activeCoupons) : "—",
+    },
+    {
+      icon: "clock-circle-bold",
+      label: "Delivery slots",
+      value: kpiData ? String(kpiData.slotCount) : "—",
+    },
   ];
 
   return (
@@ -185,12 +240,7 @@ function ConfigContent() {
       </div>
 
       <CommerceConfigPanel />
-      <CommerceRulesSection rules={rules} updateRules={updateRules} resetRules={resetRules} />
-      <LoyaltySection
-        loyalty={loyalty}
-        updateLoyalty={updateLoyalty}
-        resetLoyalty={resetLoyalty}
-      />
+      <LoyaltySection />
       <ReferralConfigSection />
 
       {/* Secondary controls. */}
@@ -266,201 +316,72 @@ function ConfigContent() {
 }
 
 /* =======================================================================
- * Global Commerce Rules (§3.8)
+ * Loyalty (§3.5.1) — DB-backed via /api/admin/config/loyalty
  * ===================================================================== */
-function CommerceRulesSection({
-  rules,
-  updateRules,
-  resetRules,
-}: {
-  rules: CommerceRules;
-  updateRules: (patch: Partial<CommerceRules>) => void;
-  resetRules: () => void;
-}) {
-  const [draft, setDraft] = useState<CommerceRules>(rules);
-  // Re-sync when the store resets/changes underneath us.
-  useEffect(() => setDraft(rules), [rules]);
-
-  const freeShipping = draft.shippingFlat === 0;
-  const dirty = useMemo(
-    () => JSON.stringify(draft) !== JSON.stringify(rules),
-    [draft, rules],
-  );
-
-  function patchSlot(id: string, patch: Partial<DeliverySlot>) {
-    setDraft((d) => ({
-      ...d,
-      deliverySlots: d.deliverySlots.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-    }));
-  }
-  function addSlot() {
-    const id = `slot-${Date.now()}`;
-    setDraft((d) => ({
-      ...d,
-      deliverySlots: [...d.deliverySlots, { id, label: "New slot", cutoff: "22:00" }],
-    }));
-  }
-  function removeSlot(id: string) {
-    setDraft((d) => ({ ...d, deliverySlots: d.deliverySlots.filter((s) => s.id !== id) }));
-  }
-
-  function save() {
-    updateRules(draft);
-    toast.success("Commerce rules saved", {
-      description: "Applied to the live storefront — cart & checkout.",
-    });
-  }
-  function reset() {
-    resetRules();
-    toast.info("Commerce rules reset to defaults");
-  }
-
-  return (
-    <PrimarySection id="rules">
-      <Card>
-        <SectionHeader
-          icon="settings-bold"
-          tone="forest"
-          title="Global commerce rules"
-          caption="Order minimums, delivery pricing, tax display & slots — applied to cart and checkout."
-          badge={dirty ? <Pill tone="warn">Unsaved</Pill> : <span className="ng-eyebrow">§3.8</span>}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <NumberField
-            label="Minimum order value"
-            value={draft.minOrderValue}
-            onChange={(v) => setDraft((d) => ({ ...d, minOrderValue: v }))}
-            prefix="₹"
-            step={10}
-            hint="Cart must reach this to checkout"
-          />
-          <NumberField
-            label="Free-delivery threshold"
-            value={draft.freeDeliveryThreshold}
-            onChange={(v) => setDraft((d) => ({ ...d, freeDeliveryThreshold: v }))}
-            prefix="₹"
-            step={10}
-            hint="Free at/above this subtotal"
-          />
-          <NumberField
-            label="Flat delivery fee"
-            value={draft.shippingFlat}
-            onChange={(v) => setDraft((d) => ({ ...d, shippingFlat: v }))}
-            prefix="₹"
-            step={5}
-            hint={freeShipping ? "Currently free for all orders" : "Charged below the threshold"}
-          />
-          <SegToggle
-            label="Tax display mode"
-            value={draft.taxMode}
-            onChange={(v) => setDraft((d) => ({ ...d, taxMode: v }))}
-            options={[
-              { value: "inclusive", label: "Inclusive" },
-              { value: "exclusive", label: "Exclusive" },
-            ]}
-            hint={draft.taxMode === "inclusive" ? "Shown prices include GST" : "GST added at checkout"}
-          />
-          <div className="sm:col-span-2 lg:col-span-2 flex items-center">
-            <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
-              <Toggle
-                label="Free delivery for all orders"
-                description="When on, the flat delivery fee is set to ₹0"
-                checked={freeShipping}
-                onChange={(on) =>
-                  setDraft((d) => ({ ...d, shippingFlat: on ? 0 : d.shippingFlat || 49 }))
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Delivery slots */}
-        <div className="mt-6 pt-5 border-t border-ng-line-soft">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <span className="text-[12.5px] font-semibold text-ng-ink">Delivery slots</span>
-            <button
-              type="button"
-              onClick={addSlot}
-              className="inline-flex items-center gap-1 text-[12px] text-ng-forest font-semibold hover:text-ng-leaf transition-colors cursor-pointer"
-            >
-              <Icon name="add-circle-bold" size={15} />
-              Add slot
-            </button>
-          </div>
-          <ul className="space-y-2.5">
-            {draft.deliverySlots.map((slot) => (
-              <li
-                key={slot.id}
-                className="grid grid-cols-[1.8fr_1fr_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
-              >
-                <TextField
-                  label="Label"
-                  value={slot.label}
-                  onChange={(v) => patchSlot(slot.id, { label: v })}
-                  placeholder="Morning · 7–10 AM"
-                />
-                <TextField
-                  label="Cutoff"
-                  value={slot.cutoff}
-                  onChange={(v) => patchSlot(slot.id, { cutoff: v })}
-                  placeholder="22:00"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeSlot(slot.id)}
-                  aria-label={`Remove slot ${slot.label}`}
-                  className="h-11 px-3 rounded-xl border border-ng-line text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors cursor-pointer"
-                >
-                  <Icon name="trash-bin-trash-bold" size={16} />
-                </button>
-              </li>
-            ))}
-            {draft.deliverySlots.length === 0 ? (
-              <li className="text-[12px] font-medium text-ng-ink-soft py-2">No slots — add one above.</li>
-            ) : null}
-          </ul>
-        </div>
-
-        <SaveBar
-          note="Changes apply to the live storefront (cart & checkout)."
-          onSave={save}
-          onReset={reset}
-          dirty={dirty}
-        />
-      </Card>
-    </PrimarySection>
-  );
-}
-
-/* =======================================================================
- * Loyalty (§3.5.1)
- * ===================================================================== */
-function LoyaltySection({
-  loyalty,
-  updateLoyalty,
-  resetLoyalty,
-}: {
-  loyalty: LoyaltyConfig;
-  updateLoyalty: (patch: Partial<LoyaltyConfig>) => void;
-  resetLoyalty: () => void;
-}) {
-  const [draft, setDraft] = useState<LoyaltyConfig>(loyalty);
-  useEffect(() => setDraft(loyalty), [loyalty]);
+function LoyaltySection() {
+  const [saved, setSaved] = useState<LoyaltyConfig>(LOYALTY_CONFIG);
+  const [draft, setDraft] = useState<LoyaltyConfig>(LOYALTY_CONFIG);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const dirty = useMemo(
-    () => JSON.stringify(draft) !== JSON.stringify(loyalty),
-    [draft, loyalty],
+    () => JSON.stringify(draft) !== JSON.stringify(saved),
+    [draft, saved],
   );
 
-  function save() {
-    updateLoyalty(draft);
-    toast.success("Loyalty programme saved", {
-      description: "Drives points earned & checkout redemption.",
-    });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/config/loyalty", { cache: "no-store" });
+        const data = (await res.json()) as { ok?: boolean; config?: LoyaltyConfig };
+        if (!cancelled && res.ok && data.ok !== false && data.config) {
+          setSaved(data.config);
+          setDraft(data.config);
+        }
+      } catch {
+        /* keep defaults on failure */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/config/loyalty", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        config?: LoyaltyConfig;
+        error?: string;
+      };
+      if (!res.ok || data.ok === false || !data.config) {
+        throw new Error(data.error || "save-failed");
+      }
+      setSaved(data.config);
+      setDraft(data.config);
+      toast.success("Loyalty programme saved", {
+        description: "Drives points earned & checkout redemption across the storefront.",
+      });
+    } catch (err) {
+      toast.error("Could not save loyalty programme", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
   }
   function reset() {
-    resetLoyalty();
-    toast.info("Loyalty config reset to defaults");
+    setDraft(saved);
+    toast.info("Reverted unsaved changes");
   }
 
   return (
@@ -471,7 +392,15 @@ function LoyaltySection({
           tone="clay"
           title="Loyalty programme"
           caption="Earn & redemption ratios, floors and caps — drives points on orders and checkout redemption."
-          badge={dirty ? <Pill tone="warn">Unsaved</Pill> : <span className="ng-eyebrow">§3.5.1</span>}
+          badge={
+            loading ? (
+              <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
+            ) : dirty ? (
+              <Pill tone="warn">Unsaved</Pill>
+            ) : (
+              <Pill tone="success">Synced</Pill>
+            )
+          }
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <NumberField
@@ -527,7 +456,11 @@ function LoyaltySection({
         </div>
 
         <SaveBar
-          note="Drives points earned on orders and redemption at checkout."
+          note={
+            saving
+              ? "Saving…"
+              : "Persisted to Supabase — drives points earned on orders and redemption at checkout."
+          }
           onSave={save}
           onReset={reset}
           dirty={dirty}
@@ -538,17 +471,67 @@ function LoyaltySection({
 }
 
 /* =======================================================================
- * Feature toggles (performance) — UI state + toast
+ * Feature toggles — DB-backed via /api/admin/config/features
  * ===================================================================== */
-function FeatureTogglesSection() {
-  const [features, setFeatures] = useState(INITIAL_FEATURES);
+interface FeatureFlag {
+  key: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+}
 
-  function toggle(key: string) {
-    setFeatures((fs) =>
-      fs.map((f) => (f.key === key ? { ...f, on: !f.on } : f)),
-    );
-    const f = features.find((x) => x.key === key);
-    if (f) toast.success(`${f.label} ${f.on ? "disabled" : "enabled"}`);
+function FeatureTogglesSection() {
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/config/features", { cache: "no-store" });
+        const data = (await res.json()) as { ok?: boolean; flags?: FeatureFlag[] };
+        if (!cancelled && res.ok && data.ok !== false && data.flags) {
+          setFlags(data.flags);
+        }
+      } catch {
+        /* keep empty on failure */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function toggle(key: string) {
+    const current = flags.find((f) => f.key === key);
+    if (!current) return;
+    const next = !current.enabled;
+    // Optimistic flip; revert on failure.
+    setFlags((fs) => fs.map((f) => (f.key === key ? { ...f, enabled: next } : f)));
+    try {
+      const res = await fetch("/api/admin/config/features", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ [key]: next }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        flags?: FeatureFlag[];
+        error?: string;
+      };
+      if (!res.ok || data.ok === false || !data.flags) {
+        throw new Error(data.error || "save-failed");
+      }
+      setFlags(data.flags);
+      toast.success(`${current.label} ${next ? "enabled" : "disabled"}`);
+    } catch (err) {
+      setFlags((fs) => fs.map((f) => (f.key === key ? { ...f, enabled: current.enabled } : f)));
+      toast.error("Could not update feature", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    }
   }
 
   return (
@@ -561,18 +544,20 @@ function FeatureTogglesSection() {
           caption="Switch storefront capabilities on or off across the platform."
           badge={
             <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">
-              {features.filter((f) => f.on).length} / {features.length} on
+              {loading
+                ? "Loading…"
+                : `${flags.filter((f) => f.enabled).length} / ${flags.length} on`}
             </span>
           }
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 -my-1">
-          {features.map((f) => (
+          {flags.map((f) => (
             <div key={f.key} className="border-b border-ng-line-soft sm:[&:nth-last-child(-n+2)]:border-0 last:border-0">
               <Toggle
                 label={f.label}
-                description={f.desc}
-                checked={f.on}
-                onChange={() => toggle(f.key)}
+                description={f.description}
+                checked={f.enabled}
+                onChange={() => void toggle(f.key)}
               />
             </div>
           ))}

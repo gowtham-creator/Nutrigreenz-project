@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -11,12 +10,14 @@ import {
 } from "react";
 
 /**
- * Loyalty programme configuration.
+ * Loyalty programme configuration (client-side read model).
  *
- * Editable by a Super Admin and persisted to localStorage (`ng.loyalty.v1`).
- * The storefront checkout reads `redeemPointsPerRupee` (and the redemption
- * limits) from here so changes go live immediately. Mirrors the SSR-safe
- * localStorage pattern used by `cart.tsx`/`commerce.tsx`.
+ * The canonical config lives server-side in Supabase (`public.loyalty_config`),
+ * edited by a Super Admin via `/api/admin/config/loyalty`. This provider reads
+ * the customer-facing subset from the public `/api/loyalty-config` endpoint so
+ * the storefront checkout uses the SAME live economics for everyone — replacing
+ * the old per-browser localStorage config. Falls back to the built-in defaults
+ * until the fetch resolves (or if it fails), so checkout never breaks.
  */
 export interface LoyaltyConfig {
   /** Points earned per ₹1 spent. */
@@ -43,17 +44,17 @@ export const LOYALTY_CONFIG: LoyaltyConfig = {
   earnEnabled: true,
 };
 
-const STORAGE_KEY = "ng.loyalty.v1";
-
 interface LoyaltyConfigValue {
   config: LoyaltyConfig;
-  updateConfig: (patch: Partial<LoyaltyConfig>) => void;
-  resetConfig: () => void;
 }
 
 const LoyaltyConfigContext = createContext<LoyaltyConfigValue | null>(null);
 
-/** Coerce arbitrary stored JSON into a valid LoyaltyConfig, falling back to defaults. */
+/**
+ * Coerce the public API payload into a valid LoyaltyConfig, falling back to
+ * defaults per-field. The public endpoint omits `expiryMonths` (not needed by
+ * the storefront), so that always resolves to the default here.
+ */
 function normalizeConfig(value: unknown): LoyaltyConfig {
   if (typeof value !== "object" || value === null) return LOYALTY_CONFIG;
   const v = value as Partial<LoyaltyConfig>;
@@ -73,56 +74,31 @@ function normalizeConfig(value: unknown): LoyaltyConfig {
   };
 }
 
-function readStoredConfig(): LoyaltyConfig {
-  if (typeof window === "undefined") return LOYALTY_CONFIG;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return LOYALTY_CONFIG;
-    return normalizeConfig(JSON.parse(raw) as unknown);
-  } catch {
-    return LOYALTY_CONFIG;
-  }
-}
-
 export function LoyaltyConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<LoyaltyConfig>(LOYALTY_CONFIG);
-  const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage after mount (avoids SSR mismatch).
+  // Pull the live economics from the public endpoint after mount. Read-only —
+  // edits happen in the Super Admin control center against the admin API.
   useEffect(() => {
-    setConfig(readStoredConfig());
-    setHydrated(true);
-  }, []);
-
-  // Persist whenever config changes (only after initial hydration).
-  useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    } catch {
-      /* quota / private-mode — fail silently */
-    }
-  }, [config, hydrated]);
-
-  const updateConfig = useCallback((patch: Partial<LoyaltyConfig>) => {
-    setConfig((prev) => ({ ...prev, ...patch }));
-  }, []);
-
-  const resetConfig = useCallback(() => {
-    setConfig(LOYALTY_CONFIG);
-    if (typeof window !== "undefined") {
+    let cancelled = false;
+    (async () => {
       try {
-        window.localStorage.removeItem(STORAGE_KEY);
+        const res = await fetch("/api/loyalty-config", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { ok?: boolean; config?: unknown };
+        if (!cancelled && data.ok !== false && data.config) {
+          setConfig(normalizeConfig(data.config));
+        }
       } catch {
-        /* ignore */
+        /* offline / unconfigured — keep the built-in defaults */
       }
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const value = useMemo<LoyaltyConfigValue>(
-    () => ({ config, updateConfig, resetConfig }),
-    [config, updateConfig, resetConfig],
-  );
+  const value = useMemo<LoyaltyConfigValue>(() => ({ config }), [config]);
 
   return (
     <LoyaltyConfigContext.Provider value={value}>
@@ -131,7 +107,7 @@ export function LoyaltyConfigProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Read + mutate the loyalty programme config (Super Admin UI + checkout). */
+/** Read the live loyalty programme config (storefront checkout). */
 export function useLoyaltyConfig(): LoyaltyConfigValue {
   const ctx = useContext(LoyaltyConfigContext);
   if (!ctx) {

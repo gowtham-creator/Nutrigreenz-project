@@ -14,10 +14,11 @@ import { NumberField, Toggle, SaveBar } from "@/components/ng/admin/super/contro
  * confirmed-order qualifier, monthly cap and reward expiry, plus the scope's
  * three anti-abuse guards (same-device, mobile dedupe, address-cluster).
  *
- * Local state only — a dedicated referral store lands in Milestone 2; for now
- * this mirrors the shape the engine will consume and confirms with a toast.
- * Rewards are tied to confirmed (non-cancellable) orders per the No-Cancellation
- * policy, so there is no claw-back path here.
+ * DB-backed: loads and saves the singleton config through the super-admin-gated
+ * `/api/admin/config/referral` endpoint (Supabase service-role). Money is edited
+ * in ₹ here but persisted as integer paise. Rewards are tied to confirmed
+ * (non-cancellable) orders per the No-Cancellation policy, so there is no
+ * claw-back path here.
  */
 
 const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -35,6 +36,19 @@ export type ReferralConfig = {
   blockAddressCluster: boolean;
 };
 
+/** The paise-denominated shape the API returns / accepts. */
+type ApiReferralConfig = {
+  referrerPoints: number;
+  refereeDiscountPaise: number;
+  minQualifyingOrderPaise: number;
+  maxPerMonth: number;
+  expiryDays: number;
+  enabled: boolean;
+  blockSameDevice: boolean;
+  dedupeMobile: boolean;
+  blockAddressCluster: boolean;
+};
+
 const DEFAULTS: ReferralConfig = {
   referrerPoints: 200,
   refereeDiscount: 100,
@@ -46,6 +60,38 @@ const DEFAULTS: ReferralConfig = {
   dedupeMobile: true,
   blockAddressCluster: false,
 };
+
+const API = "/api/admin/config/referral";
+
+/** Map the API's paise config into the ₹-denominated editor shape. */
+function fromApi(c: ApiReferralConfig): ReferralConfig {
+  return {
+    referrerPoints: c.referrerPoints,
+    refereeDiscount: Math.round(c.refereeDiscountPaise / 100),
+    minQualifyingOrder: Math.round(c.minQualifyingOrderPaise / 100),
+    maxPerMonth: c.maxPerMonth,
+    expiryDays: c.expiryDays,
+    enabled: c.enabled,
+    blockSameDevice: c.blockSameDevice,
+    dedupeMobile: c.dedupeMobile,
+    blockAddressCluster: c.blockAddressCluster,
+  };
+}
+
+/** Map the editor's ₹ values back into the API's paise payload. */
+function toApiPayload(c: ReferralConfig): ApiReferralConfig {
+  return {
+    referrerPoints: c.referrerPoints,
+    refereeDiscountPaise: Math.round(c.refereeDiscount * 100),
+    minQualifyingOrderPaise: Math.round(c.minQualifyingOrder * 100),
+    maxPerMonth: c.maxPerMonth,
+    expiryDays: c.expiryDays,
+    enabled: c.enabled,
+    blockSameDevice: c.blockSameDevice,
+    dedupeMobile: c.dedupeMobile,
+    blockAddressCluster: c.blockAddressCluster,
+  };
+}
 
 const ABUSE_GUARDS: {
   key: "blockSameDevice" | "dedupeMobile" | "blockAddressCluster";
@@ -76,26 +122,73 @@ const ABUSE_GUARDS: {
 export function ReferralConfigSection() {
   const [saved, setSaved] = React.useState<ReferralConfig>(DEFAULTS);
   const [draft, setDraft] = React.useState<ReferralConfig>(DEFAULTS);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
 
   const dirty = React.useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(saved),
     [draft, saved],
   );
 
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(API, { cache: "no-store" });
+        const data = (await res.json()) as { ok?: boolean; config?: ApiReferralConfig };
+        if (!cancelled && res.ok && data.ok !== false && data.config) {
+          const next = fromApi(data.config);
+          setSaved(next);
+          setDraft(next);
+        }
+      } catch {
+        /* keep defaults on failure */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function patch<K extends keyof ReferralConfig>(key: K, val: ReferralConfig[K]) {
     setDraft((d) => ({ ...d, [key]: val }));
   }
 
-  function save() {
-    setSaved(draft);
-    toast.success("Referral programme saved", {
-      description: `Referrer +${draft.referrerPoints} pts · referee ${INR(draft.refereeDiscount)} off. Demo · engine wires in M2.`,
-    });
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch(API, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(toApiPayload(draft)),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        config?: ApiReferralConfig;
+        error?: string;
+      };
+      if (!res.ok || data.ok === false || !data.config) {
+        throw new Error(data.error || "save-failed");
+      }
+      const next = fromApi(data.config);
+      setSaved(next);
+      setDraft(next);
+      toast.success("Referral programme saved", {
+        description: `Referrer +${next.referrerPoints} pts · referee ${INR(next.refereeDiscount)} off.`,
+      });
+    } catch (err) {
+      toast.error("Could not save referral programme", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
   }
   function reset() {
-    setDraft(DEFAULTS);
-    setSaved(DEFAULTS);
-    toast.info("Referral config reset to defaults");
+    setDraft(saved);
+    toast.info("Reverted unsaved changes");
   }
 
   const guardsOn = ABUSE_GUARDS.filter((g) => draft[g.key]).length;
@@ -108,7 +201,15 @@ export function ReferralConfigSection() {
           tone="clay"
           title="Referral programme"
           caption="Reward values, the confirmed-order qualifier and anti-abuse guards — drives refer-a-friend."
-          badge={dirty ? <Pill tone="warn">Unsaved</Pill> : <span className="ng-eyebrow">§3.7</span>}
+          badge={
+            loading ? (
+              <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
+            ) : dirty ? (
+              <Pill tone="warn">Unsaved</Pill>
+            ) : (
+              <Pill tone="success">Synced</Pill>
+            )
+          }
         />
 
         {/* Reward values + qualifiers */}
@@ -204,7 +305,11 @@ export function ReferralConfigSection() {
         </div>
 
         <SaveBar
-          note="Rewards fire only after a referee's confirmed order — no claw-back. Demo · engine wires in M2."
+          note={
+            saving
+              ? "Saving…"
+              : "Persisted to Supabase. Rewards fire only after a referee's confirmed order — no claw-back."
+          }
           onSave={save}
           onReset={reset}
           dirty={dirty}
