@@ -13,7 +13,7 @@ const buttonVariants = cva(
         primary:
           "bg-ng-forest text-ng-paper hover:bg-ng-forest-deep hover:-translate-y-0.5 shadow-[0_4px_14px_rgba(31,77,46,0.25)] hover:shadow-[0_8px_24px_rgba(31,77,46,0.32)]",
         secondary:
-          "bg-ng-cream text-ng-forest border border-ng-line hover:border-ng-leaf hover:bg-ng-sage hover:-translate-y-0.5",
+          "bg-ng-cream text-ng-forest border border-ng-line hover:border-ng-forest hover:bg-ng-cream-deep hover:text-ng-forest-deep hover:-translate-y-0.5",
         outline:
           "bg-transparent text-ng-forest border-2 border-ng-forest hover:bg-ng-forest hover:text-ng-paper",
         ghost:

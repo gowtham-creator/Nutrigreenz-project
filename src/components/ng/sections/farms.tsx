@@ -85,7 +85,7 @@ export function Farms() {
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   {farm.practices.slice(0, 3).map((p) => (
-                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-sage border border-ng-leaf-soft/60 text-ng-forest-deep capitalize">
+                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-cream border border-ng-forest-deep/30 text-ng-forest-deep capitalize">
                       {p}
                     </span>
                   ))}

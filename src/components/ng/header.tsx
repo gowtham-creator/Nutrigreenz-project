@@ -71,10 +71,10 @@ export function Header() {
                 className={cn(
                   "inline-flex items-center rounded-full px-4 py-2 text-[14px] font-medium transition-colors duration-200",
                   isActive(item.href)
-                    ? "bg-ng-forest text-ng-cream"
+                    ? "bg-gradient-to-b from-ng-forest to-ng-forest-deep text-ng-cream shadow-[0_2px_10px_-4px_rgba(20,51,31,0.55)] ring-1 ring-inset ring-ng-leaf/15"
                     : openMega === item.label
-                      ? "bg-ng-sage/60 text-ng-forest-deep"
-                      : "text-ng-ink hover:bg-ng-sage/55 hover:text-ng-forest-deep",
+                      ? "bg-ng-forest/[0.06] text-ng-forest-deep"
+                      : "text-ng-ink hover:bg-ng-forest/[0.06] hover:text-ng-forest-deep",
                 )}
               >
                 {item.label}
@@ -107,7 +107,7 @@ export function Header() {
         <div className="flex items-center gap-2 ml-auto">
           <button
             aria-label="Search"
-            className="hidden xl:inline-flex shrink-0 h-10 w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="hidden xl:inline-flex shrink-0 h-10 w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7" />
@@ -120,7 +120,7 @@ export function Header() {
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
           >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8Z" />
@@ -134,7 +134,7 @@ export function Header() {
           <Link
             href="/cart"
             aria-label="Cart"
-            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 transition-colors text-ng-ink"
+            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
@@ -152,7 +152,7 @@ export function Header() {
           </Button>
           <button
             aria-label="Open menu"
-            className="min-[1152px]:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-sage/50 text-ng-ink"
+            className="min-[1152px]:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -186,8 +186,8 @@ export function Header() {
                 className={cn(
                   "rounded-xl px-3 py-3 text-[15px] font-medium transition-colors",
                   isActive(item.href)
-                    ? "bg-ng-forest text-ng-cream"
-                    : "text-ng-ink hover:bg-ng-sage/50 hover:text-ng-forest-deep",
+                    ? "bg-gradient-to-b from-ng-forest to-ng-forest-deep text-ng-cream ring-1 ring-inset ring-ng-leaf/15"
+                    : "text-ng-ink hover:bg-ng-forest/[0.06] hover:text-ng-forest-deep",
                 )}
                 onClick={() => setMobileOpen(false)}
               >
@@ -200,7 +200,7 @@ export function Header() {
                       key={m.href}
                       href={m.href}
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-xl px-3 py-2.5 text-[14px] text-ng-ink-soft hover:bg-ng-sage/50 hover:text-ng-forest-deep transition-colors"
+                      className="rounded-xl px-3 py-2.5 text-[14px] text-ng-ink-soft hover:bg-ng-forest/[0.06] hover:text-ng-forest-deep transition-colors"
                     >
                       {m.label}
                     </Link>

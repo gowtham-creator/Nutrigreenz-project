@@ -60,7 +60,7 @@ export default function FarmsPage() {
                 <p className="text-[14px] text-ng-ink-muted mt-3 leading-relaxed line-clamp-3">{f.story}</p>
                 <div className="mt-auto pt-4 flex flex-wrap gap-2">
                   {f.practices.slice(0, 3).map((p) => (
-                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-sage/60 text-ng-forest-deep capitalize">{p}</span>
+                    <span key={p} className="text-[11px] px-2.5 py-1 rounded-full bg-ng-cream border border-ng-forest-deep/30 text-ng-forest-deep capitalize">{p}</span>
                   ))}
                 </div>
               </div>

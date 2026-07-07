@@ -153,7 +153,7 @@ export function ProductInFocus({
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       isActive
                         ? "border-ng-forest bg-ng-forest text-ng-cream shadow-[0_10px_28px_-12px_rgba(31,77,46,0.7)]"
-                        : "border-ng-line bg-ng-paper text-ng-ink-soft hover:border-ng-leaf-soft hover:text-ng-forest",
+                        : "border-ng-line bg-ng-paper text-ng-ink-soft hover:border-ng-forest hover:text-ng-forest-deep",
                     )}
                   >
                     {Icon ? (
@@ -162,7 +162,7 @@ export function ProductInFocus({
                           "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
                           isActive
                             ? "bg-ng-cream/15 text-ng-cream"
-                            : "bg-ng-sage/60 text-ng-forest group-hover:bg-ng-sage/80",
+                            : "bg-ng-sage/60 text-ng-forest",
                         )}
                       >
                         <Icon size={18} />

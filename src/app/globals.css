@@ -438,11 +438,18 @@
               border-color var(--dur-fast) var(--ease-out-soft);
 }
 .ng-chip:hover {
-  background: var(--ng-sage); transform: translateY(-1px);
-  border-color: var(--ng-leaf-soft);
+  /* Contrast-forward, not a green wash: firm the border to forest and deepen
+     the neutral surface a notch. Emphasis comes from border + text, never a
+     flat green fill. */
+  background: var(--ng-cream-deep); transform: translateY(-1px);
+  border-color: var(--ng-forest); color: var(--ng-forest-deep);
 }
 .ng-chip[data-active="true"] {
   background: var(--ng-forest); color: var(--ng-paper); border-color: var(--ng-forest);
+}
+.ng-chip[data-active="true"]:hover {
+  /* Active pill stays dark; hover just deepens for a tactile press. */
+  background: var(--ng-forest-deep); color: var(--ng-paper); border-color: var(--ng-forest-deep);
 }
 
 /* Section labels (small caps eyebrow) */
