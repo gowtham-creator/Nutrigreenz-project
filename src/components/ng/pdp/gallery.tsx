@@ -38,7 +38,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
   return (
     <div className="flex flex-col-reverse gap-4 md:flex-row">
       {/* Thumbnails */}
-      <div className="flex flex-row gap-3 md:flex-col">
+      <div className="flex flex-row gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-col md:overflow-visible md:pb-0">
         {safeImages.map((img, i) => (
           <button
             key={i}

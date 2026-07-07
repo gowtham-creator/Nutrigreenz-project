@@ -102,7 +102,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
           type="button"
           onClick={share}
           aria-label="Share this product"
-          className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full border border-ng-line text-ng-forest transition-colors hover:border-ng-leaf hover:bg-ng-sage"
+          className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full border border-ng-line text-ng-forest transition-colors hover:border-ng-leaf hover:bg-ng-sage"
         >
           <Icon name="share-bold" size={18} />
         </button>
@@ -212,9 +212,9 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
                 <Icon name="add-square-linear" size={18} />
               </button>
             </div>
-            <Button onClick={add} size="lg" fullWidth className="flex-1 cursor-pointer">
+            <Button onClick={add} size="lg" fullWidth className="min-w-0 flex-1 cursor-pointer px-4 sm:px-8">
               <Icon name="bag-4-bold" size={18} />
-              Add to cart · ₹{lineTotal.toLocaleString()}
+              <span className="min-w-0 truncate">Add to cart · ₹{lineTotal.toLocaleString()}</span>
             </Button>
           </div>
           <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">

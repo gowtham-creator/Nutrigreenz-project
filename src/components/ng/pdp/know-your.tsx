@@ -18,7 +18,8 @@ export function KnowYour({ data }: KnowYourProps) {
 
       {/* Desktop / tablet: comparison table */}
       <div className="hidden overflow-hidden rounded-3xl border border-ng-line-soft md:block">
-        <table className="w-full border-collapse text-left">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-left">
           <thead>
             <tr className="bg-ng-forest-deep text-ng-cream">
               <th className="w-36 px-5 py-4 text-[12px] font-semibold uppercase tracking-wider text-ng-cream/70">
@@ -51,7 +52,8 @@ export function KnowYour({ data }: KnowYourProps) {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       {/* Mobile: stacked per-type cards */}

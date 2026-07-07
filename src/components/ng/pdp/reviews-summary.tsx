@@ -104,7 +104,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
               onClick={() => setSort(s.key)}
               aria-pressed={sort === s.key}
               className={cn(
-                "cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                "inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3.5 py-2.5 text-[13px] font-medium transition-colors",
                 sort === s.key ? "border-ng-forest bg-ng-forest text-ng-cream" : "border-ng-line text-ng-forest hover:border-ng-leaf",
               )}
             >
@@ -134,7 +134,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
                       Verified
                     </span>
                   ) : null}
-                  <span className="ml-auto inline-flex items-center gap-2">
+                  <span className="ml-auto inline-flex items-center gap-2.5">
                     <span className="text-[12px]">Helpful?</span>
                     <button
                       type="button"
@@ -142,7 +142,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
                       aria-pressed={v === "up"}
                       aria-label="Mark helpful"
                       className={cn(
-                        "inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-1 text-[12px] tabular-nums transition-colors",
+                        "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-full border px-2.5 py-2 text-[12px] tabular-nums transition-colors",
                         v === "up" ? "border-ng-leaf bg-ng-leaf/15 text-ng-forest" : "border-ng-line hover:border-ng-leaf",
                       )}
                     >
@@ -155,7 +155,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
                       aria-pressed={v === "down"}
                       aria-label="Mark not helpful"
                       className={cn(
-                        "inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-1 text-[12px] transition-colors",
+                        "inline-flex h-11 w-11 cursor-pointer items-center justify-center gap-1 rounded-full border text-[12px] transition-colors",
                         v === "down" ? "border-ng-terracotta bg-ng-terracotta/10 text-ng-terracotta" : "border-ng-line hover:border-ng-terracotta",
                       )}
                     >

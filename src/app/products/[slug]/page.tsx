@@ -349,8 +349,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </Parallax>
         </div>
 
-        <div className="relative z-10 grid gap-10 lg:grid-cols-2 lg:gap-14">
-          <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
+          <div className="md:sticky md:top-24 md:self-start">
             <Reveal>
               <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} />
             </Reveal>
