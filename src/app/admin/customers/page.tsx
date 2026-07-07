@@ -244,6 +244,8 @@ export default function AdminCustomers() {
         }
         className="!p-0 overflow-hidden"
       >
+        <div className="overflow-x-auto">
+          <div className="min-w-[820px]">
         <div className="grid grid-cols-[2fr_1.8fr_1.2fr_1.3fr_0.8fr_1fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Name</span>
           <span>Email</span>
@@ -344,6 +346,8 @@ export default function AdminCustomers() {
             ))}
           </ul>
         )}
+          </div>
+        </div>
       </Card>
 
       {selectedId ? (

@@ -107,6 +107,8 @@ export default function AdminWishlists() {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
+              <div className="min-w-[720px]">
             <div className="grid grid-cols-[0.4fr_2.6fr_0.9fr_1.6fr_1fr_0.9fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
               <span>#</span>
               <span>Product</span>
@@ -153,6 +155,8 @@ export default function AdminWishlists() {
                 );
               })}
             </ul>
+              </div>
+            </div>
           </>
         )}
       </Card>

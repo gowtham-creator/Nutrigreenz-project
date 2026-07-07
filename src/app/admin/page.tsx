@@ -275,8 +275,10 @@ export default function AdminOverview() {
         <Card
           title="Recent orders"
           action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Open queue →</Link>}
-          className="!p-0 overflow-hidden"
+          className="!p-0"
         >
+          <div className="overflow-x-auto">
+            <div className="min-w-[720px]">
           <div className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold border-b border-ng-line-soft">
             <span>Order</span>
             <span>Customer</span>
@@ -306,6 +308,8 @@ export default function AdminOverview() {
               ))}
             </ul>
           )}
+            </div>
+          </div>
         </Card>
 
         <Card title="Top products" action={<span className="text-[11px] font-semibold text-ng-ink-muted uppercase tracking-wider">by revenue</span>}>

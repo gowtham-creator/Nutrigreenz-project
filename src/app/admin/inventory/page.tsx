@@ -355,6 +355,8 @@ export default function AdminInventory() {
           </div>
         </div>
 
+        <div className="overflow-x-auto">
+          <div className="min-w-[820px]">
         <div className="grid grid-cols-[2fr_1.1fr_1fr_0.9fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
           <span>SKU</span>
@@ -448,6 +450,8 @@ export default function AdminInventory() {
             })}
           </ul>
         )}
+          </div>
+        </div>
       </Card>
 
       <ProductModal

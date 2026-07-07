@@ -136,6 +136,8 @@ export default function AdminOrders() {
 
       {/* Orders table */}
       <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[760px]">
         <div
           className={cn(
             COLS,
@@ -205,6 +207,8 @@ export default function AdminOrders() {
             ))}
           </ul>
         )}
+          </div>
+        </div>
       </Card>
     </AdminShell>
   );
