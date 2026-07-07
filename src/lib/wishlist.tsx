@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -16,6 +17,15 @@ import type { ProductCard } from "@/types/nutrigreenz";
  * The wishlist is scoped to the current identity (like the cart/addresses) so a
  * signed-out visitor and every signed-in account keep their OWN saved products
  * and never see another account's. A new account starts empty.
+ *
+ * SIGNED-IN: the source of truth is the server table (`public.wishlists` via
+ * `/api/account/wishlist`), attached to the CANONICAL customer, so saves persist
+ * across devices and a person's Google + phone sign-ins. On first sign-in any
+ * locally-saved products (guest + this account's old localStorage) are folded
+ * into the DB, then the DB takes over; a per-identity localStorage cache is kept
+ * only as an offline fallback so the UI never loses data when the API is down.
+ *
+ * SIGNED-OUT (guest): saves stay in localStorage exactly as before.
  */
 const LEGACY_KEY = "ng.wishlist.v1"; // pre-identity global store — abandoned
 const GUEST_KEY = "ng.wishlist.v1::guest";
@@ -72,11 +82,94 @@ function writeStored(key: string, items: ProductCard[]): void {
   }
 }
 
+/** De-duplicate a product list by id, keeping the first (most-recent) occurrence. */
+function dedupeById(list: ProductCard[]): ProductCard[] {
+  const seen = new Set<string>();
+  const out: ProductCard[] = [];
+  for (const p of list) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+}
+
+/* ── server wishlist API (signed-in only; the server scopes to the caller) ─── */
+
+/** GET the signed-in customer's saved products, or null when unavailable. */
+async function apiListWishlist(): Promise<ProductCard[] | null> {
+  try {
+    const res = await fetch("/api/account/wishlist", {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { items?: unknown };
+    return Array.isArray(data.items) ? data.items.filter(isProductCard) : [];
+  } catch {
+    return null;
+  }
+}
+
+/** Bulk-merge local slugs into the DB; returns the unified hydrated list. */
+async function apiMergeWishlist(slugs: string[]): Promise<ProductCard[] | null> {
+  try {
+    const res = await fetch("/api/account/wishlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slugs }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { items?: unknown };
+    return Array.isArray(data.items) ? data.items.filter(isProductCard) : [];
+  } catch {
+    return null;
+  }
+}
+
+async function apiAddWishlist(productSlug: string): Promise<void> {
+  try {
+    await fetch("/api/account/wishlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productSlug }),
+    });
+  } catch {
+    /* best-effort — the local optimistic state already reflects the change */
+  }
+}
+
+async function apiRemoveWishlist(productSlug: string): Promise<void> {
+  try {
+    await fetch(`/api/account/wishlist?slug=${encodeURIComponent(productSlug)}`, {
+      method: "DELETE",
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
+async function apiClearWishlist(): Promise<void> {
+  try {
+    await fetch("/api/account/wishlist?all=1", { method: "DELETE" });
+  } catch {
+    /* best-effort */
+  }
+}
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const { account, loading: authLoading } = useAuth();
   const [items, setItems] = useState<ProductCard[]>([]);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  // Guards a one-time localStorage→DB fold-in per identity.
+  const importedFor = useRef<Set<string>>(new Set());
+  // Mirror of `items` for the mutators (so their fetch decisions never go stale).
+  const itemsRef = useRef<ProductCard[]>(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
+  const signedIn = Boolean(account);
   const storageKey = account
     ? `${USER_PREFIX}${account.email || account.phone || "user"}`
     : GUEST_KEY;
@@ -92,22 +185,63 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
     }
-    let next = readStoredItems(storageKey);
-    // On sign-in, fold any guest-saved items in (de-duped), then clear guest.
-    if (storageKey.startsWith(USER_PREFIX)) {
-      const guest = readStoredItems(GUEST_KEY);
-      if (guest.length > 0) {
-        const ids = new Set(next.map((p) => p.id));
-        next = [...next, ...guest.filter((p) => !ids.has(p.id))];
-        writeStored(storageKey, next);
+
+    let cancelled = false;
+
+    // Guest → localStorage only (unchanged behaviour).
+    if (!signedIn) {
+      setItems(readStoredItems(GUEST_KEY));
+      setLoadedKey(storageKey);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Signed-in → the DB is the source of truth, with a one-time local fold-in.
+    (async () => {
+      const localItems = dedupeById([
+        ...readStoredItems(storageKey),
+        ...readStoredItems(GUEST_KEY),
+      ]);
+
+      const server = await apiListWishlist();
+      if (cancelled) return;
+
+      // API unavailable (Supabase unconfigured / offline) → fall back to the
+      // local cache so the UI keeps working; never lose saves.
+      if (server === null) {
+        setItems(localItems);
+        setLoadedKey(storageKey);
+        return;
+      }
+
+      let merged = server;
+      if (!importedFor.current.has(storageKey)) {
+        importedFor.current.add(storageKey);
+        const serverSlugs = new Set(server.map((p) => p.slug));
+        const toPush = localItems
+          .filter((p) => !serverSlugs.has(p.slug))
+          .map((p) => p.slug);
+        if (toPush.length > 0) {
+          const unified = await apiMergeWishlist(toPush);
+          if (!cancelled && unified) merged = unified;
+        }
+        // Guest saves are now server-owned; clear the guest bucket.
         writeStored(GUEST_KEY, []);
       }
-    }
-    setItems(next);
-    setLoadedKey(storageKey);
-  }, [authLoading, storageKey, loadedKey]);
 
-  // Persist whenever items change — only once they belong to the active identity.
+      if (!cancelled) {
+        setItems(merged);
+        setLoadedKey(storageKey);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, storageKey, loadedKey, signedIn]);
+
+  // Persist to localStorage — the guest store, or the signed-in offline cache.
   useEffect(() => {
     if (loadedKey === null || loadedKey !== storageKey) return;
     writeStored(storageKey, items);
@@ -118,19 +252,35 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     [items],
   );
 
-  const toggle = useCallback((product: ProductCard) => {
-    setItems((prev) =>
-      prev.some((item) => item.id === product.id)
-        ? prev.filter((item) => item.id !== product.id)
-        : [product, ...prev],
-    );
-  }, []);
+  const toggle = useCallback(
+    (product: ProductCard) => {
+      const exists = itemsRef.current.some((item) => item.id === product.id);
+      setItems((prev) =>
+        exists
+          ? prev.filter((item) => item.id !== product.id)
+          : [product, ...prev],
+      );
+      if (signedIn) {
+        if (exists) void apiRemoveWishlist(product.slug);
+        else void apiAddWishlist(product.slug);
+      }
+    },
+    [signedIn],
+  );
 
-  const remove = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+  const remove = useCallback(
+    (id: string) => {
+      const target = itemsRef.current.find((item) => item.id === id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      if (signedIn && target) void apiRemoveWishlist(target.slug);
+    },
+    [signedIn],
+  );
 
-  const clear = useCallback(() => setItems([]), []);
+  const clear = useCallback(() => {
+    setItems([]);
+    if (signedIn) void apiClearWishlist();
+  }, [signedIn]);
 
   const count = items.length;
 
