@@ -2,12 +2,50 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Section } from "../section";
 import { ProductCard } from "../product-card";
 import { PRODUCE_ICONS, type ProduceIconName } from "../produce-icons";
-import { Stagger, StaggerItem } from "../motion";
+import { Stagger, StaggerItem, Reveal } from "../motion";
 import { cn } from "@/lib/utils";
 import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
+
+/** A single pack/variety thumbnail surfaced in the header "range" cluster. */
+interface RangeMedia {
+  src: string;
+  alt: string;
+  /** Short, factual pack-size / variety label (e.g. "1L · 500ml · 250ml"). */
+  tag: string;
+}
+
+/**
+ * Per-family "range" imagery for the header fill — reuses existing product art
+ * so the large empty space to the right of the heading surfaces more of the
+ * product (pack sizes + variety) instead of sitting as dead space. Index 1 is
+ * the front/centre hero of the fanned trio.
+ */
+const ACCENT_RANGE: Record<NonNullable<Props["accent"]>, RangeMedia[]> = {
+  amber: [
+    { src: "/images/products/oils/groundnut.webp", alt: "Cold-pressed groundnut oil", tag: "Single-origin" },
+    { src: "/images/products/oils/oils-tile-sizes.webp", alt: "Glass bottle sizes for our oils", tag: "1L · 500ml · 250ml" },
+    { src: "/images/products/oils/oils-tile-range.webp", alt: "The full cold-pressed oil range", tag: "The range" },
+  ],
+  gold: [
+    { src: "/images/products/ghee/ghee-curd.webp", alt: "Cultured curd for bilona ghee", tag: "Hand-churned" },
+    { src: "/images/products/ghee/ghee-jar-bowl.webp", alt: "A2 ghee jar with a filled bowl", tag: "250ml · 500ml · 1L" },
+    { src: "/images/products/ghee/tile-farm.webp", alt: "Ghee from named desi cows", tag: "Bilona method" },
+  ],
+  honey: [
+    { src: "/images/products/honey/tile-raw.webp", alt: "Raw, unheated honey", tag: "Raw · unheated" },
+    { src: "/images/products/honey/honey-jar-dipper.webp", alt: "Raw honey jar with a dipper", tag: "350g · 500g" },
+    { src: "/images/products/honey/tile-forests.webp", alt: "Forest-sourced honey", tag: "Forest-sourced" },
+  ],
+  forest: [
+    { src: "/images/products/oils/oils-tile-range.webp", alt: "Cold-pressed oil range", tag: "Oils" },
+    { src: "/images/products/ghee/ghee-jar-bowl.webp", alt: "A2 ghee jar with a filled bowl", tag: "Ghee" },
+    { src: "/images/products/honey/honey-jar-dipper.webp", alt: "Raw honey jar with a dipper", tag: "Honey" },
+  ],
+};
 
 /**
  * A selectable sub-category tab. The filter rule is expressed as a *serializable*
@@ -125,8 +163,12 @@ export function ProductInFocus({
       "radial-gradient(ellipse 42% 55% at 90% 18%, rgba(102,191,115,0.11), transparent 60%), radial-gradient(ellipse 46% 52% at 6% 88%, rgba(31,77,46,0.06), transparent 62%)",
   };
 
+  // Per-family "range" thumbnails that fill the header's empty right side on
+  // desktop (reuses existing product art — no dead space).
+  const rangeMedia = accent ? ACCENT_RANGE[accent] : null;
+
   return (
-    <Section id={sectionId} className="relative overflow-hidden" eyebrow={eyebrow} heading={heading} description={description}>
+    <Section id={sectionId} className="relative overflow-hidden">
       {/* Soft botanical wash behind the rail (per-family hue when `accent` is set) */}
       <div
         aria-hidden
@@ -139,6 +181,61 @@ export function ProductInFocus({
       />
 
       <div className="relative z-10">
+        {/* ── Header: eyebrow + heading + description, with a per-family
+            "range" media cluster filling the space to the right on desktop so
+            the block never reads as empty. ─────────────────────────────── */}
+        <div className="mb-10 grid gap-8 md:mb-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
+          <Reveal as="header" className="flex max-w-2xl flex-col gap-4">
+            {eyebrow ? <span className="ng-eyebrow">{eyebrow}</span> : null}
+            <h2 className="font-display text-[clamp(28px,4.6vw,52px)] leading-[1.05] tracking-tight text-ng-forest-deep">
+              {heading}
+            </h2>
+            {description ? (
+              <p className="text-[17px] leading-relaxed text-pretty text-ng-ink-muted">
+                {description}
+              </p>
+            ) : null}
+          </Reveal>
+
+          {rangeMedia ? (
+            <Reveal delay={0.1} className="relative hidden shrink-0 lg:block">
+              {/* Accent-tinted halo behind the fanned trio */}
+              <div
+                className="pointer-events-none absolute -inset-x-6 -inset-y-4 rounded-[2rem]"
+                style={{ background: accent ? ACCENT_WASH[accent] : undefined }}
+              />
+              <div className="relative flex items-end justify-center">
+                {rangeMedia.map((m, i) => (
+                  <figure
+                    key={m.src}
+                    className={cn(
+                      "relative overflow-hidden rounded-2xl bg-ng-cream ring-1 ring-black/[0.06] shadow-[0_18px_40px_-20px_rgba(20,51,31,0.5)]",
+                      i === 1
+                        ? "z-20 h-48 w-36"
+                        : "z-10 h-40 w-28",
+                      i === 0 && "-mr-5 origin-bottom-right rotate-[-5deg]",
+                      i === 2 && "-ml-5 origin-bottom-left rotate-[5deg]",
+                    )}
+                  >
+                    <Image
+                      src={m.src}
+                      alt={m.alt}
+                      fill
+                      sizes="160px"
+                      className="object-cover"
+                    />
+                    <figcaption className="absolute inset-x-1.5 bottom-1.5">
+                      <span className="block truncate rounded-full bg-ng-forest-deep/82 px-2 py-1 text-center text-[9px] font-semibold tracking-tight text-ng-cream backdrop-blur-sm">
+                        {m.tag}
+                      </span>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </Reveal>
+          ) : null}
+        </div>
+
         {/* ── Sub-category icon tabs + scroll controls ─────────────────── */}
         <div className="-mx-5 px-5 md:mx-0 md:px-0">
           <div className="flex items-center justify-between gap-4">
