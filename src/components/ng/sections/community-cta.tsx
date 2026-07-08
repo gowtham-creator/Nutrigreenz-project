@@ -7,14 +7,24 @@ import { Reveal, Parallax, FloatIn, MagneticHover } from "../motion";
 
 export function CommunityCTA() {
   return (
-    <Section className="bg-ng-sage-mesh bg-ng-sage/30 relative overflow-hidden">
-      {/* Base depth wash */}
+    <Section className="bg-ng-cream relative overflow-hidden">
+      {/* Soft gradient wash — warm paper melting into a calm sage field so the
+          harvest-letter panel sits on real depth instead of a flat sage block. */}
       <div
         aria-hidden
-        className="absolute inset-0 opacity-50 pointer-events-none z-0"
+        className="absolute inset-0 pointer-events-none z-0"
         style={{
           background:
-            "radial-gradient(ellipse 40% 50% at 0% 100%, rgba(31,77,46,0.18), transparent 60%), radial-gradient(ellipse 40% 50% at 100% 0%, rgba(200,166,104,0.25), transparent 60%)",
+            "linear-gradient(180deg, #FBFAF4 0%, #F1F4E9 46%, #E3EAD8 100%)",
+        }}
+      />
+      {/* Base depth wash — cool green corner glow, warm forest anchor, no gold */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-60 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 42% 52% at 0% 100%, rgba(31,77,46,0.16), transparent 60%), radial-gradient(ellipse 42% 52% at 100% 0%, rgba(102,191,115,0.18), transparent 60%)",
         }}
       />
 
@@ -28,7 +38,7 @@ export function CommunityCTA() {
         <div
           aria-hidden
           className="absolute right-0 bottom-0 h-80 w-80 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(circle, rgba(181,134,47,0.22), transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, rgba(181,134,47,0.12), transparent 70%)" }}
         />
       </Parallax>
 

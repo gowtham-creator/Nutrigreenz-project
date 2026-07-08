@@ -130,28 +130,42 @@ export function Footer() {
           ))}
 
           {/* Find us */}
-          <div className="col-span-2 md:col-span-1">
-            <h4 className="font-display text-[15px] tracking-wider uppercase text-ng-clay mb-5">
-              Find us
-            </h4>
-            <address className="not-italic text-[14px] text-ng-cream/70 space-y-1 mb-6">
-              <p>Nutrigreenz Farm Technologies Pvt. Ltd.</p>
-              <p>Plot 7, KPHB Colony, Kukatpally</p>
-              <p>Hyderabad, Telangana 500072</p>
-              <p>+91 8888 555 411</p>
-              <p>hello@nutrigreenz.in</p>
-            </address>
-            <div className="flex gap-3">
-              {SOCIALS.map((s) => (
-                <Link
-                  key={s.name}
-                  href={`https://${s.name}.com/nutrigreenz`}
-                  aria-label={s.label}
-                  className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
-                >
-                  <Icon name={s.icon} size={16} label={s.label} />
-                </Link>
-              ))}
+          <div className="relative col-span-2 md:col-span-1">
+            {/* Soft local scrim — the sun + tallest tree row of the illustration
+                rise highest behind this column, so a gentle contained deepening
+                keeps the address perfectly crisp without dimming the scene
+                elsewhere. Feathered edges blend into the forest background. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-x-4 -inset-y-3 rounded-3xl"
+              style={{
+                background:
+                  "radial-gradient(ellipse 94% 84% at 50% 44%, rgba(10,31,18,0.60), rgba(10,31,18,0.28) 60%, transparent 80%)",
+              }}
+            />
+            <div className="relative">
+              <h4 className="font-display text-[15px] tracking-wider uppercase text-ng-clay mb-5">
+                Find us
+              </h4>
+              <address className="not-italic text-[14px] text-ng-cream/75 space-y-1 mb-6">
+                <p>Nutrigreenz Farm Technologies Pvt. Ltd.</p>
+                <p>Plot 7, KPHB Colony, Kukatpally</p>
+                <p>Hyderabad, Telangana 500072</p>
+                <p>+91 8888 555 411</p>
+                <p>hello@nutrigreenz.in</p>
+              </address>
+              <div className="flex gap-3">
+                {SOCIALS.map((s) => (
+                  <Link
+                    key={s.name}
+                    href={`https://${s.name}.com/nutrigreenz`}
+                    aria-label={s.label}
+                    className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
+                  >
+                    <Icon name={s.icon} size={16} label={s.label} />
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

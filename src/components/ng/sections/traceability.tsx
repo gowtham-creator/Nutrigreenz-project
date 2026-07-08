@@ -22,20 +22,30 @@ export function Traceability() {
 
   return (
     <Section className="bg-ng-forest-deep text-ng-cream relative overflow-hidden">
+      {/* Base depth gradient — deep-forest with a faint cool-green glow so the
+          dark band reads with dimension instead of a flat black-green. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% -12%, #123324 0%, transparent 60%), linear-gradient(168deg, #0A1F12 0%, #0E2717 52%, #14331F 100%)",
+        }}
+      />
       <Parallax speed={0.3} className="absolute inset-0 pointer-events-none">
         <div
           aria-hidden
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-40"
           style={{
             background:
-              "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(111,170,62,0.35), transparent 60%), radial-gradient(ellipse 50% 60% at 10% 90%, rgba(200,166,104,0.25), transparent 60%)",
+              "radial-gradient(ellipse 60% 50% at 82% 16%, rgba(102,191,115,0.30), transparent 62%), radial-gradient(ellipse 55% 60% at 8% 92%, rgba(76,175,80,0.20), transparent 64%)",
           }}
         />
       </Parallax>
 
       {/* Parallaxed scan/lot-code motif */}
       <Parallax speed={0.22} className="absolute inset-0 pointer-events-none">
-        <div aria-hidden className="absolute right-[6%] top-[14%] font-mono text-[clamp(60px,9vw,130px)] leading-none text-ng-clay/[0.06] tracking-tighter select-none">
+        <div aria-hidden className="absolute right-[6%] top-[14%] font-mono text-[clamp(60px,9vw,130px)] leading-none text-ng-leaf/[0.06] tracking-tighter select-none">
           ANT-24
         </div>
         <div aria-hidden className="absolute left-[4%] bottom-[10%] grid grid-cols-6 gap-1.5 opacity-[0.07]">
@@ -48,11 +58,11 @@ export function Traceability() {
       <div className="relative z-10 grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-center">
         <div>
           <Reveal>
-            <span className="ng-eyebrow text-ng-clay">Traceability is the product</span>
+            <span className="ng-eyebrow text-ng-leaf">Traceability is the product</span>
           </Reveal>
           <Reveal delay={0.08}>
             <h2 className="font-display text-[clamp(34px,5vw,58px)] leading-[1.02] text-ng-cream tracking-tight mt-3">
-              Every jar carries a <em className="italic text-ng-clay">six-character code.</em>
+              Every jar carries a <em className="italic text-ng-leaf">six-character code.</em>
             </h2>
           </Reveal>
           <Reveal delay={0.16}>
@@ -93,7 +103,7 @@ export function Traceability() {
               <button
                 type="button"
                 onClick={() => { setCode(SAMPLE_LOT.code); setRevealed(true); }}
-                className="underline text-ng-clay hover:text-ng-cream transition-colors"
+                className="underline text-ng-leaf hover:text-ng-cream transition-colors"
               >
                 ANT-24-051
               </button>
@@ -114,7 +124,7 @@ export function Traceability() {
           <div className="glass-dark group/card tilt-soft hover:[transform:none] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-3xl p-7 md:p-9 shadow-[var(--shadow-ng-float)] border border-ng-cream/15 backdrop-blur-2xl">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <div className="text-[11px] uppercase tracking-[0.2em] text-ng-clay font-semibold">Trace receipt</div>
+                <div className="text-[11px] uppercase tracking-[0.2em] text-ng-leaf font-semibold">Trace receipt</div>
                 <div className="font-mono text-[24px] text-ng-cream mt-1">
                   {revealed ? SAMPLE_LOT.code : "— — — — — —"}
                 </div>
@@ -132,7 +142,7 @@ export function Traceability() {
 
             <div className="mt-7 pt-6 border-t border-ng-cream/10 flex items-center justify-between">
               <div className="text-[12px] text-ng-cream/60">Tamper-evident · blockchain-anchored</div>
-              <Link href="/traceability" className="text-[13px] text-ng-clay hover:text-ng-cream transition-colors">
+              <Link href="/traceability" className="text-[13px] text-ng-leaf hover:text-ng-cream transition-colors">
                 Full report →
               </Link>
             </div>

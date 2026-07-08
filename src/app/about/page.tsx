@@ -53,6 +53,7 @@ export default function AboutPage() {
   return (
     <PageShell>
       <PageHero
+        tint="story"
         eyebrow="Our story"
         title={
           <>
@@ -62,7 +63,7 @@ export default function AboutPage() {
         description="Nutri Greenz began with one farm, one press and one stubborn belief — that good food should be honest about where it comes from. Today we bring fully traceable produce from 42 partner farms to kitchens across Hyderabad."
       >
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild variant="gold" size="lg">
+          <Button asChild variant="primary" size="lg">
             <Link href="/shop">Shop the pantry</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
@@ -92,7 +93,7 @@ export default function AboutPage() {
         <div className="grid md:grid-cols-2 gap-5">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+              <div className="h-12 w-12 rounded-xl bg-ng-leaf/15 ring-1 ring-inset ring-ng-forest/12 inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={p.icon} size={24} />
               </div>
               <h3 className="mt-5 font-display text-[21px] text-ng-forest-deep leading-snug">{p.title}</h3>
@@ -155,21 +156,31 @@ export default function AboutPage() {
         heading="If we can't prove it, we don't claim it"
         description="Anyone can print &ldquo;natural&rdquo; on a label. We decided the only honest version of that promise is one you can check yourself."
       >
-        <Reveal className="rounded-3xl bg-ng-forest-deep text-ng-cream p-8 md:p-12">
-          <div className="grid md:grid-cols-3 gap-8">
+        <Reveal className="relative overflow-hidden rounded-3xl bg-ng-forest-deep text-ng-cream p-8 md:p-12">
+          {/* On-theme depth so the dark ethos panel reads with dimension, not a
+              flat green block — matching the traceability band. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 58% 70% at 92% 6%, rgba(102,191,115,0.16), transparent 60%), radial-gradient(ellipse 55% 60% at 4% 100%, rgba(76,175,80,0.10), transparent 62%)",
+            }}
+          />
+          <div className="relative grid md:grid-cols-3 gap-8">
             {[
               { icon: "qr-code-bold", t: "Scan the code", d: "Every pack carries a unique lot code printed on the label." },
               { icon: "tractor-bold", t: "See the farm", d: "The code resolves to the exact farm, farmer and harvest date." },
               { icon: "document-text-bold", t: "Read the report", d: "Open the lab report for that lot — pesticide, aflatoxin, the lot." },
             ].map((b) => (
               <div key={b.t}>
-                <Icon name={b.icon} size={28} className="text-ng-clay" />
+                <Icon name={b.icon} size={28} className="text-ng-leaf" />
                 <h3 className="mt-4 font-display text-[20px] text-ng-cream">{b.t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-ng-cream/70">{b.d}</p>
               </div>
             ))}
           </div>
-          <div className="mt-9">
+          <div className="relative mt-9">
             <Button asChild variant="gold" size="md">
               <Link href="/traceability">Try the traceability scanner</Link>
             </Button>
@@ -182,7 +193,8 @@ export default function AboutPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {TIMELINE.map((t, i) => (
             <Reveal key={t.year} delay={i * 0.06} className="relative h-full rounded-2xl border border-ng-line-soft bg-ng-paper p-6">
-              <div className="font-display text-[28px] text-ng-clay leading-none">{t.year}</div>
+              <span aria-hidden className="mb-4 block h-1 w-8 rounded-full bg-ng-leaf" />
+              <div className="font-display text-[28px] text-ng-forest leading-none">{t.year}</div>
               <h3 className="mt-3 font-display text-[18px] text-ng-forest-deep leading-snug">{t.title}</h3>
               <p className="mt-2 text-[14px] leading-relaxed text-ng-ink-muted">{t.body}</p>
             </Reveal>
@@ -199,7 +211,7 @@ export default function AboutPage() {
             Hyderabad.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Button asChild variant="gold" size="lg">
+            <Button asChild variant="secondary" size="lg">
               <Link href="/shop">Start shopping</Link>
             </Button>
             <Button asChild variant="glass" size="lg">

@@ -23,12 +23,24 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     <PageShell>
       {/* Hero — image banner sits above the heading, which lives in its own block (no overlap) */}
       <article>
-        <header className="bg-ng-forest-deep text-ng-cream">
+        <header className="relative overflow-hidden bg-ng-forest-deep text-ng-cream">
+          {/* On-theme depth for the caption band below the banner — a soft
+              leaf/forest glow rising into the title block, matching the forest
+              heroes elsewhere. The image sits in its own ratio block above, so
+              the heading never overlaps the photograph. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
+            style={{
+              background:
+                "radial-gradient(ellipse 62% 90% at 90% 130%, rgba(102,191,115,0.16), transparent 60%), radial-gradient(ellipse 52% 80% at 6% 130%, rgba(76,175,80,0.10), transparent 62%)",
+            }}
+          />
           <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
             <Image src={article.cover} alt={article.title} fill className="object-cover" sizes="100vw" priority />
             <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep/80 via-ng-forest-deep/10 to-transparent" />
           </div>
-          <div className="mx-auto max-w-3xl px-5 md:px-8 py-10 md:py-14">
+          <div className="relative mx-auto max-w-3xl px-5 md:px-8 py-10 md:py-14">
             <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${CATEGORY_TONE[article.category]}`}>
               {article.category.replace("-", " ")}
             </span>
