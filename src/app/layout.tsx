@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto_Slab, Lora, Figtree, JetBrains_Mono } from "next/font/google";
+import { Roboto_Slab, Lora, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
@@ -26,10 +26,13 @@ const lora = Lora({
   display: "swap",
 });
 
-const figtree = Figtree({
-  variable: "--font-figtree",
+// Body sans — Hanken Grotesk: a sturdier, warmer humanist grotesque that reads
+// more solid than the previous geometric sans and pairs with the slab-serif
+// display face.
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -52,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${robotoSlab.variable} ${lora.variable} ${figtree.variable} ${jetbrains.variable}`}
+      className={`${robotoSlab.variable} ${lora.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
         <AuthProvider>

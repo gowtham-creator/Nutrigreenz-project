@@ -6,7 +6,7 @@
 
 @theme inline {
   /* Fonts */
-  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
   --font-serif: var(--font-lora), Lora, Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -50,7 +50,7 @@
 :root {
   /* Font stacks — declared on :root (not only in @theme inline) so the
      base-layer var(--font-*) references resolve to the next/font families. */
-  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
   --font-serif: var(--font-lora), Lora, Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
