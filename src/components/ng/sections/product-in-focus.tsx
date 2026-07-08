@@ -198,7 +198,9 @@ export function ProductInFocus({
           </Reveal>
 
           {rangeMedia ? (
-            <Reveal delay={0.1} className="relative hidden shrink-0 lg:block">
+            /* Pulled in from the right edge (lg:mr-*) so the fanned trio sits
+               nearer the copy instead of hugging the section boundary. */
+            <Reveal delay={0.1} className="relative hidden shrink-0 lg:block lg:mr-6 xl:mr-20 2xl:mr-40">
               {/* Accent-tinted halo behind the fanned trio */}
               <div
                 className="pointer-events-none absolute -inset-x-6 -inset-y-4 rounded-[2rem]"
