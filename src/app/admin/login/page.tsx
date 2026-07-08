@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -11,6 +12,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
@@ -30,6 +32,53 @@ function toE164(raw: string): string | null {
   if (d.length === 10) return `+91${d}`;
   if (d.length === 12 && d.startsWith("91")) return `+${d}`;
   return null;
+}
+
+/**
+ * TactileField — wraps an input group so it gives a subtle spring lift + glow
+ * on focus (liquid-glass tactility). The relatedTarget guard keeps the lift
+ * steady while focus hops between OTP boxes. The scale transform is
+ * automatically neutralised under `prefers-reduced-motion` by the surrounding
+ * <MotionConfig reducedMotion="user">.
+ */
+function TactileField({ children }: { children: React.ReactNode }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <motion.div
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
+      animate={{ scale: focused ? 1.012 : 1 }}
+      transition={{ type: "spring", stiffness: 420, damping: 30 }}
+      style={{ transformOrigin: "center" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * SpringPress — primary-action wrapper adding gentle press physics. The scale
+ * is disabled under reduced motion via the ambient MotionConfig.
+ */
+function SpringPress({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 600, damping: 20 }}
+      style={{ transformOrigin: "center" }}
+      className={cn("w-full", className)}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 function LoginForm() {
@@ -463,367 +512,441 @@ function LoginForm() {
     setError(null);
   }
 
+  // A stable key for the currently-visible pane; drives the spring crossfade +
+  // auto-height animation when the operator moves between panes.
+  const viewKey =
+    method === "phone"
+      ? codeSent
+        ? "phone-verify"
+        : "phone-send"
+      : mfaFactors !== null
+        ? mfaChoice === null
+          ? "mfa-choose"
+          : mfaChoice === "email"
+            ? "mfa-email"
+            : mfaChoice === "totp"
+              ? "mfa-totp"
+              : "mfa-phone"
+        : "passcode";
+
   return (
-    <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
-      {/* Brand panel — moving forest gradient + floating glows + rising
-          particles (NXT-style motion, Nutri Greenz palette); the forest photo
-          remains as a faint texture layer underneath. */}
-      <aside className="login-gradient relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.16] mix-blend-luminosity"
-          style={{
-            backgroundImage: "url(/images/admin/forest-panel.webp)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <span aria-hidden className="login-glow login-glow--a" />
-        <span aria-hidden className="login-glow login-glow--b" />
-        <span aria-hidden className="login-glow login-glow--c" />
-        {[8, 22, 37, 51, 64, 78, 90, 15, 45, 70, 30, 58].map((left, i) => (
-          <span
-            key={left}
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
+        {/* Brand panel — moving forest gradient + floating glows + rising
+            particles (NXT-style motion, Nutri Greenz palette); the forest photo
+            remains as a faint texture layer underneath. */}
+        <aside className="login-gradient relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
+          <div
             aria-hidden
-            className="login-particle"
-            style={{ left: `${left}%`, "--pd": `${11 + (i % 5) * 2.6}s`, "--pdelay": `${(i * 1.7) % 12}s` } as React.CSSProperties}
+            className="absolute inset-0 opacity-[0.16] mix-blend-luminosity"
+            style={{
+              backgroundImage: "url(/images/admin/forest-panel.webp)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           />
-        ))}
+          <span aria-hidden className="login-glow login-glow--a" />
+          <span aria-hidden className="login-glow login-glow--b" />
+          <span aria-hidden className="login-glow login-glow--c" />
+          {[8, 22, 37, 51, 64, 78, 90, 15, 45, 70, 30, 58].map((left, i) => (
+            <span
+              key={left}
+              aria-hidden
+              className="login-particle"
+              style={{ left: `${left}%`, "--pd": `${11 + (i % 5) * 2.6}s`, "--pdelay": `${(i * 1.7) % 12}s` } as React.CSSProperties}
+            />
+          ))}
 
-        <Link
-          href="/"
-          className="relative z-10 flex w-fit items-center gap-2.5 rounded-full bg-ng-paper/75 px-3.5 py-2 backdrop-blur-md"
-        >
-          <Logo variant="mark" className="h-8" />
-          <span className="font-display text-[17px] text-ng-forest-deep">Nutri Greenz</span>
-        </Link>
+          <Link
+            href="/"
+            className="relative z-10 flex w-fit items-center gap-2.5 rounded-full bg-ng-paper/75 px-3.5 py-2 backdrop-blur-md"
+          >
+            <Logo variant="mark" className="h-8" />
+            <span className="font-display text-[17px] text-ng-forest-deep">Nutri Greenz</span>
+          </Link>
 
-        <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
-          <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
-            <Icon name="shield-keyhole-bold" size={14} />
-            Admin · v0.4.1
-          </div>
-          <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
-            Operator console
-          </h2>
-          <p className="font-sans text-[14px] font-medium text-ng-ink-muted mt-3 leading-relaxed">
-            Manage catalog, orders, inventory and marketing for the Nutri Greenz
-            storefront. Restricted to authorised operators.
-          </p>
-        </div>
-
-        <p className="relative z-10 w-fit rounded-full bg-ng-paper/75 px-3.5 py-1.5 font-mono text-[11.5px] font-medium text-ng-forest backdrop-blur-md">
-          Secured area — activity may be monitored.
-        </p>
-      </aside>
-
-      {/* Form panel — the deep forest moving gradient continues across the
-          whole screen; the form floats on a cream paper card (NXT pattern). */}
-      <main className="login-gradient relative flex-1 flex items-center justify-center overflow-hidden p-8 lg:p-12">
-        <span aria-hidden className="login-glow login-glow--a login-glow--soft" />
-        <span aria-hidden className="login-glow login-glow--b login-glow--soft" />
-        <span aria-hidden className="login-glow login-glow--c" />
-        {[12, 34, 55, 74, 88, 24, 63].map((left, i) => (
-          <span
-            key={left}
-            aria-hidden
-            className="login-particle"
-            style={{ left: `${left}%`, "--pd": `${12 + (i % 4) * 2.4}s`, "--pdelay": `${(i * 2.1) % 11}s` } as React.CSSProperties}
-          />
-        ))}
-        <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
-          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
-            <Icon name="lock-keyhole-bold" size={24} />
-          </div>
-
-          <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">
-            Sign in to Admin
-          </h1>
-          <p className="font-sans text-[13.5px] font-medium text-ng-ink-muted mt-2">
-            Enter your operator credentials to continue.
-          </p>
-
-          {/* Method toggle: Passcode | Phone OTP */}
-          <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-ng-paper border border-ng-line p-1">
-            {(["passcode", "phone"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => switchMethod(m)}
-                aria-pressed={method === m}
-                className={
-                  "flex items-center justify-center gap-1.5 h-9 rounded-lg text-[13px] font-semibold transition-colors " +
-                  (method === m
-                    ? "bg-ng-forest-deep text-ng-cream"
-                    : "text-ng-ink-muted hover:text-ng-ink")
-                }
-              >
-                <Icon
-                  name={m === "passcode" ? "key-minimalistic-bold" : "phone-bold"}
-                  size={15}
-                />
-                {m === "passcode" ? "Passcode" : "Phone OTP"}
-              </button>
-            ))}
-          </div>
-
-          {method === "passcode" && mfaFactors !== null && mfaChoice === null ? (
-            <div className="mt-6 flex flex-col gap-3">
-              <p className="text-[13px] font-medium text-ng-ink-muted">
-                Choose how to finish signing in:
-              </p>
-              {mfaFactors.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => void chooseFactor(f as "totp" | "email" | "phone")}
-                  className="flex items-center gap-3 rounded-xl border border-ng-line bg-ng-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ng-ink transition-colors hover:border-ng-leaf cursor-pointer"
-                >
-                  <Icon
-                    name={
-                      f === "email"
-                        ? "letter-bold"
-                        : f === "phone"
-                          ? "phone-bold"
-                          : "shield-keyhole-bold"
-                    }
-                    size={18}
-                    className="text-ng-forest"
-                  />
-                  {f === "email"
-                    ? "Email one-time code"
-                    : f === "phone"
-                      ? "Mobile code"
-                      : "Authenticator app"}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={resetMfa}
-                className="self-start text-[12px] font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
-              >
-                Back to sign in
-              </button>
+          <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
+            <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
+              <Icon name="shield-keyhole-bold" size={14} />
+              Admin · v0.4.1
             </div>
-          ) : method === "passcode" && mfaChoice === "email" ? (
-            <form onSubmit={verifyMail} className="mt-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[13px] font-semibold text-ng-ink">Email code</span>
-                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
-                  Enter the 6-digit code we emailed you.
-                </p>
-                <OtpInput value={mail} onChange={setMail} />
-                {error ? (
-                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
-                ) : null}
-              </div>
-              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                <Icon name="letter-bold" size={18} />
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </Button>
-              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
-                <button
-                  type="button"
-                  disabled={mailSending}
-                  onClick={() => void sendMailCode()}
-                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:text-ng-ink-soft cursor-pointer"
-                >
-                  {mailSending ? "Sending…" : "Resend code"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
-                  className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
-                >
-                  {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
-                </button>
-              </div>
-            </form>
-          ) : method === "passcode" && mfaChoice === "totp" ? (
-            <form onSubmit={verifyMfa} className="mt-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[13px] font-semibold text-ng-ink">
-                  Authenticator code
-                </span>
-                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
-                  Open your authenticator app and enter the current 6-digit code
-                  for Nutri Greenz Admin.
-                </p>
-                <OtpInput value={totp} onChange={setTotp} />
-                {error ? (
-                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
-                ) : null}
-              </div>
-              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                <Icon name="shield-keyhole-bold" size={18} />
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </Button>
-              <button
-                type="button"
-                onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
-                className="text-[12px] font-sans font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
-              >
-                {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
-              </button>
-            </form>
-          ) : method === "passcode" && mfaChoice === "phone" ? (
-            <form onSubmit={verifyMfaPhone} className="mt-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[13px] font-semibold text-ng-ink">Mobile code</span>
-                <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
-                  {codeSent
-                    ? `Enter the 6-digit code we sent to ${otpPhone ?? "your mobile"}.`
-                    : `Sending a code to ${otpPhone ?? "your mobile"}…`}
-                </p>
-                <OtpInput value={code} onChange={setCode} />
-                {error ? (
-                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
-                ) : null}
-              </div>
-              <Button type="submit" fullWidth disabled={submitting || !codeSent} className="mt-1">
-                <Icon name="phone-bold" size={18} />
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </Button>
-              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
-                <button
-                  type="button"
-                  disabled={resendIn > 0 || resending || submitting}
-                  onClick={() => (otpPhone ? void requestCode(true, otpPhone) : undefined)}
-                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
-                >
-                  {resending
-                    ? "Sending…"
-                    : resendIn > 0
-                      ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
-                      : "Resend code"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
-                  className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
-                >
-                  {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
-                </button>
-              </div>
-            </form>
-          ) : method === "passcode" && mfaFactors === null ? (
-            <form onSubmit={handlePasscode} className="mt-6 flex flex-col gap-4">
-              <Input
-                label="Email"
-                type="email"
-                autoComplete="username"
-                placeholder="you@nutrigreenz.in"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                prefix={<Icon name="letter-bold" size={18} />}
-                error={error ?? undefined}
-              />
-              <Input
-                label="Passcode"
-                type={showPasscode ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                prefix={<Icon name="lock-keyhole-minimalistic-linear" size={18} />}
-                suffix={
-                  <button
-                    type="button"
-                    onClick={() => setShowPasscode((s) => !s)}
-                    aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
-                    className="inline-flex items-center justify-center text-ng-ink-soft hover:text-ng-forest transition-colors"
-                  >
-                    <Icon name={showPasscode ? "eye-closed-bold" : "eye-bold"} size={18} />
-                  </button>
-                }
-                error={error ?? undefined}
-              />
-
-              <div className="-mt-1 text-right">
-                <Link
-                  href="/admin/forgot"
-                  className="text-[12px] font-sans font-semibold text-ng-clay hover:text-ng-clay-deep transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                <Icon name="shield-keyhole-bold" size={18} />
-                {submitting ? "Signing in…" : "Sign in to Admin"}
-              </Button>
-            </form>
-          ) : !codeSent ? (
-            <form onSubmit={sendCode} className="mt-6 flex flex-col gap-4">
-              <Input
-                label="Mobile number"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="98XXX XXXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                prefix={
-                  <span className="text-[15px] font-medium text-ng-ink">+91</span>
-                }
-                maxLength={10}
-                hint="Authorised operator numbers only."
-                error={error ?? undefined}
-              />
-              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                <Icon name="chat-round-dots-bold" size={18} />
-                {submitting ? "Sending…" : "Send OTP"}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={verifyCode} className="mt-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-[13px] font-semibold text-ng-ink">
-                  Enter the 6-digit code
-                </span>
-                <OtpInput value={code} onChange={setCode} />
-                {error ? (
-                  <p className="text-[12px] font-medium text-ng-danger">{error}</p>
-                ) : null}
-              </div>
-              <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                <Icon name="shield-keyhole-bold" size={18} />
-                {submitting ? "Verifying…" : "Verify & sign in"}
-              </Button>
-              <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
-                <button
-                  type="button"
-                  disabled={resendIn > 0 || resending || submitting}
-                  onClick={() => void requestCode(true)}
-                  className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft"
-                >
-                  {resending
-                    ? "Sending…"
-                    : resendIn > 0
-                      ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
-                      : "Resend code"}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetPhone}
-                  className="text-ng-ink-muted transition-colors hover:text-ng-ink"
-                >
-                  Use a different number
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Invisible reCAPTCHA target for phone OTP (abuse protection). */}
-          <div id="admin-recaptcha" />
-
-          <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">
-            <Icon name="shield-keyhole-bold" size={13} />
-            Authorised operators only
+            <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
+              Operator console
+            </h2>
+            <p className="font-sans text-[14px] font-medium text-ng-ink-muted mt-3 leading-relaxed">
+              Manage catalog, orders, inventory and marketing for the Nutri Greenz
+              storefront. Restricted to authorised operators.
+            </p>
           </div>
-        </div>
-      </main>
-    </div>
+
+          <p className="relative z-10 w-fit rounded-full bg-ng-paper/75 px-3.5 py-1.5 font-mono text-[11.5px] font-medium text-ng-forest backdrop-blur-md">
+            Secured area — activity may be monitored.
+          </p>
+        </aside>
+
+        {/* Form panel — the deep forest moving gradient continues across the
+            whole screen; the form floats on a frosted liquid-glass card. */}
+        <main className="login-gradient relative flex-1 flex items-center justify-center overflow-hidden p-8 lg:p-12">
+          <span aria-hidden className="login-glow login-glow--a login-glow--soft" />
+          <span aria-hidden className="login-glow login-glow--b login-glow--soft" />
+          <span aria-hidden className="login-glow login-glow--c" />
+          {[12, 34, 55, 74, 88, 24, 63].map((left, i) => (
+            <span
+              key={left}
+              aria-hidden
+              className="login-particle"
+              style={{ left: `${left}%`, "--pd": `${12 + (i % 4) * 2.4}s`, "--pdelay": `${(i * 2.1) % 11}s` } as React.CSSProperties}
+            />
+          ))}
+          <div className="login-card relative z-10 w-full max-w-sm rounded-3xl p-7 sm:p-8">
+            <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
+              <Icon name="lock-keyhole-bold" size={24} />
+            </div>
+
+            <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">
+              Sign in to Admin
+            </h1>
+            <p className="font-sans text-[13.5px] font-medium text-ng-ink-muted mt-2">
+              Enter your operator credentials to continue.
+            </p>
+
+            {/* Method toggle: Passcode | Phone OTP — the active pill is a shared
+                layout element, so it springs between segments on switch. */}
+            <div className="relative mt-6 grid grid-cols-2 gap-1 rounded-xl bg-ng-paper border border-ng-line p-1">
+              {(["passcode", "phone"] as const).map((m) => {
+                const active = method === m;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => switchMethod(m)}
+                    aria-pressed={active}
+                    className={
+                      "relative flex items-center justify-center gap-1.5 h-9 rounded-lg text-[13px] font-semibold transition-colors " +
+                      (active ? "text-ng-cream" : "text-ng-ink-muted hover:text-ng-ink")
+                    }
+                  >
+                    {active ? (
+                      <motion.span
+                        layoutId="admin-auth-pill"
+                        aria-hidden
+                        className="absolute inset-0 rounded-lg bg-ng-forest-deep shadow-[0_6px_16px_rgba(10,31,18,0.28)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 32, mass: 0.8 }}
+                      />
+                    ) : null}
+                    <span className="relative z-10 inline-flex items-center gap-1.5">
+                      <Icon
+                        name={m === "passcode" ? "key-minimalistic-bold" : "phone-bold"}
+                        size={15}
+                      />
+                      {m === "passcode" ? "Passcode" : "Phone OTP"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Content region — spring auto-height + crossfade between panes. */}
+            <motion.div
+              layout
+              className="relative mt-6"
+              transition={{ layout: { type: "spring", stiffness: 260, damping: 30 } }}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.div
+                  key={viewKey}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.26, ease: [0.25, 0.6, 0.2, 1] }}
+                >
+                  {method === "passcode" && mfaFactors !== null && mfaChoice === null ? (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[13px] font-medium text-ng-ink-muted">
+                        Choose how to finish signing in:
+                      </p>
+                      {mfaFactors.map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => void chooseFactor(f as "totp" | "email" | "phone")}
+                          className="flex items-center gap-3 rounded-xl border border-ng-line bg-ng-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ng-ink transition-colors hover:border-ng-leaf cursor-pointer"
+                        >
+                          <Icon
+                            name={
+                              f === "email"
+                                ? "letter-bold"
+                                : f === "phone"
+                                  ? "phone-bold"
+                                  : "shield-keyhole-bold"
+                            }
+                            size={18}
+                            className="text-ng-forest"
+                          />
+                          {f === "email"
+                            ? "Email one-time code"
+                            : f === "phone"
+                              ? "Mobile code"
+                              : "Authenticator app"}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={resetMfa}
+                        className="self-start text-[12px] font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
+                      >
+                        Back to sign in
+                      </button>
+                    </div>
+                  ) : method === "passcode" && mfaChoice === "email" ? (
+                    <form onSubmit={verifyMail} className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[13px] font-semibold text-ng-ink">Email code</span>
+                        <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                          Enter the 6-digit code we emailed you.
+                        </p>
+                        <TactileField>
+                          <OtpInput value={mail} onChange={setMail} />
+                        </TactileField>
+                        {error ? (
+                          <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                        ) : null}
+                      </div>
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting}>
+                          <Icon name="letter-bold" size={18} />
+                          {submitting ? "Verifying…" : "Verify & sign in"}
+                        </Button>
+                      </SpringPress>
+                      <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                        <button
+                          type="button"
+                          disabled={mailSending}
+                          onClick={() => void sendMailCode()}
+                          className="text-ng-forest transition-colors hover:text-ng-leaf disabled:text-ng-ink-soft cursor-pointer"
+                        >
+                          {mailSending ? "Sending…" : "Resend code"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                          className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
+                        >
+                          {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : method === "passcode" && mfaChoice === "totp" ? (
+                    <form onSubmit={verifyMfa} className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[13px] font-semibold text-ng-ink">
+                          Authenticator code
+                        </span>
+                        <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                          Open your authenticator app and enter the current 6-digit code
+                          for Nutri Greenz Admin.
+                        </p>
+                        <TactileField>
+                          <OtpInput value={totp} onChange={setTotp} />
+                        </TactileField>
+                        {error ? (
+                          <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                        ) : null}
+                      </div>
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting}>
+                          <Icon name="shield-keyhole-bold" size={18} />
+                          {submitting ? "Verifying…" : "Verify & sign in"}
+                        </Button>
+                      </SpringPress>
+                      <button
+                        type="button"
+                        onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                        className="text-[12px] font-sans font-semibold text-ng-forest transition-colors hover:text-ng-leaf cursor-pointer"
+                      >
+                        {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
+                      </button>
+                    </form>
+                  ) : method === "passcode" && mfaChoice === "phone" ? (
+                    <form onSubmit={verifyMfaPhone} className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[13px] font-semibold text-ng-ink">Mobile code</span>
+                        <p className="-mt-1 text-[12.5px] text-ng-ink-muted">
+                          {codeSent
+                            ? `Enter the 6-digit code we sent to ${otpPhone ?? "your mobile"}.`
+                            : `Sending a code to ${otpPhone ?? "your mobile"}…`}
+                        </p>
+                        <TactileField>
+                          <OtpInput value={code} onChange={setCode} />
+                        </TactileField>
+                        {error ? (
+                          <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                        ) : null}
+                      </div>
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting || !codeSent}>
+                          <Icon name="phone-bold" size={18} />
+                          {submitting ? "Verifying…" : "Verify & sign in"}
+                        </Button>
+                      </SpringPress>
+                      <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                        <button
+                          type="button"
+                          disabled={resendIn > 0 || resending || submitting}
+                          onClick={() => (otpPhone ? void requestCode(true, otpPhone) : undefined)}
+                          className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
+                        >
+                          {resending
+                            ? "Sending…"
+                            : resendIn > 0
+                              ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
+                              : "Resend code"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (mfaFactors && mfaFactors.length > 1 ? chooseFactor(null) : resetMfa())}
+                          className="text-ng-ink-muted transition-colors hover:text-ng-ink cursor-pointer"
+                        >
+                          {mfaFactors && mfaFactors.length > 1 ? "Use another method" : "Back to sign in"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : method === "passcode" && mfaFactors === null ? (
+                    <form onSubmit={handlePasscode} className="flex flex-col gap-4">
+                      <TactileField>
+                        <Input
+                          label="Email"
+                          type="email"
+                          autoComplete="username"
+                          placeholder="you@nutrigreenz.in"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          prefix={<Icon name="letter-bold" size={18} />}
+                          error={error ?? undefined}
+                        />
+                      </TactileField>
+                      <TactileField>
+                        <Input
+                          label="Passcode"
+                          type={showPasscode ? "text" : "password"}
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          value={passcode}
+                          onChange={(e) => setPasscode(e.target.value)}
+                          prefix={<Icon name="lock-keyhole-minimalistic-linear" size={18} />}
+                          suffix={
+                            <button
+                              type="button"
+                              onClick={() => setShowPasscode((s) => !s)}
+                              aria-label={showPasscode ? "Hide passcode" : "Show passcode"}
+                              className="inline-flex items-center justify-center text-ng-ink-soft hover:text-ng-forest transition-colors"
+                            >
+                              <Icon name={showPasscode ? "eye-closed-bold" : "eye-bold"} size={18} />
+                            </button>
+                          }
+                          error={error ?? undefined}
+                        />
+                      </TactileField>
+
+                      <div className="-mt-1 text-right">
+                        <Link
+                          href="/admin/forgot"
+                          className="text-[12px] font-sans font-semibold text-ng-clay hover:text-ng-clay-deep transition-colors"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
+
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting}>
+                          <Icon name="shield-keyhole-bold" size={18} />
+                          {submitting ? "Signing in…" : "Sign in to Admin"}
+                        </Button>
+                      </SpringPress>
+                    </form>
+                  ) : !codeSent ? (
+                    <form onSubmit={sendCode} className="flex flex-col gap-4">
+                      <TactileField>
+                        <Input
+                          label="Mobile number"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="98XXX XXXXX"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          prefix={
+                            <span className="text-[15px] font-medium text-ng-ink">+91</span>
+                          }
+                          maxLength={10}
+                          hint="Authorised operator numbers only."
+                          error={error ?? undefined}
+                        />
+                      </TactileField>
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting}>
+                          <Icon name="chat-round-dots-bold" size={18} />
+                          {submitting ? "Sending…" : "Send OTP"}
+                        </Button>
+                      </SpringPress>
+                    </form>
+                  ) : (
+                    <form onSubmit={verifyCode} className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-[13px] font-semibold text-ng-ink">
+                          Enter the 6-digit code
+                        </span>
+                        <TactileField>
+                          <OtpInput value={code} onChange={setCode} />
+                        </TactileField>
+                        {error ? (
+                          <p className="text-[12px] font-medium text-ng-danger">{error}</p>
+                        ) : null}
+                      </div>
+                      <SpringPress className="mt-1">
+                        <Button type="submit" fullWidth disabled={submitting}>
+                          <Icon name="shield-keyhole-bold" size={18} />
+                          {submitting ? "Verifying…" : "Verify & sign in"}
+                        </Button>
+                      </SpringPress>
+                      <div className="flex items-center justify-between text-[12px] font-sans font-semibold">
+                        <button
+                          type="button"
+                          disabled={resendIn > 0 || resending || submitting}
+                          onClick={() => void requestCode(true)}
+                          className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft"
+                        >
+                          {resending
+                            ? "Sending…"
+                            : resendIn > 0
+                              ? `Resend code in 0:${String(resendIn).padStart(2, "0")}`
+                              : "Resend code"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetPhone}
+                          className="text-ng-ink-muted transition-colors hover:text-ng-ink"
+                        >
+                          Use a different number
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Invisible reCAPTCHA target for phone OTP (abuse protection). */}
+            <div id="admin-recaptcha" />
+
+            <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">
+              <Icon name="shield-keyhole-bold" size={13} />
+              Authorised operators only
+            </div>
+          </div>
+        </main>
+      </div>
+    </MotionConfig>
   );
 }
 

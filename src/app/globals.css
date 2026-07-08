@@ -357,6 +357,22 @@
   .login-gradient, .login-glow, .login-particle { animation: none !important; }
 }
 
+/* Operator login — frosted liquid-glass auth card. Scoped to .login-card so no
+   other surface changes: translucent paper over the moving forest gradient,
+   layered depth shadow + a soft inner top highlight for the glass edge. */
+.login-card {
+  background:
+    linear-gradient(180deg, rgba(250, 248, 240, 0.92) 0%, rgba(244, 241, 228, 0.84) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 32px 80px rgba(10, 31, 18, 0.34),
+    0 8px 24px rgba(10, 31, 18, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80),
+    inset 0 -1px 0 rgba(31, 77, 46, 0.06);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
 /* Green-only aurora — same drift, sage/leaf/mint blobs, zero gold. */
 .aurora.aurora-green::before, .aurora.aurora-green::after {
   background:
