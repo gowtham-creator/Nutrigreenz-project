@@ -1,6 +1,12 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { listProducts, createProduct, type ProductStatus, type ProductFilter } from "@/lib/catalog";
+import {
+  listProducts,
+  createProduct,
+  listVariantsForProducts,
+  type ProductStatus,
+  type ProductFilter,
+} from "@/lib/catalog";
 
 const STATUSES: readonly ProductStatus[] = ["active", "draft", "archived"];
 
@@ -26,7 +32,34 @@ export async function GET(request: Request): Promise<Response> {
   };
 
   const result = await listProducts(filter);
-  return Response.json({ ok: true, ...result });
+
+  // Price + stock live on the VARIANTS for variant-backed products, so the base
+  // product row reads ₹0 / 0 units. Roll the variants up here so the admin table
+  // shows real figures (from-price + total stock) instead of an empty row.
+  const variantsByProduct = await listVariantsForProducts(result.products.map((p) => p.id));
+  const products = result.products.map((p) => {
+    const variants = variantsByProduct.get(p.id) ?? [];
+    const active = variants.filter((v) => v.isActive);
+    const used = active.length ? active : variants;
+    if (used.length === 0) return p;
+    let min = used[0].pricePaise;
+    let max = used[0].pricePaise;
+    let stock = 0;
+    for (const v of used) {
+      if (v.pricePaise < min) min = v.pricePaise;
+      if (v.pricePaise > max) max = v.pricePaise;
+      stock += v.stock;
+    }
+    return {
+      ...p,
+      variantCount: used.length,
+      variantMinPricePaise: min,
+      variantMaxPricePaise: max,
+      variantStock: stock,
+    };
+  });
+
+  return Response.json({ ok: true, ...result, products });
 }
 
 /** POST — create a product (with its inventory row). */

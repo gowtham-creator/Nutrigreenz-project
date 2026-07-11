@@ -23,6 +23,12 @@ export interface Product {
   status: ProductStatus;
   stock: number;
   reserved: number;
+  /** Variant roll-ups — present when the product is sold via size/pack variants
+   *  (its own price/stock stay 0 in that case). The table shows these instead. */
+  variantCount?: number;
+  variantMinPricePaise?: number;
+  variantMaxPricePaise?: number;
+  variantStock?: number;
   createdAt: string;
   updatedAt: string;
 }

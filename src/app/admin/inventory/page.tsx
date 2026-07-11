@@ -107,10 +107,16 @@ export default function AdminInventory() {
   }, [loadProducts]);
 
   const stats = useMemo(() => {
+    // Variant-backed products carry their stock on the variants, so roll those up;
+    // base-only products keep their own stock. Keeps the tiles truthful.
+    const eff = (p: Product) => ((p.variantCount ?? 0) > 0 ? p.variantStock ?? 0 : p.stock);
     const total = products.length;
     const active = products.filter((p) => p.status === "active").length;
-    const low = products.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length;
-    const out = products.filter((p) => p.stock <= 0).length;
+    const low = products.filter((p) => {
+      const s = eff(p);
+      return s > 0 && s <= LOW_STOCK_THRESHOLD;
+    }).length;
+    const out = products.filter((p) => eff(p) <= 0).length;
     return { total, active, low, out };
   }, [products]);
 
@@ -376,8 +382,10 @@ export default function AdminInventory() {
         ) : (
           <ul>
             {products.map((p) => {
-              const tone = p.stock <= 0 ? "neutral" : p.stock <= LOW_STOCK_THRESHOLD ? "danger" : "success";
-              const label = p.stock <= 0 ? "Out" : p.stock <= LOW_STOCK_THRESHOLD ? "Low" : "OK";
+              const hasVariants = (p.variantCount ?? 0) > 0;
+              const eStock = hasVariants ? p.variantStock ?? 0 : p.stock;
+              const tone = eStock <= 0 ? "neutral" : eStock <= LOW_STOCK_THRESHOLD ? "danger" : "success";
+              const label = eStock <= 0 ? "Out" : eStock <= LOW_STOCK_THRESHOLD ? "Low" : "OK";
               return (
                 <li
                   key={p.id}
@@ -386,9 +394,31 @@ export default function AdminInventory() {
                   <span className="truncate font-semibold text-ng-ink">{p.name}</span>
                   <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>
                   <span className="text-[12px] font-medium text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>
-                  <span className="font-mono text-[12px] tabular-nums text-ng-ink">{formatPaise(p.pricePaise)}</span>
+                  <span className="font-mono text-[12px] tabular-nums text-ng-ink">
+                    {hasVariants
+                      ? p.variantMinPricePaise === p.variantMaxPricePaise
+                        ? formatPaise(p.variantMinPricePaise ?? 0)
+                        : `from ${formatPaise(p.variantMinPricePaise ?? 0)}`
+                      : formatPaise(p.pricePaise)}
+                  </span>
                   <div className="flex items-center gap-2">
-                    {stockEditId === p.id ? (
+                    {hasVariants ? (
+                      // Stock is held per variant — surface the roll-up and send edits
+                      // to the Variants manager rather than the (unused) base stock.
+                      <button
+                        type="button"
+                        onClick={() => setVariantProduct(p)}
+                        aria-label={`Manage stock via variants for ${p.name}`}
+                        title="Stock is managed per variant — open Variants to edit"
+                        className="flex items-center gap-2 cursor-pointer text-left"
+                      >
+                        <StockMeter stock={eStock} threshold={LOW_STOCK_THRESHOLD} />
+                        <Pill tone={tone}>{label}</Pill>
+                        <span className="whitespace-nowrap text-[10.5px] font-medium text-ng-ink-soft">
+                          {p.variantCount} variants
+                        </span>
+                      </button>
+                    ) : stockEditId === p.id ? (
                       <input
                         type="number"
                         min={0}
@@ -409,7 +439,7 @@ export default function AdminInventory() {
                         aria-label={`Edit stock for ${p.name}`}
                         className="flex items-center gap-2 cursor-pointer text-left"
                       >
-                        <StockMeter stock={p.stock} threshold={LOW_STOCK_THRESHOLD} />
+                        <StockMeter stock={eStock} threshold={LOW_STOCK_THRESHOLD} />
                         <Pill tone={tone}>{label}</Pill>
                       </button>
                     )}
