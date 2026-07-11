@@ -302,7 +302,7 @@ export function AdminShell({
                 wrapping on small screens so they never overflow. Omitted when a
                 page passes no actions. */}
             {actions ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                 {actions}
               </div>
             ) : null}
