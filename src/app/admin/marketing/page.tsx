@@ -2,6 +2,7 @@ import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-sh
 import { Icon } from "@/components/ui/icon";
 import { Sparkline, HBars, TrendChip, type VizTone } from "@/components/ng/admin/viz";
 import { LiveCouponsPanel } from "@/components/ng/admin/super/live-coupons-panel";
+import { PromotionsPanel } from "@/components/ng/admin/super/promotions-panel";
 
 /**
  * Marketing desk.
@@ -56,7 +57,7 @@ export default function AdminMarketing() {
           Marketing <em className="italic text-ng-clay font-display">desk</em>
         </span>
       }
-      subtitle="Live coupons are real & redeemable — campaigns, segments and programs are previews"
+      subtitle="Promotions & live coupons are real & redeemable — campaigns, segments and programs are previews"
       actions={
         <a
           href="#live-coupons"
@@ -67,6 +68,11 @@ export default function AdminMarketing() {
         </a>
       }
     >
+      {/* Promotions — the real occasion/seasonal sale engine (banner picker,
+          discount, scope & schedule; create / edit / delete). Sits above the
+          coupon catalogue as the other live, price-affecting marketing surface. */}
+      <PromotionsPanel />
+
       {/* Live coupons — the real, redeemable coupon catalogue (create + toggle). */}
       <LiveCouponsPanel />
 
