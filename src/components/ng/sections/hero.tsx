@@ -105,16 +105,46 @@ const SLIDES: PromoSlideDef[] = [
   },
 ];
 
+/**
+ * The subset of a resolved promotion the hero needs for its lead banner. A plain
+ * serializable shape (no `server-only` import) so it crosses the Server → Client
+ * boundary as a prop; a full `PromotionRecord` is structurally assignable to it.
+ */
+export interface HeroPromo {
+  bannerKey: string;
+  title: string;
+  headline: string;
+  subcopy: string | null;
+  discountPercent: number;
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+/** A carousel entry: the active-promotion banner, or a static launch slide. */
+type SlideItem =
+  | { kind: "promo"; key: string; label: string; promo: HeroPromo }
+  | { kind: "slide"; key: string; label: string; slide: PromoSlideDef };
+
 /* ──────────────────────────────────────────────────────────────────────────
    Slideshow shell
    ────────────────────────────────────────────────────────────────────────── */
-export function Hero() {
+export function Hero({ promo }: { promo?: HeroPromo | null }) {
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
 
-  const count = SLIDES.length;
+  // When a promotion is live it leads the carousel; otherwise the hero is exactly
+  // the four static slides. The promo only ever takes the first slot, so the
+  // `index` cursor stays valid whether or not a promo is present.
+  const items: SlideItem[] = [
+    ...(promo
+      ? [{ kind: "promo" as const, key: "active-promo", label: promo.title, promo }]
+      : []),
+    ...SLIDES.map((s) => ({ kind: "slide" as const, key: s.id, label: s.label, slide: s })),
+  ];
+
+  const count = items.length;
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
   const next = useCallback(() => go(index + 1), [go, index]);
   const prev = useCallback(() => go(index - 1), [go, index]);
@@ -165,11 +195,11 @@ export function Hero() {
             <PromoSlide slide={SLIDES[0]} priority />
           </div>
 
-          {SLIDES.map((s, i) => {
+          {items.map((item, i) => {
             const active = i === index;
             return (
               <motion.div
-                key={s.id}
+                key={item.key}
                 className="absolute inset-0"
                 initial={false}
                 animate={{ opacity: active ? 1 : 0 }}
@@ -178,9 +208,13 @@ export function Hero() {
                 aria-hidden={!active}
                 role="group"
                 aria-roledescription="slide"
-                aria-label={`${i + 1} of ${count}: ${s.label}`}
+                aria-label={`${i + 1} of ${count}: ${item.label}`}
               >
-                <PromoSlide slide={s} priority={i === 0} />
+                {item.kind === "promo" ? (
+                  <PromoBannerSlide promo={item.promo} priority={i === 0} />
+                ) : (
+                  <PromoSlide slide={item.slide} priority={i === 0} />
+                )}
               </motion.div>
             );
           })}
@@ -199,15 +233,15 @@ export function Hero() {
             </button>
 
             <div role="tablist" aria-label="Choose banner" className="flex items-center gap-1.5 px-0.5">
-              {SLIDES.map((s, i) => {
+              {items.map((item, i) => {
                 const active = i === index;
                 return (
                   <button
-                    key={s.id}
+                    key={item.key}
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    aria-label={`Go to ${s.label} banner`}
+                    aria-label={`Go to ${item.label} banner`}
                     onClick={() => go(i)}
                     className="group grid h-9 min-w-[22px] place-items-center px-1"
                   >
@@ -315,6 +349,86 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
               className="w-fit border-0 bg-[#E8833A] text-white shadow-[0_4px_14px_rgba(232,131,58,0.38)] hover:bg-[#D9772F] hover:text-white"
             >
               <Link href={slide.cta.href}>{slide.cta.label}</Link>
+            </Button>
+          </MagneticHover>
+        </FloatIn>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Active-promotion banner — the live sale rendered in the PromoSlide format:
+   festive banner art anchored right beneath a cream legibility wash, with the
+   occasion tag → headline → bold "% OFF" → subcopy → orange CTA on the left.
+   ────────────────────────────────────────────────────────────────────────── */
+function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; priority?: boolean }) {
+  // A single cream wash keeps the forest copy legible over any of the nine
+  // festive banner backgrounds — the same left-fade treatment the static slides
+  // use, just with one shared colour since the artwork varies per promotion.
+  const wash = "#F5F2E0";
+  return (
+    <div className="relative flex h-full min-h-[inherit] overflow-hidden" style={{ backgroundColor: wash }}>
+      <Image
+        src={`/images/banners/sale-${promo.bannerKey}.webp`}
+        alt={promo.title}
+        fill
+        priority={priority}
+        sizes="100vw"
+        className="object-cover object-[62%_center] sm:object-right"
+      />
+      {/* Left legibility wash — desktop gentle fade, mobile heavier under the copy. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 hidden sm:block"
+        style={{ background: `linear-gradient(to right, ${wash}F2 0%, ${wash}B3 42%, transparent 68%)` }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 sm:hidden"
+        style={{ background: `linear-gradient(to right, ${wash}F7 0%, ${wash}EE 38%, ${wash}99 60%, transparent 82%)` }}
+      />
+
+      {/* Corner tag — the promotion's name (e.g. "Diwali Sale"), word-stacked. */}
+      <div className="absolute left-0 top-0 z-10 rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-cream">
+        <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
+          {promo.title.split(" ").map((w, wi) => (
+            <span key={`${w}-${wi}`} className="block">{w}</span>
+          ))}
+        </span>
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-4 p-6 pt-14 sm:gap-5 sm:p-12 sm:pt-16 md:p-14 lg:pl-16">
+        <FloatIn delay={0.05}>
+          <h2 className="font-display text-[clamp(28px,4.6vw,60px)] leading-[1.02] text-ng-forest-deep">
+            {promo.headline}
+          </h2>
+        </FloatIn>
+
+        <FloatIn delay={0.14}>
+          <p className="font-display text-[clamp(34px,6vw,78px)] font-bold leading-[0.92] text-ng-forest">
+            {promo.discountPercent}%{" "}
+            <span className="relative whitespace-nowrap text-ng-forest-deep">
+              OFF
+              <span aria-hidden className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-ng-forest/70" />
+            </span>
+          </p>
+        </FloatIn>
+
+        {promo.subcopy ? (
+          <FloatIn delay={0.2}>
+            <p className="font-sans text-[clamp(15px,1.6vw,20px)] font-medium text-ng-forest">{promo.subcopy}</p>
+          </FloatIn>
+        ) : null}
+
+        <FloatIn delay={0.28}>
+          <MagneticHover>
+            <Button
+              size="lg"
+              asChild
+              className="w-fit border-0 bg-[#E8833A] text-white shadow-[0_4px_14px_rgba(232,131,58,0.38)] hover:bg-[#D9772F] hover:text-white"
+            >
+              <Link href={promo.ctaHref}>{promo.ctaLabel}</Link>
             </Button>
           </MagneticHover>
         </FloatIn>

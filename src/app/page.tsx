@@ -12,6 +12,7 @@ import { Testimonials } from "@/components/ng/sections/testimonials";
 import { Journal } from "@/components/ng/sections/journal";
 import { CommunityCTA } from "@/components/ng/sections/community-cta";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
+import { getHeroPromotion } from "@/lib/promotions";
 import type { ProductCard } from "@/types/nutrigreenz";
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
@@ -34,6 +35,11 @@ export default async function Home() {
   // Single source of truth for every catalog-backed home section. Falls back to
   // the bundled sample when Supabase is unconfigured/empty, so it's never blank.
   const { products, categories } = await getStorefrontCatalog();
+
+  // Active hero promotion — prepended as the first hero banner when a sale is
+  // live. getHeroPromotion() already swallows backend errors (returns null); the
+  // extra .catch keeps the home page rendering even if the module itself throws.
+  const heroPromo = await getHeroPromotion().catch(() => null);
 
   // ── OILS (Cold-Pressed Oils) ──────────────────────────────────────────
   // Sub-tab `filter`s are serializable descriptors (no functions) so they can
@@ -74,7 +80,7 @@ export default async function Home() {
     <main className="bg-page-warmth text-ng-ink">
       <PromoBar />
       <Header />
-      <Hero />
+      <Hero promo={heroPromo} />
       <AssuranceStrip />
       <ShopByCategory
         className="section-glow-leaf overflow-hidden pt-14 md:pt-20"

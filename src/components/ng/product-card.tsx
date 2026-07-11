@@ -39,6 +39,14 @@ export function ProductCard({ product, variant = "default", className }: Props) 
     : 0;
   const savings = product.mrp && product.mrp > product.price ? product.mrp - product.price : 0;
 
+  // Occasion/seasonal sale: when the catalog stamped a live promo on this card,
+  // `price` is already the discounted price and `mrp` the original. Surface it
+  // with a restrained forest/cream chip instead of the louder terracotta badge.
+  const hasPromo =
+    (product.promoPercent ?? 0) > 0 && !!product.mrp && product.mrp > product.price;
+  const promoLabel =
+    product.promoLabel ?? (product.promoPercent ? `${product.promoPercent}% OFF` : "");
+
   const handleAddToBag = () => {
     if (singleVariant) {
       const label = singleVariant.pack
@@ -125,7 +133,9 @@ export function ProductCard({ product, variant = "default", className }: Props) 
             {product.badge ? (
               <Badge tone={product.badgeTone ?? "leaf"}>{product.badge}</Badge>
             ) : null}
-            {discount > 0 && !product.badge ? (
+            {hasPromo ? (
+              <Badge tone="forest">{promoLabel}</Badge>
+            ) : discount > 0 && !product.badge ? (
               <Badge tone="terracotta">{discount}% OFF</Badge>
             ) : null}
           </div>
