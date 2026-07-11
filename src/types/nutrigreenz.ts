@@ -59,6 +59,14 @@ export interface ProductCard {
   priceFrom?: boolean;
   /** Purchasable size × pack variants (empty for legacy/demo single-SKU products). */
   variants?: ProductVariantOption[];
+  /**
+   * Best applicable occasion/seasonal promotion percent (1..90) when a sale is
+   * live for this product; absent when none. When set, `price` is already the
+   * discounted price and `mrp` carries the original for a strike-through.
+   */
+  promoPercent?: number;
+  /** Ready-to-render promo chip label, e.g. "15% OFF" (present with `promoPercent`). */
+  promoLabel?: string;
 }
 
 export interface Category {

@@ -28,6 +28,11 @@ import {
   earnPointsForOrder,
   CouponInvalidError,
 } from "@/lib/rewards";
+import {
+  getActivePromotions,
+  promoPercentForProduct,
+  applyPromoPaise,
+} from "@/lib/promotions";
 
 /* ── status model ─────────────────────────────────────────────────────── */
 
@@ -372,6 +377,103 @@ async function priceLines(
 }
 
 /**
+ * Mark every priced line down by the best applicable LIVE occasion/seasonal
+ * promotion, server-side, BEFORE coupon + loyalty run — so the subtotal those
+ * compose on already reflects the sale (no double-counting). This is the same
+ * {@link promoPercentForProduct} engine the storefront cards use, so the price a
+ * shopper sees is the price they're charged.
+ *
+ * Best-effort: an unconfigured DB, no live promos, or any lookup error leaves the
+ * line prices exactly as priced. A `scope: 'all'` promo needs no product metadata
+ * (fast path); scoped promos resolve each line's product slug + category slug.
+ */
+async function applyPromotionsToPricedLines(
+  priced: { line: OrderLineInput; unitPricePaise: number }[],
+): Promise<{ line: OrderLineInput; unitPricePaise: number }[]> {
+  if (priced.length === 0) return priced;
+  try {
+    const activePromos = await getActivePromotions();
+    if (activePromos.length === 0) return priced;
+
+    // Fast path: when every live promo targets the whole catalogue, one percent
+    // applies to every line and we can skip the product-metadata lookups.
+    if (activePromos.every((p) => p.scope === "all")) {
+      const percent = activePromos.reduce((m, p) => Math.max(m, p.discountPercent), 0);
+      if (percent <= 0) return priced;
+      return priced.map(({ line, unitPricePaise }) => ({
+        line,
+        unitPricePaise: applyPromoPaise(unitPricePaise, percent),
+      }));
+    }
+
+    const db = supabaseAdmin();
+
+    // Resolve any variant-only lines to their owning product id.
+    const variantIds = Array.from(
+      new Set(priced.map((p) => p.line.variantId).filter((v): v is string => !!v)),
+    );
+    const variantToProduct = new Map<string, string>();
+    if (variantIds.length > 0) {
+      const { data } = await db
+        .from("product_variants")
+        .select("id, product_id")
+        .in("id", variantIds);
+      for (const row of (data as { id: string; product_id: string | null }[] | null) ?? []) {
+        if (row.product_id) variantToProduct.set(row.id, row.product_id);
+      }
+    }
+    const productIdFor = (line: OrderLineInput): string | null =>
+      line.productId ?? (line.variantId ? variantToProduct.get(line.variantId) ?? null : null);
+
+    // Load each product's slug + category id, then map category ids → slugs.
+    const productIds = Array.from(
+      new Set(priced.map((p) => productIdFor(p.line)).filter((v): v is string => !!v)),
+    );
+    const productMeta = new Map<string, { slug: string; categoryId: string | null }>();
+    if (productIds.length > 0) {
+      const { data } = await db
+        .from("products")
+        .select("id, slug, category_id")
+        .in("id", productIds);
+      for (const row of (data as { id: string; slug: string; category_id: string | null }[] | null) ?? []) {
+        productMeta.set(row.id, { slug: row.slug, categoryId: row.category_id });
+      }
+    }
+    const categoryIds = Array.from(
+      new Set(
+        Array.from(productMeta.values())
+          .map((m) => m.categoryId)
+          .filter((v): v is string => !!v),
+      ),
+    );
+    const categorySlug = new Map<string, string>();
+    if (categoryIds.length > 0) {
+      const { data } = await db.from("categories").select("id, slug").in("id", categoryIds);
+      for (const row of (data as { id: string; slug: string }[] | null) ?? []) {
+        categorySlug.set(row.id, row.slug);
+      }
+    }
+
+    return priced.map(({ line, unitPricePaise }) => {
+      const pid = productIdFor(line);
+      const meta = pid ? productMeta.get(pid) : undefined;
+      if (!meta) return { line, unitPricePaise };
+      const catSlug = meta.categoryId ? categorySlug.get(meta.categoryId) ?? null : null;
+      const percent = promoPercentForProduct(
+        { slug: meta.slug, categorySlug: catSlug, tags: catSlug ? [catSlug] : [] },
+        activePromos,
+      );
+      return {
+        line,
+        unitPricePaise: percent > 0 ? applyPromoPaise(unitPricePaise, percent) : unitPricePaise,
+      };
+    });
+  } catch {
+    return priced; // a promo hiccup must never break checkout
+  }
+}
+
+/**
  * Create an order: price every line from the catalog, RE-VALIDATE the coupon and
  * loyalty redemption server-side (the client's claimed amounts are ignored),
  * recompute the totals from the live commerce rules, insert the order + its
@@ -386,9 +488,12 @@ async function priceLines(
 export async function createOrder(input: CreateOrderInput): Promise<OrderWithDetail> {
   const db = supabaseAdmin();
 
-  // 1. Authoritative per-line prices + line totals (server-side).
+  // 1. Authoritative per-line prices (server-side), then mark them down by any
+  //    LIVE occasion/seasonal promotion BEFORE coupon + loyalty run, so the
+  //    subtotal those compose on already reflects the sale (no double-counting).
   const priced = await priceLines(input.items.filter((l) => l.qty > 0));
-  const lineTotals = priced.map(({ line, unitPricePaise }) => ({
+  const promoPriced = await applyPromotionsToPricedLines(priced);
+  const lineTotals = promoPriced.map(({ line, unitPricePaise }) => ({
     line,
     unitPricePaise,
     qty: Math.max(1, Math.round(line.qty)),

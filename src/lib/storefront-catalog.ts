@@ -24,6 +24,12 @@ import {
 } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
+  getActivePromotionsCached,
+  promoPercentForProduct,
+  applyPromoPaise,
+  type PromotionRecord,
+} from "@/lib/promotions";
+import {
   PRODUCTS as SAMPLE_PRODUCTS,
   CATEGORIES as SAMPLE_CATEGORIES,
 } from "@/components/ng/data";
@@ -95,11 +101,18 @@ function mapVariantOption(v: ProductVariantRecord): ProductVariantOption {
  * from the ACTIVE variants (min active price → "from ₹X"; in-stock when any
  * active variant has a sellable unit). With no variants we fall back to the
  * product's own price/stock so the bundled demo data keeps rendering.
+ *
+ * When `activePromos` carry a live occasion/seasonal sale that targets this
+ * product, the displayed `price` is marked down and the ORIGINAL price is kept
+ * as `mrp` (strike-through), plus `promoPercent` / `promoLabel` are stamped on
+ * for surfaces that show an explicit sale chip. With no applicable promo the
+ * card is identical to before (no `mrp`, no promo fields).
  */
 export function mapRecordToProductCard(
   record: ProductRecord,
   categorySlug: string | null,
   variants?: readonly ProductVariantRecord[],
+  activePromos: readonly PromotionRecord[] = [],
 ): ProductCard {
   const { rating, reviewCount } = deriveSocialProof(record.id);
   const tag = categorySlug ?? "";
@@ -108,10 +121,24 @@ export function mapRecordToProductCard(
   const hasVariants = activeVariants.length > 0;
   const stats = variantStats(variants ?? []);
 
-  const price = hasVariants
-    ? paiseToRupees(stats.minActivePricePaise ?? record.pricePaise)
-    : paiseToRupees(record.pricePaise);
+  // Base list price (paise): min active variant, else the product's own price.
+  const baseListPaise = hasVariants
+    ? stats.minActivePricePaise ?? record.pricePaise
+    : record.pricePaise;
   const inStock = hasVariants ? stats.inStock : record.stock - record.reserved > 0;
+
+  // Best live promo for THIS product (0 when none) — the single source of truth
+  // shared with the order path so every surface marks the same price down.
+  const promoPercent = promoPercentForProduct(
+    { slug: record.slug, categorySlug, tags: tag ? [tag] : [] },
+    activePromos,
+  );
+  const hasPromo = promoPercent > 0;
+  const price = paiseToRupees(
+    hasPromo ? applyPromoPaise(baseListPaise, promoPercent) : baseListPaise,
+  );
+  // Keep the un-discounted price as the strike-through mrp only when on sale.
+  const mrp = hasPromo ? paiseToRupees(baseListPaise) : undefined;
 
   const options = activeVariants.map(mapVariantOption);
 
@@ -124,6 +151,7 @@ export function mapRecordToProductCard(
     rating,
     reviewCount,
     price,
+    mrp,
     // More than one variant → the card/PDP show a "from ₹X" lead price.
     priceFrom: stats.activeCount > 1,
     // The catalog carries no per-product pack-size; show the category as the unit
@@ -134,6 +162,8 @@ export function mapRecordToProductCard(
     href: `/products/${record.slug}`,
     tags: tag ? [tag] : [],
     variants: options,
+    promoPercent: hasPromo ? promoPercent : undefined,
+    promoLabel: hasPromo ? `${promoPercent}% OFF` : undefined,
   };
 }
 
@@ -167,9 +197,11 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
   if (!isSupabaseConfigured) return sampleCatalog();
 
   try {
-    const [{ products: records }, categoryRecords] = await Promise.all([
+    const [{ products: records }, categoryRecords, activePromos] = await Promise.all([
       listProducts({ status: "active", pageSize: MAX_PRODUCTS }),
       listCategories(),
+      // One promo read per catalog build (short-cached); shared across all cards.
+      getActivePromotionsCached(),
     ]);
 
     if (records.length === 0) return sampleCatalog();
@@ -186,6 +218,7 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
         r,
         r.categoryId ? slugById.get(r.categoryId) ?? null : null,
         variantsByProduct.get(r.id) ?? [],
+        activePromos,
       ),
     );
 
@@ -229,8 +262,11 @@ export async function getStorefrontProductBySlug(
           const categories = await listCategories();
           categorySlug = categories.find((c) => c.id === record.categoryId)?.slug ?? null;
         }
-        const variants = await listVariants(record.id);
-        return mapRecordToProductCard(record, categorySlug, variants);
+        const [variants, activePromos] = await Promise.all([
+          listVariants(record.id),
+          getActivePromotionsCached(),
+        ]);
+        return mapRecordToProductCard(record, categorySlug, variants, activePromos);
       }
     } catch {
       /* fall through to the bundled sample */
