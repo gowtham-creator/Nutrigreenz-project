@@ -7,6 +7,7 @@
  * the slug is derived from the title when absent and must be unique (a duplicate
  * returns 400). Every create is written to the admin activity trail.
  */
+import { revalidatePath } from "next/cache";
 import { requireSuperAdmin, superAdminEmail } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
@@ -122,6 +123,10 @@ export async function POST(request: Request): Promise<Response> {
         active: promotion.active,
       },
     });
+    // Bust the ISR cache across the whole storefront so a newly-created (active)
+    // sale shows on the hero + every product card near-instantly, not after the
+    // page's revalidate window elapses.
+    revalidatePath("/", "layout");
     return Response.json({ ok: true, promotion }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

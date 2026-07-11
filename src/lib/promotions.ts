@@ -298,7 +298,10 @@ export function applyPromoPaise(paise: number, percent: number): number {
 /* ── active-promo cache (display surfaces only) ───────────────────────────── */
 
 let activeCache: { at: number; promos: PromotionRecord[] } | null = null;
-const ACTIVE_CACHE_TTL_MS = 60_000;
+// Short TTL so a promo toggled in admin surfaces on the storefront within seconds
+// (paired with a revalidatePath from the admin mutation routes). The order path
+// never uses this cache — it always resolves promos fresh for paisa-exact totals.
+const ACTIVE_CACHE_TTL_MS = 15_000;
 
 /**
  * {@link getActivePromotions} with a short (60s) in-process cache, for hot

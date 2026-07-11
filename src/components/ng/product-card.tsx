@@ -128,14 +128,13 @@ export function ProductCard({ product, variant = "default", className }: Props) 
           {/* Soft top sheen + bottom vignette for depth */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ng-forest-deep/10 via-transparent to-ng-paper/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-          {/* Badges — stacked top-left */}
+          {/* Badges — stacked top-left. The live-promo discount is shown BESIDE
+              the price (below) rather than as an image sticker, so the corner is
+              reserved for the "Sold out" flag and any legacy (non-promo) markdown. */}
           <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
             {product.badge ? (
               <Badge tone={product.badgeTone ?? "leaf"}>{product.badge}</Badge>
-            ) : null}
-            {hasPromo ? (
-              <Badge tone="forest">{promoLabel}</Badge>
-            ) : discount > 0 && !product.badge ? (
+            ) : discount > 0 && !hasPromo ? (
               <Badge tone="terracotta">{discount}% OFF</Badge>
             ) : null}
           </div>
@@ -179,6 +178,14 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1.5 pt-1">
           {product.priceFrom ? (
             <span className="text-[12px] font-medium text-ng-ink-soft">from</span>
+          ) : null}
+          {/* On sale: the discount % sits to the LEFT of the price, then the
+              marked-down price, then the original struck through — the familiar
+              ecommerce sale treatment. */}
+          {hasPromo ? (
+            <span className="self-center shrink-0 whitespace-nowrap rounded-md bg-ng-forest px-1.5 py-[3px] text-[11px] font-bold uppercase tracking-wide text-ng-cream tabular-nums">
+              {promoLabel}
+            </span>
           ) : null}
           <span className="font-display text-[19px] sm:text-[21px] font-semibold text-ng-forest-deep tabular-nums">
             ₹{product.price.toLocaleString("en-IN")}

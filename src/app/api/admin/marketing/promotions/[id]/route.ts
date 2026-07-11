@@ -8,6 +8,7 @@
  * and `discountPercent` against 1..90. A promotion carries no redemption history
  * (unlike a coupon), so DELETE hard-removes it. Every mutation is logged.
  */
+import { revalidatePath } from "next/cache";
 import { requireSuperAdmin, superAdminEmail } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
@@ -113,6 +114,9 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
         scope: promotion.scope,
       },
     });
+    // Activating / pausing / re-pricing a sale changes storefront prices — bust
+    // the ISR cache everywhere so the change is visible within a second or two.
+    revalidatePath("/", "layout");
     return Response.json({ ok: true, promotion });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -141,6 +145,8 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
       target: id,
       meta: { removal },
     });
+    // A deleted sale must stop discounting the storefront immediately.
+    revalidatePath("/", "layout");
     return Response.json({ ok: true, removal });
   } catch (err) {
     const message = err instanceof Error ? err.message : "delete-failed";
