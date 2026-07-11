@@ -82,6 +82,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (headline !== undefined) patch.headline = headline;
   const subcopy = nullableStr(body.subcopy);
   if (subcopy !== undefined) patch.subcopy = subcopy;
+  const announcement = nullableStr(body.announcement);
+  if (announcement !== undefined) patch.announcement = announcement;
   if (percentIn !== undefined) patch.discountPercent = percentIn;
   const sc = scope(body.scope);
   if (sc !== undefined) patch.scope = sc;

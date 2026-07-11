@@ -70,6 +70,7 @@ interface PromotionRow {
   bannerKey: string;
   headline: string;
   subcopy: string | null;
+  announcement: string | null;
   discountPercent: number;
   scope: ScopeMode;
   scopeValues: string[];
@@ -87,6 +88,7 @@ interface FormState {
   title: string;
   headline: string;
   subcopy: string;
+  announcement: string;
   discountPercent: string;
   scope: ScopeMode;
   categories: string[];
@@ -105,6 +107,7 @@ const EMPTY_FORM: FormState = {
   title: "",
   headline: "",
   subcopy: "",
+  announcement: "",
   discountPercent: "",
   scope: "all",
   categories: [],
@@ -116,6 +119,81 @@ const EMPTY_FORM: FormState = {
   autoMonth: false,
   priority: "0",
   active: true,
+};
+
+/**
+ * On-brand copy presets per occasion — the "auto-generate from one word" source.
+ * `{p}` → the discount %, `{month}` → the current month. Pick a banner + discount,
+ * hit Auto-generate, and the title / headline / subcopy / CTA and the storefront
+ * marquee line are all filled in (then freely editable).
+ */
+const COPY_PRESETS: Record<
+  BannerKey,
+  { title: string; headline: string; subcopy: string; cta: string; announcement: string }
+> = {
+  "ganesh-chaturthi": {
+    title: "Ganesh Chaturthi Sale",
+    headline: "Blessings & {p}% off this Ganesh Chaturthi",
+    subcopy: "Celebrate with pure, wholesome pantry staples — {p}% off everything.",
+    cta: "Shop the sale",
+    announcement: "🕉️ Ganesh Chaturthi Sale · {p}% OFF everything · Shop now",
+  },
+  diwali: {
+    title: "Diwali Dhamaka",
+    headline: "Light up Diwali with {p}% off",
+    subcopy: "Festival of lights, festival of savings across every shelf.",
+    cta: "Shop the sale",
+    announcement: "🪔 Diwali Dhamaka · {p}% OFF everything · Shop now",
+  },
+  ugadi: {
+    title: "Ugadi Special",
+    headline: "A fresh start this Ugadi — {p}% off",
+    subcopy: "Ring in the Telugu new year with clean, honest food — {p}% off.",
+    cta: "Shop the sale",
+    announcement: "🌿 Ugadi Special · {p}% OFF everything · Shop now",
+  },
+  sankranti: {
+    title: "Sankranti Sale",
+    headline: "Harvest joy this Sankranti — {p}% off",
+    subcopy: "Celebrate the harvest with pure oils, ghee & honey — {p}% off.",
+    cta: "Shop the sale",
+    announcement: "🪁 Sankranti Sale · {p}% OFF everything · Shop now",
+  },
+  dussehra: {
+    title: "Dussehra Dhamaka",
+    headline: "Victory savings this Dussehra — {p}% off",
+    subcopy: "Purity over shortcuts — {p}% off across the whole pantry.",
+    cta: "Shop the sale",
+    announcement: "🏹 Dussehra Sale · {p}% OFF everything · Shop now",
+  },
+  "summer-end": {
+    title: "Summer End Sale",
+    headline: "Summer's ending — {p}% off before it's gone",
+    subcopy: "Stock the pantry for the season ahead — {p}% off.",
+    cta: "Shop the sale",
+    announcement: "☀️ Summer End Sale · {p}% OFF · Shop now",
+  },
+  "winter-end": {
+    title: "Winter End Sale",
+    headline: "Warm savings before winter ends — {p}% off",
+    subcopy: "Cosy up with ghee, honey & cold-pressed oils — {p}% off.",
+    cta: "Shop the sale",
+    announcement: "❄️ Winter End Sale · {p}% OFF · Shop now",
+  },
+  "end-of-season": {
+    title: "End of Season Sale",
+    headline: "End of Season — {p}% off across the pantry",
+    subcopy: "The season's best staples at their best price — {p}% off.",
+    cta: "Shop the sale",
+    announcement: "🍂 End of Season Sale · {p}% OFF · Shop now",
+  },
+  "end-of-month": {
+    title: "{month} Sale",
+    headline: "{month} savings — {p}% off everything",
+    subcopy: "This month only — {p}% off across every shelf.",
+    cta: "Shop the sale",
+    announcement: "🗓️ {month} Sale · {p}% OFF everything · Shop now",
+  },
 };
 
 const ERROR_COPY: Record<string, string> = {
@@ -243,6 +321,7 @@ export function PromotionsPanel() {
       title: p.title,
       headline: p.headline,
       subcopy: p.subcopy ?? "",
+      announcement: p.announcement ?? "",
       discountPercent: String(p.discountPercent),
       scope: p.scope,
       categories: p.scope === "category" ? p.scopeValues : [],
@@ -258,6 +337,27 @@ export function PromotionsPanel() {
     setEditingId(p.id);
     setShowForm(true);
     sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  /** One-click copy: fill title/headline/subcopy/CTA + the marquee line from the
+   *  chosen occasion's preset, injecting the discount % (and current month). */
+  function autoGenerate() {
+    const pct = form.discountPercent.trim() || "20";
+    const month = new Date().toLocaleString("en-US", { month: "long" });
+    const fill = (s: string) => s.replace(/\{p\}/g, pct).replace(/\{month\}/gi, month);
+    const preset = COPY_PRESETS[form.bannerKey];
+    setForm((f) => ({
+      ...f,
+      title: fill(preset.title),
+      headline: fill(preset.headline),
+      subcopy: fill(preset.subcopy),
+      ctaLabel: preset.cta,
+      ctaHref: f.ctaHref.trim() || "/shop",
+      announcement: fill(preset.announcement),
+      discountPercent: f.discountPercent.trim() || pct,
+      autoMonth: f.bannerKey === "end-of-month" ? true : f.autoMonth,
+    }));
+    toast.success("Copy generated — tweak anything you like.");
   }
 
   async function submit() {
@@ -289,6 +389,7 @@ export function PromotionsPanel() {
       bannerKey: form.bannerKey,
       headline,
       subcopy: form.subcopy.trim() || null,
+      announcement: form.announcement.trim() || null,
       discountPercent: Math.round(percent),
       scope: form.scope,
       scopeValues,
@@ -373,12 +474,12 @@ export function PromotionsPanel() {
     <section
       ref={sectionRef}
       id="promotions"
-      className="mb-6 scroll-mt-32 rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)]"
+      className="mb-6 scroll-mt-32 overflow-hidden rounded-3xl border border-ng-clay/25 bg-gradient-to-b from-ng-amber/[0.06] to-ng-paper p-6 shadow-[var(--shadow-ng-card)]"
     >
       {/* Header */}
       <div className="mb-5 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-ng-amber/30 to-ng-clay/30 text-ng-clay-deep">
             <Icon name="tag-price-bold" size={20} />
           </span>
           <div>
@@ -389,7 +490,7 @@ export function PromotionsPanel() {
           </div>
         </div>
         {!showForm ? (
-          <Button type="button" variant="primary" onClick={openCreate} className="h-10 shrink-0">
+          <Button type="button" variant="primary" onClick={openCreate} className="h-10 shrink-0 !bg-ng-clay hover:!bg-ng-clay-deep !text-ng-paper">
             <Icon name="add-circle-bold" size={16} />
             New promotion
           </Button>
@@ -398,12 +499,12 @@ export function PromotionsPanel() {
 
       {/* Create / edit form */}
       {showForm ? (
-        <div className="mb-6 rounded-2xl border border-ng-line-soft bg-ng-sage/20 p-5">
+        <div className="mb-6 rounded-2xl border border-ng-clay/20 bg-ng-amber/[0.07] p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="font-display text-[16px] text-ng-forest-deep">
               {editingId ? "Edit promotion" : "New promotion"}
             </h3>
-            <span className="rounded-full bg-ng-forest/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-forest">
+            <span className="rounded-full bg-ng-clay/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-clay-deep">
               {editingId ? "Editing" : "Draft"}
             </span>
           </div>
@@ -420,10 +521,10 @@ export function PromotionsPanel() {
                   aria-pressed={selected}
                   onClick={() => setForm((f) => ({ ...f, bannerKey: key }))}
                   className={cn(
-                    "group relative overflow-hidden rounded-xl border-2 bg-ng-paper text-left transition-all",
+                    "group relative overflow-hidden rounded-xl border-2 bg-ng-paper transition-all",
                     selected
-                      ? "border-ng-forest ring-2 ring-ng-forest/25"
-                      : "border-transparent hover:border-ng-leaf",
+                      ? "border-ng-clay ring-2 ring-ng-clay/30"
+                      : "border-transparent hover:border-ng-amber",
                   )}
                 >
                   <div className="relative aspect-[16/10] w-full">
@@ -435,18 +536,34 @@ export function PromotionsPanel() {
                       className="object-cover"
                     />
                     {selected ? (
-                      <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ng-forest text-ng-paper">
+                      <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ng-clay text-ng-paper">
                         <Icon name="check-circle-bold" size={14} />
                       </span>
                     ) : null}
                   </div>
-                  <span className="block px-2 py-1.5 text-[11px] font-semibold text-ng-ink-muted">
+                  <span
+                    className={cn(
+                      "flex min-h-[38px] items-center justify-center px-2 py-1.5 text-center text-[11px] font-semibold leading-tight",
+                      selected ? "bg-ng-clay/10 text-ng-clay-deep" : "text-ng-ink-muted",
+                    )}
+                  >
                     {BANNER_LABELS[key]}
                   </span>
                 </button>
               );
             })}
           </div>
+
+          {/* Auto-generate — fills all the copy + the marquee line from the chosen
+              occasion + discount, in one click (each field stays editable). */}
+          <button
+            type="button"
+            onClick={autoGenerate}
+            className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ng-clay/50 bg-ng-clay/5 px-4 py-2.5 text-[13px] font-semibold text-ng-clay-deep transition-colors hover:bg-ng-clay/10"
+          >
+            <span aria-hidden>✨</span>
+            Auto-generate copy for {BANNER_LABELS[form.bannerKey]}
+          </button>
 
           {/* Copy + discount */}
           <div className="mb-4 grid gap-3 sm:grid-cols-[2fr_1fr]">
@@ -475,13 +592,24 @@ export function PromotionsPanel() {
               onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
             />
           </div>
-          <div className="mb-5">
+          <div className="mb-4">
             <Input
               label="Subcopy (optional)"
               placeholder="On all cold-pressed oils, ends Sunday"
               value={form.subcopy}
               onChange={(e) => setForm((f) => ({ ...f, subcopy: e.target.value }))}
             />
+          </div>
+          <div className="mb-5">
+            <Input
+              label="Top-bar announcement (optional)"
+              placeholder="🪔 Diwali Dhamaka · 15% OFF everything · Shop now"
+              value={form.announcement}
+              onChange={(e) => setForm((f) => ({ ...f, announcement: e.target.value }))}
+            />
+            <p className="mt-1 text-[11px] text-ng-ink-soft">
+              Scrolls in the bar at the very top of the store while this sale is live. Leave blank to auto-build it from the title + discount.
+            </p>
           </div>
 
           {/* Scope */}
@@ -495,8 +623,8 @@ export function PromotionsPanel() {
                 className={cn(
                   "h-11 flex-1 rounded-xl border text-[13px] font-semibold transition-all",
                   form.scope === s
-                    ? "border-ng-forest bg-ng-forest text-ng-paper"
-                    : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-leaf",
+                    ? "border-ng-clay bg-ng-clay text-ng-paper"
+                    : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-amber",
                 )}
               >
                 {s === "all" ? "All products" : s === "category" ? "Category" : "Specific products"}
@@ -523,8 +651,8 @@ export function PromotionsPanel() {
                     className={cn(
                       "h-11 rounded-xl border px-5 text-[13px] font-semibold transition-all",
                       on
-                        ? "border-ng-forest bg-ng-forest text-ng-paper"
-                        : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-leaf",
+                        ? "border-ng-clay bg-ng-clay text-ng-paper"
+                        : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-amber",
                     )}
                   >
                     {c.label}
@@ -625,8 +753,8 @@ export function PromotionsPanel() {
           All promotions{promotions.length ? ` · ${promotions.length}` : ""}
         </span>
         {liveCount > 0 ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-green-bright/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-forest">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ng-green-bright" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-amber/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-clay-deep">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ng-clay" />
             {liveCount} live now
           </span>
         ) : null}
@@ -647,7 +775,7 @@ export function PromotionsPanel() {
                 key={p.id}
                 className={cn(
                   "flex flex-col gap-4 border-l-4 p-4 sm:flex-row sm:items-center",
-                  live ? "border-ng-green-bright bg-ng-green-bright/5" : "border-transparent bg-ng-paper",
+                  live ? "border-ng-clay bg-ng-amber/[0.06]" : "border-transparent bg-ng-paper",
                 )}
               >
                 <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg border border-ng-line-soft">
@@ -658,8 +786,8 @@ export function PromotionsPanel() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-display text-[15px] text-ng-forest-deep">{p.title}</span>
                     {live ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-ng-green-bright/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ng-green-bright" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-ng-amber/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-clay-deep">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ng-clay" />
                         Live now
                       </span>
                     ) : null}

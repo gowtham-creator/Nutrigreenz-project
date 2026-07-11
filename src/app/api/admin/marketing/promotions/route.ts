@@ -92,6 +92,8 @@ export async function POST(request: Request): Promise<Response> {
   if (slug !== undefined) input.slug = slug;
   const subcopy = nullableStr(body.subcopy);
   if (subcopy !== undefined) input.subcopy = subcopy;
+  const announcement = nullableStr(body.announcement);
+  if (announcement !== undefined) input.announcement = announcement;
   const sc = scope(body.scope);
   if (sc !== undefined) input.scope = sc;
   const scopeValues = strArray(body.scopeValues);

@@ -64,6 +64,7 @@ export interface PromotionRecord {
   ctaHref: string;
   autoMonth: boolean;
   priority: number;
+  announcement: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +77,7 @@ export interface PromotionInput {
   bannerKey: string;
   headline: string;
   subcopy?: string | null;
+  announcement?: string | null;
   discountPercent: number;
   scope?: PromotionScope;
   scopeValues?: string[];
@@ -94,6 +96,7 @@ export interface PromotionPatch {
   bannerKey?: string;
   headline?: string;
   subcopy?: string | null;
+  announcement?: string | null;
   discountPercent?: number;
   scope?: PromotionScope;
   scopeValues?: string[];
@@ -115,6 +118,7 @@ interface PromotionRow {
   banner_key: string;
   headline: string;
   subcopy: string | null;
+  announcement: string | null;
   discount_percent: number;
   scope: string;
   scope_values: string[] | null;
@@ -130,7 +134,7 @@ interface PromotionRow {
 }
 
 const PROMO_COLS =
-  "id, title, slug, banner_key, headline, subcopy, discount_percent, scope, scope_values, starts_at, ends_at, active, cta_label, cta_href, auto_month, priority, created_at, updated_at";
+  "id, title, slug, banner_key, headline, subcopy, announcement, discount_percent, scope, scope_values, starts_at, ends_at, active, cta_label, cta_href, auto_month, priority, created_at, updated_at";
 
 function toScope(raw: string): PromotionScope {
   return raw === "category" || raw === "product" ? raw : "all";
@@ -144,6 +148,7 @@ function toPromotion(r: PromotionRow): PromotionRecord {
     bannerKey: r.banner_key,
     headline: r.headline,
     subcopy: r.subcopy,
+    announcement: r.announcement,
     discountPercent: r.discount_percent,
     scope: toScope(r.scope),
     scopeValues: r.scope_values ?? [],
@@ -230,13 +235,14 @@ function resolveForDisplay(promo: PromotionRecord, now: Date): PromotionRecord {
   const sub = (s: string): string => s.replace(/\{month\}/gi, month);
   const subNullable = (s: string | null): string | null => (s === null ? null : sub(s));
   const hasToken = /\{month\}/i.test(
-    `${promo.title} ${promo.headline} ${promo.subcopy ?? ""} ${promo.ctaLabel}`,
+    `${promo.title} ${promo.headline} ${promo.subcopy ?? ""} ${promo.ctaLabel} ${promo.announcement ?? ""}`,
   );
   return {
     ...promo,
     title: hasToken ? sub(promo.title) : `${month} Sale`,
     headline: hasToken ? sub(promo.headline) : `${month} Sale`,
     subcopy: subNullable(promo.subcopy),
+    announcement: subNullable(promo.announcement),
     ctaLabel: sub(promo.ctaLabel),
   };
 }
@@ -251,6 +257,20 @@ export async function getHeroPromotion(
   const active = await getActivePromotions(now);
   const top = active[0];
   return top ? resolveForDisplay(top, now) : null;
+}
+
+/**
+ * Short marquee lines for the storefront top announcement bar — one per active
+ * promotion, resolved for display. Uses the explicit `announcement` when set,
+ * else a line built from the title + discount. Uses the short-lived active-promo
+ * cache so it's cheap on every render.
+ */
+export async function getActivePromoMessages(): Promise<string[]> {
+  const now = new Date();
+  const active = await getActivePromotionsCached();
+  return active
+    .map((p) => resolveForDisplay(p, now))
+    .map((p) => p.announcement?.trim() || `${p.title} · ${p.discountPercent}% OFF · ${p.ctaLabel}`);
 }
 
 /* ── pricing engine (pure) ────────────────────────────────────────────────── */
@@ -354,6 +374,7 @@ export async function createPromotion(input: PromotionInput): Promise<PromotionR
     banner_key: input.bannerKey,
     headline,
     subcopy: input.subcopy?.trim() || null,
+    announcement: input.announcement?.trim() || null,
     discount_percent: percent,
     scope: input.scope ?? "all",
     scope_values: normaliseScopeValues(input.scopeValues),
@@ -402,6 +423,7 @@ export async function updatePromotion(
     update.headline = headline;
   }
   if (patch.subcopy !== undefined) update.subcopy = patch.subcopy?.trim() || null;
+  if (patch.announcement !== undefined) update.announcement = patch.announcement?.trim() || null;
   if (patch.discountPercent !== undefined) {
     const percent = Math.round(patch.discountPercent);
     if (!Number.isFinite(percent) || percent < 1 || percent > 90) {
