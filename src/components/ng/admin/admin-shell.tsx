@@ -275,35 +275,37 @@ export function AdminShell({
       {/* Main */}
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-10 bg-ng-cream/85 backdrop-blur border-b border-ng-line-soft">
-          <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center gap-x-4 gap-y-3">
-            {/* Title column keeps a real minimum width so a long actions row can
-                never squeeze the heading/subtitle into a one-word-per-line sliver;
-                when the actions don't fit beside it they wrap onto their own row. */}
-            <div className="flex items-center gap-2.5 flex-1 min-w-[min(100%,240px)]">
-              <button
-                type="button"
-                aria-label="Open menu"
-                onClick={() => setDrawerOpen(true)}
-                className="lg:hidden grid size-9 shrink-0 place-items-center rounded-full text-ng-forest-deep hover:bg-ng-line-soft transition-colors cursor-pointer"
-              >
-                <Icon name="hamburger-menu-bold" size={22} />
-              </button>
-              <div className="min-w-0">
-                <h1 className="font-display text-[24px] text-ng-forest-deep leading-tight tracking-[-0.01em]">{title}</h1>
-                {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            {/* Row 1 — heading (left) + operator identity, which is always pinned
+                to the top-right corner instead of being lumped in with the page
+                action buttons (where a long row would strand it on its own line). */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <button
+                  type="button"
+                  aria-label="Open menu"
+                  onClick={() => setDrawerOpen(true)}
+                  className="lg:hidden grid size-9 shrink-0 place-items-center rounded-full text-ng-forest-deep hover:bg-ng-line-soft transition-colors cursor-pointer"
+                >
+                  <Icon name="hamburger-menu-bold" size={22} />
+                </button>
+                <div className="min-w-0">
+                  <h1 className="font-display text-[24px] text-ng-forest-deep leading-tight tracking-[-0.01em]">{title}</h1>
+                  {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
+                </div>
+              </div>
+              <div className="shrink-0">
+                <AdminIdentity />
               </div>
             </div>
-            {/* Actions must be allowed to SHRINK + wrap within the viewport: the
-                inventory page passes six buttons + the identity chip, whose one-line
-                max-content width far exceeds a phone/tablet. `shrink-0` forced that
-                width and pushed the page wider than the screen (the cream gutter);
-                letting it shrink (min-w-0) lets the inner flex-wrap stack the buttons
-                onto their own rows instead. Desktop is unchanged — with room to
-                spare the group never needs to shrink. */}
-            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 ml-auto min-w-0">
-              {actions}
-              <AdminIdentity />
-            </div>
+            {/* Row 2 — page actions on their own row: right-aligned from sm up,
+                wrapping on small screens so they never overflow. Omitted when a
+                page passes no actions. */}
+            {actions ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
+                {actions}
+              </div>
+            ) : null}
           </div>
         </header>
         <main className="px-4 sm:px-6 lg:px-8 py-8">{children}</main>
