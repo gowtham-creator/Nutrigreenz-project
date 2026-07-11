@@ -350,13 +350,13 @@ export default function AdminInventory() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-          <div className="ml-auto relative">
+          <div className="relative w-full sm:ml-auto sm:w-auto">
             <Icon name="magnifer-linear" size={15} className="text-ng-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, SKU…"
-              className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-1.5 text-[12.5px] w-64 outline-none focus:border-ng-forest"
+              className="rounded-full bg-ng-paper border border-ng-line-soft pl-9 pr-4 py-1.5 text-[12.5px] w-full sm:w-64 outline-none focus:border-ng-forest"
             />
           </div>
         </div>

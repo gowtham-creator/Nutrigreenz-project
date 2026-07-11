@@ -293,7 +293,14 @@ export function AdminShell({
                 {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
               </div>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0 ml-auto">
+            {/* Actions must be allowed to SHRINK + wrap within the viewport: the
+                inventory page passes six buttons + the identity chip, whose one-line
+                max-content width far exceeds a phone/tablet. `shrink-0` forced that
+                width and pushed the page wider than the screen (the cream gutter);
+                letting it shrink (min-w-0) lets the inner flex-wrap stack the buttons
+                onto their own rows instead. Desktop is unchanged — with room to
+                spare the group never needs to shrink. */}
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 ml-auto min-w-0">
               {actions}
               <AdminIdentity />
             </div>

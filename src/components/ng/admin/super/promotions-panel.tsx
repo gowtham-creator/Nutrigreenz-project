@@ -477,8 +477,8 @@ export function PromotionsPanel() {
       className="mb-6 scroll-mt-32 overflow-hidden rounded-3xl border border-ng-clay/25 bg-gradient-to-b from-ng-amber/[0.06] to-ng-paper p-6 shadow-[var(--shadow-ng-card)]"
     >
       {/* Header */}
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-ng-amber/30 to-ng-clay/30 text-ng-clay-deep">
             <Icon name="tag-price-bold" size={20} />
           </span>
@@ -810,7 +810,7 @@ export function PromotionsPanel() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-5">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:flex-nowrap sm:justify-end sm:gap-5">
                   <span className="font-display text-[20px] tabular-nums text-ng-forest-deep">
                     {p.discountPercent}%
                   </span>
