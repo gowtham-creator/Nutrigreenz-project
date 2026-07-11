@@ -275,8 +275,11 @@ export function AdminShell({
       {/* Main */}
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-10 bg-ng-cream/85 backdrop-blur border-b border-ng-line-soft">
-          <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+            {/* Title column keeps a real minimum width so a long actions row can
+                never squeeze the heading/subtitle into a one-word-per-line sliver;
+                when the actions don't fit beside it they wrap onto their own row. */}
+            <div className="flex items-center gap-2.5 flex-1 min-w-[min(100%,240px)]">
               <button
                 type="button"
                 aria-label="Open menu"
@@ -290,7 +293,7 @@ export function AdminShell({
                 {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 shrink-0 ml-auto">
               {actions}
               <AdminIdentity />
             </div>
