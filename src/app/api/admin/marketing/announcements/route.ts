@@ -7,7 +7,6 @@
  * and `active` is the show/hide switch. Every create is written to the admin
  * activity trail and busts the storefront cache so the bar updates fast.
  */
-import { revalidatePath } from "next/cache";
 import { requireSuperAdmin, superAdminEmail } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
@@ -73,9 +72,9 @@ export async function POST(request: Request): Promise<Response> {
         sort: announcement.sort,
       },
     });
-    // Bust the ISR cache across the whole storefront so a newly-added line shows
-    // in the top bar near-instantly, not after the page's revalidate window.
-    revalidatePath("/", "layout");
+    // No revalidatePath: the storefront bar reads these via the client-fetched
+    // /api/announcements (short-cached), so a whole-site revalidation would be
+    // pointless here AND slow (it churns every route, incl. this admin page).
     return Response.json({ ok: true, announcement }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

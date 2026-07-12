@@ -7,7 +7,6 @@
  * it. Every mutation is logged and busts the storefront cache so the bar updates
  * fast.
  */
-import { revalidatePath } from "next/cache";
 import { requireSuperAdmin, superAdminEmail } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
@@ -68,9 +67,6 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
         sort: announcement.sort,
       },
     });
-    // Editing / toggling a line changes the top bar — bust the ISR cache so the
-    // change is visible within a second or two.
-    revalidatePath("/", "layout");
     return Response.json({ ok: true, announcement });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -99,8 +95,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
       target: id,
       meta: { removal },
     });
-    // A removed line must stop scrolling in the bar immediately.
-    revalidatePath("/", "layout");
     return Response.json({ ok: true, removal });
   } catch (err) {
     const message = err instanceof Error ? err.message : "delete-failed";

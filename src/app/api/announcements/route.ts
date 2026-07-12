@@ -13,6 +13,6 @@ export async function GET(): Promise<Response> {
   const messages = announcements.map((a) => a.text);
   return Response.json(
     { messages },
-    { headers: { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" } },
+    { headers: { "cache-control": "public, s-maxage=5, stale-while-revalidate=30" } },
   );
 }

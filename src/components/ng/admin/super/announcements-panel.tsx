@@ -119,19 +119,20 @@ export function AnnouncementsPanel() {
   }
 
   async function setActive(a: AnnouncementRow, active: boolean) {
+    // Optimistic — flip the status locally so it reflects instantly, with no full
+    // list reload (which is what made the page stutter / the scroll jump).
+    setRows((prev) => prev.map((r) => (r.id === a.id ? { ...r, active } : r)));
     try {
       const res = await fetch(`/api/admin/marketing/announcements/${a.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ active }),
       });
-      if (!res.ok) {
-        toast.error("Couldn't update announcement.");
-        return;
-      }
+      if (!res.ok) throw new Error("update-failed");
       toast.success(active ? "Announcement activated" : "Announcement paused");
-      await load();
     } catch {
+      // Revert on failure.
+      setRows((prev) => prev.map((r) => (r.id === a.id ? { ...r, active: !active } : r)));
       toast.error("Couldn't update announcement.");
     }
   }
@@ -140,16 +141,16 @@ export function AnnouncementsPanel() {
     if (typeof window !== "undefined" && !window.confirm(`Delete this line?\n\n“${a.text}”`)) {
       return;
     }
+    // Optimistic — drop it locally right away; restore on failure.
+    const prev = rows;
+    setRows((r) => r.filter((x) => x.id !== a.id));
+    if (editingId === a.id) resetForm();
     try {
       const res = await fetch(`/api/admin/marketing/announcements/${a.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Couldn't delete announcement.");
-        return;
-      }
+      if (!res.ok) throw new Error("delete-failed");
       toast.success("Announcement deleted");
-      if (editingId === a.id) resetForm();
-      await load();
     } catch {
+      setRows(prev);
       toast.error("Couldn't delete announcement.");
     }
   }
