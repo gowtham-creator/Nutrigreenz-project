@@ -173,13 +173,12 @@ export default function AdminMarketing() {
         <Card title="Channel revenue · 7-day GMV attribution" action={<PreviewPill />}>
           <HBars
             rows={[
-              { label: "Email", value: 247000, hint: "6.4× ROAS" },
-              { label: "Push", value: 132000, hint: "9.1× ROAS" },
-              { label: "Referral", value: 192000, hint: "organic" },
-              { label: "Community captains", value: 240000, hint: "4% comm." },
-              { label: "Paid social", value: 98000, hint: "3.2× ROAS" },
+              { label: "Email", value: 247000, hint: "6.4× ROAS", tone: "forest" },
+              { label: "Push", value: 132000, hint: "9.1× ROAS", tone: "leaf" },
+              { label: "Referral", value: 192000, hint: "organic", tone: "amber" },
+              { label: "Community captains", value: 240000, hint: "4% comm.", tone: "clay" },
+              { label: "Paid social", value: 98000, hint: "3.2× ROAS", tone: "terracotta" },
             ]}
-            tone="clay"
             formatValue={(v) => `₹${(v / 1000).toFixed(0)}k`}
           />
         </Card>

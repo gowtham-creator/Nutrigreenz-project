@@ -355,7 +355,7 @@ export function HBars({
   formatValue,
   className,
 }: {
-  rows: { label: string; value: number; hint?: string }[];
+  rows: { label: string; value: number; hint?: string; tone?: VizTone }[];
   tone?: VizTone;
   formatValue?: (v: number) => string;
   className?: string;
@@ -375,7 +375,7 @@ export function HBars({
           <div className="h-2 rounded-full bg-ng-line-soft overflow-hidden">
             <div
               className="h-full rounded-full"
-              style={{ width: `${Math.max(4, (r.value / max) * 100)}%`, background: TONE_STROKE[tone] }}
+              style={{ width: `${Math.max(4, (r.value / max) * 100)}%`, background: TONE_STROKE[r.tone ?? tone] }}
             />
           </div>
         </li>

@@ -188,29 +188,29 @@ export function LiveCouponsPanel() {
           <table className="w-full text-left text-[13px]">
             <thead className="bg-ng-sage/30 text-ng-forest-deep">
               <tr>
-                <th className="px-4 py-2.5 font-semibold">Code</th>
-                <th className="px-4 py-2.5 font-semibold">Discount</th>
-                <th className="px-4 py-2.5 font-semibold">Used</th>
-                <th className="px-4 py-2.5 font-semibold">Status</th>
-                <th className="px-4 py-2.5 font-semibold text-right">Action</th>
+                <th className="px-5 py-3 font-semibold">Code</th>
+                <th className="px-5 py-3 font-semibold">Discount</th>
+                <th className="px-5 py-3 font-semibold">Used</th>
+                <th className="px-5 py-3 font-semibold">Status</th>
+                <th className="px-5 py-3 font-semibold text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ng-line-soft">
               {coupons.map((c) => (
                 <tr key={c.id} className="bg-ng-paper">
-                  <td className="px-4 py-3 font-display text-[14px] text-ng-forest-deep">{c.code}</td>
-                  <td className="px-4 py-3 text-ng-ink-muted">{describe(c)}</td>
-                  <td className="px-4 py-3 tabular-nums text-ng-ink-muted">
+                  <td className="px-5 py-3.5 font-display text-[14px] text-ng-forest-deep">{c.code}</td>
+                  <td className="px-5 py-3.5 text-ng-ink-muted">{describe(c)}</td>
+                  <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted">
                     {c.usedCount}
                     {c.usageLimit ? ` / ${c.usageLimit}` : ""}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", c.active ? "bg-ng-green-bright/15 text-ng-forest" : "bg-ng-line text-ng-ink-soft")}>
                       <span className={cn("h-1.5 w-1.5 rounded-full", c.active ? "bg-ng-green-bright" : "bg-ng-ink-soft")} />
                       {c.active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-5 py-3.5 text-right">
                     <button
                       type="button"
                       onClick={() => void setActive(c, !c.active)}
