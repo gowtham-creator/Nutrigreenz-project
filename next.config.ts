@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
   // Token verification is done with `jose` (see src/lib/firebase-admin.ts), so
   // no firebase-admin externalisation or `output: "standalone"` is needed.
   images: {
+    // Allow higher-quality optimised variants (default is 75, which softens the
+    // fine label detail on product shots at high-DPR mobile/tablet screens).
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: "https",

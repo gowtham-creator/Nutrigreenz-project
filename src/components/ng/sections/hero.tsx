@@ -287,6 +287,7 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         alt={slide.alt}
         fill
         priority={priority}
+        quality={90}
         sizes="100vw"
         className="object-cover object-[62%_center] sm:object-right"
       />
@@ -374,6 +375,7 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
         alt={promo.title}
         fill
         priority={priority}
+        quality={90}
         sizes="100vw"
         className="object-cover object-[62%_center] sm:object-right"
       />

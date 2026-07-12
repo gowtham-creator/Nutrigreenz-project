@@ -117,7 +117,8 @@ export function ProductCard({ product, variant = "default", className }: Props) 
               src={product.image}
               alt={product.title}
               fill
-              sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
+              quality={90}
+              sizes="(max-width: 640px) 60vw, (max-width: 1280px) 33vw, 22vw"
               className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.07]"
             />
           ) : (
