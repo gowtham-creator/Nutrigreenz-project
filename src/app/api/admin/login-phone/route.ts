@@ -4,7 +4,7 @@ import {
   ADMIN_EMAIL_COOKIE,
   ADMIN_ROLE_COOKIE,
 } from "@/lib/admin-auth";
-import { createToken } from "@/lib/admin-session";
+import { ADMIN_SESSION_TTL_SECONDS, createToken } from "@/lib/admin-session";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
 import { logActivity } from "@/lib/activity-log";
@@ -13,7 +13,8 @@ import { logActivity } from "@/lib/activity-log";
 export const runtime = "nodejs";
 
 /** Session lifetime: 12 hours (seconds) — mirrors the passcode login. */
-const MAX_AGE = 60 * 60 * 12;
+// 30-min idle session, slid on activity via /api/admin/heartbeat.
+const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /**
  * POST /api/admin/login-phone  { idToken: string }

@@ -7,31 +7,34 @@ import { getAdminRole } from "@/lib/admin-auth";
 /**
  * Idle-session guard for the operator portal (Feature #51).
  *
- * Watches for operator activity (mousemove / keydown / click / scroll) and,
- * after a role-based idle window, signs the operator out: it clears the server
- * session via `/api/admin/logout`, then redirects to the login screen with
- * `?reason=timeout` so the login page can explain why.
+ * While the operator is active (mousemove / keydown / click / scroll) it pings
+ * `/api/admin/heartbeat` — throttled to once a minute — which SLIDES the server
+ * session cookie forward, so an actively-working operator is NEVER signed out
+ * (and a plain refresh keeps them in). After a full idle window with no activity
+ * it signs out: clears the server session via `/api/admin/logout`, then redirects
+ * to the login screen with `?reason=timeout`.
  *
- * Idle windows by role (read from the non-secret `ng_admin_role` cookie):
- *   - superadmin → 10 minutes
- *   - admin      → 8 minutes
+ * Belt-and-braces: the session cookie itself now expires after the same window
+ * (see ADMIN_SESSION_TTL_SECONDS), so even if this timer never runs — e.g. the
+ * tab was closed and the portal reopened after the window — the proxy finds no
+ * valid session and redirects to login. So the timeout holds whether the tab
+ * stays open or not.
  *
- * It runs ONLY on real `/admin/*` pages, and is a no-op on the auth screens
- * (`/admin/login`, `/admin/forgot`) where there is no session to protect.
+ * Runs ONLY on real `/admin/*` pages; a no-op on the auth screens where there is
+ * no session to protect.
  */
 
-/** Idle window (ms) before auto sign-out, by role. */
-const TIMEOUT_MS: Record<"superadmin" | "admin", number> = {
-  superadmin: 10 * 60 * 1000,
-  admin: 8 * 60 * 1000,
-};
+/** Idle window (ms) before auto sign-out — mirrors ADMIN_SESSION_TTL_SECONDS. */
+const IDLE_MS = 30 * 60 * 1000;
+/** Ping the heartbeat at most once per this interval, however busy the mouse is. */
+const HEARTBEAT_THROTTLE_MS = 60 * 1000;
 
 /** Activity events that count as the operator being present. */
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
 
 /** Pages that are pre-login (no session to time out). */
 function isAuthScreen(pathname: string): boolean {
-  return pathname === "/admin/login" || pathname === "/admin/forgot";
+  return pathname === "/admin/login" || pathname === "/admin/forgot" || pathname === "/login";
 }
 
 export function IdleTimeout() {
@@ -41,17 +44,13 @@ export function IdleTimeout() {
   const signedOut = useRef(false);
 
   useEffect(() => {
-    // The proxy also serves the portal on the `admin.` subdomain where clean
-    // paths (e.g. `/orders`, `/`) map to `/admin/*`. Treat the bare login path
-    // on either host as an auth screen; everything else inside the portal is
-    // a protected page that should idle-time-out.
-    if (isAuthScreen(pathname) || pathname === "/login") return;
+    if (isAuthScreen(pathname)) return;
 
     const role = getAdminRole();
     if (!role) return; // No readable session → nothing to protect.
-    const timeoutMs = TIMEOUT_MS[role];
 
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastPing = 0;
 
     async function signOut() {
       if (signedOut.current) return;
@@ -64,18 +63,27 @@ export function IdleTimeout() {
       router.replace("/admin/login?reason=timeout");
     }
 
+    // Slide the server session while active, but no more than once a minute.
+    function heartbeat() {
+      const now = Date.now();
+      if (now - lastPing < HEARTBEAT_THROTTLE_MS) return;
+      lastPing = now;
+      void fetch("/api/admin/heartbeat", { method: "POST" }).catch(() => {});
+    }
+
     function reset() {
       if (signedOut.current) return;
+      heartbeat();
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         void signOut();
-      }, timeoutMs);
+      }, IDLE_MS);
     }
 
     for (const ev of ACTIVITY_EVENTS) {
       window.addEventListener(ev, reset, { passive: true });
     }
-    reset();
+    reset(); // start the timer + slide once on mount / navigation
 
     return () => {
       if (timer) clearTimeout(timer);

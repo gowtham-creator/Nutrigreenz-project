@@ -22,6 +22,16 @@
 /** Roles an admin session can hold. */
 export type AdminRole = "admin" | "superadmin";
 
+/**
+ * Admin session idle window, in seconds. The `ng_admin` cookie (and the readable
+ * email/role cookies) are set with this maxAge at login and SLID on activity via
+ * `/api/admin/heartbeat` + on navigation, so an active operator never lapses.
+ * After this long with no activity the cookies expire on their own and the proxy
+ * bounces the next admin request to the login screen. Single source of truth —
+ * the login routes and the client idle guard all read this window.
+ */
+export const ADMIN_SESSION_TTL_SECONDS = 30 * 60;
+
 /** Decoded, verified session payload. */
 export interface AdminSession {
   email: string;

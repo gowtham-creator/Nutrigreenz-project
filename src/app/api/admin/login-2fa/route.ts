@@ -5,14 +5,15 @@ import {
   ADMIN_ROLE_COOKIE,
   ADMIN_MFA_COOKIE,
 } from "@/lib/admin-auth";
-import { createToken, verifyMfaTicket } from "@/lib/admin-session";
+import { ADMIN_SESSION_TTL_SECONDS, createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
 import { verifyEmailOtp, getAdminFactors } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
 import { logActivity } from "@/lib/activity-log";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
-const MAX_AGE = 60 * 60 * 12;
+// 30-min idle session, slid on activity via /api/admin/heartbeat.
+const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /**
  * POST /api/admin/login-2fa

@@ -6,6 +6,7 @@ import {
   ADMIN_MFA_COOKIE,
 } from "@/lib/admin-auth";
 import {
+  ADMIN_SESSION_TTL_SECONDS,
   createMfaTicket,
   createToken,
   type AdminRole,
@@ -18,7 +19,8 @@ import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
 
 /** Session lifetime: 12 hours (seconds). */
-const MAX_AGE = 60 * 60 * 12;
+// 30-min idle session, slid on activity via /api/admin/heartbeat.
+const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /** Default operator email if `ADMIN_EMAIL` is not configured. */
 const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.in";
