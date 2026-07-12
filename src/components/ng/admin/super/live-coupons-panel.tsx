@@ -28,6 +28,7 @@ interface CouponRow {
   active: boolean;
   usageLimit: number | null;
   perCustomerLimit: number | null;
+  requiresVerifiedPhone: boolean;
   usedCount: number;
 }
 
@@ -47,6 +48,7 @@ const EMPTY = {
   minOrder: "",
   cap: "",
   perCustomerLimit: "1",
+  requiresPhone: false,
 };
 
 export function LiveCouponsPanel() {
@@ -90,6 +92,8 @@ export function LiveCouponsPanel() {
       minOrderPaise: form.minOrder ? Math.round(Number(form.minOrder) * 100) : 0,
       capPaise: form.kind === "percent" && form.cap ? Math.round(Number(form.cap) * 100) : null,
       perCustomerLimit: form.perCustomerLimit ? Math.round(Number(form.perCustomerLimit)) : null,
+      // Welcome/first-order codes require an OTP-verified phone + are once-per-customer.
+      requiresVerifiedPhone: form.requiresPhone,
       active: true,
     };
 
@@ -176,6 +180,23 @@ export function LiveCouponsPanel() {
             {saving ? "Adding…" : "Add coupon"}
           </Button>
         </div>
+
+        {/* Welcome / first-order gate — requires an OTP-verified phone + once per customer. */}
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-ng-line-soft bg-ng-paper px-4 py-3 sm:col-span-2 lg:col-span-6">
+          <input
+            type="checkbox"
+            checked={form.requiresPhone}
+            onChange={(e) => setForm((f) => ({ ...f, requiresPhone: e.target.checked }))}
+            className="h-4 w-4 shrink-0 accent-ng-forest"
+          />
+          <span className="flex items-center gap-1.5 text-[13px] leading-snug text-ng-ink">
+            <Icon name="phone-bold" size={14} className="text-ng-clay-deep" />
+            <span>
+              <span className="font-semibold text-ng-forest-deep">First-order / welcome code</span>
+              {" "}— requires a verified phone (once per customer)
+            </span>
+          </span>
+        </label>
       </div>
 
       {/* List */}
@@ -198,7 +219,17 @@ export function LiveCouponsPanel() {
             <tbody className="divide-y divide-ng-line-soft">
               {coupons.map((c) => (
                 <tr key={c.id} className="bg-ng-paper">
-                  <td className="px-5 py-3.5 font-display text-[14px] text-ng-forest-deep">{c.code}</td>
+                  <td className="px-5 py-3.5 font-display text-[14px] text-ng-forest-deep">
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      {c.code}
+                      {c.requiresVerifiedPhone ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome / first-order code — requires a verified phone, once per customer">
+                          <Icon name="phone-bold" size={10} />
+                          Welcome
+                        </span>
+                      ) : null}
+                    </span>
+                  </td>
                   <td className="px-5 py-3.5 text-ng-ink-muted">{describe(c)}</td>
                   <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted">
                     {c.usedCount}

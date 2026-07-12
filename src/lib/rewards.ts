@@ -13,6 +13,7 @@
  */
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
+import { hasVerifiedPhone } from "@/lib/customer-identity";
 
 /* ── program defaults ──────────────────────────────────────────────────────
  * FALLBACK values only. The live programme config is read from the DB row
@@ -191,6 +192,12 @@ export interface CouponRecord {
   usageLimit: number | null;
   /** Redemptions allowed per customer; null = unlimited. */
   perCustomerLimit: number | null;
+  /**
+   * Welcome / first-order flag. When true the coupon only validates for a
+   * canonical customer that owns an OTP-verified phone, and is enforced as
+   * once-per-customer (a null `perCustomerLimit` is treated as 1).
+   */
+  requiresVerifiedPhone: boolean;
   usedCount: number;
   createdAt: string;
   updatedAt: string;
@@ -216,7 +223,9 @@ export type CouponRejection =
   | "expired"
   | "below-min"
   | "usage-limit"
-  | "customer-limit";
+  | "customer-limit"
+  /** Welcome/first-order code applied without an OTP-verified phone on file. */
+  | "phone-verification-required";
 
 export interface CouponValidation {
   valid: boolean;
@@ -259,6 +268,7 @@ interface CouponRow {
   ends_at: string | null;
   usage_limit: number | null;
   per_customer_limit: number | null;
+  requires_verified_phone: boolean;
   used_count: number;
   created_at: string;
   updated_at: string;
@@ -274,7 +284,7 @@ interface LedgerRow {
 }
 
 const COUPON_COLS =
-  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, used_count, created_at, updated_at";
+  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, requires_verified_phone, used_count, created_at, updated_at";
 const LEDGER_COLS = "id, customer_id, order_id, delta_points, reason, created_at";
 
 function toKind(raw: string | null | undefined): CouponKind {
@@ -298,6 +308,7 @@ function toCoupon(r: CouponRow): CouponRecord {
     endsAt: r.ends_at,
     usageLimit: r.usage_limit,
     perCustomerLimit: r.per_customer_limit,
+    requiresVerifiedPhone: Boolean(r.requires_verified_phone),
     usedCount: r.used_count,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -373,13 +384,31 @@ export async function validateCouponServer(
   if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
     return reject("usage-limit");
   }
-  if (coupon.perCustomerLimit !== null && customerId) {
+
+  // Welcome / first-order gate: the code only applies for a canonical customer
+  // that owns an OTP-VERIFIED phone — this ties the bonus to a deduped identity
+  // so the same person can't re-claim it from a fresh login. Fail-safe:
+  // hasVerifiedPhone never throws and reads FALSE on any error, so a lookup
+  // hiccup REJECTS the bonus (never silently granted). This gate is only reached
+  // for coupons an admin explicitly flagged, so a normal order is never touched.
+  if (coupon.requiresVerifiedPhone) {
+    if (!customerId || !(await hasVerifiedPhone(customerId))) {
+      return reject("phone-verification-required");
+    }
+  }
+
+  // Per-customer cap counted from `coupon_uses`. A welcome code is single-use per
+  // canonical customer even when the admin left `per_customer_limit` blank — a
+  // null limit resolves to 1 for a verified-phone code (unchanged for others).
+  const effectivePerCustomerLimit =
+    coupon.perCustomerLimit ?? (coupon.requiresVerifiedPhone ? 1 : null);
+  if (effectivePerCustomerLimit !== null && customerId) {
     const { count } = await supabaseAdmin()
       .from("coupon_uses")
       .select("id", { count: "exact", head: true })
       .eq("coupon_id", coupon.id)
       .eq("customer_id", customerId);
-    if ((count ?? 0) >= coupon.perCustomerLimit) return reject("customer-limit");
+    if ((count ?? 0) >= effectivePerCustomerLimit) return reject("customer-limit");
   }
 
   return {
@@ -566,12 +595,15 @@ export interface CouponInput {
   endsAt?: string | null;
   usageLimit?: number | null;
   perCustomerLimit?: number | null;
+  /** Welcome / first-order flag — gates the code behind an OTP-verified phone. */
+  requiresVerifiedPhone?: boolean;
 }
 
 /** Create a coupon (code stored UPPERCASE) and return the fresh record. */
 export async function createCoupon(input: CouponInput): Promise<CouponRecord> {
   const code = input.code.trim().toUpperCase();
   if (!code) throw new Error("Coupon code is required.");
+  const requiresVerifiedPhone = input.requiresVerifiedPhone ?? false;
   const { data, error } = await supabaseAdmin()
     .from("coupons")
     .insert({
@@ -584,12 +616,18 @@ export async function createCoupon(input: CouponInput): Promise<CouponRecord> {
       starts_at: input.startsAt ?? null,
       ends_at: input.endsAt ?? null,
       usage_limit: input.usageLimit == null ? null : Math.max(0, Math.round(input.usageLimit)),
+      // A welcome/first-order code is once-per-customer by definition, so it is
+      // never stored as unlimited — a blank/null limit clamps up to 1 when the
+      // verified-phone flag is on (ordinary coupons keep their existing rule).
       per_customer_limit:
         input.perCustomerLimit === undefined
           ? 1
           : input.perCustomerLimit === null
-            ? null
+            ? requiresVerifiedPhone
+              ? 1
+              : null
             : Math.max(1, Math.round(input.perCustomerLimit)),
+      requires_verified_phone: requiresVerifiedPhone,
     })
     .select(COUPON_COLS)
     .single();
@@ -607,6 +645,7 @@ export interface CouponPatch {
   endsAt?: string | null;
   usageLimit?: number | null;
   perCustomerLimit?: number | null;
+  requiresVerifiedPhone?: boolean;
 }
 
 /**
@@ -637,6 +676,9 @@ export async function updateCoupon(
   if (patch.perCustomerLimit !== undefined) {
     row.per_customer_limit =
       patch.perCustomerLimit === null ? null : Math.max(1, Math.round(patch.perCustomerLimit));
+  }
+  if (patch.requiresVerifiedPhone !== undefined) {
+    row.requires_verified_phone = patch.requiresVerifiedPhone;
   }
 
   if (Object.keys(row).length === 0) {

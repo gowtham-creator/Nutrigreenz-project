@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ng/button";
@@ -9,6 +9,10 @@ import { cn } from "@/lib/utils";
 import type { Coupon } from "@/types/nutrigreenz";
 import { INR, POINTS_PER_RUPEE } from "./order-math";
 import { couponReasonMessage, validateCouponApi } from "@/lib/rewards-client";
+import {
+  PHONE_VERIFIED_EVENT,
+  requestPhoneVerification,
+} from "@/lib/phone-verify-client";
 
 export function RewardsPanel({
   subtotal,
@@ -38,6 +42,12 @@ export function RewardsPanel({
   const loyaltyRupees = Math.floor(loyaltyAvailable / ratio);
   const loyaltyOn = loyaltyRedeemed > 0;
 
+  // A welcome / first-order code needs an OTP-verified phone before it validates.
+  // When one is rejected for that reason we open the inline OTP prompt and, once
+  // the customer verifies, re-apply the SAME code automatically (no re-typing).
+  const pendingVerifyRef = useRef(false);
+  const applyRef = useRef<() => void>(() => {});
+
   async function handleApply() {
     if (applying) return;
     setApplying(true);
@@ -47,6 +57,12 @@ export function RewardsPanel({
       const result = await validateCouponApi(code, Math.round(subtotal * 100));
       if (!result.valid || !result.code) {
         toast.error(couponReasonMessage(result.reason));
+        // Welcome/first-order code without a verified phone → open OTP inline and
+        // remember to retry this code the moment verification completes.
+        if (result.reason === "phone-verification-required") {
+          pendingVerifyRef.current = true;
+          requestPhoneVerification();
+        }
         return;
       }
       const discount = Math.round(result.discountPaise) / 100;
@@ -62,10 +78,28 @@ export function RewardsPanel({
       onApplyCoupon(coupon, discount);
       toast.success(`${result.code} applied — you saved ${INR(discount)}`);
       setCode("");
+      pendingVerifyRef.current = false;
     } finally {
       setApplying(false);
     }
   }
+
+  // Keep a live handle to the latest apply routine so the (stable) verified-phone
+  // listener always retries with the current code/subtotal, never a stale closure.
+  useEffect(() => {
+    applyRef.current = () => void handleApply();
+  });
+
+  // When the OTP prompt reports a freshly-verified phone, retry the pending code.
+  useEffect(() => {
+    const onVerified = () => {
+      if (!pendingVerifyRef.current) return;
+      pendingVerifyRef.current = false;
+      applyRef.current();
+    };
+    window.addEventListener(PHONE_VERIFIED_EVENT, onVerified);
+    return () => window.removeEventListener(PHONE_VERIFIED_EVENT, onVerified);
+  }, []);
 
   return (
     <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">

@@ -22,6 +22,10 @@ import {
   GOOGLE_ENRICH_EVENT,
   type GoogleEnrichDetail,
 } from "@/lib/google-enrich-client";
+import {
+  announcePhoneVerified,
+  PHONE_VERIFY_REQUEST_EVENT,
+} from "@/lib/phone-verify-client";
 
 /**
  * Additive, SKIPPABLE mobile-capture prompt (Task T3 — customer-identity dedup).
@@ -124,6 +128,25 @@ export function LinkPhonePrompt() {
     };
     window.addEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
     return () => window.removeEventListener(GOOGLE_ENRICH_EVENT, onEnrich);
+  }, []);
+
+  // Checkout welcome-coupon flow (money + identity sensitive): a welcome /
+  // first-order code only validates once the customer owns an OTP-verified phone.
+  // When the coupon field requests it, open this prompt FRESH so they can verify
+  // inline — even if they previously "skipped" the generic capture nag, because
+  // this is a specific, coupon-driven ask rather than the passive prompt.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onRequest = () => {
+      setStep("phone");
+      setPhone("");
+      setOtp("");
+      setError(null);
+      setDone(false);
+      setOpen(true);
+    };
+    window.addEventListener(PHONE_VERIFY_REQUEST_EVENT, onRequest);
+    return () => window.removeEventListener(PHONE_VERIFY_REQUEST_EVENT, onRequest);
   }, []);
 
   // Escape + body scroll lock while open.
@@ -267,6 +290,11 @@ export function LinkPhonePrompt() {
       if (auth?.currentUser) {
         await auth.currentUser.getIdToken(true).catch(() => {});
       }
+
+      // Tell any waiting checkout coupon field the phone is now verified + linked
+      // (the server attach above has completed), so it can re-validate + apply the
+      // pending welcome code automatically. No-op when nothing is listening.
+      announcePhoneVerified();
 
       setDone(true);
       // Mark dismissed so it never re-prompts for this account.

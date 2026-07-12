@@ -429,6 +429,55 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
 }
 
 /**
+ * Whether the canonical customer OWNS an OTP-VERIFIED phone. True iff either:
+ *   (a) a `customer_identities` row for this customer carries a non-null phone
+ *       with `verified = true` (the identity model's verified-phone record), or
+ *   (b) `customers.primary_phone` is set — that column is ONLY ever seeded from a
+ *       verified number (see {@link resolveCustomer} / {@link attachVerifiedPhone}),
+ *       so it is a trusted verified signal and covers phone sign-in users whose
+ *       verified identity row exists under a different provider tag.
+ *
+ * Used to gate welcome / first-order coupons (which must tie the bonus to a
+ * deduped, verified identity) WITHOUT touching the normal checkout path.
+ *
+ * Fail-safe by contract: this NEVER throws and returns FALSE on any error or
+ * missing config, so a transient lookup failure can never silently GRANT a
+ * phone-gated bonus. A false negative can only ever block a *welcome* coupon
+ * (the customer re-verifies inline); it is never consulted for a normal order,
+ * so it can never block ordinary checkout.
+ */
+export async function hasVerifiedPhone(customerId: string): Promise<boolean> {
+  if (!customerId) return false;
+  try {
+    const db = supabaseAdmin();
+
+    // (a) A verified phone identity attached to this canonical customer.
+    const { data: idRow, error: idErr } = await db
+      .from("customer_identities")
+      .select("id")
+      .eq("customer_id", customerId)
+      .eq("verified", true)
+      .not("phone", "is", null)
+      .limit(1)
+      .maybeSingle();
+    if (!idErr && idRow) return true;
+
+    // (b) The trusted dedup key — primary_phone is only ever set from a verified
+    //     number, so its presence proves ownership of a verified phone.
+    const { data: custRow, error: custErr } = await db
+      .from("customers")
+      .select("primary_phone")
+      .eq("id", customerId)
+      .maybeSingle();
+    if (custErr) return false;
+    return Boolean((custRow as { primary_phone: string | null } | null)?.primary_phone);
+  } catch {
+    // Fail safe: a lookup error must NEVER be read as "has a verified phone".
+    return false;
+  }
+}
+
+/**
  * Find the canonical customer that OWNS a VERIFIED phone, by either:
  *   (a) `customers.primary_phone` equals the number (the dedup key is always a
  *       verified number — `resolveCustomer` only seeds it from a verified phone), or

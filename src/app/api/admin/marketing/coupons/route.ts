@@ -82,6 +82,11 @@ export async function POST(request: Request): Promise<Response> {
   if (usageLimit !== undefined) input.usageLimit = usageLimit;
   const perCustomerLimit = nullableNum(body.perCustomerLimit);
   if (perCustomerLimit !== undefined) input.perCustomerLimit = perCustomerLimit;
+  // Welcome / first-order flag — when on, the coupon requires an OTP-verified
+  // phone and is enforced once-per-customer (createCoupon clamps the limit to 1).
+  if (typeof body.requiresVerifiedPhone === "boolean") {
+    input.requiresVerifiedPhone = body.requiresVerifiedPhone;
+  }
 
   try {
     const coupon = await createCoupon(input);
@@ -90,7 +95,12 @@ export async function POST(request: Request): Promise<Response> {
       actorRole: "superadmin",
       action: "coupon.create",
       target: coupon.code,
-      meta: { kind: coupon.kind, value: coupon.value, active: coupon.active },
+      meta: {
+        kind: coupon.kind,
+        value: coupon.value,
+        active: coupon.active,
+        requiresVerifiedPhone: coupon.requiresVerifiedPhone,
+      },
     });
     return Response.json({ ok: true, coupon }, { status: 201 });
   } catch (err) {
