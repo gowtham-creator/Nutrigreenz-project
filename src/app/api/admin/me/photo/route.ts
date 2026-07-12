@@ -67,8 +67,10 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
 
-  const admin = await getAdminByEmail(session.email);
-  if (!admin) return Response.json({ ok: false, error: "no-profile" }, { status: 404 });
+  // Ensure the operator has a profile row (creates one for an env-only admin) so
+  // there's a stable id to key the avatar object on and a row to save the URL to.
+  const admin = await updateAdminProfile({ email: session.email, role: session.role });
+  if (!admin) return Response.json({ ok: false, error: "save-failed" }, { status: 500 });
 
   // Read the image from whichever transport the client used.
   let bytes: Uint8Array;
@@ -123,7 +125,7 @@ export async function POST(request: Request): Promise<Response> {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(key);
   const photoUrl = `${data.publicUrl}?v=${Date.now()}`;
 
-  await updateAdminProfile({ email: session.email, photoUrl });
+  await updateAdminProfile({ email: session.email, role: session.role, photoUrl });
   await logActivity({
     actorEmail: session.email,
     actorRole: session.role,

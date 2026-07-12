@@ -97,10 +97,9 @@ export async function PATCH(request: Request): Promise<Response> {
     }
   }
 
-  const updated = await updateAdminProfile({ email: session.email, ...patch });
+  const updated = await updateAdminProfile({ email: session.email, role: session.role, ...patch });
   if (!updated) {
-    // No `admins` row to persist onto (env-only operator).
-    return Response.json({ ok: false, error: "no-profile" }, { status: 404 });
+    return Response.json({ ok: false, error: "save-failed" }, { status: 500 });
   }
 
   await logActivity({

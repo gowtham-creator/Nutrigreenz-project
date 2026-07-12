@@ -5,6 +5,7 @@ import {
   ADMIN_ROLE_COOKIE,
 } from "@/lib/admin-auth";
 import { ADMIN_SESSION_TTL_SECONDS, createToken } from "@/lib/admin-session";
+import { adminByPhone } from "@/lib/admins";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
 import { logActivity } from "@/lib/activity-log";
@@ -73,7 +74,9 @@ export async function POST(request: Request): Promise<Response> {
   // 3. Allowlist → operator identity (fail closed). The number maps back to the
   //    SAME canonical email as passcode sign-in, so phone sign-in lands in the
   //    existing admin profile (e.g. admin@nutrigreenz.in) — not a phone-keyed one.
-  const op = operatorForPhone(phone);
+  // Env allowlist first (fast path); then any admin whose OWN saved profile phone
+  // matches, so a super-admin who changed their number can sign in with it.
+  const op = operatorForPhone(phone) ?? (await adminByPhone(phone));
   if (!op) {
     return Response.json({ ok: false, error: "not-authorised" }, { status: 403 });
   }

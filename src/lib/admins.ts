@@ -139,6 +139,8 @@ export interface AdminProfileUpdate {
   name?: string;
   phone?: string | null;
   photoUrl?: string | null;
+  /** Role stamped when CREATING the row for an env-only operator; ignored on update. */
+  role?: AdminRole;
 }
 
 /**
@@ -154,17 +156,65 @@ export async function updateAdminProfile(
   if (input.name !== undefined) patch.name = input.name.trim() || null;
   if (input.phone !== undefined) patch.phone = (input.phone ?? "").trim() || null;
   if (input.photoUrl !== undefined) patch.photo_url = input.photoUrl || null;
-  if (Object.keys(patch).length === 0) return getAdminByEmail(input.email);
 
-  patch.updated_at = new Date().toISOString();
-  const { data, error } = await supabaseAdmin()
+  const db = supabaseAdmin();
+  const existing = await getAdminByEmail(input.email);
+
+  if (existing) {
+    if (Object.keys(patch).length === 0) return existing;
+    patch.updated_at = new Date().toISOString();
+    const { data, error } = await db
+      .from("admins")
+      .update(patch)
+      .eq("email", norm(input.email))
+      .select(COLS)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? toRecord(data as AdminRow) : existing;
+  }
+
+  // No row yet — e.g. the env-configured super-admin saving for the first time.
+  // Create one from the (verified) session identity so the profile persists and
+  // future edits, the header avatar and phone-OTP-by-profile-number all work.
+  const { data, error } = await db
     .from("admins")
-    .update(patch)
-    .eq("email", norm(input.email))
+    .insert({
+      email: norm(input.email),
+      role: input.role ?? "admin",
+      status: "active",
+      must_change_password: false,
+      name: patch.name ?? null,
+      phone: patch.phone ?? null,
+      photo_url: patch.photo_url ?? null,
+    })
     .select(COLS)
-    .maybeSingle();
+    .single();
   if (error) throw new Error(error.message);
-  return data ? toRecord(data as AdminRow) : null;
+  return toRecord(data as AdminRow);
+}
+
+/**
+ * The active admin whose saved profile phone matches (E.164), or null. Lets an
+ * operator sign in by phone-OTP to a number they set in their OWN profile — so a
+ * changed phone starts receiving the login OTP without an env change.
+ */
+export async function adminByPhone(
+  phone: string,
+): Promise<{ email: string; role: AdminRole } | null> {
+  const p = (phone || "").replace(/[^\d+]/g, "");
+  if (p.replace(/\D/g, "").length < 10) return null;
+  try {
+    const { data } = await supabaseAdmin()
+      .from("admins")
+      .select("email, role, status")
+      .eq("phone", p)
+      .maybeSingle();
+    if (!data) return null;
+    const row = data as { email: string; role: AdminRole; status: string };
+    return row.status === "active" ? { email: row.email, role: row.role } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Generate a readable, strong password (no ambiguous characters). */
