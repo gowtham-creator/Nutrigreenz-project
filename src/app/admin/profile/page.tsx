@@ -9,32 +9,108 @@ import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 
 /**
- * /admin/profile — Milestone-1 placeholder for an operator's own account.
+ * /admin/profile — an operator's own account.
  *
  * Both Admin and Super Admin can reach this page (it is NOT super-admin gated).
- * Identity (email + role) is read from the readable display cookies; the rest
- * (name, mobile, joined, last sign-in, sessions, activity) is mocked for the
- * demo. All actions fire toasts only — live editing, password change, 2FA and
- * session management connect to Firebase + the backend in Milestone 2.
+ * Name, mobile, photo and the account meta (member since / last sign-in) load
+ * from `/api/admin/me` (backed by the `admins` row), and the recent-activity
+ * feed loads from `/api/admin/me/activity` — the operator's own trail. Edits
+ * persist via `PATCH /api/admin/me` (+ the photo endpoint); identity is resolved
+ * server-side from the signed session, never from the client.
  *
  * Important: a person can edit their own name/mobile/security here, but the
  * ROLE is read-only — only a Super Admin can change someone's role (from
- * Config → Roles), so an Admin can never self-promote.
+ * Config → Roles), so an Admin can never self-promote. Password, 2FA and
+ * session management remain their own surfaces.
  */
 function roleLabel(role: AdminRole | null): string {
   return role === "superadmin" ? "Super Admin" : "Admin";
 }
 
+/** One recent-activity row as returned by `/api/admin/me/activity`. */
+interface ActivityItem {
+  action: string;
+  target: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+/** Friendly label + Solar icon for a known activity action code (fallback: humanised). */
+const ACTIVITY_LABELS: Record<string, { label: string; icon: string }> = {
+  "admin.signin": { label: "Signed in", icon: "login-3-bold" },
+  "admin.profile_update": { label: "Updated your profile", icon: "user-circle-bold" },
+  "admin.photo_update": { label: "Changed your photo", icon: "camera-bold" },
+  "admin.photo_remove": { label: "Removed your photo", icon: "camera-bold" },
+  "admin.create": { label: "Added an admin", icon: "user-rounded-bold" },
+  "admin.update": { label: "Updated an admin", icon: "pen-2-bold" },
+  "admin.reset_password": { label: "Reset an admin’s password", icon: "key-minimalistic-bold" },
+  "admin.delete": { label: "Removed an admin", icon: "user-rounded-bold" },
+  "coupon.create": { label: "Created a coupon", icon: "speaker-bold" },
+  "coupon.update": { label: "Updated a coupon", icon: "speaker-bold" },
+  "coupon.delete": { label: "Deleted a coupon", icon: "speaker-bold" },
+  "coupon.deactivate": { label: "Deactivated a coupon", icon: "speaker-bold" },
+  "promotion.create": { label: "Created a promotion", icon: "speaker-bold" },
+  "promotion.update": { label: "Updated a promotion", icon: "speaker-bold" },
+  "promotion.delete": { label: "Deleted a promotion", icon: "speaker-bold" },
+};
+
+/** Describe an activity row for the feed: label, icon and an optional detail. */
+function describeActivity(
+  item: ActivityItem,
+  selfEmail: string | null,
+): { label: string; icon: string; detail: string | null } {
+  const known = ACTIVITY_LABELS[item.action];
+  const label =
+    known?.label ??
+    item.action.replace(/[._-]+/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  const icon = known?.icon ?? "tuning-2-bold";
+  // Hide the target when it is just the operator themselves (sign-ins, own
+  // profile/photo edits); show it when it names something else (a coupon, an
+  // admin they managed, etc.).
+  const detail = item.target && item.target !== selfEmail ? item.target : null;
+  return { label, icon, detail };
+}
+
+/** "12 May 2026" — the join date, or "—" when unknown. */
+function formatMemberSince(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** "Today, 9:12 AM" / "Yesterday, …" / "3 May, …" — last sign-in, or "—". */
+function formatLastSignIn(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const time = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === now.toDateString()) return `Today, ${time}`;
+  if (d.toDateString() === yesterday.toDateString()) return `Yesterday, ${time}`;
+  return `${d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${time}`;
+}
+
+/** A short relative timestamp for the activity feed. */
+function relativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const seconds = Math.floor((Date.now() - t) / 1000);
+  if (seconds < 45) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 const SESSIONS: { device: string; place: string; when: string; current: boolean; icon: string }[] = [
   { device: "This device · Chrome on macOS", place: "Hyderabad, IN", when: "Active now", current: true, icon: "monitor-bold" },
   { device: "Safari on iPhone", place: "Hyderabad, IN", when: "2 days ago", current: false, icon: "smartphone-bold" },
-];
-
-const ACTIVITY: { icon: string; label: string; detail: string; when: string }[] = [
-  { icon: "login-3-bold", label: "Signed in", detail: "Hyderabad · Chrome on macOS", when: "Today, 9:12 AM" },
-  { icon: "tuning-2-bold", label: "Updated commerce rules", detail: "Free-delivery threshold → ₹599", when: "Yesterday, 6:40 PM" },
-  { icon: "pen-2-bold", label: "Edited a product", detail: "Cold-Pressed Groundnut Oil · 1L", when: "Yesterday, 2:18 PM" },
-  { icon: "login-3-bold", label: "Signed in", detail: "Hyderabad · Chrome on macOS", when: "Mon, 8:55 AM" },
 ];
 
 export default function AdminProfilePage() {
@@ -52,6 +128,15 @@ export default function AdminProfilePage() {
     photo: null,
   });
   const fileRef = useRef<HTMLInputElement>(null);
+  // A freshly-picked image file, uploaded on Save (null once persisted).
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Account meta + personal activity, hydrated from the DB on mount.
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [lastLoginAt, setLastLoginAt] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activityLoaded, setActivityLoaded] = useState(false);
 
   // Super-admin sign-in factors, loaded from /api/admin/security/factors.
   const [factors, setFactors] = useState<{
@@ -81,6 +166,71 @@ export default function AdminProfilePage() {
     setSaved(seed);
   }, []);
 
+  // Hydrate the real profile + personal activity from the DB. Overrides the
+  // cookie-seeded guesses above once the authoritative values arrive.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [meRes, actRes] = await Promise.all([
+          fetch("/api/admin/me"),
+          fetch("/api/admin/me/activity"),
+        ]);
+        if (alive && meRes.ok) {
+          const data = await meRes.json();
+          const p = data.profile as {
+            email?: string;
+            role?: AdminRole;
+            name?: string | null;
+            phone?: string | null;
+            photoUrl?: string | null;
+            createdAt?: string | null;
+            lastLoginAt?: string | null;
+          } | null;
+          if (p) {
+            if (p.email) setEmail(p.email);
+            if (p.role) setRole(p.role);
+            const digits = p.phone ? String(p.phone).replace(/\D/g, "").slice(-10) : "";
+            setCreatedAt(p.createdAt ?? null);
+            setLastLoginAt(p.lastLoginAt ?? null);
+            // Prefer the stored name; otherwise keep the cookie-derived guess.
+            setName((cur) => (p.name ? p.name : cur));
+            setMobile(digits);
+            setPhoto(p.photoUrl ?? null);
+            setSaved((s) => ({
+              name: p.name ? p.name : s.name,
+              mobile: digits,
+              photo: p.photoUrl ?? null,
+            }));
+          }
+        }
+        if (alive && actRes.ok) {
+          const adata = await actRes.json();
+          setActivity(Array.isArray(adata.activity) ? (adata.activity as ActivityItem[]) : []);
+        }
+      } catch {
+        /* ignore — the page still shows the cookie identity + empty activity */
+      } finally {
+        if (alive) setActivityLoaded(true);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /** Re-pull the personal activity feed (after a save/photo change). */
+  async function refreshActivity() {
+    try {
+      const res = await fetch("/api/admin/me/activity");
+      if (!res.ok) return;
+      const data = await res.json();
+      setActivity(Array.isArray(data.activity) ? (data.activity as ActivityItem[]) : []);
+    } catch {
+      /* non-fatal */
+    }
+  }
+
   // Load the super-admin's saved sign-in factors + which are available, and
   // prefill the mobile field from the saved OTP destination (#42) so the form
   // shows the number the mobile code is delivered to.
@@ -105,13 +255,9 @@ export default function AdminProfilePage() {
           email: Boolean(data.available?.email),
           phone: Boolean(data.available?.phone),
         });
-        // Seed the editable mobile field + saved snapshot from the OTP number
-        // (kept as the last 10 digits for the +91-prefixed input).
-        const digits = savedPhone ? savedPhone.replace(/\D/g, "").slice(-10) : "";
-        if (digits && alive) {
-          setMobile(digits);
-          setSaved((s) => ({ ...s, mobile: digits }));
-        }
+        // Note: the editable mobile field is seeded from the DB profile
+        // (`/api/admin/me`), not from the OTP destination — Save syncs the
+        // number the other way (profile → OTP destination) below.
       } catch {
         /* ignore — the section just stays in its default state */
       }
@@ -126,39 +272,97 @@ export default function AdminProfilePage() {
   const initial = (name.trim()[0] ?? email?.trim()?.[0] ?? "A").toUpperCase();
 
   async function handleSave() {
-    if (!name.trim()) {
+    if (saving) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       toast.error("Name can’t be empty", { description: "Enter your full name before saving." });
       return;
     }
     const mobileDigits = mobile.trim();
-    setSaved({ name: name.trim(), mobile: mobileDigits, photo });
-
-    // Persist the profile mobile as the mobile-OTP destination (#42) so the
-    // sign-in code always goes to the number shown here. The factors endpoint
-    // is super-admin gated; `factors !== null` means it loaded for this user.
-    if (factors && mobileDigits.length === 10) {
-      const e164 = `+91${mobileDigits}`;
-      try {
-        const res = await fetch("/api/admin/security/factors", {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ otpPhone: e164 }),
-        });
+    setSaving(true);
+    try {
+      // 1) Persist name + mobile to the operator's own admins row.
+      const res = await fetch("/api/admin/me", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: trimmedName, phone: mobileDigits }),
+      });
+      if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          setFactors((f) => (f ? { ...f, otpPhone: data.factors?.otpPhone ?? e164 } : f));
-        }
-      } catch {
-        /* non-fatal — the rest of the profile still saved */
+        const msg =
+          data.error === "invalid-phone"
+            ? "Enter a valid 10-digit mobile, or clear it."
+            : data.error === "name-required"
+              ? "Name can’t be empty."
+              : data.error === "no-profile"
+                ? "Your sign-in isn’t backed by a saved profile."
+                : "Couldn’t save — please try again.";
+        toast.error("Not saved", { description: msg });
+        return;
       }
-    }
 
-    toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
+      // 2) Upload a freshly-picked photo, if any, and swap the preview for the
+      //    persisted public URL.
+      let nextPhoto = photo;
+      if (photoFile) {
+        const form = new FormData();
+        form.append("file", photoFile);
+        const pRes = await fetch("/api/admin/me/photo", { method: "POST", body: form });
+        const pData = await pRes.json().catch(() => ({}));
+        if (pRes.ok && typeof pData.photoUrl === "string") {
+          setPhoto((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return pData.photoUrl as string;
+          });
+          nextPhoto = pData.photoUrl as string;
+          setPhotoFile(null);
+        } else {
+          toast.error("Photo not uploaded", {
+            description: "Your name and mobile were saved, but the photo couldn’t upload.",
+          });
+        }
+      }
+
+      // 3) Keep the profile mobile in sync with the mobile-OTP destination so
+      //    the sign-in code always goes to the number shown here. The factors
+      //    endpoint is super-admin gated; `factors !== null` means it loaded.
+      if (factors && mobileDigits.length === 10) {
+        const e164 = `+91${mobileDigits}`;
+        try {
+          const fRes = await fetch("/api/admin/security/factors", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ otpPhone: e164 }),
+          });
+          const fData = await fRes.json().catch(() => ({}));
+          if (fRes.ok) {
+            setFactors((f) => (f ? { ...f, otpPhone: fData.factors?.otpPhone ?? e164 } : f));
+          }
+        } catch {
+          /* non-fatal — the rest of the profile still saved */
+        }
+      }
+
+      setName(trimmedName);
+      setSaved({ name: trimmedName, mobile: mobileDigits, photo: nextPhoto });
+      // Refresh the header avatar + the personal activity feed.
+      window.dispatchEvent(new Event("ng:profile-updated"));
+      void refreshActivity();
+      toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
+    } catch {
+      toast.error("Not saved", { description: "Couldn’t reach the server — try again." });
+    } finally {
+      setSaving(false);
+    }
   }
   function handleReset() {
     setName(saved.name);
     setMobile(saved.mobile);
-    setPhoto(saved.photo);
+    setPhoto((prev) => {
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return saved.photo;
+    });
+    setPhotoFile(null);
   }
   function onPickPhoto(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -173,16 +377,33 @@ export default function AdminProfilePage() {
       return;
     }
     setPhoto((prev) => {
-      if (prev && prev !== saved.photo) URL.revokeObjectURL(prev);
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
-    toast.message("Photo selected", { description: "Click Save to apply — preview only (uploads in Milestone 2)." });
+    setPhotoFile(file);
+    toast.message("Photo selected", { description: "Click Save to upload it to your profile." });
   }
-  function removePhoto() {
+  async function removePhoto() {
+    const hadSaved = saved.photo !== null;
     setPhoto((prev) => {
-      if (prev && prev !== saved.photo) URL.revokeObjectURL(prev);
+      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
       return null;
     });
+    setPhotoFile(null);
+    if (!hadSaved) return; // only an unsaved preview was showing — nothing to delete
+    try {
+      const res = await fetch("/api/admin/me/photo", { method: "DELETE" });
+      if (res.ok) {
+        setSaved((s) => ({ ...s, photo: null }));
+        window.dispatchEvent(new Event("ng:profile-updated"));
+        void refreshActivity();
+        toast.success("Photo removed");
+      } else {
+        toast.error("Not removed", { description: "Couldn’t remove your photo — try again." });
+      }
+    } catch {
+      toast.error("Not removed", { description: "Couldn’t reach the server — try again." });
+    }
   }
   function sendReset() {
     toast.success("Reset link sent", {
@@ -330,7 +551,7 @@ export default function AdminProfilePage() {
               />
             </div>
             <SaveBar
-              note="Mock save — changes aren’t persisted yet (Milestone 2)."
+              note="Saved to your account — name, mobile and photo persist to the database."
               dirty={dirty}
               onSave={handleSave}
               onReset={handleReset}
@@ -495,9 +716,8 @@ export default function AdminProfilePage() {
               {[
                 { k: "Role", icon: isSuper ? "crown-bold" : "shield-keyhole-bold", v: roleLabel(role) },
                 { k: "Status", icon: "check-circle-bold", v: "Active" },
-                { k: "Member since", icon: "calendar-minimalistic-bold", v: "12 May 2026" },
-                { k: "Last sign-in", icon: "clock-circle-bold", v: "Today, 9:12 AM" },
-                { k: "Location", icon: "map-point-bold", v: "Hyderabad, IN" },
+                { k: "Member since", icon: "calendar-minimalistic-bold", v: formatMemberSince(createdAt) },
+                { k: "Last sign-in", icon: "clock-circle-bold", v: formatLastSignIn(lastLoginAt) },
               ].map((row) => (
                 <div key={row.k} className="flex items-center justify-between gap-3">
                   <dt className="inline-flex items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
@@ -511,31 +731,43 @@ export default function AdminProfilePage() {
           </Card>
 
           <Card title="Recent activity">
-            <ol>
-              {ACTIVITY.map((e, i) => (
-                <li key={i} className="flex items-start gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
-                  <span className="grid place-items-center size-8 rounded-lg bg-ng-forest/10 text-ng-forest shrink-0 mt-0.5">
-                    <Icon name={e.icon} size={14} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-semibold text-ng-ink">{e.label}</div>
-                    <div className="text-[11.5px] font-medium text-ng-ink-soft">{e.detail}</div>
-                  </div>
-                  <span className="text-[11px] font-medium text-ng-ink-soft tabular-nums shrink-0 mt-0.5">{e.when}</span>
-                </li>
-              ))}
-            </ol>
-            <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
-              <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-              A full personal audit trail ships in Milestone 2.
-            </p>
+            {activity.length > 0 ? (
+              <ol>
+                {activity.map((item, i) => {
+                  const d = describeActivity(item, email);
+                  return (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 py-2.5 border-b border-ng-line-soft last:border-0"
+                    >
+                      <span className="grid place-items-center size-8 rounded-lg bg-ng-forest/10 text-ng-forest shrink-0 mt-0.5">
+                        <Icon name={d.icon} size={14} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-semibold text-ng-ink">{d.label}</div>
+                        {d.detail ? (
+                          <div className="text-[11.5px] font-medium text-ng-ink-soft truncate">{d.detail}</div>
+                        ) : null}
+                      </div>
+                      <span className="text-[11px] font-medium text-ng-ink-soft tabular-nums shrink-0 mt-0.5">
+                        {relativeTime(item.createdAt)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
+                {activityLoaded ? "No recent activity yet." : "Loading activity…"}
+              </p>
+            )}
           </Card>
         </div>
 
         {/* ---- Footer note ---------------------------------------------- */}
         <p className="lg:col-span-3 text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5">
           <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-          Placeholder screen — live profile editing, password change, two-factor &amp; session management connect in Milestone 2.
+          Your profile details and recent activity are live. Google sign-in and multi-device session controls are still being wired up.
         </p>
       </div>
     </AdminShell>

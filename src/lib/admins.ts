@@ -111,6 +111,62 @@ export async function getAdminById(id: string): Promise<AdminRecord | null> {
   return data ? toRecord(data as AdminRow) : null;
 }
 
+/**
+ * A single admin by email (case-insensitive), or null when there is no DB row
+ * (e.g. an env-configured operator that signs in without an `admins` record).
+ *
+ * READ helper for the operator's own profile — deliberately swallows any error
+ * and returns null so a DB hiccup degrades the profile page gracefully instead
+ * of throwing into the route handler.
+ */
+export async function getAdminByEmail(email: string): Promise<AdminRecord | null> {
+  try {
+    const { data } = await supabaseAdmin()
+      .from("admins")
+      .select(COLS)
+      .eq("email", norm(email))
+      .maybeSingle();
+    return data ? toRecord(data as AdminRow) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Editable subset of an operator's OWN profile (resolved server-side by email
+ *  from the signed session — never a client-supplied id). */
+export interface AdminProfileUpdate {
+  email: string;
+  name?: string;
+  phone?: string | null;
+  photoUrl?: string | null;
+}
+
+/**
+ * Persist the signed-in operator's own profile fields, keyed by their session
+ * email. Only the provided keys are written; `updated_at` is bumped so the row
+ * reflects the edit. Returns the fresh record, or null when no `admins` row
+ * matched (an env-only operator with nothing to persist). Service-role only.
+ */
+export async function updateAdminProfile(
+  input: AdminProfileUpdate,
+): Promise<AdminRecord | null> {
+  const patch: Record<string, string | null> = {};
+  if (input.name !== undefined) patch.name = input.name.trim() || null;
+  if (input.phone !== undefined) patch.phone = (input.phone ?? "").trim() || null;
+  if (input.photoUrl !== undefined) patch.photo_url = input.photoUrl || null;
+  if (Object.keys(patch).length === 0) return getAdminByEmail(input.email);
+
+  patch.updated_at = new Date().toISOString();
+  const { data, error } = await supabaseAdmin()
+    .from("admins")
+    .update(patch)
+    .eq("email", norm(input.email))
+    .select(COLS)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toRecord(data as AdminRow) : null;
+}
+
 /** Generate a readable, strong password (no ambiguous characters). */
 export function generatePassword(length = 16): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";

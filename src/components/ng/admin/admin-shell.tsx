@@ -40,12 +40,36 @@ function roleLabel(role: AdminRole | null): string {
 function AdminIdentity() {
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<AdminRole | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setEmail(getAdminEmail());
     setRole(getAdminRole());
+  }, []);
+
+  // Pull the operator's saved photo so the chip shows it instead of the initial.
+  // Re-runs when the profile page dispatches `ng:profile-updated` after a save.
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/me");
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        if (alive) setPhotoUrl((data.profile?.photoUrl as string | null) ?? null);
+      } catch {
+        /* ignore — the chip falls back to the initial */
+      }
+    }
+    void load();
+    const onUpdated = () => void load();
+    window.addEventListener("ng:profile-updated", onUpdated);
+    return () => {
+      alive = false;
+      window.removeEventListener("ng:profile-updated", onUpdated);
+    };
   }, []);
 
   useEffect(() => {
@@ -73,8 +97,13 @@ function AdminIdentity() {
         aria-expanded={open}
         className="flex items-center gap-2.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-ng-line-soft transition-colors cursor-pointer"
       >
-        <span className="size-9 rounded-full bg-ng-forest-deep text-ng-cream flex items-center justify-center font-display text-[14px]">
-          {initial}
+        <span className="size-9 rounded-full overflow-hidden bg-ng-forest-deep text-ng-cream flex items-center justify-center font-display text-[14px]">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="" className="size-full object-cover" />
+          ) : (
+            initial
+          )}
         </span>
         <span className="hidden sm:flex flex-col items-start leading-tight min-w-0">
           <span className="font-mono text-[12.5px] font-medium text-ng-forest-deep truncate max-w-[150px]">
