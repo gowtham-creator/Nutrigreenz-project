@@ -586,9 +586,9 @@ export function CouponCampaignBuilder() {
           <div className="grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
             <span>Code</span>
             <span>Targeting</span>
-            <span>Value</span>
-            <span>Redeemed</span>
-            <span>ROI</span>
+            <span className="text-right">Value</span>
+            <span className="text-right">Redeemed</span>
+            <span className="text-right">ROI</span>
             <span className="text-right">Edit</span>
           </div>
           <ul>
@@ -616,11 +616,11 @@ export function CouponCampaignBuilder() {
                     <Icon name={m.icon} size={14} className="text-ng-forest shrink-0" />
                     <span className="truncate">{m.label}</span>
                   </span>
-                  <span className="font-semibold tabular-nums text-ng-ink">{valueLabel(c)}</span>
-                  <span className="tabular-nums font-medium text-ng-ink-muted">
+                  <span className="font-semibold tabular-nums text-ng-ink text-right">{valueLabel(c)}</span>
+                  <span className="tabular-nums font-medium text-ng-ink-muted text-right">
                     {c.issued > 0 ? `${c.redeemed.toLocaleString("en-IN")} / ${c.issued.toLocaleString("en-IN")}` : "—"}
                   </span>
-                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink">{roi(c)}</span>
+                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink text-right">{roi(c)}</span>
                   <span className="flex justify-end">
                     <button
                       type="button"

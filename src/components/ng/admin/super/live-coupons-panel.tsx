@@ -211,7 +211,7 @@ export function LiveCouponsPanel() {
               <tr>
                 <th className="px-5 py-3 font-semibold">Code</th>
                 <th className="px-5 py-3 font-semibold">Discount</th>
-                <th className="px-5 py-3 font-semibold">Used</th>
+                <th className="px-5 py-3 font-semibold text-right">Used</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 font-semibold text-right">Action</th>
               </tr>
@@ -231,7 +231,7 @@ export function LiveCouponsPanel() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-ng-ink-muted">{describe(c)}</td>
-                  <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted">
+                  <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted text-right">
                     {c.usedCount}
                     {c.usageLimit ? ` / ${c.usageLimit}` : ""}
                   </td>

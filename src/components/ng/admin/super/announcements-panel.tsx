@@ -241,7 +241,7 @@ export function AnnouncementsPanel() {
             <thead className="bg-ng-sage/30 text-ng-forest-deep">
               <tr>
                 <th className="px-5 py-3 font-semibold">Announcement</th>
-                <th className="px-5 py-3 font-semibold">Sort</th>
+                <th className="px-5 py-3 font-semibold text-right">Sort</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 font-semibold text-right">Actions</th>
               </tr>
@@ -257,7 +257,7 @@ export function AnnouncementsPanel() {
                       {a.text}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted">{a.sort}</td>
+                  <td className="px-5 py-3.5 tabular-nums text-ng-ink-muted text-right">{a.sort}</td>
                   <td className="px-5 py-3.5">
                     <span
                       className={cn(

@@ -283,8 +283,8 @@ export default function AdminOverview() {
           <div className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold border-b border-ng-line-soft">
             <span>Order</span>
             <span>Customer</span>
-            <span>Items</span>
-            <span>Total</span>
+            <span className="text-right">Items</span>
+            <span className="text-right">Total</span>
             <span>Status</span>
             <span className="text-right">When</span>
           </div>
@@ -301,8 +301,8 @@ export default function AdminOverview() {
                 >
                   <span className="font-mono text-[12px] font-semibold text-ng-forest-deep truncate">{o.orderNumber}</span>
                   <span className="truncate font-semibold text-ng-ink">{customerName(o)}</span>
-                  <span className="font-mono text-[12px] font-medium tabular-nums text-ng-ink-muted">{itemCount(o)}</span>
-                  <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink">{rupees(o.totalPaise)}</span>
+                  <span className="font-mono text-[12px] font-medium tabular-nums text-ng-ink-muted text-right">{itemCount(o)}</span>
+                  <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink text-right">{rupees(o.totalPaise)}</span>
                   <span><Pill tone={STATUS_PILL[o.status]}>{STATUS_LABEL[o.status]}</Pill></span>
                   <span className="text-[11.5px] font-medium text-ng-ink-soft text-right">{relativeTime(o.placedAt)}</span>
                 </li>

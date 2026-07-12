@@ -164,8 +164,8 @@ export function CsvImportDialog({
                   <div className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr] gap-2 px-3.5 py-2 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                     <span>Name</span>
                     <span>SKU</span>
-                    <span>Price</span>
-                    <span>Stock</span>
+                    <span className="text-right">Price</span>
+                    <span className="text-right">Stock</span>
                   </div>
                   <ul>
                     {preview.map((r) => (
@@ -175,8 +175,8 @@ export function CsvImportDialog({
                       >
                         <span className="truncate font-semibold text-ng-ink">{r.title}</span>
                         <span className="font-mono font-medium text-[11px] text-ng-ink-muted truncate">{r.sku}</span>
-                        <span className="font-mono tabular-nums font-semibold text-ng-ink">₹{r.price.toLocaleString("en-IN")}</span>
-                        <span className="font-mono tabular-nums font-semibold text-ng-ink">{r.stock}</span>
+                        <span className="font-mono tabular-nums font-semibold text-ng-ink text-right">₹{r.price.toLocaleString("en-IN")}</span>
+                        <span className="font-mono tabular-nums font-semibold text-ng-ink text-right">{r.stock}</span>
                       </li>
                     ))}
                   </ul>

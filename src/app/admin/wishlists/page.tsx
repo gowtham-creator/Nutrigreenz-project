@@ -112,10 +112,10 @@ export default function AdminWishlists() {
             <div className="grid grid-cols-[0.4fr_2.6fr_0.9fr_1.6fr_1fr_0.9fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
               <span>#</span>
               <span>Product</span>
-              <span>Savers</span>
+              <span className="text-right">Savers</span>
               <span>Share</span>
               <span>Demand</span>
-              <span>Price</span>
+              <span className="text-right">Price</span>
             </div>
             <ul>
               {top.map((p, i) => {
@@ -139,7 +139,7 @@ export default function AdminWishlists() {
                         <div className="font-mono text-[11px] font-medium text-ng-ink-soft truncate">{p.slug}</div>
                       </div>
                     </div>
-                    <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">{p.savers}</span>
+                    <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep text-right">{p.savers}</span>
                     <span className="flex items-center gap-2.5">
                       <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink-muted w-12">{share}%</span>
                       <span className="h-2 flex-1 rounded-full bg-ng-line-soft overflow-hidden">
@@ -150,7 +150,7 @@ export default function AdminWishlists() {
                       </span>
                     </span>
                     <span><Pill tone={demandTone(ratio)}>{demandLabel(ratio)}</Pill></span>
-                    <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink">{INR(p.pricePaise)}</span>
+                    <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-ink text-right">{INR(p.pricePaise)}</span>
                   </li>
                 );
               })}

@@ -176,8 +176,8 @@ export function VariantImportModal({
                   <span>SKU</span>
                   <span>Product</span>
                   <span>Label</span>
-                  <span>Price</span>
-                  <span>Stock</span>
+                  <span className="text-right">Price</span>
+                  <span className="text-right">Stock</span>
                 </div>
                 <ul>
                   {preview.rows.map((r) => (
@@ -195,8 +195,8 @@ export function VariantImportModal({
                         {r.label ?? "—"}
                         {r.pack ? ` · ${r.pack}` : ""}
                       </span>
-                      <span className="font-mono tabular-nums text-ng-ink">{formatPaise(r.pricePaise ?? 0)}</span>
-                      <span className="font-mono tabular-nums text-ng-ink">{r.stock ?? 0}</span>
+                      <span className="font-mono tabular-nums text-ng-ink text-right">{formatPaise(r.pricePaise ?? 0)}</span>
+                      <span className="font-mono tabular-nums text-ng-ink text-right">{r.stock ?? 0}</span>
                     </li>
                   ))}
                 </ul>

@@ -152,8 +152,8 @@ export function ImportModal({
                   <span>Name</span>
                   <span>SKU</span>
                   <span>Category</span>
-                  <span>Price</span>
-                  <span>Stock</span>
+                  <span className="text-right">Price</span>
+                  <span className="text-right">Stock</span>
                 </div>
                 <ul>
                   {preview.rows.map((r) => (
@@ -168,8 +168,8 @@ export function ImportModal({
                       </span>
                       <span className="font-mono text-[11.5px] text-ng-ink-muted truncate">{r.sku ?? "—"}</span>
                       <span className="text-ng-ink-muted truncate">{r.category ?? "—"}</span>
-                      <span className="font-mono tabular-nums text-ng-ink">{formatPaise(r.pricePaise ?? 0)}</span>
-                      <span className="font-mono tabular-nums text-ng-ink">{r.stock ?? 0}</span>
+                      <span className="font-mono tabular-nums text-ng-ink text-right">{formatPaise(r.pricePaise ?? 0)}</span>
+                      <span className="font-mono tabular-nums text-ng-ink text-right">{r.stock ?? 0}</span>
                     </li>
                   ))}
                 </ul>

@@ -363,11 +363,11 @@ export default function AdminInventory() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[820px]">
-        <div className="grid grid-cols-[2fr_1.1fr_1fr_0.9fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+        <div className="grid grid-cols-[1.8fr_1.1fr_1fr_1.1fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
           <span>SKU</span>
           <span>Category</span>
-          <span>Price</span>
+          <span className="text-right">Price</span>
           <span>Stock level</span>
           <span>Status</span>
           <span></span>
@@ -389,12 +389,12 @@ export default function AdminInventory() {
               return (
                 <li
                   key={p.id}
-                  className="grid grid-cols-[2fr_1.1fr_1fr_0.9fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                  className="grid grid-cols-[1.8fr_1.1fr_1fr_1.1fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="truncate font-semibold text-ng-ink">{p.name}</span>
                   <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>
                   <span className="text-[12px] font-medium text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>
-                  <span className="font-mono text-[12px] tabular-nums text-ng-ink">
+                  <span className="font-mono text-[12px] tabular-nums text-ng-ink text-right whitespace-nowrap">
                     {hasVariants
                       ? p.variantMinPricePaise === p.variantMaxPricePaise
                         ? formatPaise(p.variantMinPricePaise ?? 0)

@@ -111,10 +111,10 @@ export default function AdminMarketing() {
           <span>Campaign</span>
           <span>Channel</span>
           <span>Segment</span>
-          <span>Opens</span>
-          <span>CTR</span>
-          <span>Revenue</span>
-          <span>ROI</span>
+          <span className="text-right">Opens</span>
+          <span className="text-right">CTR</span>
+          <span className="text-right">Revenue</span>
+          <span className="text-right">ROI</span>
           <span>Status</span>
         </div>
         <ul>
@@ -129,10 +129,10 @@ export default function AdminMarketing() {
               </div>
               <span className="text-[12px] font-medium text-ng-ink-muted">{c.channel}</span>
               <span className="text-[12px] font-medium text-ng-ink-muted truncate">{c.segment}</span>
-              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink">{c.opens ? c.opens.toLocaleString("en-IN") : "—"}</span>
-              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink">{c.ctr ? `${c.ctr}%` : "—"}</span>
-              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink">{c.revenue ? `₹${c.revenue.toLocaleString("en-IN")}` : "—"}</span>
-              <span className="font-mono text-[12px] tabular-nums text-ng-success font-semibold">{c.roi}</span>
+              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink text-right">{c.opens ? c.opens.toLocaleString("en-IN") : "—"}</span>
+              <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink text-right">{c.ctr ? `${c.ctr}%` : "—"}</span>
+              <span className="font-mono text-[12px] tabular-nums font-semibold text-ng-ink text-right">{c.revenue ? `₹${c.revenue.toLocaleString("en-IN")}` : "—"}</span>
+              <span className="font-mono text-[12px] tabular-nums text-ng-success font-semibold text-right">{c.roi}</span>
               <span><Pill tone={c.tone}>{c.status}</Pill></span>
             </li>
           ))}

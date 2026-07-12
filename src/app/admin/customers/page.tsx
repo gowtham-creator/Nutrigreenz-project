@@ -251,7 +251,7 @@ export default function AdminCustomers() {
           <span>Email</span>
           <span>Phone</span>
           <span>Providers</span>
-          <span>Addresses</span>
+          <span className="text-right">Addresses</span>
           <span>Joined</span>
           <span></span>
         </div>
@@ -270,7 +270,7 @@ export default function AdminCustomers() {
                 <div className="h-3 w-32 rounded bg-ng-line-soft animate-pulse" />
                 <div className="h-3 w-24 rounded bg-ng-line-soft animate-pulse" />
                 <div className="h-5 w-20 rounded-full bg-ng-line-soft animate-pulse" />
-                <div className="h-3 w-8 rounded bg-ng-line-soft animate-pulse" />
+                <div className="h-3 w-8 rounded bg-ng-line-soft animate-pulse ml-auto" />
                 <div className="h-3 w-16 rounded bg-ng-line-soft animate-pulse" />
                 <div />
               </li>
@@ -332,7 +332,7 @@ export default function AdminCustomers() {
                   {c.primaryPhone || "—"}
                 </span>
                 <ProviderBadges providers={c.providers} />
-                <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">
+                <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep text-right">
                   {c.addressCount}
                 </span>
                 <span className="text-[12px] font-medium text-ng-ink-soft">{fmtDate(c.createdAt)}</span>
