@@ -9,6 +9,7 @@
 import "server-only";
 import { createHash, randomInt } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { isTotpConfigured } from "@/lib/totp";
 
 export interface AdminFactors {
   emailOtp: boolean;
@@ -150,8 +151,12 @@ export async function getTotpEnrollment(email: string): Promise<TotpEnrollment> 
     .eq("email", norm(email))
     .maybeSingle();
   const hasSecret = Boolean(data?.totp_secret);
+  // "Enrolled" = they already have a WORKING authenticator we can verify at login:
+  // their own per-admin secret OR the shared env secret. Either way, don't nag them
+  // to set one up (an env-configured super-admin already has TOTP).
+  const enrolled = Boolean(data?.totp_enabled) && (hasSecret || isTotpConfigured());
   return {
-    enrolled: Boolean(data?.totp_enabled) && hasSecret,
+    enrolled,
     hasSecret,
     snoozeUntil: (data?.totp_prompt_snooze_until as string | null) ?? null,
   };
