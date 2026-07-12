@@ -3,6 +3,7 @@ import { Icon } from "@/components/ui/icon";
 import { Sparkline, HBars, TrendChip, type VizTone } from "@/components/ng/admin/viz";
 import { LiveCouponsPanel } from "@/components/ng/admin/super/live-coupons-panel";
 import { PromotionsPanel } from "@/components/ng/admin/super/promotions-panel";
+import { AnnouncementsPanel } from "@/components/ng/admin/super/announcements-panel";
 
 /**
  * Marketing desk.
@@ -75,6 +76,11 @@ export default function AdminMarketing() {
 
       {/* Live coupons — the real, redeemable coupon catalogue (create + toggle). */}
       <LiveCouponsPanel />
+
+      {/* Top-bar announcements — the real, admin-managed evergreen marquee lines
+          (create / edit / activate-pause / delete). The storefront PromoBar
+          prepends any live promotion line ahead of these at render time. */}
+      <AnnouncementsPanel />
 
       {/* Audience & performance — sample figures, clearly badged as preview. */}
       <div className="mb-2 flex items-center gap-2">

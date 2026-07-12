@@ -1,0 +1,84 @@
+/**
+ * GET  /api/admin/marketing/announcements — list every evergreen marquee line.
+ * POST /api/admin/marketing/announcements — create an announcement line.
+ *
+ * Super-admin only (see ../guard), mirroring the coupon / promotion admin
+ * surfaces. `text` is required; `sort` orders the lines in the bar (ascending)
+ * and `active` is the show/hide switch. Every create is written to the admin
+ * activity trail and busts the storefront cache so the bar updates fast.
+ */
+import { revalidatePath } from "next/cache";
+import { requireSuperAdmin, superAdminEmail } from "../guard";
+import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { logActivity } from "@/lib/activity-log";
+import {
+  listAnnouncements,
+  createAnnouncement,
+  type AnnouncementInput,
+} from "@/lib/announcements";
+
+/** A trimmed non-empty string, else undefined. */
+function str(v: unknown): string | undefined {
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+/** A finite number, else undefined (blank / null / non-numeric drop out). */
+function num(v: unknown): number | undefined {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** GET — list all announcements, display order. Super-admin only. */
+export async function GET(): Promise<Response> {
+  const denied = await requireSuperAdmin();
+  if (denied) return denied;
+  const announcements = await listAnnouncements();
+  return Response.json({ ok: true, announcements });
+}
+
+/** POST — create an announcement line. Super-admin only. */
+export async function POST(request: Request): Promise<Response> {
+  const denied = await requireSuperAdmin();
+  if (denied) return denied;
+  if (!isSupabaseConfigured) {
+    return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return Response.json({ ok: false }, { status: 400 });
+  }
+
+  const text = str(body.text);
+  if (!text) return Response.json({ ok: false, error: "text-required" }, { status: 400 });
+
+  const input: AnnouncementInput = { text };
+  if (typeof body.active === "boolean") input.active = body.active;
+  const sort = num(body.sort);
+  if (sort !== undefined) input.sort = sort;
+
+  try {
+    const announcement = await createAnnouncement(input);
+    await logActivity({
+      actorEmail: await superAdminEmail(),
+      actorRole: "superadmin",
+      action: "announcement.create",
+      target: announcement.id,
+      meta: {
+        text: announcement.text,
+        active: announcement.active,
+        sort: announcement.sort,
+      },
+    });
+    // Bust the ISR cache across the whole storefront so a newly-added line shows
+    // in the top bar near-instantly, not after the page's revalidate window.
+    revalidatePath("/", "layout");
+    return Response.json({ ok: true, announcement }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "create-failed";
+    return Response.json({ ok: false, error: message }, { status: 400 });
+  }
+}
