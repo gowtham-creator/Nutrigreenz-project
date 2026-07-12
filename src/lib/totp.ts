@@ -119,3 +119,40 @@ export async function verifyTotp(
   }
   return false;
 }
+
+/** Generate a fresh base32 (RFC 4648, no padding) TOTP secret (~20 bytes → 32 chars). */
+export function generateTotpSecret(): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bytes = new Uint8Array(20);
+  crypto.getRandomValues(bytes);
+  let bits = 0;
+  let value = 0;
+  let out = "";
+  for (const b of bytes) {
+    value = (value << 8) | b;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      out += alphabet[(value >>> bits) & 31];
+    }
+  }
+  if (bits > 0) out += alphabet[(value << (5 - bits)) & 31];
+  return out;
+}
+
+/** The `otpauth://` URI a QR encodes for Google / Microsoft Authenticator. */
+export function buildOtpauthUri(
+  email: string,
+  secretBase32: string,
+  issuer = "Nutri Greenz",
+): string {
+  const label = encodeURIComponent(`${issuer}:${email}`);
+  const params = new URLSearchParams({
+    secret: secretBase32,
+    issuer,
+    algorithm: "SHA1",
+    digits: String(DIGITS),
+    period: String(PERIOD_SECONDS),
+  });
+  return `otpauth://totp/${label}?${params.toString()}`;
+}

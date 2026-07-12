@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { IdleTimeout } from "@/components/ng/admin/idle-timeout";
+import { AuthenticatorEnrollPrompt } from "@/components/ng/admin/authenticator-enroll-prompt";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   // `.ng-admin` scopes the darker secondary/tertiary ink tokens (see
@@ -11,6 +12,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="ng-admin">
       <IdleTimeout />
+      <AuthenticatorEnrollPrompt />
       {children}
     </div>
   );

@@ -130,3 +130,64 @@ export async function verifyEmailOtp(email: string, code: string): Promise<boole
     .eq("id", data.id);
   return false;
 }
+
+/* ── per-admin authenticator (TOTP) enrollment ─────────────────────────────── */
+
+export interface TotpEnrollment {
+  /** A confirmed, active per-admin authenticator secret exists. */
+  enrolled: boolean;
+  /** A secret has been stored (may be pending confirmation). */
+  hasSecret: boolean;
+  /** When the post-login "set up an authenticator" prompt should next appear. */
+  snoozeUntil: string | null;
+}
+
+/** The admin's authenticator enrollment state (all-false defaults when no row). */
+export async function getTotpEnrollment(email: string): Promise<TotpEnrollment> {
+  const { data } = await supabaseAdmin()
+    .from("admin_security")
+    .select("totp_enabled, totp_secret, totp_prompt_snooze_until")
+    .eq("email", norm(email))
+    .maybeSingle();
+  const hasSecret = Boolean(data?.totp_secret);
+  return {
+    enrolled: Boolean(data?.totp_enabled) && hasSecret,
+    hasSecret,
+    snoozeUntil: (data?.totp_prompt_snooze_until as string | null) ?? null,
+  };
+}
+
+/** The admin's OWN base32 TOTP secret, or null (used at login to verify). */
+export async function getTotpSecret(email: string): Promise<string | null> {
+  const { data } = await supabaseAdmin()
+    .from("admin_security")
+    .select("totp_secret")
+    .eq("email", norm(email))
+    .maybeSingle();
+  return (data?.totp_secret as string | null) ?? null;
+}
+
+/** Store a freshly-generated secret as PENDING (not yet enforced at login). */
+export async function setPendingTotpSecret(email: string, secret: string): Promise<void> {
+  await supabaseAdmin()
+    .from("admin_security")
+    .upsert({ email: norm(email), totp_secret: secret }, { onConflict: "email" });
+}
+
+/** Turn the authenticator factor on once the admin confirms a code. */
+export async function enableTotp(email: string): Promise<void> {
+  await supabaseAdmin()
+    .from("admin_security")
+    .upsert(
+      { email: norm(email), totp_enabled: true, totp_prompt_snooze_until: null },
+      { onConflict: "email" },
+    );
+}
+
+/** Snooze the post-login setup prompt by `days` days. */
+export async function snoozeTotpPrompt(email: string, days: number): Promise<void> {
+  const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  await supabaseAdmin()
+    .from("admin_security")
+    .upsert({ email: norm(email), totp_prompt_snooze_until: until }, { onConflict: "email" });
+}

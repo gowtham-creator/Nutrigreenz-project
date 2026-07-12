@@ -12,7 +12,7 @@ import {
   type AdminRole,
 } from "@/lib/admin-session";
 import { isTotpConfigured } from "@/lib/totp";
-import { getAdminFactors, hasSecurityRow } from "@/lib/admin-security";
+import { getAdminFactors, hasSecurityRow, getTotpSecret } from "@/lib/admin-security";
 import { verifyAdminLogin } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -144,7 +144,11 @@ export async function POST(request: Request): Promise<Response> {
     try {
       if (isSupabaseConfigured && (await hasSecurityRow(normalizedEmail))) {
         const f = await getAdminFactors(normalizedEmail);
-        if (f.totp && isTotpConfigured()) factors.push("totp");
+        // Gate TOTP when enabled AND verifiable — the admin's OWN enrolled secret
+        // or the shared env secret must exist so login-2fa can check the code.
+        if (f.totp && ((await getTotpSecret(normalizedEmail)) || isTotpConfigured())) {
+          factors.push("totp");
+        }
         if (f.emailOtp && isEmailConfigured()) factors.push("email");
         // Mobile OTP (#42): offered only when the Mobile factor is on AND a
         // destination number is saved, so the chooser never shows a dead option.
