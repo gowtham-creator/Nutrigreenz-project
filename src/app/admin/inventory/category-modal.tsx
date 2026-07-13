@@ -45,6 +45,8 @@ export function CategoryModal({
   const [icon, setIcon] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [customIcons, setCustomIcons] = useState<string[]>([]);
+  const [iconInput, setIconInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -52,6 +54,16 @@ export function CategoryModal({
     setName("");
     setIcon(null);
     setImageUrl(null);
+    setIconInput("");
+  }
+
+  /** Add any Solar icon by name to the pickable row (and select it). */
+  function addCustomIcon() {
+    const n = iconInput.trim();
+    if (!n) return;
+    setCustomIcons((c) => (c.includes(n) ? c : [...c, n]));
+    setIcon(n);
+    setIconInput("");
   }
 
   // Reset the form each time the modal (re)opens.
@@ -175,27 +187,64 @@ export function CategoryModal({
               />
             </div>
 
-            {/* Icon picker — the fallback when no image is set */}
+            {/* Icon picker — the fallback when no image is set. Presets plus any
+                custom Solar icon the admin adds by name. */}
             <div className="mt-3">
               <div className="mb-1.5 text-[11px] font-medium text-ng-ink-soft">Or pick an icon</div>
               <div className="flex flex-wrap gap-1.5">
-                {ICON_PRESETS.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setIcon(icon === n ? null : n)}
-                    aria-pressed={icon === n}
-                    className={
-                      "grid size-9 place-items-center rounded-lg border transition-colors cursor-pointer " +
-                      (icon === n
-                        ? "border-ng-forest bg-ng-forest text-ng-paper"
-                        : "border-ng-line-soft bg-ng-paper text-ng-ink-muted hover:border-ng-leaf")
-                    }
-                  >
-                    <Icon name={n} size={16} />
-                  </button>
-                ))}
+                {Array.from(new Set([...ICON_PRESETS, ...customIcons, ...(icon ? [icon] : [])])).map(
+                  (n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setIcon(icon === n ? null : n)}
+                      aria-pressed={icon === n}
+                      className={
+                        "grid size-9 place-items-center rounded-lg border transition-colors cursor-pointer " +
+                        (icon === n
+                          ? "border-ng-forest bg-ng-forest text-ng-paper"
+                          : "border-ng-line-soft bg-ng-paper text-ng-ink-muted hover:border-ng-leaf")
+                      }
+                    >
+                      <Icon name={n} size={16} />
+                    </button>
+                  ),
+                )}
               </div>
+
+              {/* Add any icon by name (Iconify Solar set) with a live preview. */}
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  className={`${FIELD} flex-1`}
+                  value={iconInput}
+                  onChange={(e) => setIconInput(e.target.value.trim())}
+                  placeholder="Add icon by name, e.g. tea-cup-bold"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomIcon();
+                    }
+                  }}
+                />
+                {iconInput ? (
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-ng-line-soft bg-ng-paper text-ng-forest">
+                    <Icon name={iconInput} size={16} />
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={addCustomIcon}
+                  disabled={!iconInput}
+                  className="shrink-0 rounded-full bg-ng-forest-deep px-3 py-1.5 text-[12px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add icon
+                </button>
+              </div>
+              <p className="mt-1 text-[10.5px] leading-snug text-ng-ink-soft">
+                Any name from the Solar icon set (see solar-icons on iconify.design), e.g.{" "}
+                <code className="text-ng-forest">bottle-bold</code>,{" "}
+                <code className="text-ng-forest">honey-bold</code>.
+              </p>
             </div>
 
             <div className="mt-4 flex items-center justify-end gap-2">

@@ -113,8 +113,8 @@ function AuthScreen() {
   return (
     <PageShell hidePromo hideFooter>
       <div className="min-h-[calc(100vh-68px)] grid lg:grid-cols-[1.05fr_1fr]">
-        {/* LEFT — form on a fresh, gold-free sage field */}
-        <div className="relative flex flex-col justify-center bg-sage-mesh px-6 py-14 md:px-16">
+        {/* LEFT — form on a warm cream / skin-tone field */}
+        <div className="relative flex flex-col justify-center bg-[linear-gradient(155deg,#f8f2e8_0%,#f2e9d9_58%,#ece0cd_100%)] px-6 py-14 md:px-16">
           <div className="relative z-10 mx-auto w-full max-w-md">
             <Logo />
             <Reveal>
@@ -234,8 +234,9 @@ function AuthScreen() {
           <div id="recaptcha-container" />
         </div>
 
-        {/* RIGHT — forest brand panel: pure-green animated gradient, no gold */}
-        <div className="login-gradient relative hidden overflow-hidden lg:block">
+        {/* RIGHT — brand panel: richer multi-hue forest → leaf → olive gradient
+            (local to this page; the animated glows/particles still layer on top). */}
+        <div className="relative hidden overflow-hidden lg:block bg-[linear-gradient(150deg,#0c3a21_0%,#15502f_32%,#276641_58%,#3e7d49_82%,#5c7d3c_100%)]">
           <span aria-hidden className="login-glow login-glow--a" />
           <span aria-hidden className="login-glow login-glow--b" />
           <span aria-hidden className="login-glow login-glow--c" />
