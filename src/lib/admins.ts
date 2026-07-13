@@ -11,6 +11,13 @@ import { normalizePhone } from "@/lib/admin-allowlist";
 export type AdminRole = "admin" | "superadmin";
 export type AdminStatus = "active" | "invited" | "disabled";
 
+/** Which sign-in factors an admin has enabled (mirrors admin_security). */
+export interface AdminFactorFlags {
+  emailOtp: boolean;
+  phoneOtp: boolean;
+  totp: boolean;
+}
+
 export interface AdminRecord {
   id: string;
   email: string;
@@ -22,6 +29,8 @@ export interface AdminRecord {
   mustChangePassword: boolean;
   createdAt: string;
   lastLoginAt: string | null;
+  /** Per-admin sign-in factors (from admin_security); present after listAdmins. */
+  factors?: AdminFactorFlags;
 }
 
 interface AdminRow {
@@ -57,13 +66,39 @@ function toRecord(r: AdminRow): AdminRecord {
   };
 }
 
-/** All admins, oldest first. */
+/** All admins, oldest first, each enriched with its per-admin factor flags. */
 export async function listAdmins(): Promise<AdminRecord[]> {
-  const { data } = await supabaseAdmin()
+  const db = supabaseAdmin();
+  const { data } = await db
     .from("admins")
     .select(COLS)
     .order("created_at", { ascending: true });
-  return ((data as AdminRow[] | null) ?? []).map(toRecord);
+  const rows = ((data as AdminRow[] | null) ?? []).map(toRecord);
+  if (rows.length === 0) return rows;
+
+  // Attach the sign-in factors each admin has enabled (admin_security), so the
+  // super-admin roster can show + edit them per person. Best-effort: a missing
+  // security row just means every factor is off.
+  const emails = rows.map((r) => norm(r.email));
+  const { data: sec } = await db
+    .from("admin_security")
+    .select("email, email_otp_enabled, phone_otp_enabled, totp_enabled")
+    .in("email", emails);
+  const byEmail = new Map(
+    ((sec as Array<Record<string, unknown>> | null) ?? []).map((s) => [
+      String(s.email).toLowerCase(),
+      s,
+    ]),
+  );
+  for (const r of rows) {
+    const s = byEmail.get(norm(r.email));
+    r.factors = {
+      emailOtp: Boolean(s?.email_otp_enabled),
+      phoneOtp: Boolean(s?.phone_otp_enabled),
+      totp: Boolean(s?.totp_enabled),
+    };
+  }
+  return rows;
 }
 
 export async function adminEmailExists(email: string): Promise<boolean> {

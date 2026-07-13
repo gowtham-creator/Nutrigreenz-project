@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/admins";
+import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity-log";
@@ -63,6 +64,10 @@ export async function POST(request: Request): Promise<Response> {
   const phoneDigits = String(body.phone ?? "").replace(/\D/g, "");
   const password = String(body.password ?? "");
   const channels = (Array.isArray(body.channels) ? body.channels : ["email"]).map(String);
+  const factors = (typeof body.factors === "object" && body.factors ? body.factors : {}) as Record<
+    string,
+    unknown
+  >;
 
   if (!name || !EMAIL_RE.test(email) || phoneDigits.length !== 10) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
@@ -86,6 +91,21 @@ export async function POST(request: Request): Promise<Response> {
     password,
     role: "admin",
   });
+
+  // Persist the per-admin sign-in factors the super-admin selected. otpEmail /
+  // otpPhone default to the admin's OWN contact so codes go to them. Best-effort:
+  // a failure here must not fail the create — factors can be set later via Edit.
+  try {
+    await setAdminFactors(email, {
+      emailOtp: Boolean(factors.emailOtp),
+      phoneOtp: Boolean(factors.phoneOtp),
+      totp: Boolean(factors.totp),
+      otpEmail: email,
+      otpPhone: phone,
+    });
+  } catch {
+    /* non-fatal */
+  }
 
   // Deliver credentials. Email via Brevo; SMS/WhatsApp await their providers.
   const sent: string[] = [];

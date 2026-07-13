@@ -22,6 +22,10 @@ type RoleKey = "admin" | "superadmin";
 type StatusKey = "active" | "invited" | "disabled";
 type Channel = "email" | "sms" | "whatsapp";
 
+/** Which sign-in factors an admin has enabled (mirrors admin_security). */
+type FactorFlags = { emailOtp: boolean; phoneOtp: boolean; totp: boolean };
+const NO_FACTORS: FactorFlags = { emailOtp: false, phoneOtp: false, totp: false };
+
 type AdminUser = {
   id: string;
   name: string;
@@ -30,6 +34,7 @@ type AdminUser = {
   role: RoleKey;
   status: StatusKey;
   lastLoginAt: string | null;
+  factors: FactorFlags;
 };
 
 type AdminRecord = {
@@ -40,9 +45,16 @@ type AdminRecord = {
   role: RoleKey;
   status: string;
   lastLoginAt: string | null;
+  factors?: FactorFlags;
 };
 
-type NewAdminPayload = { name: string; email: string; phone: string; password: string };
+type NewAdminPayload = {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  factors: FactorFlags;
+};
 type Credentials = { email: string; password: string };
 
 const labelChannel = (c: string) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp");
@@ -61,6 +73,7 @@ function recordToUser(a: AdminRecord): AdminUser {
     role: a.role,
     status: toStatus(a.status),
     lastLoginAt: a.lastLoginAt,
+    factors: a.factors ?? { ...NO_FACTORS },
   };
 }
 
@@ -243,7 +256,7 @@ export function AdminsManagement() {
         toast.error("Not added", { description: msg });
         return false;
       }
-      setAdmins((prev) => [...prev, recordToUser(data.admin)]);
+      setAdmins((prev) => [...prev, recordToUser({ ...data.admin, factors: payload.factors })]);
       setReset(null);
       setCreated({ email: data.admin.email, password: payload.password });
       const sent = (data.sent ?? []).map(labelChannel).join(", ");
@@ -263,7 +276,7 @@ export function AdminsManagement() {
 
   async function handleEdit(
     id: string,
-    patch: { name: string; phone: string; role: RoleKey; status: StatusKey },
+    patch: { name: string; phone: string; role: RoleKey; status: StatusKey; factors: FactorFlags },
   ): Promise<boolean> {
     try {
       const res = await fetch(`/api/admin/admins/${id}`, {
@@ -276,7 +289,9 @@ export function AdminsManagement() {
         toast.error("Not saved", { description: "Couldn’t update the admin — check the details." });
         return false;
       }
-      setAdmins((prev) => prev.map((x) => (x.id === id ? recordToUser(data.admin) : x)));
+      setAdmins((prev) =>
+        prev.map((x) => (x.id === id ? recordToUser({ ...data.admin, factors: patch.factors }) : x)),
+      );
       toast.success("Changes saved", { description: `${data.admin.email} updated.` });
       return true;
     } catch {
@@ -517,6 +532,90 @@ export function AdminsManagement() {
 }
 
 /* ----------------------------------------------------------------------- */
+/* Shared switch + per-admin sign-in factor selector.                       */
+/* ----------------------------------------------------------------------- */
+/** iOS-style switch with a clearly visible knob (white + shadow + ring). */
+function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer",
+        checked ? "bg-ng-forest" : "bg-ng-line",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform",
+          checked ? "translate-x-5" : "translate-x-0",
+        )}
+      />
+    </button>
+  );
+}
+
+const FACTOR_OPTIONS: { key: keyof FactorFlags; label: string; desc: string; icon: string }[] = [
+  { key: "emailOtp", label: "Email OTP", desc: "A one-time code is emailed at sign-in.", icon: "letter-bold" },
+  {
+    key: "phoneOtp",
+    label: "Phone OTP (SMS)",
+    desc: "A code is texted to their mobile. Goes live with MSG91.",
+    icon: "chat-round-dots-bold",
+  },
+  {
+    key: "totp",
+    label: "Authenticator app",
+    desc: "They scan a QR to set up Google / Microsoft Authenticator on their next sign-in.",
+    icon: "key-minimalistic-bold",
+  },
+];
+
+/** The three per-admin sign-in factors, each toggled independently. */
+function SecurityFactors({
+  value,
+  onChange,
+}: {
+  value: FactorFlags;
+  onChange: (next: FactorFlags) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[13px] font-semibold text-ng-ink">Sign-in security</span>
+      <div className="divide-y divide-ng-line-soft rounded-xl border border-ng-line bg-ng-paper">
+        {FACTOR_OPTIONS.map((f) => (
+          <div key={f.key} className="flex items-center gap-3 px-3.5 py-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-ng-line-soft text-ng-forest-deep">
+              <Icon name={f.icon} size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[12.5px] font-semibold text-ng-ink">{f.label}</div>
+              <p className="text-[11px] font-medium leading-snug text-ng-ink-soft">{f.desc}</p>
+            </div>
+            <Switch
+              checked={value[f.key]}
+              onChange={(v) => onChange({ ...value, [f.key]: v })}
+              label={`Toggle ${f.label}`}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
 /* Add / Invite admin modal (mirrors stock-adjust-dialog a11y pattern).     */
 /* ----------------------------------------------------------------------- */
 function AddInviteAdminModal({
@@ -535,6 +634,7 @@ function AddInviteAdminModal({
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["email"]);
+  const [factors, setFactors] = useState<FactorFlags>({ ...NO_FACTORS });
   const [submitting, setSubmitting] = useState(false);
   const [mobileTaken, setMobileTaken] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
@@ -621,7 +721,7 @@ function AddInviteAdminModal({
     }
     setSubmitting(true);
     const ok = await onInvite(
-      { name: name.trim(), email: email.trim(), phone: digits, password },
+      { name: name.trim(), email: email.trim(), phone: digits, password, factors },
       channels,
     );
     setSubmitting(false);
@@ -728,6 +828,9 @@ function AddInviteAdminModal({
             />
           </div>
 
+          {/* Sign-in security (per-admin factors) */}
+          <SecurityFactors value={factors} onChange={setFactors} />
+
           {/* Send credentials via */}
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold text-ng-ink">Send credentials via</span>
@@ -786,7 +889,7 @@ function EditAdminModal({
   onClose: () => void;
   onSave: (
     id: string,
-    patch: { name: string; phone: string; role: RoleKey; status: StatusKey },
+    patch: { name: string; phone: string; role: RoleKey; status: StatusKey; factors: FactorFlags },
   ) => Promise<boolean>;
 }) {
   const headingId = useId();
@@ -798,6 +901,7 @@ function EditAdminModal({
   const [mobile, setMobile] = useState((admin.mobile ?? "").replace(/\D/g, "").slice(-10));
   const [role, setRole] = useState<RoleKey>(admin.role);
   const [active, setActive] = useState(admin.status !== "disabled");
+  const [factors, setFactors] = useState<FactorFlags>({ ...NO_FACTORS, ...admin.factors });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; mobile?: string }>({});
 
@@ -841,6 +945,7 @@ function EditAdminModal({
       phone: digits,
       role,
       status: active ? "active" : "disabled",
+      factors,
     });
     setSubmitting(false);
     if (ok) onClose();
@@ -934,6 +1039,9 @@ function EditAdminModal({
             </div>
           </div>
 
+          {/* Sign-in security (per-admin factors) */}
+          <SecurityFactors value={factors} onChange={setFactors} />
+
           {/* Status */}
           <div className="flex items-center justify-between rounded-xl border border-ng-line bg-ng-paper px-4 py-3">
             <div className="min-w-0">
@@ -942,24 +1050,7 @@ function EditAdminModal({
                 {active ? "Active — can sign in." : "Deactivated — sign-in is blocked."}
               </p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={active}
-              aria-label="Toggle account status"
-              onClick={() => setActive((v) => !v)}
-              className={cn(
-                "relative h-6 w-11 rounded-full transition-colors cursor-pointer shrink-0",
-                active ? "bg-ng-forest" : "bg-ng-line",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 size-5 rounded-full bg-ng-paper transition-transform",
-                  active ? "translate-x-[22px]" : "translate-x-0.5",
-                )}
-              />
-            </button>
+            <Switch checked={active} onChange={setActive} label="Toggle account status" />
           </div>
         </div>
 

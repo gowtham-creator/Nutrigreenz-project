@@ -9,6 +9,7 @@ import {
   type AdminRole,
   type AdminStatus,
 } from "@/lib/admins";
+import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity-log";
@@ -85,6 +86,24 @@ export async function PATCH(
 
   const admin = await updateAdmin(id, patch);
   if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  // Persist per-admin sign-in factors when supplied. otpEmail/otpPhone track the
+  // admin's own contact so codes reach THEM; keep otpPhone in sync when the
+  // mobile changed. Best-effort — a failure here must not fail the profile edit.
+  if (typeof body.factors === "object" && body.factors) {
+    const f = body.factors as Record<string, unknown>;
+    try {
+      await setAdminFactors(admin.email, {
+        emailOtp: Boolean(f.emailOtp),
+        phoneOtp: Boolean(f.phoneOtp),
+        totp: Boolean(f.totp),
+        otpEmail: admin.email,
+        ...(patch.phone ? { otpPhone: patch.phone } : {}),
+      });
+    } catch {
+      /* non-fatal */
+    }
+  }
 
   await logActivity({
     actorEmail,
