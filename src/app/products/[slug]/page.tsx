@@ -11,6 +11,7 @@ import { getStorefrontCatalog, getStorefrontProductBySlug } from "@/lib/storefro
 import { Gallery } from "@/components/ng/pdp/gallery";
 import { BuyPanel } from "@/components/ng/pdp/buy-panel";
 import { PdpVariantProvider } from "@/components/ng/pdp/variant-context";
+import { ViewPing } from "@/components/ng/pdp/view-ping";
 import { TrustBar } from "@/components/ng/pdp/trust-bar";
 import { ProductDescription } from "@/components/ng/pdp/product-description";
 import { ProductStorySections } from "@/components/ng/pdp/product-story-sections";
@@ -314,6 +315,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <PageShell>
+      {/* Best-effort PDP view ping — records one product_views row for analytics. */}
+      <ViewPing productId={p.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Share the selected size × pack between the buy panel and the sticky bar. */}
