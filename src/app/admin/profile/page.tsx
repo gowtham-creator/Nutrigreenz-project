@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
 import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
+import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
 
 /**
  * /admin/profile — an operator's own account.
@@ -160,9 +161,14 @@ export default function AdminProfilePage() {
     const guess = e
       ? e.split("@")[0].split(/[._-]/).filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(" ")
       : "Operator";
-    const seed = { name: guess || "Operator", mobile: "", photo: null };
+    // Paint the cached avatar instantly so it doesn't flash the initial letter
+    // while /api/admin/me is in flight. Seed `saved.photo` to the same value so
+    // the SaveBar doesn't read it as an unsaved change.
+    const cachedPhoto = readCachedPhoto();
+    const seed = { name: guess || "Operator", mobile: "", photo: cachedPhoto };
     setName(seed.name);
     setMobile(seed.mobile);
+    setPhoto(cachedPhoto);
     setSaved(seed);
   }, []);
 
@@ -197,6 +203,7 @@ export default function AdminProfilePage() {
             setName((cur) => (p.name ? p.name : cur));
             setMobile(digits);
             setPhoto(p.photoUrl ?? null);
+            writeCachedPhoto(p.photoUrl ?? null);
             setSaved((s) => ({
               name: p.name ? p.name : s.name,
               mobile: digits,
@@ -345,6 +352,7 @@ export default function AdminProfilePage() {
 
       setName(trimmedName);
       setSaved({ name: trimmedName, mobile: mobileDigits, photo: nextPhoto });
+      writeCachedPhoto(nextPhoto);
       // Refresh the header avatar + the personal activity feed.
       window.dispatchEvent(new Event("ng:profile-updated"));
       void refreshActivity();
@@ -395,6 +403,7 @@ export default function AdminProfilePage() {
       const res = await fetch("/api/admin/me/photo", { method: "DELETE" });
       if (res.ok) {
         setSaved((s) => ({ ...s, photo: null }));
+        writeCachedPhoto(null);
         window.dispatchEvent(new Event("ng:profile-updated"));
         void refreshActivity();
         toast.success("Photo removed");
@@ -477,7 +486,18 @@ export default function AdminProfilePage() {
                   >
                     {photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photo} alt="Your profile" className="size-full object-cover" />
+                      <img
+                        src={photo}
+                        alt="Your profile"
+                        className="size-full object-cover"
+                        onError={() => {
+                          // Stale/broken cached URL — show the initial instead.
+                          if (!photo.startsWith("blob:")) {
+                            setPhoto(null);
+                            writeCachedPhoto(null);
+                          }
+                        }}
+                      />
                     ) : (
                       <span>{initial}</span>
                     )}

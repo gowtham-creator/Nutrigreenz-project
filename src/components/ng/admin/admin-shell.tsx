@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
+import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
 
 type NavItem = { href: string; label: string; icon: string; superadminOnly?: boolean };
 
@@ -36,10 +37,6 @@ function roleLabel(role: AdminRole | null): string {
   return "Admin";
 }
 
-/** localStorage key for the operator's avatar URL — painted instantly on mount
- *  so the chip never flashes the initial letter between page navigations. */
-const PHOTO_CACHE_KEY = "ng:admin-photo";
-
 /** Top-right admin identity chip with a sign-out dropdown. */
 function AdminIdentity() {
   const [email, setEmail] = useState<string | null>(null);
@@ -56,12 +53,8 @@ function AdminIdentity() {
   useEffect(() => {
     setEmail(getAdminEmail());
     setRole(getAdminRole());
-    try {
-      const cached = localStorage.getItem(PHOTO_CACHE_KEY);
-      if (cached) setPhotoUrl(cached);
-    } catch {
-      /* localStorage unavailable — fall back to the network load below */
-    }
+    const cached = readCachedPhoto();
+    if (cached) setPhotoUrl(cached);
 
     let alive = true;
     async function load() {
@@ -72,12 +65,7 @@ function AdminIdentity() {
         const next = (data.profile?.photoUrl as string | null) ?? null;
         if (!alive) return;
         setPhotoUrl(next);
-        try {
-          if (next) localStorage.setItem(PHOTO_CACHE_KEY, next);
-          else localStorage.removeItem(PHOTO_CACHE_KEY);
-        } catch {
-          /* ignore cache write failures */
-        }
+        writeCachedPhoto(next);
       } catch {
         /* ignore — the chip falls back to the initial */
       }
@@ -126,11 +114,7 @@ function AdminIdentity() {
               onError={() => {
                 // Stale/broken cached URL — drop it and show the initial.
                 setPhotoUrl(null);
-                try {
-                  localStorage.removeItem(PHOTO_CACHE_KEY);
-                } catch {
-                  /* ignore */
-                }
+                writeCachedPhoto(null);
               }}
             />
           ) : (
