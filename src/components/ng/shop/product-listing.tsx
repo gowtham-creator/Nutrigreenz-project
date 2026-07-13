@@ -32,7 +32,7 @@ interface ProductListingProps {
    * Category facets for the chip-strip + filter panel. Defaults to the bundled
    * `CATEGORY_TAGS`; the live shop passes facets built from the real categories.
    */
-  categoryTags?: { tag: string; label: string }[];
+  categoryTags?: { tag: string; label: string; image?: string | null; iconName?: string | null }[];
   /**
    * Maps a category slug → the product tags it contains. Defaults to the bundled
    * `SLUG_TO_TAGS`. For the live catalog each product is tagged with its own
@@ -177,9 +177,21 @@ export function ProductListing({
             <Chip active={activeChip === null} onClick={() => selectChip(null)}>
               All
             </Chip>
-            {categoryTags.map(({ tag, label }) =>
+            {categoryTags.map(({ tag, label, image, iconName }) =>
               (tagCounts[tag] ?? 0) > 0 ? (
-                <Chip key={tag} active={activeChip === tag} onClick={() => selectChip(tag)}>
+                <Chip
+                  key={tag}
+                  active={activeChip === tag}
+                  onClick={() => selectChip(tag)}
+                  icon={
+                    image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={image} alt="" className="size-4 rounded-full object-cover" />
+                    ) : iconName ? (
+                      <Icon name={iconName} size={15} />
+                    ) : undefined
+                  }
+                >
                   {label}
                 </Chip>
               ) : null,

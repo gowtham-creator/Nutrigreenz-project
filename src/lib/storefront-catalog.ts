@@ -40,6 +40,10 @@ import type { Category, ProductCard, ProductVariantOption } from "@/types/nutrig
 export interface CategoryTag {
   tag: string;
   label: string;
+  /** Admin-uploaded category image (preferred visual for the chip). */
+  image?: string | null;
+  /** Admin-picked Solar icon name (shown when there's no image). */
+  iconName?: string | null;
 }
 
 /** The data a listing page needs to render the existing UI. */
@@ -173,7 +177,10 @@ function mapCategory(record: CategoryRecord, productCount: number): Category {
     id: record.id,
     slug: record.slug,
     title: record.name,
+    // Fallback produce-icon; the real admin-set image (when present) is preferred
+    // by the surfaces that render it.
     icon: "seedling",
+    image: record.imageUrl ?? undefined,
     productCount,
   };
 }
@@ -230,13 +237,16 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
       if (tag) counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
 
-    const categories = categoryRecords
-      .filter((c) => (counts.get(c.slug) ?? 0) > 0)
-      .map((c) => mapCategory(c, counts.get(c.slug) ?? 0));
+    const activeRecords = categoryRecords.filter((c) => (counts.get(c.slug) ?? 0) > 0);
+    const categories = activeRecords.map((c) => mapCategory(c, counts.get(c.slug) ?? 0));
 
-    const categoryTags: CategoryTag[] = categories.map((c) => ({
+    // Carry the admin-set image + icon onto the facet so the chip strip can show
+    // the category's own visual (image preferred, else the picked Solar icon).
+    const categoryTags: CategoryTag[] = activeRecords.map((c) => ({
       tag: c.slug,
-      label: c.title,
+      label: c.name,
+      image: c.imageUrl,
+      iconName: c.icon,
     }));
 
     return { products, categories, categoryTags, live: true };
