@@ -15,6 +15,7 @@ import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { advanceOrderStatus } from "@/lib/orders";
+import { sendOrderShippedEmail, sendOrderDeliveredEmail } from "@/lib/order-emails";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,13 @@ export async function POST(
           ? 409 // conflict: backward / lateral / no-cancel
           : 400; // invalid-status
     return Response.json({ ok: false, error: result.error }, { status: code });
+  }
+
+  // Notify the customer on the shipped / delivered milestones (best-effort).
+  const oid = result.order?.id;
+  if (oid) {
+    if (nextStatus === "shipped") void sendOrderShippedEmail(oid);
+    else if (nextStatus === "delivered") void sendOrderDeliveredEmail(oid);
   }
 
   return Response.json({ ok: true, order: result.order });
