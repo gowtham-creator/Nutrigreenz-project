@@ -89,19 +89,18 @@ const SLIDES: PromoSlideDef[] = [
   },
   {
     id: "rice",
-    label: "Basmati rice",
+    label: "Everyday rice",
     tag: "Coming Soon",
-    img: "/images/hero/launch-rice.webp",
-    alt: "Nutri Greenz Basmati Rice — extra-long grain, naturally aged",
-    kicker: "Biryani plans?",
-    title: "Basmati",
-    script: "Aa Raha Hai.",
-    sub: "Extra-long grain | Naturally aged for aroma",
-    tagline: "From Indian paddies to your kitchen",
+    img: "/images/hero/rice-hero.webp",
+    alt: "Nutri Greenz rice - Sona Masoori, HMT and Basmati, naturally aged",
+    kicker: "Roz ka chawal,",
+    title: "Goodness in",
+    script: "Every Grain.",
+    sub: "Sona Masoori · HMT · Basmati · Naturally aged",
+    tagline: "Fresh, pure grains for everyday meals",
     cta: { label: "Explore the pantry", href: "/shop" },
-    // Cool pale mint — kept clearly lighter/cooler than the ghee sage so all
-    // four banner gradients are visually distinct.
-    wash: "#EAF3EC",
+    // Warm cream to match the new rice artwork's soft beige backdrop.
+    wash: "#F4ECD8",
   },
 ];
 
