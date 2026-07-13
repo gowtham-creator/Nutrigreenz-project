@@ -1,6 +1,9 @@
 import "server-only";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { getOrder, type OrderWithDetail } from "@/lib/orders";
+import { render, type NotifyType } from "@/lib/notification-templates";
+import { sendSms } from "@/lib/sms";
+import { sendWhatsApp } from "@/lib/whatsapp";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -68,14 +71,34 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
 
 async function send(orderId: string, kind: Kind): Promise<void> {
   try {
-    if (!isEmailConfigured()) return;
     const order = await getOrder(orderId);
-    if (!order || !order.userEmail) return;
-    await sendEmail({
-      to: order.userEmail,
-      subject: COPY[kind].subject(order.orderNumber),
-      html: orderEmailHtml(order, kind),
-    });
+    if (!order) return;
+
+    // Email keeps its existing on-brand template.
+    if (isEmailConfigured() && order.userEmail) {
+      await sendEmail({
+        to: order.userEmail,
+        subject: COPY[kind].subject(order.orderNumber),
+        html: orderEmailHtml(order, kind),
+      });
+    }
+
+    // SMS + WhatsApp share the single source-of-truth templates. Both no-op until
+    // MSG91 / WhatsApp is configured, so this is safe to call unconditionally.
+    if (order.userPhone) {
+      const type: NotifyType = kind === "confirmed" ? "orderPlaced" : "orderStatus";
+      const vars = {
+        orderNumber: order.orderNumber,
+        status: kind === "confirmed" ? "placed" : kind,
+        total: rupees(order.totalPaise),
+        itemsSummary: order.items.map((it) => `${it.title} x${it.qty}`).join(", "),
+        trackUrl: `${SITE}/orders/${order.id}`,
+      };
+      await Promise.allSettled([
+        sendSms({ to: order.userPhone, body: render(type, "sms", vars).body }),
+        sendWhatsApp({ to: order.userPhone, body: render(type, "whatsapp", vars).body }),
+      ]);
+    }
   } catch {
     /* best-effort — never throw into the order / status flow */
   }
