@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CaptainShell, CaptainCard } from "@/components/ng/captain/captain-shell";
+import { CaptainShell, CaptainCard, CaptainStat } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 
 type Status = "Due" | "Collected" | "Handed over";
@@ -51,8 +51,9 @@ const INITIAL: Pickup[] = [
   },
 ];
 
+// Monochrome-green progression: neutral (pending) → leaf (mid) → forest (done).
 const STATUS_STYLE: Record<Status, string> = {
-  Due: "bg-ng-clay/25 text-ng-clay-deep",
+  Due: "bg-ng-cream-deep text-ng-ink-muted",
   Collected: "bg-ng-leaf/25 text-ng-forest",
   "Handed over": "bg-ng-forest text-ng-cream",
 };
@@ -99,18 +100,18 @@ export default function CaptainPickups() {
     >
       {/* Route summary */}
       <div className="grid grid-cols-3 gap-2.5 mb-4">
-        <RouteStat label="Due" value={dueCount} tone="clay" icon="box-bold" />
-        <RouteStat label="Collected" value={collectedCount} tone="leaf" icon="bag-check-bold" />
-        <RouteStat label="Orders" value={totalOrders} tone="forest" icon="checklist-minimalistic-bold" />
+        <CaptainStat label="Due" value={dueCount} tone="paper" icon="box-bold" />
+        <CaptainStat label="Collected" value={collectedCount} tone="sage" icon="bag-check-bold" />
+        <CaptainStat label="Orders" value={totalOrders} tone="forest" icon="checklist-minimalistic-bold" />
       </div>
 
       {/* Next stop emphasis */}
       {nextStop && filter !== "Done" ? (
-        <div className="relative overflow-hidden rounded-2xl bg-ng-forest-deep text-ng-cream p-4 mb-5">
-          <div className="absolute -top-12 -right-10 size-36 rounded-full bg-ng-clay/20 blur-2xl" aria-hidden />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep text-ng-cream p-4 mb-5">
+          <div className="absolute -top-12 -right-10 size-36 rounded-full bg-ng-leaf/20 blur-2xl" aria-hidden />
           <div className="relative">
             <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/25 ring-1 ring-ng-clay/35 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-clay">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
                 <Icon name="map-point-wave-bold" size={12} />
                 Next stop
               </span>
@@ -182,7 +183,7 @@ export default function CaptainPickups() {
                         ? "bg-ng-forest text-ng-cream"
                         : p.status === "Collected"
                           ? "bg-ng-leaf/25 text-ng-forest"
-                          : "bg-ng-clay/20 text-ng-clay-deep"
+                          : "bg-ng-cream-deep text-ng-ink-muted"
                     }`}
                   >
                     <Icon
@@ -289,30 +290,3 @@ export default function CaptainPickups() {
   );
 }
 
-function RouteStat({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string;
-  value: number;
-  tone: "clay" | "leaf" | "forest";
-  icon: string;
-}) {
-  const map = {
-    clay: "bg-ng-clay/12 border-ng-clay/30 text-ng-clay-deep",
-    leaf: "bg-ng-sage/45 border-ng-line text-ng-forest",
-    forest: "bg-ng-forest text-ng-cream border-ng-forest",
-  } as const;
-  const iconTone = tone === "forest" ? "text-ng-leaf" : tone === "leaf" ? "text-ng-forest" : "text-ng-clay-deep";
-  const valTone = tone === "forest" ? "text-ng-cream" : "text-ng-forest-deep";
-  const labTone = tone === "forest" ? "text-ng-leaf-soft" : "text-ng-ink-soft";
-  return (
-    <div className={`rounded-2xl border px-3 py-3 ${map[tone]}`}>
-      <Icon name={icon} size={18} className={iconTone} />
-      <div className={`font-display text-[22px] leading-none mt-2 ${valTone}`}>{value}</div>
-      <div className={`text-[10px] uppercase tracking-wider mt-1 ${labTone}`}>{label}</div>
-    </div>
-  );
-}
