@@ -41,7 +41,7 @@ export function AccountShell({
       {/* Soft, reduced-motion-safe ambient blobs behind the whole suite. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[420px] overflow-hidden">
         <div className="absolute -left-24 -top-28 h-80 w-80 rounded-full bg-ng-leaf/12 blur-3xl" />
-        <div className="absolute -right-28 top-10 h-72 w-72 rounded-full bg-ng-clay/12 blur-3xl" />
+        <div className="absolute -right-28 top-10 h-72 w-72 rounded-full bg-ng-forest-soft/12 blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 md:px-8 py-8 md:py-10">
@@ -70,7 +70,7 @@ export function AccountShell({
                       size={18}
                       className={cn(
                         "transition-colors",
-                        isActive ? "text-ng-clay" : "text-ng-ink-soft group-hover:text-ng-forest",
+                        isActive ? "text-ng-leaf" : "text-ng-ink-soft group-hover:text-ng-forest",
                       )}
                     />
                     {n.label}

@@ -34,7 +34,7 @@ export function AccountIdentity() {
         {isAuthed ? (
           <span
             aria-hidden
-            className="absolute -bottom-0.5 -right-0.5 grid h-4.5 w-4.5 place-items-center rounded-full bg-ng-paper text-ng-clay ring-1 ring-ng-clay/30"
+            className="absolute -bottom-0.5 -right-0.5 grid h-4.5 w-4.5 place-items-center rounded-full bg-ng-paper text-ng-leaf ring-1 ring-ng-leaf/30"
           >
             <Icon name="leaf-bold" size={11} />
           </span>

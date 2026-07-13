@@ -108,7 +108,7 @@ export default function AccountOrderDetailPage({
             </div>
           ) : (
             <section className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
-              <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+              <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
                 <Icon
                   name={state === "unauth" ? "lock-keyhole-minimalistic-bold" : "box-linear"}
                   size={28}
@@ -245,14 +245,14 @@ export default function AccountOrderDetailPage({
                       <span
                         className={`relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full ring-4 ring-ng-paper ${
                           t.active
-                            ? "bg-ng-clay text-ng-forest-deep shadow-[0_0_0_4px_rgba(181,134,47,0.18)]"
+                            ? "bg-ng-leaf text-ng-forest-deep shadow-[0_0_0_4px_rgba(102,191,115,0.22)]"
                             : t.done
                               ? "bg-ng-forest text-ng-cream"
                               : "bg-ng-sage/60 text-ng-ink-soft"
                         }`}
                       >
                         {t.active ? (
-                          <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-ng-clay/40" />
+                          <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-ng-leaf/40" />
                         ) : null}
                         <Icon name={t.icon} size={17} className="relative" />
                       </span>
@@ -266,7 +266,7 @@ export default function AccountOrderDetailPage({
                             {t.label}
                           </span>
                           {t.active ? (
-                            <span className="rounded-full bg-ng-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-clay-deep">
+                            <span className="rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest">
                               Now
                             </span>
                           ) : null}
