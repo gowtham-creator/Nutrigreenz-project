@@ -7,7 +7,7 @@ import {
 } from "@/lib/admin-auth";
 import { ADMIN_SESSION_TTL_SECONDS, createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
-import { verifyEmailOtp, getAdminFactors, getTotpSecret } from "@/lib/admin-security";
+import { verifyEmailOtp, getAdminFactors, resolveTotpSecret } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
 import { logActivity } from "@/lib/activity-log";
 
@@ -61,9 +61,10 @@ export async function POST(request: Request): Promise<Response> {
 
   let ok = false;
   if (factor === "totp") {
-    // Prefer the admin's OWN enrolled secret; fall back to the shared env secret
-    // so the env-configured super-admin (and anyone not yet enrolled) still works.
-    const secret = (await getTotpSecret(email)) ?? process.env.ADMIN_TOTP_SECRET;
+    // The admin's OWN enrolled secret, or the shared env secret ONLY for the env
+    // super-admin (resolveTotpSecret scopes it) — never one shared secret for a
+    // per-admin who should be verifying against their own.
+    const secret = await resolveTotpSecret(email);
     ok = secret ? await verifyTotp(code as string, secret) : false;
   } else if (factor === "email") {
     ok = await verifyEmailOtp(email, code as string);

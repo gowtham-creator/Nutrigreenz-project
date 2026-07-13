@@ -12,5 +12,11 @@ export async function GET(): Promise<Response> {
 
   const e = await getTotpEnrollment(session.email);
   const snoozed = e.snoozeUntil ? new Date(e.snoozeUntil).getTime() > Date.now() : false;
-  return Response.json({ ok: true, enrolled: e.enrolled, promptDue: !e.enrolled && !snoozed });
+  // Prompt only when the authenticator factor was ASSIGNED to this admin but they
+  // haven't enrolled their own secret yet (and haven't snoozed the nudge).
+  return Response.json({
+    ok: true,
+    enrolled: e.enrolled,
+    promptDue: e.assigned && !e.enrolled && !snoozed,
+  });
 }

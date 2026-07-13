@@ -12,7 +12,12 @@ import {
   type AdminRole,
 } from "@/lib/admin-session";
 import { isTotpConfigured } from "@/lib/totp";
-import { getAdminFactors, hasSecurityRow, getTotpSecret } from "@/lib/admin-security";
+import {
+  getAdminFactors,
+  hasSecurityRow,
+  resolveTotpSecret,
+  isEnvTotpAdmin,
+} from "@/lib/admin-security";
 import { verifyAdminLogin } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -131,39 +136,40 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  // Work out which second factors gate this sign-in (super-admin only). The
-  // enabled set is driven by the admin's saved settings (`admin_security`); a
-  // factor only counts when it is actually usable (secret/provider present).
-  // Back-compat: with no saved row, env TOTP gates login exactly as before.
+  // Second factors gate EVERY admin (not just super-admins): the enabled set comes
+  // from each admin's saved settings (`admin_security`). A factor only counts when
+  // it is actually usable — a verifiable TOTP secret, a configured email sender, or
+  // a saved mobile number — so the chooser never shows a dead option and an admin is
+  // never locked out of a factor they can't complete. Back-compat: the env
+  // super-admin with no saved row still gates on the env TOTP secret as before.
   let factors: string[] = [];
   // The number a mobile-OTP factor is sent to (echoed to the client so it can
   // auto-send the Firebase OTP to the saved operator number). Never a secret —
   // it's the operator's own number, already shown in their profile.
   let otpPhone: string | null = null;
-  if (role === "superadmin") {
-    try {
-      if (isSupabaseConfigured && (await hasSecurityRow(normalizedEmail))) {
-        const f = await getAdminFactors(normalizedEmail);
-        // Gate TOTP when enabled AND verifiable — the admin's OWN enrolled secret
-        // or the shared env secret must exist so login-2fa can check the code.
-        if (f.totp && ((await getTotpSecret(normalizedEmail)) || isTotpConfigured())) {
-          factors.push("totp");
-        }
-        if (f.emailOtp && isEmailConfigured()) factors.push("email");
-        // Mobile OTP (#42): offered only when the Mobile factor is on AND a
-        // destination number is saved, so the chooser never shows a dead option.
-        // login-2fa already verifies a Firebase phone token against this number.
-        if (f.phoneOtp && f.otpPhone) {
-          factors.push("phone");
-          otpPhone = f.otpPhone;
-        }
-      } else if (isTotpConfigured()) {
-        factors = ["totp"];
+  try {
+    if (isSupabaseConfigured && (await hasSecurityRow(normalizedEmail))) {
+      const f = await getAdminFactors(normalizedEmail);
+      // TOTP gates login only when a verifiable secret exists (the admin's OWN
+      // enrolled secret, or the env secret for the env super-admin). When TOTP is
+      // enabled but not yet enrolled, we DON'T gate here — the post-login setup
+      // prompt makes them scan a QR, and the NEXT sign-in then requires it.
+      if (f.totp && (await resolveTotpSecret(normalizedEmail))) {
+        factors.push("totp");
       }
-    } catch {
-      // DB hiccup → fall back to env TOTP so MFA still gates the sign-in.
-      if (isTotpConfigured()) factors = ["totp"];
+      if (f.emailOtp && isEmailConfigured()) factors.push("email");
+      // Mobile OTP is delivered via Firebase phone auth (login-2fa verifies the
+      // returned token against this number) — no SMS provider required today.
+      if (f.phoneOtp && f.otpPhone) {
+        factors.push("phone");
+        otpPhone = f.otpPhone;
+      }
+    } else if (isEnvTotpAdmin(normalizedEmail) && isTotpConfigured()) {
+      factors = ["totp"];
     }
+  } catch {
+    // DB hiccup → fall back to env TOTP for the env super-admin so MFA still gates.
+    if (isEnvTotpAdmin(normalizedEmail) && isTotpConfigured()) factors = ["totp"];
   }
 
   // Fail-closed MFA guard for the highest-privilege role. When ADMIN_REQUIRE_MFA

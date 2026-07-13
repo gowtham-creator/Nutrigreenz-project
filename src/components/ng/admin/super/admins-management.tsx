@@ -570,8 +570,8 @@ const FACTOR_OPTIONS: { key: keyof FactorFlags; label: string; desc: string; ico
   { key: "emailOtp", label: "Email OTP", desc: "A one-time code is emailed at sign-in.", icon: "letter-bold" },
   {
     key: "phoneOtp",
-    label: "Phone OTP (SMS)",
-    desc: "A code is texted to their mobile. Goes live with MSG91.",
+    label: "Phone OTP",
+    desc: "A one-time code is sent to their mobile (app phone verification) at sign-in.",
     icon: "chat-round-dots-bold",
   },
   {

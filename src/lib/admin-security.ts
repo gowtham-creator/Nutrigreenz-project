@@ -135,6 +135,8 @@ export async function verifyEmailOtp(email: string, code: string): Promise<boole
 /* ── per-admin authenticator (TOTP) enrollment ─────────────────────────────── */
 
 export interface TotpEnrollment {
+  /** The super-admin has assigned the authenticator factor to this admin. */
+  assigned: boolean;
   /** A confirmed, active per-admin authenticator secret exists. */
   enrolled: boolean;
   /** A secret has been stored (may be pending confirmation). */
@@ -151,11 +153,14 @@ export async function getTotpEnrollment(email: string): Promise<TotpEnrollment> 
     .eq("email", norm(email))
     .maybeSingle();
   const hasSecret = Boolean(data?.totp_secret);
-  // "Enrolled" = they already have a WORKING authenticator we can verify at login:
-  // their own per-admin secret OR the shared env secret. Either way, don't nag them
-  // to set one up (an env-configured super-admin already has TOTP).
-  const enrolled = Boolean(data?.totp_enabled) && (hasSecret || isTotpConfigured());
+  // "Enrolled" = they have a WORKING authenticator we can verify at login: their
+  // OWN per-admin secret, or — ONLY for the env-configured super-admin — the shared
+  // env secret. A per-admin who was assigned TOTP but hasn't scanned a QR yet is
+  // NOT enrolled, so the post-login setup prompt still fires for them.
+  const enrolled =
+    Boolean(data?.totp_enabled) && (hasSecret || (isEnvTotpAdmin(email) && isTotpConfigured()));
   return {
+    assigned: Boolean(data?.totp_enabled),
     enrolled,
     hasSecret,
     snoozeUntil: (data?.totp_prompt_snooze_until as string | null) ?? null,
@@ -170,6 +175,25 @@ export async function getTotpSecret(email: string): Promise<string | null> {
     .eq("email", norm(email))
     .maybeSingle();
   return (data?.totp_secret as string | null) ?? null;
+}
+
+/** The env-configured super-admin owns the shared ADMIN_TOTP_SECRET; no other
+ *  admin is gated/enrolled against it — they each get their own per-admin secret. */
+export function isEnvTotpAdmin(email: string): boolean {
+  const envAdmin = (process.env.ADMIN_EMAIL || "admin@nutrigreenz.in").trim().toLowerCase();
+  return norm(email) === envAdmin;
+}
+
+/** The secret to verify this admin's TOTP against at sign-in: their own enrolled
+ *  secret, or the shared env secret ONLY for the env super-admin. null when none
+ *  applies — so TOTP simply isn't gated and the admin is prompted to enrol first. */
+export async function resolveTotpSecret(email: string): Promise<string | null> {
+  const own = await getTotpSecret(email);
+  if (own) return own;
+  if (isEnvTotpAdmin(email) && isTotpConfigured()) {
+    return process.env.ADMIN_TOTP_SECRET?.trim() || null;
+  }
+  return null;
 }
 
 /** Store a freshly-generated secret as PENDING (not yet enforced at login). */
