@@ -7,6 +7,8 @@ export interface Category {
   name: string;
   slug: string;
   sort: number;
+  icon: string | null;
+  imageUrl: string | null;
   createdAt: string;
 }
 

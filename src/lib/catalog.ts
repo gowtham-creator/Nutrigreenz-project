@@ -14,6 +14,10 @@ export interface CategoryRecord {
   name: string;
   slug: string;
   sort: number;
+  /** Admin-picked Solar icon name for the category pill (fallback when no image). */
+  icon: string | null;
+  /** Admin-uploaded category image URL (preferred over the icon on the storefront). */
+  imageUrl: string | null;
   createdAt: string;
 }
 
@@ -39,6 +43,8 @@ interface CategoryRow {
   name: string;
   slug: string;
   sort: number;
+  icon: string | null;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -99,9 +105,14 @@ function toCategory(r: CategoryRow): CategoryRecord {
     name: r.name,
     slug: r.slug,
     sort: r.sort,
+    icon: r.icon ?? null,
+    imageUrl: r.image_url ?? null,
     createdAt: r.created_at,
   };
 }
+
+/** Column list for category reads (kept in one place so every query matches). */
+const CATEGORY_COLS = "id, name, slug, sort, icon, image_url, created_at";
 
 function toProduct(r: ProductRow): ProductRecord {
   const category = firstOf(r.categories);
@@ -130,7 +141,7 @@ function toProduct(r: ProductRow): ProductRecord {
 export async function listCategories(): Promise<CategoryRecord[]> {
   const { data } = await supabaseAdmin()
     .from("categories")
-    .select("id, name, slug, sort, created_at")
+    .select(CATEGORY_COLS)
     .order("sort", { ascending: true })
     .order("name", { ascending: true });
   return ((data as CategoryRow[] | null) ?? []).map(toCategory);
@@ -141,6 +152,8 @@ export interface CategoryInput {
   name: string;
   slug?: string;
   sort?: number;
+  icon?: string | null;
+  imageUrl?: string | null;
 }
 
 /**
@@ -153,13 +166,15 @@ export async function upsertCategory(input: CategoryInput): Promise<CategoryReco
   const slug = (input.slug?.trim() || slugify(name)) || slugify(name);
 
   if (input.id) {
-    const patch: Record<string, string | number> = { name, slug };
+    const patch: Record<string, string | number | null> = { name, slug };
     if (input.sort !== undefined) patch.sort = input.sort;
+    if (input.icon !== undefined) patch.icon = input.icon;
+    if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
     const { data, error } = await db
       .from("categories")
       .update(patch)
       .eq("id", input.id)
-      .select("id, name, slug, sort, created_at")
+      .select(CATEGORY_COLS)
       .single();
     if (error || !data) throw new Error(error?.message || "Failed to update category.");
     return toCategory(data as CategoryRow);
@@ -167,8 +182,14 @@ export async function upsertCategory(input: CategoryInput): Promise<CategoryReco
 
   const { data, error } = await db
     .from("categories")
-    .insert({ name, slug, sort: input.sort ?? 0 })
-    .select("id, name, slug, sort, created_at")
+    .insert({
+      name,
+      slug,
+      sort: input.sort ?? 0,
+      icon: input.icon ?? null,
+      image_url: input.imageUrl ?? null,
+    })
+    .select(CATEGORY_COLS)
     .single();
   if (error || !data) throw new Error(error?.message || "Failed to create category.");
   return toCategory(data as CategoryRow);

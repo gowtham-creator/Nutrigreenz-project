@@ -203,12 +203,12 @@ export default function AdminInventory() {
 
   // ── categories ────────────────────────────────────────────────────
   const createCategory = useCallback(
-    async (name: string) => {
+    async (draft: { name: string; icon: string | null; imageUrl: string | null }) => {
       setCategoryBusy(true);
       try {
-        await postJson("/api/admin/inventory/categories", "POST", { name });
+        await postJson("/api/admin/inventory/categories", "POST", draft);
         await loadCategories();
-        toast.success("Category added", { description: name });
+        toast.success("Category added", { description: draft.name });
       } catch {
         toast.error("Could not add category");
       } finally {
@@ -218,14 +218,17 @@ export default function AdminInventory() {
     [loadCategories],
   );
   const renameCategory = useCallback(
-    async (id: string, name: string) => {
+    async (
+      id: string,
+      draft: { name: string; icon: string | null; imageUrl: string | null },
+    ) => {
       setCategoryBusy(true);
       try {
-        await postJson(`/api/admin/inventory/categories/${id}`, "PATCH", { name });
+        await postJson(`/api/admin/inventory/categories/${id}`, "PATCH", draft);
         await loadCategories();
         await loadProducts();
       } catch {
-        toast.error("Could not rename category");
+        toast.error("Could not save category");
       } finally {
         setCategoryBusy(false);
       }

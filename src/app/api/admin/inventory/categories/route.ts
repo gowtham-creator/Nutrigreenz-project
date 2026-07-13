@@ -31,8 +31,10 @@ export async function POST(request: Request): Promise<Response> {
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
+  const icon = typeof body.icon === "string" ? body.icon.trim() || null : undefined;
+  const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : undefined;
   try {
-    const category = await upsertCategory({ name, sort });
+    const category = await upsertCategory({ name, sort, icon, imageUrl });
     return Response.json({ ok: true, category });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";
