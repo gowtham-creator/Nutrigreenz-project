@@ -35,31 +35,32 @@ export function CaptainShell({
     <div className="min-h-screen bg-ng-forest-deep text-ng-cream flex justify-center">
       {/* Phone-shaped container — full width on mobile, framed on desktop */}
       <div className="w-full max-w-[460px] min-h-screen bg-ng-paper text-ng-ink relative flex flex-col sm:my-6 sm:min-h-[calc(100vh-3rem)] sm:rounded-[36px] sm:overflow-hidden sm:ring-1 sm:ring-ng-forest-deep/15 sm:shadow-[0_40px_90px_-20px_rgba(10,31,18,0.55)]">
-        {/* ===== On-duty top bar ===== */}
-        <header className="relative overflow-hidden bg-ng-forest-deep text-ng-cream">
-          {/* layered field-tool ambience */}
+        {/* ===== On-duty top bar — lush forest gradient ===== */}
+        <header className="relative overflow-hidden bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep text-ng-cream">
+          {/* layered plant-green ambience */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-90"
+            className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(120% 80% at 88% -10%, rgba(102,191,115,0.22), transparent 60%), radial-gradient(90% 70% at 0% 0%, rgba(181,134,47,0.16), transparent 55%)",
+                "radial-gradient(115% 80% at 85% -12%, rgba(102,191,115,0.30), transparent 58%), radial-gradient(100% 70% at 0% 6%, rgba(76,175,80,0.16), transparent 55%)",
             }}
             aria-hidden
           />
-          <div className="pointer-events-none absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-ng-clay/45 to-transparent" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-ng-leaf/45 to-transparent" aria-hidden />
 
           <div className="relative px-5 pt-[max(1.15rem,env(safe-area-inset-top))] pb-4">
+            {/* Row 1 — brand · role · duty · avatar */}
             <div className="flex items-center gap-2.5">
               <Logo variant="full" tone="white" className="!h-[26px]" priority />
-              <span className="inline-flex items-center gap-1 rounded-md bg-ng-clay/20 ring-1 ring-ng-clay/40 px-2 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.18em] text-ng-clay">
-                <Icon name="shield-star-bold" size={11} className="text-ng-clay" />
+              <span className="inline-flex items-center gap-1 rounded-md bg-ng-leaf/15 ring-1 ring-ng-leaf/35 px-2 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.18em] text-ng-leaf">
+                <Icon name="shield-star-bold" size={11} className="text-ng-leaf" />
                 Captain
               </span>
 
               <div className="ml-auto flex items-center gap-2">
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-soft/55 ring-1 ring-ng-leaf/20 px-2.5 py-[5px] text-[10px] font-semibold text-ng-leaf-soft"
-                  title="Offline-first: captures sync to HQ when you're back online"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-soft/55 ring-1 ring-ng-leaf/25 px-2.5 py-[5px] text-[10px] font-semibold text-ng-leaf-soft"
+                  title="On duty · captures sync to HQ when you're back online"
                 >
                   <span className="relative flex size-2" aria-hidden>
                     <span className="absolute inline-flex h-full w-full rounded-full bg-ng-leaf opacity-70 motion-safe:animate-ping" />
@@ -76,27 +77,24 @@ export function CaptainShell({
               </div>
             </div>
 
-            {/* identity + duty strip */}
-            <div className="mt-3.5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0 text-[12px] text-ng-cream/75">
+            {/* Row 2 — one grouped context strip (identity + shift), no scattered pills */}
+            <div className="mt-3.5 rounded-2xl bg-ng-forest-soft/30 ring-1 ring-ng-leaf/12 divide-y divide-ng-leaf/10">
+              <div className="flex items-center gap-2 px-3 py-2">
                 <Icon name="map-point-bold" size={14} className="text-ng-leaf shrink-0" />
-                <span className="font-semibold text-ng-cream truncate">{captain.name}</span>
-                <span className="text-ng-cream/35">·</span>
-                <span className="truncate">{captain.area}</span>
+                <span className="font-semibold text-ng-cream truncate text-[12px]">{captain.name}</span>
+                <span className="text-ng-cream/30">·</span>
+                <span className="truncate text-[12px] text-ng-cream/70">{captain.area}</span>
+                <span className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[10px] text-ng-cream/60">
+                  <Icon name="cloud-bold" size={12} className="text-ng-leaf-soft" />
+                  Offline-ready
+                </span>
               </div>
-              <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-cream/8 ring-1 ring-ng-cream/12 px-2.5 py-1 text-[10px] text-ng-cream/70">
-                <Icon name="cloud-bold" size={12} className="text-ng-leaf-soft" />
-                Offline-ready
-              </span>
-            </div>
-
-            {/* mission line — "Today at <stall>" */}
-            <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-ng-forest-soft/35 ring-1 ring-ng-leaf/12 px-3 py-2">
-              <Icon name="routing-2-bold" size={15} className="text-ng-leaf shrink-0" />
-              <span className="text-[11.5px] text-ng-cream/80 truncate">
-                <span className="text-ng-cream/55">Today · {today} · </span>
-                <span className="font-semibold text-ng-cream">{captain.stall}</span>
-              </span>
+              <div className="flex items-center gap-2 px-3 py-2">
+                <Icon name="routing-2-bold" size={14} className="text-ng-leaf shrink-0" />
+                <span className="text-[11.5px] text-ng-cream/55 shrink-0">Today · {today}</span>
+                <span className="text-ng-cream/25">·</span>
+                <span className="text-[11.5px] font-semibold text-ng-cream truncate">{captain.stall}</span>
+              </div>
             </div>
           </div>
         </header>
@@ -104,8 +102,8 @@ export function CaptainShell({
         {/* ===== Title block ===== */}
         <div className="px-5 pt-5 pb-1.5">
           {eyebrow ? (
-            <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-ng-clay-deep font-bold mb-1.5">
-              <span className="inline-block h-[3px] w-3.5 rounded-full bg-ng-clay/70" aria-hidden />
+            <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-ng-forest font-bold mb-1.5">
+              <span className="inline-block h-[3px] w-3.5 rounded-full bg-ng-leaf" aria-hidden />
               {eyebrow}
             </div>
           ) : null}
@@ -167,15 +165,61 @@ export function CaptainCard({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: "paper" | "forest" | "clay" | "sage";
+  tone?: "paper" | "forest" | "sage";
 }) {
   const map: Record<string, string> = {
     paper: "bg-ng-white border-ng-line text-ng-ink shadow-[0_1px_3px_rgba(10,31,18,0.04)]",
-    forest: "bg-ng-forest-deep border-ng-forest-deep text-ng-cream",
-    clay: "bg-ng-clay/20 border-ng-clay/40 text-ng-forest-deep",
+    forest:
+      "bg-ng-forest-deep bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep border-ng-forest-deep text-ng-cream",
     sage: "bg-ng-sage/55 border-ng-line text-ng-forest-deep",
   };
   return <div className={cn("rounded-2xl border p-4", map[tone], className)}>{children}</div>;
+}
+
+/**
+ * Compact metric tile — one consistent stat card shared across Today, Pickups
+ * and Settle so the dashboards read as one system. `tone` adapts it to paper
+ * surfaces or the dark forest heroes.
+ */
+export function CaptainStat({
+  icon,
+  label,
+  value,
+  tone = "paper",
+}: {
+  icon: string;
+  label: string;
+  value: string | number;
+  tone?: "paper" | "forest" | "sage" | "onForest";
+}) {
+  const surface: Record<string, string> = {
+    paper: "bg-ng-white border border-ng-line shadow-[0_1px_3px_rgba(10,31,18,0.04)]",
+    forest: "bg-ng-forest border border-ng-forest",
+    sage: "bg-ng-sage/45 border border-ng-line",
+    onForest: "bg-ng-forest-soft/40 border border-ng-leaf/12",
+  };
+  const onDark = tone === "forest" || tone === "onForest";
+  return (
+    <div className={cn("rounded-2xl px-3 py-3", surface[tone])}>
+      <Icon name={icon} size={17} className={onDark ? "text-ng-leaf" : "text-ng-forest"} />
+      <div
+        className={cn(
+          "font-display text-[19px] leading-none mt-2 truncate",
+          onDark ? "text-ng-cream" : "text-ng-forest-deep",
+        )}
+      >
+        {value}
+      </div>
+      <div
+        className={cn(
+          "text-[10px] uppercase tracking-wider mt-1",
+          onDark ? "text-ng-leaf-soft" : "text-ng-ink-soft",
+        )}
+      >
+        {label}
+      </div>
+    </div>
+  );
 }
 
 /** Small labelled section heading with optional trailing action. */

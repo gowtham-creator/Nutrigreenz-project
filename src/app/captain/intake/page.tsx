@@ -112,14 +112,14 @@ export default function CaptainIntake() {
       </div>
 
       {/* M2 cross-match note */}
-      <div className="flex gap-2.5 rounded-2xl bg-ng-clay/15 border border-ng-clay/35 px-3.5 py-3 mb-5">
-        <div className="size-7 rounded-lg bg-ng-clay/20 ring-1 ring-ng-clay/30 flex items-center justify-center shrink-0">
-          <Icon name="link-round-bold" size={16} className="text-ng-clay-deep" />
+      <div className="flex gap-2.5 rounded-2xl bg-ng-sage/30 border border-ng-leaf/25 px-3.5 py-3 mb-5">
+        <div className="size-7 rounded-lg bg-ng-forest/10 ring-1 ring-ng-leaf/25 flex items-center justify-center shrink-0">
+          <Icon name="link-round-bold" size={16} className="text-ng-forest" />
         </div>
-        <p className="text-[12px] leading-snug text-ng-soil">
-          On online signup, this mobile <span className="font-semibold">auto-links &amp; imports</span> stall purchases
-          — marking the customer “Onboarded”.{" "}
-          <span className="text-ng-ink-soft">(OTP cross-match · Milestone 2)</span>
+        <p className="text-[12px] leading-snug text-ng-ink-muted">
+          On online signup, this mobile{" "}
+          <span className="font-semibold text-ng-forest-deep">auto-links &amp; imports</span> stall purchases — marking
+          the customer “Onboarded”. <span className="text-ng-ink-soft">(OTP cross-match · Milestone 2)</span>
         </p>
       </div>
 
@@ -306,7 +306,7 @@ export default function CaptainIntake() {
                   </div>
                   <span
                     className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[9.5px] uppercase tracking-wider font-bold ${
-                      c.payMode === "UPI" ? "bg-ng-leaf/25 text-ng-forest" : "bg-ng-clay/25 text-ng-clay-deep"
+                      c.payMode === "UPI" ? "bg-ng-leaf/25 text-ng-forest" : "bg-ng-soil/12 text-ng-soil"
                     }`}
                   >
                     {c.payMode}

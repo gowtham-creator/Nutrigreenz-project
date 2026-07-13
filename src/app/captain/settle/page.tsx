@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CaptainShell, CaptainCard, CaptainSectionHead } from "@/components/ng/captain/captain-shell";
+import { CaptainShell, CaptainCard, CaptainSectionHead, CaptainStat } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
 
@@ -40,7 +40,7 @@ export default function CaptainSettle() {
     >
       {/* ===== Reconciled hero ===== */}
       <CaptainCard tone="forest" className="relative overflow-hidden !p-5">
-        <div className="absolute -top-12 -right-10 size-40 rounded-full bg-ng-clay/25 blur-2xl" aria-hidden />
+        <div className="absolute -top-12 -right-10 size-40 rounded-full bg-ng-leaf/18 blur-2xl" aria-hidden />
         <div className="relative">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ng-leaf-soft">
@@ -68,7 +68,7 @@ export default function CaptainSettle() {
             <div className="mt-4">
               <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-ng-cream/12">
                 <div
-                  className="h-full bg-ng-clay motion-safe:transition-[width] motion-safe:duration-700"
+                  className="h-full bg-ng-cream-deep motion-safe:transition-[width] motion-safe:duration-700"
                   style={{ width: `${cashShare}%` }}
                 />
                 <div
@@ -78,7 +78,7 @@ export default function CaptainSettle() {
               </div>
               <div className="mt-2 flex items-center justify-between text-[10.5px] text-ng-cream/65">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-ng-clay" aria-hidden /> Cash {cashShare}%
+                  <span className="size-2 rounded-full bg-ng-cream-deep" aria-hidden /> Cash {cashShare}%
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   UPI {upiShare}% <span className="size-2 rounded-full bg-ng-leaf" aria-hidden />
@@ -91,9 +91,9 @@ export default function CaptainSettle() {
 
       {/* ===== Day summary ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
-        <DayStat icon="users-group-rounded-bold" label="Customers" value={String(stats.count)} />
-        <DayStat icon="bag-smile-bold" label="Stall GMV" value={`₹${stats.gmv.toLocaleString("en-IN")}`} />
-        <DayStat icon="tag-price-bold" label="Avg ticket" value={`₹${avgTicket.toLocaleString("en-IN")}`} />
+        <CaptainStat icon="users-group-rounded-bold" label="Customers" value={stats.count} />
+        <CaptainStat icon="bag-smile-bold" label="Stall GMV" value={`₹${stats.gmv.toLocaleString("en-IN")}`} />
+        <CaptainStat icon="tag-price-bold" label="Avg ticket" value={`₹${avgTicket.toLocaleString("en-IN")}`} />
       </div>
 
       {/* ===== Per-mode breakdown ===== */}
@@ -101,8 +101,8 @@ export default function CaptainSettle() {
       <div className="grid grid-cols-2 gap-3">
         <CaptainCard className="h-full">
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-ng-clay/15 flex items-center justify-center">
-              <Icon name="banknote-2-bold" size={18} className="text-ng-clay-deep" />
+            <div className="size-8 rounded-lg bg-ng-soil/10 flex items-center justify-center">
+              <Icon name="banknote-2-bold" size={18} className="text-ng-soil" />
             </div>
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Cash</span>
           </div>
@@ -153,7 +153,7 @@ export default function CaptainSettle() {
         </label>
         <div
           className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] ${
-            matched ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-amber/15 text-ng-clay-deep"
+            matched ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-amber/15 text-ng-soil"
           }`}
         >
           <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={16} className="shrink-0" />
@@ -213,7 +213,7 @@ export default function CaptainSettle() {
               <li key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className={`size-2 rounded-full shrink-0 ${c.payMode === "UPI" ? "bg-ng-leaf" : "bg-ng-clay"}`}
+                    className={`size-2 rounded-full shrink-0 ${c.payMode === "UPI" ? "bg-ng-leaf" : "bg-ng-soil"}`}
                     aria-hidden
                   />
                   <div className="min-w-0">
@@ -227,7 +227,7 @@ export default function CaptainSettle() {
                   </div>
                   <span
                     className={`text-[10px] uppercase tracking-wider font-bold ${
-                      c.payMode === "UPI" ? "text-ng-forest" : "text-ng-clay-deep"
+                      c.payMode === "UPI" ? "text-ng-forest" : "text-ng-soil"
                     }`}
                   >
                     {c.payMode}
@@ -251,12 +251,3 @@ function Row({ label, value, muted }: { label: string; value: string; muted?: bo
   );
 }
 
-function DayStat({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-ng-white border border-ng-line px-3 py-3 shadow-[0_1px_3px_rgba(10,31,18,0.04)]">
-      <Icon name={icon} size={17} className="text-ng-forest" />
-      <div className="font-display text-[17px] text-ng-forest-deep leading-none mt-2 truncate">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft mt-1">{label}</div>
-    </div>
-  );
-}

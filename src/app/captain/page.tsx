@@ -6,6 +6,7 @@ import {
   CaptainCard,
   CaptainSectionHead,
   CaptainRing,
+  CaptainStat,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
@@ -51,10 +52,10 @@ export default function CaptainHome() {
       {/* ===== Mission hero ===== */}
       <CaptainCard tone="forest" className="relative overflow-hidden !p-5">
         <div className="absolute -top-14 -right-12 size-44 rounded-full bg-ng-leaf/20 blur-2xl" aria-hidden />
-        <div className="absolute -bottom-16 -left-10 size-40 rounded-full bg-ng-clay/15 blur-2xl" aria-hidden />
+        <div className="absolute -bottom-16 -left-10 size-40 rounded-full bg-ng-green-bright/12 blur-2xl" aria-hidden />
         <div className="relative">
           <div className="flex items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/20 ring-1 ring-ng-clay/35 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-clay">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
               <Icon name="target-bold" size={12} />
               Daily mission
             </div>
@@ -88,8 +89,13 @@ export default function CaptainHome() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <MiniStat icon="bag-smile-bold" label="Stall GMV" value={`₹${stats.gmv.toLocaleString("en-IN")}`} />
-            <MiniStat icon="checklist-minimalistic-bold" label="Orders" value={String(stats.orders)} />
+            <CaptainStat
+              tone="onForest"
+              icon="bag-smile-bold"
+              label="Stall GMV"
+              value={`₹${stats.gmv.toLocaleString("en-IN")}`}
+            />
+            <CaptainStat tone="onForest" icon="checklist-minimalistic-bold" label="Orders" value={stats.orders} />
           </div>
 
           <Link
@@ -130,23 +136,23 @@ export default function CaptainHome() {
             Next stop
           </CaptainSectionHead>
           <Link href="/captain/pickups" className="block">
-            <div className="relative overflow-hidden rounded-2xl border border-ng-clay/35 bg-ng-clay/10 p-4 cursor-pointer hover:border-ng-clay/60 transition-colors">
+            <div className="relative overflow-hidden rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-4 cursor-pointer hover:border-ng-leaf transition-colors">
               <div className="flex items-center gap-3">
-                <div className="size-11 rounded-xl bg-ng-clay/20 ring-1 ring-ng-clay/30 flex items-center justify-center shrink-0">
-                  <Icon name="map-point-wave-bold" size={22} className="text-ng-clay-deep" />
+                <div className="size-11 rounded-xl bg-ng-forest ring-1 ring-ng-leaf/30 flex items-center justify-center shrink-0">
+                  <Icon name="map-point-wave-bold" size={22} className="text-ng-leaf" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-ng-clay-deep">Up next</span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-ng-forest">Up next</span>
                   </div>
                   <div className="font-display text-[15px] text-ng-forest-deep truncate leading-tight mt-0.5">
                     {nextStop.community}
                   </div>
-                  <div className="text-[12px] text-ng-soil/80 mt-0.5">{nextStop.slot}</div>
+                  <div className="text-[12px] text-ng-ink-muted mt-0.5">{nextStop.slot}</div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-display text-[20px] text-ng-forest-deep leading-none">{nextStop.orders}</div>
-                  <div className="text-[9.5px] uppercase tracking-wider text-ng-clay-deep mt-1">orders</div>
+                  <div className="text-[9.5px] uppercase tracking-wider text-ng-forest mt-1">orders</div>
                 </div>
               </div>
             </div>
@@ -200,7 +206,7 @@ export default function CaptainHome() {
         <div className="space-y-2.5">
           {todayCustomers.slice(0, 3).map((c) => (
             <CaptainCard key={c.id} className="flex items-center gap-3">
-              <div className="size-9 rounded-full bg-ng-clay/25 text-ng-clay-deep flex items-center justify-center font-display text-[13px] shrink-0">
+              <div className="size-9 rounded-full bg-ng-sage/60 text-ng-forest flex items-center justify-center font-display text-[13px] shrink-0">
                 {c.name.charAt(0)}
               </div>
               <div className="min-w-0 flex-1">
@@ -216,18 +222,6 @@ export default function CaptainHome() {
         </div>
       )}
     </CaptainShell>
-  );
-}
-
-function MiniStat({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="h-full rounded-xl bg-ng-forest-soft/45 ring-1 ring-ng-leaf/10 px-3 py-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ng-leaf-soft">
-        <Icon name={icon} size={13} className="text-ng-leaf" />
-        {label}
-      </div>
-      <div className="font-display text-[18px] text-ng-cream leading-none mt-1.5">{value}</div>
-    </div>
   );
 }
 
