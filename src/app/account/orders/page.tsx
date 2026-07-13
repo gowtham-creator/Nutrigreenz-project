@@ -89,7 +89,7 @@ export default function AccountOrdersPage() {
       <div className="space-y-8">
         {/* Heading */}
         <Reveal>
-          <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+          <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
             <Icon name="box-bold" size={14} />
             Your orders
           </span>
@@ -137,7 +137,7 @@ export default function AccountOrdersPage() {
         {/* Not signed in */}
         {state === "unauth" ? (
           <section className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
-            <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+            <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
               <Icon name="lock-keyhole-minimalistic-bold" size={28} />
             </span>
             <p className="font-display text-[22px] text-ng-forest-deep">Sign in to see your orders</p>
@@ -214,7 +214,7 @@ export default function AccountOrdersPage() {
               <section>
                 {filtered.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
-                    <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+                    <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
                       <Icon name="box-linear" size={30} />
                     </span>
                     <p className="font-display text-[20px] text-ng-forest-deep">No orders match</p>
@@ -234,7 +234,7 @@ export default function AccountOrdersPage() {
           ) : (
             /* Empty — a signed-in account with no orders yet. */
             <section className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
-              <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+              <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
                 <Icon name="box-linear" size={30} />
               </span>
               <p className="font-display text-[22px] text-ng-forest-deep">No orders yet</p>

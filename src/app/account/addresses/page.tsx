@@ -11,7 +11,7 @@ export default function AddressesPage() {
   return (
     <AccountShell active="addresses">
       <div className="mb-8">
-        <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+        <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
           <Icon name="map-point-bold" size={14} />
           Your account
         </span>

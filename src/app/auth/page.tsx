@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/ng/page-shell";
 import { Button } from "@/components/ng/button";
@@ -28,6 +28,14 @@ const PERKS = [
   { icon: "shield-check-bold", title: "Lab-tested, every lot", body: "Scan the code on any pack to see its harvest, farm and purity report." },
   { icon: "wallet-money-bold", title: "5% back on every order", body: "Loyalty credit you can redeem on anything in the pantry." },
   { icon: "crown-star-bold", title: "First dibs on harvests", body: "Limited-batch lots ship to members 48 hours before the public." },
+];
+
+// Condensed value props for the mobile form field, where the forest brand panel
+// on the right is hidden — so small screens still see why membership is worth it.
+const TRUST = [
+  { icon: "verified-check-bold", label: "Lab-tested lots" },
+  { icon: "wallet-money-bold", label: "5% back" },
+  { icon: "leaf-bold", label: "Farm-direct" },
 ];
 
 function AuthScreen() {
@@ -105,12 +113,16 @@ function AuthScreen() {
   return (
     <PageShell hidePromo hideFooter>
       <div className="min-h-[calc(100vh-68px)] grid lg:grid-cols-[1.05fr_1fr]">
-        {/* LEFT — form */}
-        <div className="relative flex flex-col justify-center px-6 md:px-16 py-14 bg-cream-mesh">
-          <div className="relative z-10 max-w-md mx-auto w-full">
+        {/* LEFT — form on a fresh, gold-free sage field */}
+        <div className="relative flex flex-col justify-center bg-sage-mesh px-6 py-14 md:px-16">
+          <div className="relative z-10 mx-auto w-full max-w-md">
             <Logo />
             <Reveal>
-              <h1 className="font-display text-[clamp(38px,4.6vw,56px)] leading-[1.02] text-ng-forest-deep mt-10">
+              <span className="ng-eyebrow mt-10 inline-flex items-center gap-2 text-ng-forest">
+                <Icon name="leaf-bold" size={14} />
+                {step === "phone" ? "Members save more" : "Almost there"}
+              </span>
+              <h1 className="mt-3 font-display text-[clamp(36px,4.4vw,54px)] leading-[1.03] text-ng-forest-deep">
                 {step === "phone" ? (
                   <>Log in or <em className="italic text-ng-leaf">sign up</em>.</>
                 ) : (
@@ -118,7 +130,7 @@ function AuthScreen() {
                 )}
               </h1>
             </Reveal>
-            <p className="text-[15px] text-ng-ink-muted mt-3 leading-relaxed">
+            <p className="mt-3 text-[15px] leading-relaxed text-ng-ink-muted">
               {step === "phone"
                 ? "Enter your mobile number — we'll text you a one-time code. No password needed."
                 : `We sent a 6-digit code to ${e164}.`}
@@ -202,23 +214,48 @@ function AuthScreen() {
                 <Link href="#" className="text-ng-forest hover:underline">Privacy</Link>.
               </p>
             )}
+
+            {/* Mobile-only value strip — the forest brand panel opposite is desktop-only. */}
+            <div className="mt-9 grid grid-cols-3 gap-2 lg:hidden">
+              {TRUST.map((t) => (
+                <div
+                  key={t.label}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-ng-line-soft bg-ng-paper/70 px-2 py-3.5 text-center"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest">
+                    <Icon name={t.icon} size={16} />
+                  </span>
+                  <span className="text-[11px] font-medium leading-tight text-ng-ink-muted">{t.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
           {/* invisible reCAPTCHA mount for Firebase Phone Auth */}
           <div id="recaptcha-container" />
         </div>
 
-        {/* RIGHT — brand panel */}
-        <div className="relative hidden overflow-hidden bg-forest-radial lg:block">
-          <div aria-hidden className="absolute inset-0 aurora opacity-50" />
+        {/* RIGHT — forest brand panel: pure-green animated gradient, no gold */}
+        <div className="login-gradient relative hidden overflow-hidden lg:block">
+          <span aria-hidden className="login-glow login-glow--a" />
+          <span aria-hidden className="login-glow login-glow--b" />
+          <span aria-hidden className="login-glow login-glow--c" />
+          {[10, 26, 42, 58, 72, 86, 34, 64].map((left, i) => (
+            <span
+              key={left}
+              aria-hidden
+              className="login-particle"
+              style={{ left: `${left}%`, "--pd": `${11 + (i % 5) * 2.6}s`, "--pdelay": `${(i * 1.7) % 12}s` } as CSSProperties}
+            />
+          ))}
           <div className="relative flex h-full flex-col justify-center gap-14 p-14 text-ng-cream">
             <div>
               <Logo variant="wordmark" tone="white" />
-              <h2 className="font-display text-[34px] leading-[1.15] mt-10 max-w-sm text-balance">
+              <h2 className="mt-10 max-w-sm text-balance font-display text-[34px] leading-[1.15]">
                 Born in soil,
                 <br />
                 <em className="italic text-ng-leaf">built for tomorrow.</em>
               </h2>
-              <ul className="mt-10 space-y-6 max-w-sm">
+              <ul className="mt-10 max-w-sm space-y-6">
                 {PERKS.map((p) => (
                   <li key={p.title} className="flex gap-4">
                     <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-leaf/15 text-ng-leaf ring-1 ring-ng-leaf/30">
@@ -234,12 +271,12 @@ function AuthScreen() {
             </div>
 
             <div className="glass-dark max-w-md rounded-3xl p-6">
-              <div className="flex items-center gap-1 text-ng-clay">
+              <div className="flex items-center gap-1 text-ng-leaf">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Icon key={i} name="star-bold" size={15} />
                 ))}
               </div>
-              <blockquote className="font-display mt-3 text-[19px] italic leading-snug text-ng-cream/95">
+              <blockquote className="mt-3 font-display text-[19px] italic leading-snug text-ng-cream/95">
                 &ldquo;Six months in, my whole pantry is Nutri Greenz. The lot codes turned us into believers.&rdquo;
               </blockquote>
               <footer className="mt-3 text-[12px] text-ng-cream/60">— Anjali · member since Aug 2025 · Hyderabad</footer>

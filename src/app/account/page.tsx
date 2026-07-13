@@ -48,7 +48,7 @@ export default function AccountPage() {
 
   const recent = orders.slice(0, 3);
   const stats = [
-    { icon: "wallet-money-bold", number: "₹0", label: "Wallet credit", href: "/loyalty", tint: "clay" as const },
+    { icon: "wallet-money-bold", number: "₹0", label: "Wallet credit", href: "/loyalty", tint: "leaf" as const },
     { icon: "box-bold", number: String(orders.length), label: "Orders placed", href: "/orders", tint: "leaf" as const },
     { icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const },
   ];
@@ -58,9 +58,9 @@ export default function AccountPage() {
       <div className="space-y-10">
         {/* Hero card */}
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep p-8 text-ng-cream shadow-[var(--shadow-ng-float)] ring-1 ring-ng-clay/20 md:p-10">
-            <div aria-hidden className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-ng-clay/30 blur-3xl" />
-            <div aria-hidden className="absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-ng-leaf/20 blur-3xl" />
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep p-8 text-ng-cream shadow-[var(--shadow-ng-float)] ring-1 ring-ng-leaf/15 md:p-10">
+            <div aria-hidden className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-ng-leaf/25 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-ng-forest-soft/45 blur-3xl" />
             <div
               aria-hidden
               className="absolute inset-0 opacity-[0.06]"
@@ -70,12 +70,12 @@ export default function AccountPage() {
               }}
             />
             <div className="relative">
-              <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+              <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-leaf">
                 <Icon name="leaf-bold" size={14} />
                 Welcome back, {firstName}
               </span>
               <h1 className="mt-2.5 max-w-xl font-display text-[clamp(32px,4vw,46px)] leading-[1.05]">
-                Your harvest, <em className="italic text-ng-clay">at a glance.</em>
+                Your harvest, <em className="italic text-ng-leaf">at a glance.</em>
               </h1>
               <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ng-cream/70">
                 Track deliveries, manage subscriptions and watch your wallet grow — all in one place.
@@ -83,12 +83,7 @@ export default function AccountPage() {
 
               <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">
                 {stats.map((s) => {
-                  const tint =
-                    s.tint === "clay"
-                      ? "text-ng-clay"
-                      : s.tint === "leaf"
-                        ? "text-ng-leaf"
-                        : "text-ng-blue";
+                  const tint = s.tint === "leaf" ? "text-ng-leaf" : "text-ng-blue";
                   const inner = (
                     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-ng-cream/12 bg-ng-cream/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-ng-cream/[0.1]">
                       <Icon name={s.icon} size={20} className={`${tint} opacity-90`} />
@@ -135,7 +130,7 @@ export default function AccountPage() {
           </div>
           {recent.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-10 text-center">
-              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+              <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
                 <Icon name="box-linear" size={26} />
               </span>
               <p className="font-display text-[19px] text-ng-forest-deep">No orders yet</p>
@@ -208,10 +203,10 @@ export default function AccountPage() {
         {/* Review prompt — only once there are orders to review */}
         {orders.length > 0 ? (
           <Reveal as="section">
-            <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-ng-clay/30 bg-gradient-to-br from-ng-sage/40 to-ng-cream p-7 md:flex-row md:items-center">
-              <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ng-clay/15 blur-3xl" />
+            <div className="relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-ng-leaf/25 bg-gradient-to-br from-ng-sage/40 to-ng-cream p-7 md:flex-row md:items-center">
+              <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ng-leaf/15 blur-3xl" />
               <div className="relative flex-1">
-                <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay-deep">
+                <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
                   <Icon name="wallet-money-bold" size={14} />
                   Earn ₹100
                 </span>

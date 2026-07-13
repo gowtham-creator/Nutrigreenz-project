@@ -138,19 +138,31 @@ export default function ProfilePage() {
             </Button>
           </div>
         ) : null}
-        {/* Header */}
+        {/* Header — forest-gradient band gives the page a branded, premium anchor */}
         <Reveal>
-          <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
-            <Icon name="user-bold" size={14} />
-            Your account
-          </span>
-          <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
-            Profile &amp; <em className="italic text-ng-leaf">preferences</em>
-          </h1>
-          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
-            Keep your details current so deliveries reach you and we only send what you actually
-            want to hear about.
-          </p>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep p-7 text-ng-cream shadow-[var(--shadow-ng-card)] ring-1 ring-ng-leaf/15 md:p-9">
+            <div aria-hidden className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-ng-leaf/25 blur-3xl" />
+            <div aria-hidden className="absolute -bottom-24 -left-12 h-56 w-56 rounded-full bg-ng-forest-soft/50 blur-3xl" />
+            <div className="relative">
+              <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-leaf">
+                <Icon name="user-bold" size={14} />
+                Your account
+              </span>
+              <h1 className="mt-2.5 max-w-xl font-display text-[clamp(30px,4vw,44px)] leading-[1.05]">
+                Profile &amp; <em className="italic text-ng-leaf">preferences</em>
+              </h1>
+              <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-ng-cream/70">
+                Keep your details current so deliveries reach you and we only send what you actually
+                want to hear about.
+              </p>
+              {hasVerifiedPhone ? (
+                <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[12px] font-medium text-ng-cream ring-1 ring-ng-cream/15 backdrop-blur-sm">
+                  <Icon name="verified-check-bold" size={14} className="text-ng-green-bright" />
+                  Mobile verified · {displayPhone}
+                </span>
+              ) : null}
+            </div>
+          </div>
         </Reveal>
 
         {/* Account details */}
