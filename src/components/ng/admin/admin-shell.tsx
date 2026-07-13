@@ -21,6 +21,8 @@ const NAV: NavItem[] = [
   { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", superadminOnly: true },
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
   { href: "/admin/reports", label: "Reports", icon: "chart-2-bold" },
+  // Product & customer analytics (demand signals + sign-in mix) — both roles.
+  { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold" },
   // DEDUPED canonical customer directory (one row per real person).
   { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", superadminOnly: true },
