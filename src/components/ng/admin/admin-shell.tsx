@@ -36,6 +36,10 @@ function roleLabel(role: AdminRole | null): string {
   return "Admin";
 }
 
+/** localStorage key for the operator's avatar URL — painted instantly on mount
+ *  so the chip never flashes the initial letter between page navigations. */
+const PHOTO_CACHE_KEY = "ng:admin-photo";
+
 /** Top-right admin identity chip with a sign-out dropdown. */
 function AdminIdentity() {
   const [email, setEmail] = useState<string | null>(null);
@@ -44,21 +48,36 @@ function AdminIdentity() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Identity is read from readable cookies (instant). The saved photo comes from
+  // /api/admin/me, but we CACHE it in localStorage and paint the cached value on
+  // mount so the chip doesn't flash the initial letter on every navigation while
+  // the request is in flight — the network result just refreshes the cache.
+  // Re-runs when the profile page dispatches `ng:profile-updated` after a save.
   useEffect(() => {
     setEmail(getAdminEmail());
     setRole(getAdminRole());
-  }, []);
+    try {
+      const cached = localStorage.getItem(PHOTO_CACHE_KEY);
+      if (cached) setPhotoUrl(cached);
+    } catch {
+      /* localStorage unavailable — fall back to the network load below */
+    }
 
-  // Pull the operator's saved photo so the chip shows it instead of the initial.
-  // Re-runs when the profile page dispatches `ng:profile-updated` after a save.
-  useEffect(() => {
     let alive = true;
     async function load() {
       try {
         const res = await fetch("/api/admin/me");
         if (!res.ok || !alive) return;
         const data = await res.json();
-        if (alive) setPhotoUrl((data.profile?.photoUrl as string | null) ?? null);
+        const next = (data.profile?.photoUrl as string | null) ?? null;
+        if (!alive) return;
+        setPhotoUrl(next);
+        try {
+          if (next) localStorage.setItem(PHOTO_CACHE_KEY, next);
+          else localStorage.removeItem(PHOTO_CACHE_KEY);
+        } catch {
+          /* ignore cache write failures */
+        }
       } catch {
         /* ignore — the chip falls back to the initial */
       }
@@ -100,7 +119,20 @@ function AdminIdentity() {
         <span className="size-9 rounded-full overflow-hidden bg-ng-forest-deep text-ng-cream flex items-center justify-center font-display text-[14px]">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="size-full object-cover" />
+            <img
+              src={photoUrl}
+              alt=""
+              className="size-full object-cover"
+              onError={() => {
+                // Stale/broken cached URL — drop it and show the initial.
+                setPhotoUrl(null);
+                try {
+                  localStorage.removeItem(PHOTO_CACHE_KEY);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            />
           ) : (
             initial
           )}
