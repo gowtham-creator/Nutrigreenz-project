@@ -482,57 +482,98 @@ function CustomerDrawer({
               >
                 {detail && detail.addresses.length > 0 ? (
                   <ul className="space-y-2">
-                    {detail.addresses.map((a) => (
-                      <li key={a.id}>
-                        <details className="group rounded-xl border border-ng-line-soft bg-ng-paper open:bg-ng-line-soft/20 transition-colors">
-                          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-3 [&::-webkit-details-marker]:hidden">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="text-[12.5px] font-semibold text-ng-ink capitalize">
-                                {a.label === "other" && a.customLabel
-                                  ? a.customLabel
-                                  : a.label || "Address"}
+                    {detail.addresses.map((a) => {
+                      const cityStatePin = [
+                        [a.city, a.state].filter(Boolean).join(", "),
+                        a.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                      const addrLines = [
+                        a.buildingFloorFlat,
+                        a.roadStreet,
+                        a.areaLandmark,
+                        cityStatePin || null,
+                        a.country,
+                      ].filter((l): l is string => Boolean(l && String(l).trim()));
+                      const hasContact = Boolean(a.fullName || a.phone);
+                      return (
+                        <li key={a.id}>
+                          <details className="group overflow-hidden rounded-xl border border-ng-line-soft bg-ng-paper transition-colors open:border-ng-leaf/50">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-3 [&::-webkit-details-marker]:hidden">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="text-[12.5px] font-semibold capitalize text-ng-ink">
+                                  {a.label === "other" && a.customLabel
+                                    ? a.customLabel
+                                    : a.label || "Address"}
+                                </span>
+                                {a.isDefault ? <Pill tone="success">Default</Pill> : null}
                               </span>
-                              {a.isDefault ? <Pill tone="success">Default</Pill> : null}
-                            </span>
-                            <span className="flex shrink-0 items-center gap-2">
-                              <span className="max-w-[150px] truncate text-[12px] font-medium text-ng-ink-muted">
-                                {[a.city, a.pincode].filter(Boolean).join(", ") || "—"}
+                              <span className="flex shrink-0 items-center gap-2">
+                                <span className="max-w-[150px] truncate text-[12px] font-medium text-ng-ink-muted">
+                                  {[a.city, a.pincode].filter(Boolean).join(", ") || "—"}
+                                </span>
+                                <Icon
+                                  name="alt-arrow-down-bold"
+                                  size={13}
+                                  className="text-ng-ink-soft transition-transform group-open:rotate-180"
+                                />
                               </span>
-                              <Icon
-                                name="alt-arrow-down-bold"
-                                size={13}
-                                className="text-ng-ink-soft transition-transform group-open:rotate-180"
-                              />
-                            </span>
-                          </summary>
-                          <div className="space-y-1 border-t border-ng-line-soft px-3 py-2.5 text-[12px]">
-                            {(
-                              [
-                                ["Recipient", a.fullName],
-                                ["Phone", a.phone],
-                                ["Flat / Building", a.buildingFloorFlat],
-                                ["Street / Road", a.roadStreet],
-                                ["Area / Landmark", a.areaLandmark],
-                                ["City", a.city],
-                                ["Region", a.region],
-                                ["State", a.state],
-                                ["Pincode", a.pincode],
-                                ["Country", a.country],
-                              ] as const
-                            )
-                              .filter(([, v]) => Boolean(v))
-                              .map(([k, v]) => (
-                                <div key={k} className="flex items-start justify-between gap-3">
-                                  <span className="shrink-0 text-ng-ink-muted">{k}</span>
-                                  <span className="break-words text-right font-medium text-ng-ink">
-                                    {v}
-                                  </span>
+                            </summary>
+
+                            <div className="border-t border-ng-line-soft px-3.5 py-3">
+                              {hasContact ? (
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-2.5">
+                                  {a.fullName ? (
+                                    <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ng-ink">
+                                      <Icon
+                                        name="user-circle-bold"
+                                        size={14}
+                                        className="text-ng-ink-soft"
+                                      />
+                                      {a.fullName}
+                                    </span>
+                                  ) : null}
+                                  {a.phone ? (
+                                    <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ng-ink-muted">
+                                      <Icon name="phone-bold" size={14} className="text-ng-ink-soft" />
+                                      {a.phone}
+                                    </span>
+                                  ) : null}
                                 </div>
-                              ))}
-                          </div>
-                        </details>
-                      </li>
-                    ))}
+                              ) : null}
+
+                              {addrLines.length > 0 ? (
+                                <div
+                                  className={
+                                    "flex gap-2" +
+                                    (hasContact ? " border-t border-ng-line-soft/60 pt-2.5" : "")
+                                  }
+                                >
+                                  <Icon
+                                    name="map-point-bold"
+                                    size={15}
+                                    className="mt-0.5 shrink-0 text-ng-forest"
+                                  />
+                                  <address className="text-[12.5px] not-italic leading-relaxed text-ng-ink-muted">
+                                    {addrLines.map((line, i) => (
+                                      <div
+                                        key={i}
+                                        className={i === 0 ? "font-medium text-ng-ink" : undefined}
+                                      >
+                                        {line}
+                                      </div>
+                                    ))}
+                                  </address>
+                                </div>
+                              ) : !hasContact ? (
+                                <p className="text-[12px] text-ng-ink-soft">No further detail saved.</p>
+                              ) : null}
+                            </div>
+                          </details>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <EmptyLine>No saved addresses.</EmptyLine>
