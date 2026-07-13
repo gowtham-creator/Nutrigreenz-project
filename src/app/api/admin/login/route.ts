@@ -18,7 +18,7 @@ import {
   resolveTotpSecret,
   isEnvTotpAdmin,
 } from "@/lib/admin-security";
-import { verifyAdminLogin } from "@/lib/admins";
+import { verifyAdminLogin, touchAdminLastLogin } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
@@ -205,6 +205,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: true, mfaRequired: true, factors, otpPhone });
   }
 
+  void touchAdminLastLogin(normalizedEmail); // record the successful sign-in
   const token = await createToken(normalizedEmail, role);
   const secure = process.env.NODE_ENV === "production";
   const c = await cookies();

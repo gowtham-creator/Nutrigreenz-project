@@ -9,6 +9,7 @@ import { ADMIN_SESSION_TTL_SECONDS, createToken, verifyMfaTicket } from "@/lib/a
 import { verifyTotp } from "@/lib/totp";
 import { verifyEmailOtp, getAdminFactors, resolveTotpSecret } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
+import { touchAdminLastLogin } from "@/lib/admins";
 import { logActivity } from "@/lib/activity-log";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
@@ -86,6 +87,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 401 });
   }
 
+  void touchAdminLastLogin(email); // record the successful (2FA) sign-in
   const token = await createToken(email, role);
   const secure = process.env.NODE_ENV === "production";
 

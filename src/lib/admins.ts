@@ -290,6 +290,21 @@ export async function createAdmin(input: NewAdminInput): Promise<AdminRecord> {
   return toRecord(data as AdminRow);
 }
 
+/** Bump an admin's `last_login_at` to now (UPDATE by email). No-op when there is
+ *  no DB row (env-only operators keep their synthetic status), and never throws —
+ *  safe to fire on every successful sign-in, including the env super-admin whose
+ *  session is minted in login-2fa / login-phone rather than verifyAdminLogin. */
+export async function touchAdminLastLogin(email: string): Promise<void> {
+  try {
+    await supabaseAdmin()
+      .from("admins")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("email", norm(email));
+  } catch {
+    /* best-effort — never block sign-in */
+  }
+}
+
 /** Verify a DB admin's email + password; bumps last_login_at and returns the record, or null. */
 export async function verifyAdminLogin(
   email: string,
