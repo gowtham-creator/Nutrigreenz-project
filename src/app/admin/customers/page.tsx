@@ -43,11 +43,17 @@ interface IdentityRow {
 interface AddressRow {
   id: string;
   label: string | null;
+  customLabel: string | null;
   fullName: string | null;
   phone: string | null;
+  buildingFloorFlat: string | null;
+  roadStreet: string | null;
+  areaLandmark: string | null;
   city: string | null;
+  region: string | null;
   state: string | null;
   pincode: string | null;
+  country: string | null;
   isDefault: boolean;
 }
 
@@ -477,21 +483,54 @@ function CustomerDrawer({
                 {detail && detail.addresses.length > 0 ? (
                   <ul className="space-y-2">
                     {detail.addresses.map((a) => (
-                      <li
-                        key={a.id}
-                        className="rounded-xl border border-ng-line-soft bg-ng-paper p-3"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[12.5px] font-semibold text-ng-ink capitalize">
-                            {a.label || "Address"}
-                          </span>
-                          {a.isDefault ? (
-                            <Pill tone="success">Default</Pill>
-                          ) : null}
-                        </div>
-                        <div className="mt-1 text-[12px] font-medium text-ng-ink-muted">
-                          {[a.city, a.state, a.pincode].filter(Boolean).join(", ") || "—"}
-                        </div>
+                      <li key={a.id}>
+                        <details className="group rounded-xl border border-ng-line-soft bg-ng-paper open:bg-ng-line-soft/20 transition-colors">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-3 [&::-webkit-details-marker]:hidden">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className="text-[12.5px] font-semibold text-ng-ink capitalize">
+                                {a.label === "other" && a.customLabel
+                                  ? a.customLabel
+                                  : a.label || "Address"}
+                              </span>
+                              {a.isDefault ? <Pill tone="success">Default</Pill> : null}
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="max-w-[150px] truncate text-[12px] font-medium text-ng-ink-muted">
+                                {[a.city, a.pincode].filter(Boolean).join(", ") || "—"}
+                              </span>
+                              <Icon
+                                name="alt-arrow-down-bold"
+                                size={13}
+                                className="text-ng-ink-soft transition-transform group-open:rotate-180"
+                              />
+                            </span>
+                          </summary>
+                          <div className="space-y-1 border-t border-ng-line-soft px-3 py-2.5 text-[12px]">
+                            {(
+                              [
+                                ["Recipient", a.fullName],
+                                ["Phone", a.phone],
+                                ["Flat / Building", a.buildingFloorFlat],
+                                ["Street / Road", a.roadStreet],
+                                ["Area / Landmark", a.areaLandmark],
+                                ["City", a.city],
+                                ["Region", a.region],
+                                ["State", a.state],
+                                ["Pincode", a.pincode],
+                                ["Country", a.country],
+                              ] as const
+                            )
+                              .filter(([, v]) => Boolean(v))
+                              .map(([k, v]) => (
+                                <div key={k} className="flex items-start justify-between gap-3">
+                                  <span className="shrink-0 text-ng-ink-muted">{k}</span>
+                                  <span className="break-words text-right font-medium text-ng-ink">
+                                    {v}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </details>
                       </li>
                     ))}
                   </ul>

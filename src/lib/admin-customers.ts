@@ -51,11 +51,17 @@ export interface CustomerIdentitySummary {
 export interface CustomerAddressSummary {
   id: string;
   label: string | null;
+  customLabel: string | null;
   fullName: string | null;
   phone: string | null;
+  buildingFloorFlat: string | null;
+  roadStreet: string | null;
+  areaLandmark: string | null;
   city: string | null;
+  region: string | null;
   state: string | null;
   pincode: string | null;
+  country: string | null;
   isDefault: boolean;
 }
 
@@ -118,11 +124,17 @@ interface AddressRow {
   id: string;
   customer_id: string;
   label: string | null;
+  custom_label: string | null;
   full_name: string | null;
   phone: string | null;
+  building_floor_flat: string | null;
+  road_street: string | null;
+  area_landmark: string | null;
   city: string | null;
+  region: string | null;
   state: string | null;
   pincode: string | null;
+  country: string | null;
   is_default: boolean;
 }
 
@@ -144,7 +156,7 @@ const CUSTOMER_COLS =
 const IDENTITY_COLS =
   "id, customer_id, provider, email, phone, verified, created_at";
 const ADDRESS_COLS =
-  "id, customer_id, label, full_name, phone, city, state, pincode, is_default";
+  "id, customer_id, label, custom_label, full_name, phone, building_floor_flat, road_street, area_landmark, city, region, state, pincode, country, is_default";
 const USER_COLS =
   "id, customer_id, firebase_uid, email, phone, full_name, photo_url, provider, last_login_at, created_at";
 
@@ -375,11 +387,17 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
   const addresses: CustomerAddressSummary[] = addressRows.map((r) => ({
     id: r.id,
     label: r.label,
+    customLabel: r.custom_label,
     fullName: r.full_name,
     phone: r.phone,
+    buildingFloorFlat: r.building_floor_flat,
+    roadStreet: r.road_street,
+    areaLandmark: r.area_landmark,
     city: r.city,
+    region: r.region,
     state: r.state,
     pincode: r.pincode,
+    country: r.country,
     isDefault: r.is_default,
   }));
 

@@ -83,6 +83,34 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
     }));
   }, [account, initial]);
 
+  // The client `account` only carries the Firebase identity, so a Google session
+  // has NO phone there. Pull the canonical profile (/api/account/me) — where a
+  // linked/verified mobile lives — so a fresh address defaults to the customer's
+  // real number + name instead of asking for them again.
+  useEffect(() => {
+    if (initial) return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/account/me");
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        const c = data.customer as { name?: string | null; phone?: string | null } | null;
+        if (!c || !alive) return;
+        setForm((prev) => ({
+          ...prev,
+          fullName: prev.fullName || c.name || "",
+          phone: prev.phone || c.phone || "",
+        }));
+      } catch {
+        /* ignore — the form still works, just without the server prefill */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [initial]);
+
   // ── Google Places search (optional; renders only when a key is configured).
   // One session token per search→pick cycle keeps billing on the cheap
   // session SKU; picking a suggestion autofills street/area/city/pincode/state.
