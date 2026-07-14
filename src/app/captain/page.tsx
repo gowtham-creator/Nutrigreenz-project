@@ -4,9 +4,11 @@ import Link from "next/link";
 import {
   CaptainShell,
   CaptainCard,
+  CaptainHero,
   CaptainSectionHead,
   CaptainRing,
   CaptainStat,
+  CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
@@ -50,68 +52,64 @@ export default function CaptainHome() {
       }
     >
       {/* ===== Mission hero ===== */}
-      <CaptainCard tone="forest" className="relative overflow-hidden !p-5">
-        <div className="absolute -top-14 -right-12 size-44 rounded-full bg-ng-leaf/20 blur-2xl" aria-hidden />
-        <div className="absolute -bottom-16 -left-10 size-40 rounded-full bg-ng-green-bright/12 blur-2xl" aria-hidden />
-        <div className="relative">
-          <div className="flex items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
-              <Icon name="target-bold" size={12} />
-              Daily mission
-            </div>
-            <span className="text-[11px] text-ng-cream/55">Goal · {DAILY_GOAL}</span>
+      <CaptainHero className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
+            <Icon name="target-bold" size={12} />
+            Daily mission
           </div>
-
-          <div className="mt-4 flex items-center gap-4">
-            <CaptainRing value={stats.count} max={DAILY_GOAL} size={96} stroke={9} className="text-ng-cream">
-              <span className="font-display text-[30px] text-ng-cream leading-none">{stats.count}</span>
-              <span className="text-[9px] uppercase tracking-[0.12em] text-ng-leaf-soft mt-0.5">captured</span>
-            </CaptainRing>
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] text-ng-cream/80 leading-snug">
-                {remaining > 0 ? (
-                  <>
-                    <span className="font-display text-ng-cream text-[18px]">{remaining} more</span> to hit today&apos;s
-                    target.
-                  </>
-                ) : (
-                  <span className="font-display text-ng-cream text-[16px]">Target smashed — keep going! 🎯</span>
-                )}
-              </div>
-              <div className="mt-2.5 h-1.5 w-full rounded-full bg-ng-cream/12 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
-                  style={{ width: `${goalPct}%` }}
-                />
-              </div>
-              <div className="mt-1.5 text-[10.5px] text-ng-cream/55">{goalPct}% of daily goal</div>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <CaptainStat
-              tone="onForest"
-              icon="bag-smile-bold"
-              label="Stall GMV"
-              value={`₹${stats.gmv.toLocaleString("en-IN")}`}
-            />
-            <CaptainStat tone="onForest" icon="checklist-minimalistic-bold" label="Orders" value={stats.orders} />
-          </div>
-
-          <Link
-            href="/captain/intake"
-            className="group mt-4 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3.5 text-[14.5px] cursor-pointer hover:bg-ng-green-bright transition-colors shadow-[0_10px_24px_-8px_rgba(102,191,115,0.7)]"
-          >
-            <Icon name="user-plus-bold" size={18} />
-            Capture a customer
-            <Icon
-              name="arrow-right-linear"
-              size={17}
-              className="motion-safe:transition-transform group-hover:translate-x-0.5"
-            />
-          </Link>
+          <span className="text-[11px] text-ng-cream/55">Goal · {DAILY_GOAL}</span>
         </div>
-      </CaptainCard>
+
+        <div className="mt-4 flex items-center gap-4">
+          <CaptainRing value={stats.count} max={DAILY_GOAL} size={96} stroke={9} className="text-ng-cream">
+            <span className="font-display text-[30px] text-ng-cream leading-none">{stats.count}</span>
+            <span className="text-[9px] uppercase tracking-[0.12em] text-ng-leaf-soft mt-0.5">captured</span>
+          </CaptainRing>
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] text-ng-cream/80 leading-snug">
+              {remaining > 0 ? (
+                <>
+                  <span className="font-display text-ng-cream text-[18px]">{remaining} more</span> to hit today&apos;s
+                  target.
+                </>
+              ) : (
+                <span className="font-display text-ng-cream text-[16px]">Target smashed — keep going.</span>
+              )}
+            </div>
+            <div className="mt-2.5 h-1.5 w-full rounded-full bg-ng-cream/12 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
+                style={{ width: `${goalPct}%` }}
+              />
+            </div>
+            <div className="mt-1.5 text-[10.5px] text-ng-cream/55">{goalPct}% of daily goal</div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
+          <CaptainStat
+            tone="onForest"
+            icon="bag-smile-bold"
+            label="Stall GMV"
+            value={`₹${stats.gmv.toLocaleString("en-IN")}`}
+          />
+          <CaptainStat tone="onForest" icon="checklist-minimalistic-bold" label="Orders" value={stats.orders} />
+        </div>
+
+        <Link
+          href="/captain/intake"
+          className="group mt-4 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3.5 text-[14.5px] cursor-pointer hover:bg-ng-green-bright transition-colors shadow-[0_10px_24px_-8px_rgba(102,191,115,0.7)]"
+        >
+          <Icon name="user-plus-bold" size={18} />
+          Capture a customer
+          <Icon
+            name="arrow-right-linear"
+            size={17}
+            className="motion-safe:transition-transform group-hover:translate-x-0.5"
+          />
+        </Link>
+      </CaptainHero>
 
       {/* ===== Quick actions ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
@@ -193,15 +191,11 @@ export default function CaptainHome() {
         Latest captures
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
-        <CaptainCard tone="sage" className="text-center py-7">
-          <div className="size-12 rounded-2xl bg-ng-white/70 flex items-center justify-center mx-auto">
-            <Icon name="users-group-rounded-bold" size={26} className="text-ng-forest" />
-          </div>
-          <p className="text-[13px] text-ng-forest-deep mt-3 font-semibold">No captures yet today</p>
-          <p className="text-[12px] text-ng-ink-muted mt-1 max-w-[16rem] mx-auto">
-            Tap “Capture a customer” to log your first stall sale.
-          </p>
-        </CaptainCard>
+        <CaptainEmpty
+          icon="users-group-rounded-bold"
+          title="No captures yet today"
+          hint="Tap “Capture a customer” to log your first stall sale."
+        />
       ) : (
         <div className="space-y-2.5">
           {todayCustomers.slice(0, 3).map((c) => (

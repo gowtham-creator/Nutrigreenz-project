@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CaptainShell, CaptainCard, CaptainSectionHead, CaptainStat } from "@/components/ng/captain/captain-shell";
+import {
+  CaptainShell,
+  CaptainCard,
+  CaptainHero,
+  CaptainSectionHead,
+  CaptainStat,
+  CaptainEmpty,
+} from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
 
@@ -39,55 +46,52 @@ export default function CaptainSettle() {
       subtitle="Reconcile your stall takings, then submit to HQ."
     >
       {/* ===== Reconciled hero ===== */}
-      <CaptainCard tone="forest" className="relative overflow-hidden !p-5">
-        <div className="absolute -top-12 -right-10 size-40 rounded-full bg-ng-leaf/18 blur-2xl" aria-hidden />
-        <div className="relative">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ng-leaf-soft">
-              <Icon name="wallet-money-bold" size={15} />
-              Reconciled today
-            </div>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                matched ? "bg-ng-leaf/20 text-ng-leaf" : "bg-ng-amber/20 text-ng-amber"
-              }`}
-            >
-              <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={12} />
-              {matched ? "Balanced" : "Variance"}
-            </span>
+      <CaptainHero className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ng-leaf-soft">
+            <Icon name="wallet-money-bold" size={15} />
+            Reconciled today
           </div>
-          <div className="font-display text-[44px] text-ng-cream leading-none mt-2.5">
-            ₹{reconciledTotal.toLocaleString("en-IN")}
-          </div>
-          <div className="text-[12px] text-ng-cream/70 mt-2.5">
-            {stats.count} customers · {stats.orders} orders captured
-          </div>
-
-          {/* payment mix bar */}
-          {stats.gmv > 0 ? (
-            <div className="mt-4">
-              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-ng-cream/12">
-                <div
-                  className="h-full bg-ng-cream-deep motion-safe:transition-[width] motion-safe:duration-700"
-                  style={{ width: `${cashShare}%` }}
-                />
-                <div
-                  className="h-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
-                  style={{ width: `${upiShare}%` }}
-                />
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[10.5px] text-ng-cream/65">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-ng-cream-deep" aria-hidden /> Cash {cashShare}%
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  UPI {upiShare}% <span className="size-2 rounded-full bg-ng-leaf" aria-hidden />
-                </span>
-              </div>
-            </div>
-          ) : null}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              matched ? "bg-ng-leaf/20 text-ng-leaf" : "bg-ng-amber/20 text-ng-amber"
+            }`}
+          >
+            <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={12} />
+            {matched ? "Balanced" : "Variance"}
+          </span>
         </div>
-      </CaptainCard>
+        <div className="font-display text-[44px] text-ng-cream leading-none mt-2.5">
+          ₹{reconciledTotal.toLocaleString("en-IN")}
+        </div>
+        <div className="text-[12px] text-ng-cream/70 mt-2.5">
+          {stats.count} customers · {stats.orders} orders captured
+        </div>
+
+        {/* payment mix bar */}
+        {stats.gmv > 0 ? (
+          <div className="mt-4">
+            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-ng-cream/12">
+              <div
+                className="h-full bg-ng-cream-deep motion-safe:transition-[width] motion-safe:duration-700"
+                style={{ width: `${cashShare}%` }}
+              />
+              <div
+                className="h-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
+                style={{ width: `${upiShare}%` }}
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-[10.5px] text-ng-cream/65">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-ng-cream-deep" aria-hidden /> Cash {cashShare}%
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                UPI {upiShare}% <span className="size-2 rounded-full bg-ng-leaf" aria-hidden />
+              </span>
+            </div>
+          </div>
+        ) : null}
+      </CaptainHero>
 
       {/* ===== Day summary ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
@@ -166,18 +170,19 @@ export default function CaptainSettle() {
       {/* ===== Submit ===== */}
       <div className="mt-5">
         {submitted ? (
-          <div className="relative overflow-hidden rounded-2xl bg-ng-forest-deep text-ng-cream p-4 flex items-center gap-3">
-            <div className="absolute -top-10 -right-8 size-28 rounded-full bg-ng-leaf/15 blur-2xl" aria-hidden />
-            <div className="relative size-11 rounded-full bg-ng-leaf/20 flex items-center justify-center shrink-0">
-              <Icon name="check-circle-bold" size={26} className="text-ng-leaf" />
-            </div>
-            <div className="relative">
-              <div className="font-display text-[15px]">Settlement submitted</div>
-              <div className="text-[12px] text-ng-cream/70 mt-0.5">
-                ₹{reconciledTotal.toLocaleString("en-IN")} reconciled · synced to HQ
+          <CaptainHero className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="size-11 rounded-full bg-ng-leaf/20 flex items-center justify-center shrink-0">
+                <Icon name="check-circle-bold" size={26} className="text-ng-leaf" />
+              </div>
+              <div>
+                <div className="font-display text-[15px]">Settlement submitted</div>
+                <div className="text-[12px] text-ng-cream/70 mt-0.5">
+                  ₹{reconciledTotal.toLocaleString("en-IN")} reconciled · synced to HQ
+                </div>
               </div>
             </div>
-          </div>
+          </CaptainHero>
         ) : (
           <button
             type="button"
@@ -203,9 +208,11 @@ export default function CaptainSettle() {
         Today&apos;s ledger
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
-        <CaptainCard tone="sage" className="text-center py-6 text-[13px] text-ng-ink-muted">
-          Captured sales will be listed here for reconciliation.
-        </CaptainCard>
+        <CaptainEmpty
+          icon="bill-list-bold"
+          title="No sales to reconcile yet"
+          hint="Captured sales will be listed here for end-of-day reconciliation."
+        />
       ) : (
         <CaptainCard className="!p-0 overflow-hidden">
           <ul className="divide-y divide-ng-line-soft">
