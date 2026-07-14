@@ -1,4 +1,5 @@
 import "server-only";
+import { msg91AuthKey } from "@/lib/msg91";
 
 /**
  * WhatsApp Business messages via MSG91's WhatsApp API. BEST-EFFORT + env-gated:
@@ -8,12 +9,12 @@ import "server-only";
  * inside a 24h customer-service window.
  *
  * Env:
- *   MSG91_AUTH_KEY          — account auth key (secret, shared with SMS)
+ *   MSG91_AUTH_KEY          — account auth key (secret, shared with SMS; legacy MSG91_AUTHKEY also accepted)
  *   MSG91_WHATSAPP_NUMBER   — the provisioned WhatsApp Business number (integrated)
  */
 
 export function isWhatsAppConfigured(): boolean {
-  return Boolean(process.env.MSG91_AUTH_KEY && process.env.MSG91_WHATSAPP_NUMBER);
+  return Boolean(msg91AuthKey() && process.env.MSG91_WHATSAPP_NUMBER);
 }
 
 export interface SendWhatsAppInput {
@@ -41,7 +42,7 @@ export async function sendWhatsApp({
   body,
 }: SendWhatsAppInput): Promise<SendResult> {
   if (!isWhatsAppConfigured()) return { ok: false, skipped: true };
-  const authkey = process.env.MSG91_AUTH_KEY as string;
+  const authkey = msg91AuthKey() as string;
   const from = process.env.MSG91_WHATSAPP_NUMBER as string;
   const number = to.replace(/[^\d]/g, "");
   try {

@@ -1,9 +1,12 @@
 import { isSignedInAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { exportProductsCsv } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 /** GET — download the full product catalog as a CSV attachment. */
 export async function GET(): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });

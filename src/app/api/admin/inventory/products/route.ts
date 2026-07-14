@@ -7,6 +7,7 @@ import {
   type ProductStatus,
   type ProductFilter,
 } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 const STATUSES: readonly ProductStatus[] = ["active", "draft", "archived"];
 
@@ -17,6 +18,8 @@ function asStatus(raw: unknown): ProductStatus | undefined {
 
 /** GET — list products with search / category / status filters and pagination. */
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: true, products: [], total: 0, page: 1, pageSize: 50 });
@@ -64,6 +67,8 @@ export async function GET(request: Request): Promise<Response> {
 
 /** POST — create a product (with its inventory row). */
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });

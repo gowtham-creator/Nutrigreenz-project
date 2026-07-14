@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken, type AdminSession } from "@/lib/admin-session";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import { listActivity, listActivityForActor, type ActivityEntry } from "@/lib/activity-log";
 
 export const runtime = "nodejs";
@@ -40,6 +41,8 @@ const DEFAULT_LIMIT = 100;
  * phrase the caller's own rows as "You" without a second identity round-trip.
  */
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("audit");
+  if (denied) return denied;
   const session = await currentSession();
   if (!session) return Response.json({ ok: false }, { status: 401 });
 

@@ -1,11 +1,14 @@
 import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateVariant, deleteVariant } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PATCH — edit an editable subset of a variant's fields. */
 export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
@@ -48,6 +51,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
 /** DELETE — remove a variant. Super-admin only. */
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!(await isSuperAdmin())) {
     return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });

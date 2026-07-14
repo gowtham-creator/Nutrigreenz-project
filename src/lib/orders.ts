@@ -34,6 +34,23 @@ import {
   applyPromoPaise,
 } from "@/lib/promotions";
 
+/**
+ * Thrown by {@link createOrder} when one or more ordered lines cannot be
+ * reserved because their available `stock - reserved` is short (or the variant
+ * is inactive/removed). The order is NOT persisted when this is thrown — the
+ * atomic reservation runs before any row is written. The API layer maps it to a
+ * 409 with an `out-of-stock` code so checkout can explain the failure; the
+ * `variantIds` carry the first line that could not be fulfilled.
+ */
+export class OutOfStockError extends Error {
+  readonly variantIds: string[];
+  constructor(variantIds: string[] = []) {
+    super("out-of-stock");
+    this.name = "OutOfStockError";
+    this.variantIds = variantIds;
+  }
+}
+
 /* ── status model ─────────────────────────────────────────────────────── */
 
 /** Fulfilment lifecycle — forward-only, no cancelled/refunded (§3.9). */
@@ -537,6 +554,34 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   const taxPaise = taxPaiseFor(discountedBase, rules);
   const totalPaise = discountedBase + shippingPaise + taxPaise;
 
+  // 2c. Reserve inventory ATOMICALLY, before persisting anything. Availability is
+  //     `stock - reserved` everywhere in the app, so a hold is taken by bumping
+  //     `reserved` under a `stock - reserved >= qty` guard (the reserve_variant_stock
+  //     RPC). The RPC reserves every variant line in ONE transaction and RAISEs on
+  //     the first short line, rolling the whole call back — so two concurrent orders
+  //     for the last unit can't both succeed, and nothing is persisted when a line
+  //     can't be fulfilled. Product-only lines (no variantId) carry no variant to
+  //     lock and are skipped. Coupon re-validation already ran above, so we only
+  //     hold stock once the order is otherwise valid.
+  const reservation = lineTotals
+    .filter((l) => Boolean(l.line.variantId))
+    .map((l) => ({ variant_id: l.line.variantId as string, qty: l.qty }));
+  if (reservation.length > 0) {
+    const { error: reserveErr } = await db.rpc("reserve_variant_stock", {
+      p_items: reservation,
+    });
+    if (reserveErr) {
+      if (
+        reserveErr.code === "P0001" ||
+        /out_of_stock/i.test(reserveErr.message ?? "")
+      ) {
+        const m = /out_of_stock:([0-9a-fA-F-]+)/.exec(reserveErr.message ?? "");
+        throw new OutOfStockError(m ? [m[1]] : []);
+      }
+      throw new Error(`Failed to reserve stock: ${reserveErr.message ?? "unknown"}`);
+    }
+  }
+
   // 3. Insert the order header.
   const orderNumber = await nextOrderNumber();
   const { data: orderData, error: orderErr } = await db
@@ -563,6 +608,15 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
     .select(ORDER_COLS)
     .single();
   if (orderErr || !orderData) {
+    // The header failed to persist, so no order will ever own the hold we just
+    // took — give the reservation back (best-effort) rather than leak it.
+    if (reservation.length > 0) {
+      try {
+        await db.rpc("release_variant_stock", { p_items: reservation });
+      } catch {
+        /* best-effort compensation — a stuck hold is admin-adjustable */
+      }
+    }
     throw new Error(`Failed to create order: ${orderErr?.message ?? "unknown"}`);
   }
   const order = toOrder(orderData as OrderRow);

@@ -1,4 +1,5 @@
 import "server-only";
+import { msg91AuthKey } from "@/lib/msg91";
 
 /**
  * Transactional SMS via MSG91. BEST-EFFORT + env-gated: until the MSG91 auth key,
@@ -8,13 +9,13 @@ import "server-only";
  * with zero code change.
  *
  * Env:
- *   MSG91_AUTH_KEY    — account auth key (secret)
+ *   MSG91_AUTH_KEY    — account auth key (secret; legacy MSG91_AUTHKEY also accepted)
  *   MSG91_SENDER_ID   — the DLT-registered 6-char header (e.g. NUTGRZ)
  *   MSG91_SMS_ROUTE   — optional, defaults to the transactional route
  */
 
 export function isSmsConfigured(): boolean {
-  return Boolean(process.env.MSG91_AUTH_KEY && process.env.MSG91_SENDER_ID);
+  return Boolean(msg91AuthKey() && process.env.MSG91_SENDER_ID);
 }
 
 export interface SendSmsInput {
@@ -35,7 +36,7 @@ export interface SendResult {
 /** Send one SMS. No-ops (ok:false, skipped) until MSG91 is configured. */
 export async function sendSms({ to, body, templateId }: SendSmsInput): Promise<SendResult> {
   if (!isSmsConfigured()) return { ok: false, skipped: true };
-  const authkey = process.env.MSG91_AUTH_KEY as string;
+  const authkey = msg91AuthKey() as string;
   const sender = process.env.MSG91_SENDER_ID as string;
   const number = to.replace(/[^\d]/g, ""); // MSG91 wants digits with country code
   try {

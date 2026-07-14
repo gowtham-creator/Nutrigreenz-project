@@ -15,9 +15,14 @@ import { getCustomerById } from "@/lib/customer-identity";
 import {
   createOrder,
   listOrdersForCustomer,
+  OutOfStockError,
   type OrderLineInput,
 } from "@/lib/orders";
-import { CouponInvalidError, REDEEM_PAISE_PER_POINT } from "@/lib/rewards";
+import {
+  CouponInvalidError,
+  getLoyaltyConfig,
+  redeemPaisePerPoint,
+} from "@/lib/rewards";
 import { createPaymentIntent } from "@/lib/payments-razorpay";
 import { sendOrderConfirmedEmail } from "@/lib/order-emails";
 
@@ -98,12 +103,19 @@ export async function POST(request: Request): Promise<Response> {
 
   // The client may request a redemption as points (`loyaltyPoints`) or, for the
   // current checkout, as a paise value — either way the server RE-CLAMPS it to
-  // the live balance + guardrails, so this is only a request, never a claim.
+  // the live balance + guardrails, so this is only a request, never a claim. A
+  // paise request is converted to points at the LIVE redeem rate, so an admin
+  // changing the redeem ratio in loyalty config takes effect immediately (rather
+  // than a hardcoded 10 paise/point).
   const directPoints = int(b.loyaltyPoints);
-  const requestedPoints =
-    directPoints > 0
-      ? directPoints
-      : Math.max(0, Math.floor(int(b.loyaltyRedeemedPaise) / REDEEM_PAISE_PER_POINT));
+  let requestedPoints = Math.max(0, directPoints);
+  if (directPoints <= 0) {
+    const redeemedPaise = int(b.loyaltyRedeemedPaise);
+    if (redeemedPaise > 0) {
+      const paisePerPoint = redeemPaisePerPoint(await getLoyaltyConfig());
+      requestedPoints = Math.max(0, Math.floor(redeemedPaise / paisePerPoint));
+    }
+  }
 
   try {
     const order = await createOrder({
@@ -147,6 +159,15 @@ export async function POST(request: Request): Promise<Response> {
       { status: 201 },
     );
   } catch (err) {
+    // Insufficient stock is a client-actionable conflict, not a 500 — the order
+    // was rejected BEFORE persistence (no oversell), so the cart can be adjusted
+    // and retried.
+    if (err instanceof OutOfStockError) {
+      return Response.json(
+        { ok: false, error: "out-of-stock", variantIds: err.variantIds },
+        { status: 409 },
+      );
+    }
     // A coupon that failed server re-validation is a client error, not a 500 —
     // surface the concrete reason so checkout can explain why it was dropped.
     if (err instanceof CouponInvalidError) {

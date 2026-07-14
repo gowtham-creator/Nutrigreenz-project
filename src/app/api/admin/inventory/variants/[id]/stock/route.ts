@@ -1,11 +1,14 @@
 import { isSignedInAdmin } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { setVariantStock } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PUT — set a variant's absolute stock (and optionally reserved). */
 export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
