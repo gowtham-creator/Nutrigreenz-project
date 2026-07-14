@@ -18,7 +18,8 @@ export default async function FarmsPage() {
   return (
     <PageShell>
       <PageHero
-        tint="field"
+        tone="forest"
+        serifTitle
         image="/images/farms/farms-hero.webp"
         eyebrow="42 partner farms · 7 states"
         title={<>The hands that <em className="italic text-ng-leaf">feed your pantry.</em></>}

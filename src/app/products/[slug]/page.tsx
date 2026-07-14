@@ -335,8 +335,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           into the base cream lower down so the farm/forest base stays intact. */}
       <div style={{ background: theme.bg }}>
 
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="border-b border-ng-line-soft bg-ng-paper">
+      {/* Breadcrumb — transparent so the category-theme wash flows through it
+          continuously (a solid bg here left a visible colour seam/band). */}
+      <nav aria-label="Breadcrumb" className="border-b border-ng-line-soft/50">
         <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-5 py-3 text-[13px] text-ng-ink-muted md:px-8">
           <li>
             <Link href="/" className="transition-colors hover:text-ng-forest">Home</Link>

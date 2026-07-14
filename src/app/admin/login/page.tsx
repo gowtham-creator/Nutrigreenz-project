@@ -851,7 +851,7 @@ function LoginForm() {
                       <div className="-mt-1 text-right">
                         <Link
                           href="/admin/forgot"
-                          className="text-[12px] font-sans font-semibold text-ng-clay hover:text-ng-clay-deep transition-colors"
+                          className="text-[12px] font-sans font-semibold text-ng-ink hover:text-ng-forest-deep transition-colors"
                         >
                           Forgot password?
                         </Link>

@@ -43,6 +43,7 @@ export function PageHero({
   tint,
   wash,
   image,
+  serifTitle,
   children,
 }: {
   eyebrow?: string;
@@ -56,6 +57,8 @@ export function PageHero({
   /** Optional background photo — sits behind a left→right cream scrim so the
    *  left-aligned dark text stays fully legible over the image. Wins over wash. */
   image?: string;
+  /** Render the title in the soft serif (Lora) instead of the slab display. */
+  serifTitle?: boolean;
   children?: ReactNode;
 }) {
   const toneClass =
@@ -89,7 +92,9 @@ export function PageHero({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(100deg, rgba(244,241,232,0.97) 0%, rgba(244,241,232,0.9) 30%, rgba(244,241,232,0.58) 52%, rgba(244,241,232,0.16) 78%, rgba(244,241,232,0) 100%)",
+                tone === "forest"
+                  ? "linear-gradient(100deg, rgba(11,33,20,0.95) 0%, rgba(11,33,20,0.86) 34%, rgba(11,33,20,0.55) 58%, rgba(11,33,20,0.34) 82%, rgba(11,33,20,0.26) 100%)"
+                  : "linear-gradient(100deg, rgba(244,241,232,0.97) 0%, rgba(244,241,232,0.9) 30%, rgba(244,241,232,0.58) 52%, rgba(244,241,232,0.16) 78%, rgba(244,241,232,0) 100%)",
             }}
           />
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ng-forest/15 to-transparent" />
@@ -139,7 +144,7 @@ export function PageHero({
       ) : null}
       <div className={cn("relative z-10 mx-auto max-w-7xl px-5 md:px-8 py-16 md:py-24", align === "center" && "text-center")}>
         {eyebrow ? <span className={cn("ng-eyebrow", eyebrowColor)}>{eyebrow}</span> : null}
-        <h1 className={cn("font-display text-[clamp(30px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl text-balance break-words", titleColor, align === "center" && "mx-auto")}>
+        <h1 className={cn(serifTitle ? "font-serif" : "font-display", "text-[clamp(30px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl text-balance break-words", titleColor, align === "center" && "mx-auto")}>
           {title}
         </h1>
         {description ? (

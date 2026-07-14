@@ -183,7 +183,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             Currently sold out — we&apos;re restocking from the farm soon.
           </div>
           <Button disabled size="lg" fullWidth>
-            <Icon name="bag-4-bold" size={18} />
+            <Icon name="cart-large-2-bold" size={18} />
             Out of stock
           </Button>
         </div>
@@ -213,12 +213,12 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
               </button>
             </div>
             <Button onClick={add} size="lg" fullWidth className="min-w-0 flex-1 cursor-pointer px-4 sm:px-8">
-              <Icon name="bag-4-bold" size={18} />
+              <Icon name="cart-large-2-bold" size={18} />
               <span className="min-w-0 truncate">Add to cart · ₹{lineTotal.toLocaleString()}</span>
             </Button>
           </div>
           <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
-            <Icon name="bolt-bold" size={18} />
+            <Icon name="wallet-money-bold" size={18} />
             Buy Now
           </Button>
         </div>
