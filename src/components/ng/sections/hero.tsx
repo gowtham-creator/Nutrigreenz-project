@@ -331,8 +331,9 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         }}
       />
 
-      {/* Corner tag */}
-      <div className="absolute left-0 top-0 z-10 rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-cream">
+      {/* Corner tag — top-left radius matches the card so it follows the rounded
+          corner cleanly instead of being clipped by the card's overflow. */}
+      <div className="absolute left-0 top-0 z-10 rounded-br-3xl rounded-tl-[28px] bg-ng-forest-deep px-5 py-3 text-ng-cream md:rounded-tl-[36px]">
         <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
           {slide.tag.split(" ").map((w) => (
             <span key={w} className="block">{w}</span>
