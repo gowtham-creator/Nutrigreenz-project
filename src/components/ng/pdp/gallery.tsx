@@ -8,6 +8,7 @@ import { Badge } from "@/components/ng/badge";
 import type { Tone } from "@/types/nutrigreenz";
 import { PhotoPlaceholder, isPlaceholderSrc } from "./photo-placeholder";
 import type { ProduceIconName } from "@/components/ng/produce-icons";
+import type { CategoryTheme } from "@/lib/category-theme";
 import { usePdpVariant } from "./variant-context";
 import { useDragSwipe } from "@/components/ng/use-drag-swipe";
 
@@ -25,6 +26,8 @@ interface GalleryProps {
   discount?: number;
   /** Category glyph used by the photo placeholders until real photos exist. */
   produceIcon?: ProduceIconName;
+  /** Per-category theme — tints the stage glow + empty placeholders. */
+  theme?: CategoryTheme;
 }
 
 const PLACEHOLDER = "/images/placeholder.svg";
@@ -40,7 +43,7 @@ const PLACEHOLDER = "/images/placeholder.svg";
  * product's own image(s). Until real photography exists, each empty slot renders
  * an attractive, category-aware <PhotoPlaceholder> instead of a flat logo.
  */
-export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf" }: GalleryProps) {
+export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf", theme }: GalleryProps) {
   const reduce = useReducedMotion();
   const shared = usePdpVariant();
   const selected = shared?.selected;
@@ -111,7 +114,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             )}
           >
             {isPlaceholderSrc(img.src) ? (
-              <PhotoPlaceholder icon={produceIcon} variant="thumb" />
+              <PhotoPlaceholder icon={produceIcon} variant="thumb" theme={theme} />
             ) : (
               <Image src={img.src} alt={img.alt} fill className="object-contain p-1.5" sizes="80px" />
             )}
@@ -133,7 +136,10 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
         >
           {/* Ambient glow + halo behind product (static, behind the track) */}
           <div aria-hidden className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ng-leaf/10 blur-3xl" />
+            <div
+              className={cn("absolute left-1/2 top-1/2 h-3/4 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl", !theme && "bg-ng-leaf/10")}
+              style={theme ? { background: theme.halo } : undefined}
+            />
             <div className="absolute inset-x-8 bottom-6 h-6 rounded-[50%] bg-ng-forest-deep/10 blur-2xl" />
           </div>
 
@@ -155,7 +161,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
                 aria-hidden={i !== clampedActive}
               >
                 {isPlaceholderSrc(img.src) ? (
-                  <PhotoPlaceholder icon={produceIcon} variant="main" label={img.label ?? img.alt} />
+                  <PhotoPlaceholder icon={produceIcon} variant="main" label={img.label ?? img.alt} theme={theme} />
                 ) : (
                   <Image
                     src={img.src}
