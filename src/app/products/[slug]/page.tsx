@@ -141,6 +141,7 @@ function toBuyVariant(v: ProductVariantOption): PdpVariant {
     size: v.label,
     pack: v.pack,
     price: v.price,
+    mrp: v.mrp,
     perUnit,
     inStock: v.inStock,
     imageUrl: v.imageUrl,

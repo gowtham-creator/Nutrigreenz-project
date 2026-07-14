@@ -82,7 +82,8 @@ function deriveSocialProof(seed: string): { rating: number; reviewCount: number 
 }
 
 /** Map a single catalog variant → its storefront option (price in rupees). */
-function mapVariantOption(v: ProductVariantRecord): ProductVariantOption {
+function mapVariantOption(v: ProductVariantRecord, promoPercent = 0): ProductVariantOption {
+  const hasPromo = promoPercent > 0;
   return {
     id: v.id,
     sku: v.sku ?? "",
@@ -90,7 +91,10 @@ function mapVariantOption(v: ProductVariantRecord): ProductVariantOption {
     pack: v.pack,
     sizeValue: v.sizeValue,
     sizeUnit: v.sizeUnit,
-    price: paiseToRupees(v.pricePaise),
+    // Mark each variant down by the SAME product promo the card + order path use,
+    // so the PDP's selected-size price matches the sale (original kept as strike mrp).
+    price: paiseToRupees(hasPromo ? applyPromoPaise(v.pricePaise, promoPercent) : v.pricePaise),
+    mrp: hasPromo ? paiseToRupees(v.pricePaise) : undefined,
     inStock: v.stock - v.reserved > 0,
     imageUrl: v.imageUrl,
   };
@@ -145,7 +149,7 @@ export function mapRecordToProductCard(
   // Keep the un-discounted price as the strike-through mrp only when on sale.
   const mrp = hasPromo ? paiseToRupees(baseListPaise) : undefined;
 
-  const options = activeVariants.map(mapVariantOption);
+  const options = activeVariants.map((v) => mapVariantOption(v, promoPercent));
 
   return {
     id: record.id,

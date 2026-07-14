@@ -34,8 +34,10 @@ export interface ProductVariantOption {
   sizeValue: number | null;
   /** Size unit ("L", "ml", "g", "kg"), when known. */
   sizeUnit: string | null;
-  /** Variant price in whole rupees. */
+  /** Variant price in whole rupees (marked down when a promo applies). */
   price: number;
+  /** Original (pre-promo) price in rupees — strike-through; set only on sale. */
+  mrp?: number;
   /** True when at least one sellable unit remains (stock − reserved > 0). */
   inStock: boolean;
   /** Optional per-variant image URL; null falls back to the product image(s). */
