@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CaptainShell, CaptainCard, CaptainSectionHead } from "@/components/ng/captain/captain-shell";
+import {
+  CaptainShell,
+  CaptainCard,
+  CaptainSectionHead,
+  CaptainEmpty,
+} from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 import {
   useCaptain,
@@ -217,29 +222,29 @@ export default function CaptainIntake() {
                 <button
                   type="button"
                   onClick={() => setQty(p.sku, 1)}
-                  className="inline-flex items-center gap-1 rounded-full border border-ng-line text-ng-forest px-3.5 py-2 text-[12.5px] font-bold cursor-pointer hover:border-ng-leaf hover:bg-ng-white transition-colors active:scale-[0.97]"
+                  className="inline-flex items-center gap-1 rounded-full border border-ng-line text-ng-forest px-4 py-2.5 text-[12.5px] font-bold cursor-pointer hover:border-ng-leaf hover:bg-ng-white transition-colors active:scale-[0.97]"
                 >
                   <Icon name="add-circle-bold" size={16} />
                   Add
                 </button>
               ) : (
-                <div className="inline-flex items-center gap-1 rounded-full bg-ng-forest text-ng-cream px-1.5 py-1">
+                <div className="inline-flex items-center gap-0.5 rounded-full bg-ng-forest text-ng-cream p-1">
                   <button
                     type="button"
                     onClick={() => setQty(p.sku, -1)}
                     aria-label={`Reduce ${p.title}`}
-                    className="size-8 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    className="size-9 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   >
-                    <Icon name="minus-square-linear" size={19} />
+                    <Icon name="minus-square-linear" size={20} />
                   </button>
-                  <span className="font-display text-[16px] tabular-nums w-5 text-center">{qty}</span>
+                  <span className="font-display text-[16px] tabular-nums w-6 text-center">{qty}</span>
                   <button
                     type="button"
                     onClick={() => setQty(p.sku, 1)}
                     aria-label={`Add ${p.title}`}
-                    className="size-8 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                    className="size-9 rounded-full hover:bg-ng-forest-soft flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   >
-                    <Icon name="add-square-linear" size={19} />
+                    <Icon name="add-square-linear" size={20} />
                   </button>
                 </div>
               )}
@@ -287,9 +292,11 @@ export default function CaptainIntake() {
         Captured today
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
-        <CaptainCard tone="sage" className="text-center py-6 text-[13px] text-ng-ink-muted">
-          Captures you log appear here instantly.
-        </CaptainCard>
+        <CaptainEmpty
+          icon="bag-3-bold"
+          title="No captures logged yet"
+          hint="Sales you capture appear here instantly for the day."
+        />
       ) : (
         <div className="space-y-2.5">
           {todayCustomers.map((c) => (
@@ -321,6 +328,9 @@ export default function CaptainIntake() {
           ))}
         </div>
       )}
+
+      {/* Clears the floating capture bar so the last ledger row stays readable. */}
+      <div aria-hidden className="h-24" />
 
       {/* ===== Sticky capture bar (floats above tab nav) ===== */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(5.25rem,calc(4.5rem+env(safe-area-inset-bottom)))]">
@@ -372,7 +382,7 @@ function Field({
     <label className="block">
       <span className="text-[12.5px] font-medium text-ng-ink-muted">
         {label}
-        {required ? <span className="text-ng-terracotta"> *</span> : null}
+        {required ? <span className="text-ng-danger"> *</span> : null}
       </span>
       <div className="mt-1.5">{children}</div>
       {hint ? <span className="block text-[11px] text-ng-ink-soft mt-1">{hint}</span> : null}

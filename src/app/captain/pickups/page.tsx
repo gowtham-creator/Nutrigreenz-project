@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CaptainShell, CaptainCard, CaptainStat } from "@/components/ng/captain/captain-shell";
+import {
+  CaptainShell,
+  CaptainCard,
+  CaptainHero,
+  CaptainStat,
+  CaptainEmpty,
+} from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
 
 type Status = "Due" | "Collected" | "Handed over";
@@ -100,48 +106,45 @@ export default function CaptainPickups() {
     >
       {/* Route summary */}
       <div className="grid grid-cols-3 gap-2.5 mb-4">
-        <CaptainStat label="Due" value={dueCount} tone="paper" icon="box-bold" />
-        <CaptainStat label="Collected" value={collectedCount} tone="sage" icon="bag-check-bold" />
-        <CaptainStat label="Orders" value={totalOrders} tone="forest" icon="checklist-minimalistic-bold" />
+        <CaptainStat label="Due" value={dueCount} icon="box-bold" />
+        <CaptainStat label="Collected" value={collectedCount} icon="bag-check-bold" />
+        <CaptainStat label="Orders" value={totalOrders} icon="checklist-minimalistic-bold" />
       </div>
 
       {/* Next stop emphasis */}
       {nextStop && filter !== "Done" ? (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep text-ng-cream p-4 mb-5">
-          <div className="absolute -top-12 -right-10 size-36 rounded-full bg-ng-leaf/20 blur-2xl" aria-hidden />
-          <div className="relative">
-            <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
-                <Icon name="map-point-wave-bold" size={12} />
-                Next stop
-              </span>
-              <span className="text-[11px] text-ng-cream/55">{nextStop.slot}</span>
-            </div>
-            <div className="font-display text-[19px] text-ng-cream mt-2.5 leading-tight">{nextStop.community}</div>
-            <div className="flex items-center gap-1.5 text-[11.5px] text-ng-cream/65 mt-1.5">
-              <Icon name="box-minimalistic-linear" size={13} />
-              {nextStop.items}
-            </div>
-            <div className="mt-3.5 flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => toast.info(`Opening route to ${nextStop.community}`)}
-                className="flex items-center justify-center gap-1.5 rounded-full bg-ng-cream/10 ring-1 ring-ng-cream/15 text-ng-cream px-4 py-2.5 text-[12.5px] font-semibold cursor-pointer hover:bg-ng-cream/15 transition-colors"
-              >
-                <Icon name="map-point-wave-linear" size={15} />
-                Navigate
-              </button>
-              <button
-                type="button"
-                onClick={() => advance(nextStop.id)}
-                className="flex-1 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-2.5 text-[13.5px] cursor-pointer hover:bg-ng-green-bright transition-colors active:scale-[0.98] shadow-[0_8px_20px_-8px_rgba(102,191,115,0.7)]"
-              >
-                <Icon name="box-bold" size={16} />
-                Collect {nextStop.orders} orders
-              </button>
-            </div>
+        <CaptainHero className="p-5 mb-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
+              <Icon name="map-point-wave-bold" size={12} />
+              Next stop
+            </span>
+            <span className="text-[11px] text-ng-cream/55">{nextStop.slot}</span>
           </div>
-        </div>
+          <div className="font-display text-[19px] text-ng-cream mt-2.5 leading-tight">{nextStop.community}</div>
+          <div className="flex items-center gap-1.5 text-[11.5px] text-ng-cream/65 mt-1.5">
+            <Icon name="box-minimalistic-linear" size={13} />
+            {nextStop.items}
+          </div>
+          <div className="mt-4 flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => toast.info(`Opening route to ${nextStop.community}`)}
+              className="flex items-center justify-center gap-1.5 rounded-full bg-ng-cream/10 ring-1 ring-ng-cream/15 text-ng-cream px-4 py-3 text-[12.5px] font-semibold cursor-pointer hover:bg-ng-cream/15 transition-colors active:scale-[0.98]"
+            >
+              <Icon name="map-point-wave-linear" size={15} />
+              Navigate
+            </button>
+            <button
+              type="button"
+              onClick={() => advance(nextStop.id)}
+              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3 text-[13.5px] cursor-pointer hover:bg-ng-green-bright transition-colors active:scale-[0.98] shadow-[0_8px_20px_-8px_rgba(102,191,115,0.7)]"
+            >
+              <Icon name="box-bold" size={16} />
+              Collect {nextStop.orders} orders
+            </button>
+          </div>
+        </CaptainHero>
       ) : null}
 
       {/* Filter chips */}
@@ -152,9 +155,9 @@ export default function CaptainPickups() {
             type="button"
             onClick={() => setFilter(f)}
             aria-pressed={filter === f}
-            className={`px-4 py-1.5 rounded-full text-[12.5px] cursor-pointer transition-colors ${
+            className={`px-4 py-2.5 rounded-full text-[12.5px] font-semibold cursor-pointer transition-colors active:scale-[0.98] ${
               filter === f
-                ? "bg-ng-forest text-ng-cream font-bold"
+                ? "bg-ng-forest text-ng-cream shadow-[0_6px_16px_-8px_rgba(20,51,31,0.55)]"
                 : "bg-ng-white border border-ng-line text-ng-ink-muted hover:border-ng-leaf"
             }`}
           >
@@ -243,7 +246,7 @@ export default function CaptainPickups() {
                     <button
                       type="button"
                       onClick={() => toast.info(`Opening route to ${p.community}`)}
-                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2 rounded-lg bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors"
+                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
                     >
                       <Icon name="map-point-wave-linear" size={15} />
                       Route
@@ -251,13 +254,13 @@ export default function CaptainPickups() {
                     <button
                       type="button"
                       onClick={() => toast.info("Calling community coordinator")}
-                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2 rounded-lg bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors"
+                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
                     >
                       <Icon name="phone-linear" size={15} />
                       Call
                     </button>
                     {p.status === "Handed over" ? (
-                      <span className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2 rounded-lg bg-ng-sage/40 text-ng-forest font-bold">
+                      <span className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-sage/40 text-ng-forest font-bold">
                         <Icon name="check-circle-bold" size={15} />
                         Done
                       </span>
@@ -265,7 +268,7 @@ export default function CaptainPickups() {
                       <button
                         type="button"
                         onClick={() => advance(p.id)}
-                        className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2 rounded-lg bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98]"
+                        className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98]"
                       >
                         <Icon name={p.status === "Due" ? "box-bold" : "hand-stars-bold"} size={15} />
                         {p.status === "Due" ? "Collect" : "Hand over"}
@@ -278,11 +281,11 @@ export default function CaptainPickups() {
           })}
 
           {visible.length === 0 ? (
-            <CaptainCard tone="sage" className="text-center py-8">
-              <Icon name="check-circle-bold" size={30} className="text-ng-forest mx-auto" />
-              <p className="text-[13px] text-ng-forest-deep mt-2 font-semibold">Nothing here</p>
-              <p className="text-[12px] text-ng-ink-muted mt-1">No pickups match this filter.</p>
-            </CaptainCard>
+            <CaptainEmpty
+              icon="check-circle-bold"
+              title={filter === "Due" ? "All caught up" : "Nothing here"}
+              hint="No pickups match this filter."
+            />
           ) : null}
         </div>
       </div>

@@ -129,6 +129,11 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as OfflineCustomer[];
+        // Intentional one-time hydration: adopt the persisted captures on mount
+        // so SSR renders the seed and the client swaps to stored data. This runs
+        // once and cannot loop, so the generic "no setState in effect" rule is a
+        // false positive here.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (Array.isArray(parsed) && parsed.length > 0) setCustomers(parsed);
       }
     } catch {

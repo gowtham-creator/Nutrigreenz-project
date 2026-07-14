@@ -165,15 +165,75 @@ export function CaptainCard({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: "paper" | "forest" | "sage";
+  tone?: "paper" | "sage";
 }) {
-  const map: Record<string, string> = {
+  const map: Record<"paper" | "sage", string> = {
     paper: "bg-ng-white border-ng-line text-ng-ink shadow-[0_1px_3px_rgba(10,31,18,0.04)]",
-    forest:
-      "bg-ng-forest-deep bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep border-ng-forest-deep text-ng-cream",
     sage: "bg-ng-sage/55 border-ng-line text-ng-forest-deep",
   };
   return <div className={cn("rounded-2xl border p-4", map[tone], className)}>{children}</div>;
+}
+
+/**
+ * Canonical dark "forest" surface — the single hero/emphasis treatment shared by
+ * every captain screen (mission, reconciled total, next stop, submitted). Bakes
+ * in the lush gradient + soft plant-green ambience so the surfaces never diverge.
+ * Callers set padding via `className` (heroes use `p-5`, inline confirmations `p-4`).
+ */
+export function CaptainHero({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-ng-forest-deep text-ng-cream",
+        "bg-ng-forest-deep bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep",
+        className,
+      )}
+    >
+      <div
+        className="pointer-events-none absolute -top-14 -right-12 size-44 rounded-full bg-ng-leaf/20 blur-2xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-16 -left-10 size-40 rounded-full bg-ng-green-bright/12 blur-2xl"
+        aria-hidden
+      />
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Shared empty-state block — one calm, consistent pattern (icon chip · title ·
+ * hint) reused across Today, Pickups, Intake and Settle so "nothing here yet"
+ * always reads the same.
+ */
+export function CaptainEmpty({
+  icon,
+  title,
+  hint,
+  className,
+}: {
+  icon: string;
+  title: string;
+  hint?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-ng-line bg-ng-sage/45 px-5 py-8 text-center",
+        className,
+      )}
+    >
+      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-ng-white/70 ring-1 ring-ng-line-soft">
+        <Icon name={icon} size={24} className="text-ng-forest" />
+      </div>
+      <p className="mt-3 text-[13.5px] font-semibold text-ng-forest-deep">{title}</p>
+      {hint ? (
+        <p className="mx-auto mt-1 max-w-[17rem] text-[12px] leading-snug text-ng-ink-muted">{hint}</p>
+      ) : null}
+    </div>
+  );
 }
 
 /**
