@@ -10,50 +10,19 @@ import {
   type ReactNode,
 } from "react";
 import type { LocationZone } from "@/types/nutrigreenz";
+import {
+  AREA_BY_PINCODE,
+  SERVICEABLE_PINCODES,
+  isHyderabadPincode,
+  lookupArea,
+} from "@/lib/hyderabad-areas";
 
 const STORAGE_KEY = "ng.location.v1";
 
-/**
- * Hyderabad pincodes we currently deliver to. Mocked here; the real serviceable
- * list comes from the admin portal / logistics service later.
- */
-export const SERVICEABLE_PINCODES: string[] = [
-  "500081", // Madhapur / Hitech City
-  "500032", // Gachibowli
-  "500084", // Kondapur
-  "500072", // Kukatpally (KPHB)
-  "500085", // KPHB Colony
-  "500034", // Banjara Hills
-  "500033", // Jubilee Hills
-  "500016", // Begumpet
-  "500003", // Secunderabad
-  "500049", // Miyapur
-  "500089", // Manikonda
-  "500074", // LB Nagar
-  "500060", // Dilsukhnagar
-];
-
-/** Pincode → area label, used by the mock reverse-geocode. */
-const AREA_BY_PINCODE: Record<string, string> = {
-  "500081": "Madhapur",
-  "500032": "Gachibowli",
-  "500084": "Kondapur",
-  "500072": "Kukatpally",
-  "500085": "KPHB Colony",
-  "500034": "Banjara Hills",
-  "500033": "Jubilee Hills",
-  "500016": "Begumpet",
-  "500003": "Secunderabad",
-  "500049": "Miyapur",
-  "500089": "Manikonda",
-  "500074": "LB Nagar",
-  "500060": "Dilsukhnagar",
-};
-
-/** Pretty area label for a pincode (falls back to "Hyderabad"). Exported for onboarding/sheet. */
-export function lookupArea(pincode: string): string {
-  return AREA_BY_PINCODE[pincode.trim()] ?? "Hyderabad";
-}
+// The serviceable list + pincode→area lookup now live in the framework-agnostic
+// `@/lib/hyderabad-areas` so the server-side reverse geocoder shares them. Keep
+// re-exporting here so existing importers of `@/lib/location` are unaffected.
+export { SERVICEABLE_PINCODES, lookupArea };
 
 interface LocationContextValue {
   /** The currently selected delivery zone, or null if none chosen yet. */
@@ -127,10 +96,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const setZone = useCallback((next: LocationZone | null) => setZoneState(next), []);
 
   const isServiceable = useCallback((pincode: string) => {
-    const p = pincode.trim();
     // We deliver across Hyderabad — any 500xxx pincode is serviceable, plus the
     // explicit popular-areas list (kept for labels / quick-pick).
-    return /^500\d{3}$/.test(p) || SERVICEABLE_PINCODES.includes(p);
+    return isHyderabadPincode(pincode);
   }, []);
 
   const requestBrowserLocation = useCallback(async (): Promise<void> => {
@@ -145,27 +113,33 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       });
     });
     const { latitude, longitude } = position.coords;
-    // Real, free, key-less reverse-geocode (CORS-enabled) → your actual area + pincode.
-    // Falls back to the deterministic mock if the request fails.
+    // Resolve area + pincode server-side (`/api/geo/detect`): it reverse-geocodes
+    // the coordinates, derives the pincode, and runs it through the SAME
+    // pincode→area lookup that manual entry uses — so auto-detect and typing a
+    // pincode always agree. The endpoint also best-effort persists the hint for a
+    // signed-in customer with no saved address. Falls back to the deterministic
+    // mock when it's unreachable so the UI never blocks.
     try {
-      const res = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
-      );
-      if (!res.ok) throw new Error("reverse-geocode failed");
-      const d = (await res.json()) as {
-        locality?: string;
-        city?: string;
-        principalSubdivision?: string;
-        postcode?: string;
-      };
-      const area = d.locality || d.city || d.principalSubdivision || "Current location";
-      setZoneState({
-        area,
-        pincode: d.postcode ?? "",
-        city: d.city || d.principalSubdivision || "",
-        lat: latitude,
-        lng: longitude,
+      const res = await fetch("/api/geo/detect", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lat: latitude, lng: longitude }),
       });
+      const d = (res.ok ? await res.json() : null) as
+        | { ok?: boolean; area?: string; pincode?: string; city?: string }
+        | null;
+      if (d?.ok && (d.pincode || d.area)) {
+        const pincode = d.pincode ?? "";
+        setZoneState({
+          area: d.area || lookupArea(pincode),
+          pincode,
+          city: d.city || "Hyderabad",
+          lat: latitude,
+          lng: longitude,
+        });
+        return;
+      }
+      throw new Error("reverse-geocode failed");
     } catch {
       setZoneState(mockReverseGeocode(latitude, longitude));
     }

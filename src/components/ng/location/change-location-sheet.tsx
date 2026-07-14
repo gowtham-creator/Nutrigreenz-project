@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ng/button";
 import { useLocation } from "@/lib/location";
+import { lookupArea } from "@/lib/hyderabad-areas";
 import { cn } from "@/lib/utils";
 import type { LocationZone } from "@/types/nutrigreenz";
 
@@ -14,27 +15,6 @@ interface ChangeLocationSheetProps {
 }
 
 const PIN_RE = /^\d{0,6}$/;
-
-/** Pretty area label for a serviceable pincode (mirrors the lib's mock map). */
-const AREA_BY_PINCODE: Record<string, string> = {
-  "500081": "Madhapur",
-  "500032": "Gachibowli",
-  "500084": "Kondapur",
-  "500072": "Kukatpally",
-  "500085": "KPHB Colony",
-  "500034": "Banjara Hills",
-  "500033": "Jubilee Hills",
-  "500016": "Begumpet",
-  "500003": "Secunderabad",
-  "500049": "Miyapur",
-  "500089": "Manikonda",
-  "500074": "LB Nagar",
-  "500060": "Dilsukhnagar",
-};
-
-function areaFor(pincode: string): string {
-  return AREA_BY_PINCODE[pincode] ?? "Hyderabad";
-}
 
 /**
  * Change-location sheet: GPS detect, manual pincode entry with live
@@ -78,7 +58,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
   const pinFeedback: "ok" | "no" | null = pinComplete ? (pinServiceable ? "ok" : "no") : null;
 
   const popular = useMemo(
-    () => serviceablePincodes.map((p) => ({ pincode: p, area: areaFor(p) })),
+    () => serviceablePincodes.map((p) => ({ pincode: p, area: lookupArea(p) })),
     [serviceablePincodes],
   );
 
@@ -103,7 +83,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
   function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!pinServiceable) return;
-    commit({ area: areaFor(trimmed), pincode: trimmed, city: "Hyderabad" });
+    commit({ area: lookupArea(trimmed), pincode: trimmed, city: "Hyderabad" });
   }
 
   if (!mounted || !open) return null;
@@ -213,7 +193,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
             </div>
             {pinFeedback === "ok" ? (
               <p className="text-[12px] text-ng-forest">
-                Great news — we deliver to {areaFor(trimmed)} ({trimmed}).
+                Great news — we deliver to {lookupArea(trimmed)} ({trimmed}).
               </p>
             ) : pinFeedback === "no" ? (
               <p className="text-[12px] text-ng-danger">
