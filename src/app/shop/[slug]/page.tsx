@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
+import { getCategoryTheme } from "@/lib/category-theme";
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits surface
 // on category pages without a redeploy.
@@ -52,11 +53,15 @@ export default async function ShopCategoryPage({
 
   const count = products.filter((p) => p.tags?.includes(slug)).length;
   const words = cat.title.split(" ");
+  // Per-category look — an Oils page shouldn't read like Honey or Spices.
+  const theme = getCategoryTheme(slug);
 
   return (
     <PageShell>
+      <div style={{ background: theme.bg }}>
       <PageHero
         eyebrow={`Category · ${count} ${count === 1 ? "product" : "products"}`}
+        wash={theme.heroWash}
         title={
           <>
             {words.map((w, i) =>
@@ -100,6 +105,7 @@ export default async function ShopCategoryPage({
 
       <ShopTrustStrip />
       <ProductListing products={products} categoryTags={categoryTags} categorySlug={slug} />
+      </div>
     </PageShell>
   );
 }

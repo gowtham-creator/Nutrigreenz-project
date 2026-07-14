@@ -41,6 +41,7 @@ export function PageHero({
   align = "left",
   tone = "cream",
   tint,
+  wash,
   children,
 }: {
   eyebrow?: string;
@@ -49,6 +50,8 @@ export function PageHero({
   align?: "left" | "center";
   tone?: "cream" | "sage" | "forest";
   tint?: HeroTint;
+  /** Arbitrary per-category hero wash (CSS `background`); wins over `tint`. */
+  wash?: string;
   children?: ReactNode;
 }) {
   const toneClass =
@@ -87,10 +90,11 @@ export function PageHero({
           {/* Crisp green hairline at the base */}
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ng-leaf/35 to-transparent" />
         </div>
-      ) : tint ? (
+      ) : (wash || tint) ? (
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          {/* Distinct-but-on-theme tinted wash for this page's light hero. */}
-          <div className="absolute inset-0" style={{ background: HERO_TINTS[tint] }} />
+          {/* Distinct-but-on-theme tinted wash for this page's light hero. A
+              per-category `wash` (e.g. an Oils vs Honey hero) wins over `tint`. */}
+          <div className="absolute inset-0" style={{ background: wash ?? (tint ? HERO_TINTS[tint] : undefined) }} />
           {/* Whisper-fine dot texture for an intentional, crafted surface. */}
           <div
             className="absolute inset-0 opacity-[0.05]"

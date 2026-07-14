@@ -28,6 +28,7 @@ import type { Review } from "@/components/ng/pdp/reviews";
 import type { PdpVariant } from "@/components/ng/pdp/variant-selector";
 import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 import { getProductStory } from "@/components/ng/pdp/pdp-story";
+import { getCategoryTheme } from "@/lib/category-theme";
 
 const SITE = "https://nutrigreenz.in";
 const PLACEHOLDER = "/images/placeholder.svg";
@@ -249,6 +250,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   // Per-category editorial story (Anveshan-style blocks). Null when the category
   // has no story authored yet — the page then degrades to the generic sections.
   const story = getProductStory(categoryId, cat.slug);
+  // Per-category look — tints the page + surfaces so an Oils PDP feels different
+  // from Honey/Ghee/Spices, while the farm/forest base stays intact.
+  const theme = getCategoryTheme(categoryId, cat.slug);
   const { variants, baseIndex } = resolveVariants(p);
   const basePrice = variants[baseIndex]?.price ?? p.price;
   const discount = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
@@ -265,26 +269,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const others = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
-  // Gallery — prefer the category's curated per-product renders. Otherwise, when
-  // the category ships a shared detail set (e.g. all six cold-pressed oils share
-  // one pack/label/why/kitchen/sizes set) and the product has a real hero image,
-  // lead with that hero and append the shared shots. Failing both, fall back to
-  // the single product image plus branded placeholders.
+  // Gallery — the product's own real photo always LEADS when it exists, so a
+  // per-SKU shot is never buried behind curated/placeholder frames. After it we
+  // append the category's curated detail set (per-product `gallery`, else the
+  // shared range set, e.g. all cold-pressed oils share one pack/why/kitchen set).
+  // With no real photo and no curated set, we fall back to branded placeholders
+  // (now tinted per category), captioned so the client knows which shot belongs.
   const hasRealImage = p.image.length > 0 && p.image !== PLACEHOLDER;
-  const images =
+  const curated =
     story?.gallery && story.gallery.length > 0
-      ? story.gallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label }))
-      : story?.sharedGallery && story.sharedGallery.length > 0 && hasRealImage
-        ? [
-            { src: p.image, alt: p.title, label: "Front of pack" },
-            ...story.sharedGallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label })),
-          ]
-        : [
-            { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
-            { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
-            { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
-            { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
-          ];
+      ? story.gallery
+      : story?.sharedGallery && story.sharedGallery.length > 0
+        ? story.sharedGallery
+        : null;
+  const curatedShots = curated?.map((g) => ({ src: g.src, alt: g.alt, label: g.label })) ?? [];
+  const images = curated
+    ? hasRealImage
+      ? [{ src: p.image, alt: p.title, label: "Front of pack" }, ...curatedShots]
+      : curatedShots
+    : [
+        { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
+        { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
+        { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
+        { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
+      ];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -323,6 +331,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* Share the selected size × pack between the buy panel and the sticky bar. */}
       <PdpVariantProvider variants={variants} initialIndex={baseIndex}>
 
+      {/* Per-category background wash (colour only — layout unchanged). Fades back
+          into the base cream lower down so the farm/forest base stays intact. */}
+      <div style={{ background: theme.bg }}>
+
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="border-b border-ng-line-soft bg-ng-paper">
         <ol className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-5 py-3 text-[13px] text-ng-ink-muted md:px-8">
@@ -346,17 +358,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section className="relative overflow-hidden !py-10 md:!py-14">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <Parallax speed={0.4} className="absolute -left-32 top-10">
-            <div className="h-96 w-96 rounded-full bg-ng-leaf/10 blur-3xl" />
+            <div className="h-96 w-96 rounded-full blur-3xl" style={{ background: theme.halo }} />
           </Parallax>
           <Parallax speed={0.25} className="absolute -right-28 top-72">
-            <div className="h-80 w-80 rounded-full bg-ng-clay/[0.06] blur-3xl" />
+            <div className="h-80 w-80 rounded-full blur-3xl" style={{ background: theme.halo }} />
           </Parallax>
         </div>
 
         <div className="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
           <div className="md:sticky md:top-24 md:self-start">
             <Reveal>
-              <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} />
+              <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} theme={theme} />
             </Reveal>
           </div>
 
@@ -405,7 +417,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ) : null}
 
       {/* 4 · Brand story */}
-      <Section className="bg-ng-sage/15">
+      <Section style={{ background: theme.soft }}>
         <StorySection story={content.story} produceIcon={content.produceIcon} />
       </Section>
 
@@ -437,7 +449,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* 9 · Customer reviews */}
       <Section
         id="reviews"
-        className="bg-ng-sage/15 !py-16"
+        className="!py-16"
+        style={{ background: theme.soft }}
         eyebrow="Customer reviews"
         heading={<>What people <em className="italic text-ng-leaf">are saying</em></>}
       >
@@ -474,6 +487,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* Sticky bottom add-to-cart bar */}
       <StickyBar product={p} price={basePrice} outOfStock={outOfStock} />
 
+      </div>
       </PdpVariantProvider>
     </PageShell>
   );

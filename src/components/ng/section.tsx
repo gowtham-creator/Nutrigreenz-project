@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Reveal } from "./motion";
 
@@ -11,6 +11,8 @@ interface SectionProps {
   description?: ReactNode;
   align?: "left" | "center";
   id?: string;
+  /** Inline surface style — used to tint a band per the category theme. */
+  style?: CSSProperties;
 }
 
 export function Section({
@@ -22,9 +24,10 @@ export function Section({
   description,
   align = "left",
   id,
+  style,
 }: SectionProps) {
   return (
-    <section id={id} className={cn("relative py-16 md:py-28", className)}>
+    <section id={id} className={cn("relative py-16 md:py-28", className)} style={style}>
       <div
         className={cn(
           "mx-auto max-w-7xl px-5 md:px-8",
