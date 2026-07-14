@@ -19,6 +19,8 @@ export interface PdpVariant {
   perUnit: string;
   /** false when this exact variant is sold out (defaults to in-stock) */
   inStock?: boolean;
+  /** Optional per-variant image URL; when set the gallery leads with it. */
+  imageUrl?: string | null;
 }
 
 interface VariantSelectorProps {

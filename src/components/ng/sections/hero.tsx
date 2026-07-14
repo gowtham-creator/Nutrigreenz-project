@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "../button";
 import { Icon } from "@/components/ui/icon";
 import { FloatIn, MagneticHover } from "../motion";
+import { useDragSwipe } from "@/components/ng/use-drag-swipe";
 
 /**
  * Hero — a wide promotional **banner slideshow** (Anveshan-style format).
@@ -148,14 +149,25 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
   const next = useCallback(() => go(index + 1), [go, index]);
   const prev = useCallback(() => go(index - 1), [go, index]);
 
-  // Auto-advance — paused on hover/focus, when the tab is hidden, or reduced
-  // motion. Depending on `index` restarts the timer after every change (manual
-  // or auto), so a slide is never cut short right after you click an arrow/dot.
+  // Finger-swipe on touch/pointer devices — drag left/right to advance, with a
+  // small live nudge for feedback. Keeps the existing crossfade, arrows and dots
+  // untouched; a committed swipe just calls next()/prev().
+  const { offset: dragX, dragging, handlers: swipe } = useDragSwipe({
+    onSwipeLeft: next,
+    onSwipeRight: prev,
+    threshold: 44,
+    maxOffset: 120,
+  });
+
+  // Auto-advance — paused on hover/focus, during an active drag, when the tab is
+  // hidden, or under reduced motion. Depending on `index` restarts the timer
+  // after every change (manual or auto), so a slide is never cut short right
+  // after you click an arrow/dot or finish a swipe.
   useEffect(() => {
-    if (paused || reduce) return;
+    if (paused || reduce || dragging) return;
     const t = window.setTimeout(() => setIndex((i) => (i + 1) % count), AUTO_MS);
     return () => window.clearTimeout(t);
-  }, [paused, reduce, count, index]);
+  }, [paused, reduce, count, index, dragging]);
 
   // Pause autoplay while the tab is backgrounded.
   useEffect(() => {
@@ -183,7 +195,10 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
       }}
       onKeyDown={onKeyDown}
     >
-      <div className="relative overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px]">
+      <div
+        {...swipe}
+        className="relative touch-pan-y select-none overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px]"
+      >
         {/* Equal-height stage — height fixed by the banner clamp so slides never
             shift layout. ALL slides stay mounted and are cross-faded by opacity,
             so every image preloads up-front (no lazy pop-in when the carousel
@@ -194,29 +209,37 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
             <PromoSlide slide={SLIDES[0]} priority />
           </div>
 
-          {items.map((item, i) => {
-            const active = i === index;
-            return (
-              <motion.div
-                key={item.key}
-                className="absolute inset-0"
-                initial={false}
-                animate={{ opacity: active ? 1 : 0 }}
-                transition={{ duration: reduce ? 0.2 : 0.6, ease: [0.16, 1, 0.3, 1] }}
-                style={{ pointerEvents: active ? "auto" : "none" }}
-                aria-hidden={!active}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${count}: ${item.label}`}
-              >
-                {item.kind === "promo" ? (
-                  <PromoBannerSlide promo={item.promo} priority={i === 0} />
-                ) : (
-                  <PromoSlide slide={item.slide} priority={i === 0} />
-                )}
-              </motion.div>
-            );
-          })}
+          {/* Swipe layer: only the slides translate with the finger; the sizer and
+              controls stay put. Snaps back (dragX → 0) with a short transition on
+              release while the crossfade advances to the new slide. */}
+          <div
+            className={`absolute inset-0 ${dragging || reduce ? "" : "transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"}`}
+            style={{ transform: `translate3d(${dragX}px, 0, 0)` }}
+          >
+            {items.map((item, i) => {
+              const active = i === index;
+              return (
+                <motion.div
+                  key={item.key}
+                  className="absolute inset-0"
+                  initial={false}
+                  animate={{ opacity: active ? 1 : 0 }}
+                  transition={{ duration: reduce ? 0.2 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ pointerEvents: active ? "auto" : "none" }}
+                  aria-hidden={!active}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${count}: ${item.label}`}
+                >
+                  {item.kind === "promo" ? (
+                    <PromoBannerSlide promo={item.promo} priority={i === 0} />
+                  ) : (
+                    <PromoSlide slide={item.slide} priority={i === 0} />
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
 
           {/* Controls — prev · dots · next in one slim glass pill at the bottom.
               Compact and light so it sits over the art without dominating it;

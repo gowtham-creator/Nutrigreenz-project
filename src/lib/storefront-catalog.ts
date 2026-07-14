@@ -92,6 +92,7 @@ function mapVariantOption(v: ProductVariantRecord): ProductVariantOption {
     sizeUnit: v.sizeUnit,
     price: paiseToRupees(v.pricePaise),
     inStock: v.stock - v.reserved > 0,
+    imageUrl: v.imageUrl,
   };
 }
 

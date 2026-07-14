@@ -402,6 +402,8 @@ export interface ProductVariantRecord {
   reserved: number;
   isActive: boolean;
   sort: number;
+  /** Optional per-variant image URL; NULL falls back to the product image. */
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -419,12 +421,13 @@ interface VariantRow {
   reserved: number;
   is_active: boolean;
   sort: number;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
 
 const VARIANT_COLS =
-  "id, product_id, label, pack, size_value, size_unit, price_paise, sku, stock, reserved, is_active, sort, created_at, updated_at";
+  "id, product_id, label, pack, size_value, size_unit, price_paise, sku, stock, reserved, is_active, sort, image_url, created_at, updated_at";
 
 function toVariant(r: VariantRow): ProductVariantRecord {
   return {
@@ -440,6 +443,7 @@ function toVariant(r: VariantRow): ProductVariantRecord {
     reserved: r.reserved,
     isActive: r.is_active,
     sort: r.sort,
+    imageUrl: r.image_url ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -512,6 +516,7 @@ export interface NewVariantInput {
   reserved?: number;
   isActive?: boolean;
   sort?: number;
+  imageUrl?: string | null;
 }
 
 /** Create a variant for a product and return the fresh record. */
@@ -530,6 +535,7 @@ export async function createVariant(input: NewVariantInput): Promise<ProductVari
       reserved: Math.max(0, Math.round(input.reserved ?? 0)),
       is_active: input.isActive ?? true,
       sort: Math.round(input.sort ?? 0),
+      image_url: input.imageUrl?.trim() || null,
     })
     .select(VARIANT_COLS)
     .single();
@@ -546,6 +552,7 @@ export interface VariantUpdateInput {
   sku?: string | null;
   isActive?: boolean;
   sort?: number;
+  imageUrl?: string | null;
 }
 
 /** Apply an editable subset of fields to a variant and return the fresh record. */
@@ -563,6 +570,7 @@ export async function updateVariant(
   if (input.sku !== undefined) patch.sku = input.sku?.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sort !== undefined) patch.sort = Math.round(input.sort);
+  if (input.imageUrl !== undefined) patch.image_url = input.imageUrl?.trim() || null;
   if (Object.keys(patch).length === 0) {
     const { data } = await db.from("product_variants").select(VARIANT_COLS).eq("id", id).maybeSingle();
     return data ? toVariant(data as VariantRow) : null;

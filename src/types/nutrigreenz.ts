@@ -38,6 +38,8 @@ export interface ProductVariantOption {
   price: number;
   /** True when at least one sellable unit remains (stock − reserved > 0). */
   inStock: boolean;
+  /** Optional per-variant image URL; null falls back to the product image(s). */
+  imageUrl: string | null;
 }
 
 export interface ProductCard {

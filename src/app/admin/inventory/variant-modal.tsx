@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { PACK_OPTIONS, type Product, type Variant } from "./types";
@@ -16,6 +16,30 @@ async function api<T>(url: string, method: string, body?: unknown): Promise<T> {
   return data;
 }
 
+const ACCEPT = "image/jpeg,image/png,image/webp";
+const MAX_BYTES = 5 * 1024 * 1024;
+
+/** Validate + upload one image to the shared inventory upload endpoint. */
+async function uploadImage(file: File): Promise<string | null> {
+  if (!ACCEPT.split(",").includes(file.type)) {
+    toast.error("Use a JPG, PNG or WebP image.");
+    return null;
+  }
+  if (file.size > MAX_BYTES) {
+    toast.error("Image must be 5 MB or smaller.");
+    return null;
+  }
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch("/api/admin/inventory/upload", { method: "POST", body });
+  const data = (await res.json()) as { ok?: boolean; url?: string; error?: string };
+  if (!res.ok || !data.ok || !data.url) {
+    toast.error("Upload failed. Please try again.");
+    return null;
+  }
+  return data.url;
+}
+
 interface RowEdit {
   priceRupees: string;
   stock: string;
@@ -29,6 +53,7 @@ interface NewDraft {
   sku: string;
   priceRupees: string;
   stock: string;
+  imageUrl: string;
 }
 
 const emptyDraft = (): NewDraft => ({
@@ -39,11 +64,78 @@ const emptyDraft = (): NewDraft => ({
   sku: "",
   priceRupees: "",
   stock: "0",
+  imageUrl: "",
 });
 
 const FIELD =
   "w-full rounded-lg bg-ng-paper border border-ng-line-soft px-2.5 py-1.5 text-[12.5px] text-ng-ink outline-none focus:border-ng-forest transition-colors";
 const LABEL = "block text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-muted mb-1";
+
+/** A compact 40px per-variant image control: shows the thumb (or a picker
+ *  placeholder), triggers a hidden file input, and offers a corner "remove"
+ *  affordance once an image is set. Used inline in each existing-variant row. */
+function RowImage({
+  imageUrl,
+  uploading,
+  disabled,
+  onPick,
+  onClear,
+}: {
+  imageUrl: string | null;
+  uploading: boolean;
+  disabled: boolean;
+  onPick: (file: File) => void;
+  onClear: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        disabled={disabled}
+        aria-label={imageUrl ? "Change variant image" : "Add variant image"}
+        title={imageUrl ? "Change variant image" : "Add variant image"}
+        className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-lg border border-dashed border-ng-line-soft bg-ng-paper text-ng-ink-muted transition-colors hover:border-ng-forest disabled:opacity-50"
+      >
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <Icon name="gallery-add-bold" size={16} />
+        )}
+        {uploading && (
+          <span className="absolute inset-0 grid place-items-center bg-ng-paper/80 text-ng-forest-deep">
+            <Icon name="refresh-bold" size={14} className="animate-spin" />
+          </span>
+        )}
+      </button>
+      {imageUrl && !uploading ? (
+        <button
+          type="button"
+          onClick={onClear}
+          disabled={disabled}
+          aria-label="Remove variant image"
+          title="Remove variant image"
+          className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-ng-terracotta text-white shadow-sm transition-transform hover:scale-110 disabled:opacity-50"
+        >
+          <Icon name="close-circle-bold" size={12} />
+        </button>
+      ) : null}
+      <input
+        ref={ref}
+        type="file"
+        accept={ACCEPT}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onPick(file);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
 
 /** Manage one base product's size × pack variants: price, stock, active, add/delete. */
 export function VariantModal({
@@ -64,6 +156,10 @@ export function VariantModal({
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<NewDraft>(emptyDraft);
+  // Which existing variant row is mid-upload (spinner), and whether the "add"
+  // draft's own image is uploading.
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [draftUploading, setDraftUploading] = useState(false);
 
   const load = useCallback(async () => {
     if (!product) return;
@@ -151,6 +247,40 @@ export function VariantModal({
     }
   };
 
+  // Upload (or clear) an existing variant's own image, then persist via PATCH.
+  const setRowImage = async (v: Variant, file: File | null) => {
+    setUploadingId(v.id);
+    try {
+      let url: string | null = null;
+      if (file) {
+        url = await uploadImage(file);
+        if (!url) return; // uploadImage already toasted the reason
+      }
+      await api(`/api/admin/inventory/variants/${v.id}`, "PATCH", { imageUrl: url });
+      toast.success(file ? "Variant image updated" : "Variant image removed", {
+        description: v.sku ?? v.label,
+      });
+      await load();
+      onChanged();
+    } catch {
+      toast.error("Could not update variant image");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  // Upload an image for the not-yet-created draft variant (held in local state
+  // until "Add" persists it).
+  const pickDraftImage = async (file: File) => {
+    setDraftUploading(true);
+    try {
+      const url = await uploadImage(file);
+      if (url) set("imageUrl", url);
+    } finally {
+      setDraftUploading(false);
+    }
+  };
+
   const addVariant = async () => {
     if (!draft.label.trim()) {
       toast.error("Enter a size label, e.g. 1L");
@@ -168,6 +298,7 @@ export function VariantModal({
         pricePaise: Math.max(0, Math.round((Number(draft.priceRupees) || 0) * 100)),
         stock: Math.max(0, Math.round(Number(draft.stock) || 0)),
         sort: variants.length * 10,
+        imageUrl: draft.imageUrl.trim() || null,
       });
       toast.success("Variant added", { description: draft.label.trim() });
       setDraft(emptyDraft());
@@ -237,11 +368,20 @@ export function VariantModal({
                       v.isActive ? "" : "opacity-60"
                     }`}
                   >
-                    <span className="text-[13px] font-semibold text-ng-ink truncate">
-                      {v.label}
-                      {v.pack ? (
-                        <span className="ml-1 text-[12px] font-medium text-ng-ink-muted">· {v.pack}</span>
-                      ) : null}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <RowImage
+                        imageUrl={v.imageUrl}
+                        uploading={uploadingId === v.id}
+                        disabled={busy || uploadingId !== null}
+                        onPick={(file) => void setRowImage(v, file)}
+                        onClear={() => void setRowImage(v, null)}
+                      />
+                      <span className="min-w-0 truncate text-[13px] font-semibold text-ng-ink">
+                        {v.label}
+                        {v.pack ? (
+                          <span className="ml-1 text-[12px] font-medium text-ng-ink-muted">· {v.pack}</span>
+                        ) : null}
+                      </span>
                     </span>
                     <span className="font-mono text-[11.5px] text-ng-ink-muted truncate">{v.sku ?? "—"}</span>
                     <div>
@@ -345,10 +485,20 @@ export function VariantModal({
                 <label className={LABEL} htmlFor="nv-stock">Stock</label>
                 <input id="nv-stock" type="number" min={0} className={FIELD} value={draft.stock} onChange={(e) => set("stock", e.target.value)} />
               </div>
+              <div>
+                <span className={LABEL}>Image</span>
+                <RowImage
+                  imageUrl={draft.imageUrl || null}
+                  uploading={draftUploading}
+                  disabled={busy}
+                  onPick={(file) => void pickDraftImage(file)}
+                  onClear={() => set("imageUrl", "")}
+                />
+              </div>
               <div className="flex items-end">
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || draftUploading}
                   onClick={() => void addVariant()}
                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50"
                 >
