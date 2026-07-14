@@ -429,7 +429,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {/* 6 · Uses */}
       <Section className="!pt-0" eyebrow="Ways to use it" heading={<>{content.uses.title}</>}>
-        <Uses intro={content.uses.intro} tips={content.uses.tips} icon={content.produceIcon} />
+        <Uses intro={content.uses.intro} tips={content.uses.tips} icon={content.produceIcon} image={content.uses.image} theme={theme} />
       </Section>
 
       {/* 7 · FAQ */}

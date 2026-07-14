@@ -1,13 +1,19 @@
+import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
-import type { UseTip } from "./pdp-content";
+import type { PdpImage, UseTip } from "./pdp-content";
 import { PhotoPlaceholder } from "./photo-placeholder";
 import type { ProduceIconName } from "@/components/ng/produce-icons";
+import type { CategoryTheme } from "@/lib/category-theme";
 
 interface UsesProps {
   intro: string;
   tips: UseTip[];
   /** Category glyph for the lifestyle "in your kitchen" photo placeholder. */
   icon?: ProduceIconName;
+  /** Real lifestyle photo for the "in your kitchen" panel; falls back to the themed placeholder. */
+  image?: PdpImage;
+  /** Per-category theme so the fallback placeholder reads category-appropriate. */
+  theme?: CategoryTheme;
 }
 
 /**
@@ -15,7 +21,7 @@ interface UsesProps {
  * phrase of each tip is bolded; the photo placeholder shows where an in-use /
  * recipe shot belongs (Anveshan-style) once real photography lands.
  */
-export function Uses({ intro, tips, icon = "leaf" }: UsesProps) {
+export function Uses({ intro, tips, icon = "leaf", image, theme }: UsesProps) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start lg:gap-12">
       <div className="flex flex-col gap-6">
@@ -38,9 +44,19 @@ export function Uses({ intro, tips, icon = "leaf" }: UsesProps) {
         </ul>
       </div>
 
-      {/* Lifestyle photo slot — a real in-use / recipe shot drops in here later. */}
+      {/* Lifestyle "in your kitchen" slot — real photo when available, themed placeholder otherwise. */}
       <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] border border-ng-line-soft shadow-[var(--shadow-ng-card)] sm:aspect-[16/10] lg:aspect-[4/5]">
-        <PhotoPlaceholder icon={icon} variant="main" label="In your kitchen" />
+        {image ? (
+          <Image
+            src={image.src}
+            alt={image.alt}
+            fill
+            sizes="(max-width: 1024px) 100vw, 40vw"
+            className="object-cover"
+          />
+        ) : (
+          <PhotoPlaceholder icon={icon} variant="main" label="In your kitchen" theme={theme} />
+        )}
       </div>
     </div>
   );

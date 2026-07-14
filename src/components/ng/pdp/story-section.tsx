@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { FooterScene } from "@/components/ng/footer-scene";
 import { PRODUCE_ICONS, type ProduceIconName } from "@/components/ng/produce-icons";
 import { Reveal } from "@/components/ng/motion";
@@ -27,17 +28,29 @@ export function StorySection({ story, produceIcon }: StorySectionProps) {
       </Reveal>
 
       <Reveal delay={0.08}>
-        {/* Illustrated stage — brand landscape + glowing produce glyph, no photos */}
+        {/* Real story photo when the category has one; illustrated stage otherwise. */}
         <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-ng-line-soft bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep text-ng-forest-soft shadow-[var(--shadow-ng-card)]">
-          <div aria-hidden className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ng-clay/15 blur-3xl" />
-          </div>
-          <FooterScene />
-          <div className="absolute left-1/2 top-[38%] z-10 -translate-x-1/2 -translate-y-1/2">
-            <span className="grid h-24 w-24 place-items-center rounded-3xl border border-ng-cream/15 bg-ng-cream/10 text-ng-cream backdrop-blur-sm sm:h-28 sm:w-28">
-              <Glyph size={56} className="text-ng-leaf" />
-            </span>
-          </div>
+          {story.image ? (
+            <Image
+              src={story.image.src}
+              alt={story.image.alt}
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+            />
+          ) : (
+            <>
+              <div aria-hidden className="pointer-events-none absolute inset-0">
+                <div className="absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ng-clay/15 blur-3xl" />
+              </div>
+              <FooterScene />
+              <div className="absolute left-1/2 top-[38%] z-10 -translate-x-1/2 -translate-y-1/2">
+                <span className="grid h-24 w-24 place-items-center rounded-3xl border border-ng-cream/15 bg-ng-cream/10 text-ng-cream backdrop-blur-sm sm:h-28 sm:w-28">
+                  <Glyph size={56} className="text-ng-leaf" />
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </Reveal>
     </div>

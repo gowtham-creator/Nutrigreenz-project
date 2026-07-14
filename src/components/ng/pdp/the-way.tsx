@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { Reveal } from "@/components/ng/motion";
 import type { WayCard } from "./pdp-content";
@@ -16,12 +17,24 @@ export function TheWay({ cards }: TheWayProps) {
       {cards.map((card, i) => (
         <Reveal key={card.title} delay={i * 0.06} className="h-full">
           <article className="group flex h-full flex-col gap-4 rounded-3xl border border-ng-line-soft bg-ng-paper p-6 transition-colors hover:border-ng-leaf-soft">
-            {/* illustrated tinted header tile */}
+            {/* Real header photo when available; illustrated tint + icon otherwise. */}
             <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-ng-sage/60 via-ng-cream to-ng-cream-deep">
-              <div aria-hidden className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-ng-leaf/15 blur-2xl" />
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-ng-paper text-ng-forest shadow-[var(--shadow-ng-card)]">
-                <Icon name={card.icon} size={28} className="text-ng-leaf" />
-              </span>
+              {card.image ? (
+                <Image
+                  src={card.image.src}
+                  alt={card.image.alt}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                  className="object-cover"
+                />
+              ) : (
+                <>
+                  <div aria-hidden className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-ng-leaf/15 blur-2xl" />
+                  <span className="grid h-14 w-14 place-items-center rounded-2xl bg-ng-paper text-ng-forest shadow-[var(--shadow-ng-card)]">
+                    <Icon name={card.icon} size={28} className="text-ng-leaf" />
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <h3 className="font-display text-xl text-ng-forest-deep">{card.title}</h3>

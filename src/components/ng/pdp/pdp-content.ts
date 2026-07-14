@@ -52,11 +52,25 @@ export function resolveCategoryId(product: Pick<ProductCard, "tags">): PdpCatego
 
 /* ─────────────────────────────── content types ───────────────────────────── */
 
+/**
+ * An optional REAL product photo for a content slot. When present, the section
+ * renders a next/image (object-cover) instead of the themed illustrated
+ * placeholder — so categories with real photography (oils, ghee, honey) show
+ * their shots, while categories still awaiting photos keep the on-brand
+ * placeholder. Paths point at existing assets under `public/images/products/`.
+ */
+export interface PdpImage {
+  src: string;
+  alt: string;
+}
+
 export interface WayCard {
   icon: string; // Solar icon name
   title: string;
   body: string;
   points: string[];
+  /** Real header photo; falls back to the illustrated tint + icon when absent. */
+  image?: PdpImage;
 }
 
 export interface FaqItem {
@@ -101,9 +115,9 @@ export interface PdpCategoryContent {
   /** how many quality checks this category runs (used in trust + certs copy) */
   checks: number;
   /** 4 trust-row items (free shipping / support / returns / N checks) */
-  story: { eyebrow: string; title: string; body: string[] };
+  story: { eyebrow: string; title: string; body: string[]; image?: PdpImage };
   way: { eyebrow: string; title: string; cards: WayCard[] };
-  uses: { title: string; intro: string; tips: UseTip[] };
+  uses: { title: string; intro: string; tips: UseTip[]; image?: PdpImage };
   faq: FaqItem[];
   knowYour: KnowYour;
   impact: { title: string; subtitle: string; stats: ImpactStat[] };
@@ -174,6 +188,11 @@ const DEFAULT_CONTENT: PdpCategoryContent = {
 
 /* ──────────────────────────────── per-category ───────────────────────────── */
 
+/** Existing real product-photo directories, mapped into the image slots below. */
+const OILS_IMG = "/images/products/oils";
+const GHEE_IMG = "/images/products/ghee";
+const HONEY_IMG = "/images/products/honey";
+
 const OILS: PdpCategoryContent = {
   produceIcon: "oil",
   credentials: ["Cold-pressed", "Single-origin", "No refining", "Glass-bottled"],
@@ -185,14 +204,15 @@ const OILS: PdpCategoryContent = {
       "We buy the season's best seed from a single farm lot, then press it slow and cold — below 40°C — on a wooden ghani. No heat, no hexane, no bleaching, no deodorising.",
       "What's left is an oil that still tastes of the seed it came from, bottled in UV-protected glass so the aroma reaches your kitchen exactly as it left the press.",
     ],
+    image: { src: `${OILS_IMG}/oils-lifestyle.webp`, alt: "Cold-pressed oil poured in an Indian kitchen" },
   },
   way: {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with oils",
     cards: [
-      { icon: "temperature-bold", title: "Cold-pressed below 40°C", body: "Heat destroys aroma and antioxidants. We never let it.", points: ["Natural vitamin E retained", "Full seed flavour preserved"] },
-      { icon: "filter-bold", title: "Single-pass, no refining", body: "One farm lot, one press — no blending, no solvents.", points: ["No hexane extraction", "No bleaching or deodorising"] },
-      { icon: "bottle-bold", title: "Glass-bottled fresh", body: "UV-protected glass, never plastic.", points: ["No leaching off the bottle", "Pressed-to-order freshness"] },
+      { icon: "temperature-bold", title: "Cold-pressed below 40°C", body: "Heat destroys aroma and antioxidants. We never let it.", points: ["Natural vitamin E retained", "Full seed flavour preserved"], image: { src: `${OILS_IMG}/groundnut.webp`, alt: "Cold-pressed groundnut oil in a glass bottle" } },
+      { icon: "filter-bold", title: "Single-pass, no refining", body: "One farm lot, one press — no blending, no solvents.", points: ["No hexane extraction", "No bleaching or deodorising"], image: { src: `${OILS_IMG}/sesame.webp`, alt: "Cold-pressed sesame oil in a glass bottle" } },
+      { icon: "bottle-bold", title: "Glass-bottled fresh", body: "UV-protected glass, never plastic.", points: ["No leaching off the bottle", "Pressed-to-order freshness"], image: { src: `${OILS_IMG}/coconut.webp`, alt: "Cold-pressed coconut oil in a glass bottle" } },
     ],
   },
   uses: {
@@ -204,6 +224,7 @@ const OILS: PdpCategoryContent = {
       { key: "Everyday sautéing — ", rest: "a healthy fat for stir-fries and shallow frying." },
       { key: "Oil pulling & massage — ", rest: "coconut and sesame double up beautifully for skin and hair." },
     ],
+    image: { src: `${OILS_IMG}/groundnut-side.webp`, alt: "Cold-pressed oil bottle — pack and label detail" },
   },
   faq: [
     { q: "What does 'cold-pressed' actually mean?", a: "The seed is crushed mechanically at low temperature (below 40°C) without chemical solvents. That keeps the natural antioxidants, aroma and vitamin E that high-heat refining strips out." },
@@ -237,14 +258,15 @@ const GHEE: PdpCategoryContent = {
       "Our ghee begins with indigenous A2 cows — Gir, Sahiwal, Desi — grazing open pasture, never confined or pushed with synthetic feed. The milk is cultured into curd, hand-churned to butter the traditional Bilona way, then slow-simmered to golden ghee the same day it's collected.",
       "It's a slower, costlier method. But it's the only way to get that grainy texture and nutty aroma that tells you it's the real thing.",
     ],
+    image: { src: `${GHEE_IMG}/ghee-farm.webp`, alt: "Indigenous A2 cows grazing open farm pasture" },
   },
   way: {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with ghee",
     cards: [
-      { icon: "test-tube-bold", title: "A2-protein verified", body: "From indigenous breeds that give A2 milk only.", points: ["Gir, Sahiwal & Desi cows", "Breed verified at source"] },
-      { icon: "refresh-bold", title: "Bilona hand-churned", body: "Curd churned to butter, then slow-simmered — not cream-boiled.", points: ["Grainy, granular texture", "Nutty caramel aroma"] },
-      { icon: "leaf-bold", title: "Farm to spoon", body: "Made the day milk is collected. Nothing stored, nothing rushed.", points: ["Grass-fed, no synthetic feed", "Single-source, traceable lot"] },
+      { icon: "test-tube-bold", title: "A2-protein verified", body: "From indigenous breeds that give A2 milk only.", points: ["Gir, Sahiwal & Desi cows", "Breed verified at source"], image: { src: `${GHEE_IMG}/a2-gir-cow-ghee.webp`, alt: "A2 Gir cow Bilona ghee jar" } },
+      { icon: "refresh-bold", title: "Bilona hand-churned", body: "Curd churned to butter, then slow-simmered — not cream-boiled.", points: ["Grainy, granular texture", "Nutty caramel aroma"], image: { src: `${GHEE_IMG}/vedic-bilona-ghee.webp`, alt: "Vedic Bilona hand-churned ghee jar" } },
+      { icon: "leaf-bold", title: "Farm to spoon", body: "Made the day milk is collected. Nothing stored, nothing rushed.", points: ["Grass-fed, no synthetic feed", "Single-source, traceable lot"], image: { src: `${GHEE_IMG}/ghee-jar-bowl.webp`, alt: "A2 Bilona ghee jar with a bowl, ready to serve" } },
     ],
   },
   uses: {
@@ -256,6 +278,7 @@ const GHEE: PdpCategoryContent = {
       { key: "Baking & sweets — ", rest: "swap butter for ghee in halwa, ladoo and shortbread." },
       { key: "A teaspoon in warm milk — ", rest: "a traditional bedtime ritual in many Indian homes." },
     ],
+    image: { src: `${GHEE_IMG}/ghee-lifestyle.webp`, alt: "Golden A2 Bilona ghee poured in an Indian kitchen" },
   },
   faq: [
     { q: "What is A2 ghee and why does it matter?", a: "A2 ghee comes from indigenous cow breeds (like Gir and Sahiwal) whose milk carries only the A2 beta-casein protein, which many people find gentler to digest than ordinary A1 milk." },
@@ -288,14 +311,15 @@ const HONEY: PdpCategoryContent = {
       "Our honey is gathered by traditional beekeepers from a single forest harvest — never smoked out, never the queen sacrificed. It's strained, never heated or ultra-filtered, so the enzymes, pollen and aroma the bees built stay exactly where they belong: in the jar.",
       "Because it's truly raw, it naturally crystallises in cooler months. That's not a flaw — it's the surest sign no one boiled the life out of it.",
     ],
+    image: { src: `${HONEY_IMG}/honey-jar-dipper.webp`, alt: "Raw honey jar with a wooden dipper and honeycomb" },
   },
   way: {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with honey",
     cards: [
-      { icon: "fire-bold", title: "Raw & unheated", body: "Never pasteurised — enzymes and pollen left intact.", points: ["Strained, not ultra-filtered", "Living, active honey"] },
-      { icon: "leaf-bold", title: "Single-forest source", body: "Traced to one forest harvest, not bulk-blended.", points: ["Multifloral, acacia & forest", "Distinct seasonal character"] },
-      { icon: "test-tube-bold", title: "Purity lab-tested", body: "Screened for added sugar and syrup adulteration.", points: ["Zero added sugar or jaggery", "C3/C4 purity verified"] },
+      { icon: "fire-bold", title: "Raw & unheated", body: "Never pasteurised — enzymes and pollen left intact.", points: ["Strained, not ultra-filtered", "Living, active honey"], image: { src: `${HONEY_IMG}/honey-hero.webp`, alt: "Raw unheated honey jar" } },
+      { icon: "leaf-bold", title: "Single-forest source", body: "Traced to one forest harvest, not bulk-blended.", points: ["Multifloral, acacia & forest", "Distinct seasonal character"], image: { src: `${HONEY_IMG}/wild-forest-honey.webp`, alt: "Wild forest single-origin raw honey jar" } },
+      { icon: "test-tube-bold", title: "Purity lab-tested", body: "Screened for added sugar and syrup adulteration.", points: ["Zero added sugar or jaggery", "C3/C4 purity verified"], image: { src: `${HONEY_IMG}/kashmiri-acacia-honey.webp`, alt: "Lab-tested pure Kashmiri acacia honey jar" } },
     ],
   },
   uses: {
@@ -307,6 +331,7 @@ const HONEY: PdpCategoryContent = {
       { key: "A natural sweetener — ", rest: "swap into dressings and marinades off the heat." },
       { key: "Soothe a sore throat — ", rest: "a classic teaspoon, neat, when the weather turns." },
     ],
+    image: { src: `${HONEY_IMG}/multifloral-raw-honey.webp`, alt: "Multifloral raw honey jar for everyday use" },
   },
   faq: [
     { q: "Why has my honey crystallised?", a: "Crystallisation is natural and a hallmark of raw, unprocessed honey. Stand the jar in warm water to liquefy it gently — never microwave, as that destroys the enzymes." },
