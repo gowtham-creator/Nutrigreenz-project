@@ -54,6 +54,7 @@ export default function AboutPage() {
     <PageShell>
       <PageHero
         tint="story"
+        image="/images/about/about-hero.webp"
         eyebrow="Our story"
         title={
           <>

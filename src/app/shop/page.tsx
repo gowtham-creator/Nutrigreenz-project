@@ -26,6 +26,7 @@ export default async function ShopPage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/shop/shop-hero.webp"
         eyebrow={`The full harvest · ${products.length} SKUs across ${categories.length} categories`}
         title={
           <>
