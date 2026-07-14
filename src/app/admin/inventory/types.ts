@@ -48,6 +48,7 @@ export interface Variant {
   reserved: number;
   isActive: boolean;
   sort: number;
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

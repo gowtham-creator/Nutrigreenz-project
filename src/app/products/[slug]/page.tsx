@@ -142,6 +142,7 @@ function toBuyVariant(v: ProductVariantOption): PdpVariant {
     price: v.price,
     perUnit,
     inStock: v.inStock,
+    imageUrl: v.imageUrl,
   };
 }
 

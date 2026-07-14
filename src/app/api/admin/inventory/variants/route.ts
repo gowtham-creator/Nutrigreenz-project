@@ -52,6 +52,7 @@ export async function POST(request: Request): Promise<Response> {
       stock: Math.max(0, Math.round(Number(body.stock) || 0)),
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),
       sort: Math.round(Number(body.sort) || 0),
+      imageUrl: body.imageUrl != null && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null,
     });
     return Response.json({ ok: true, variant });
   } catch (err) {

@@ -33,6 +33,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (body.sku !== undefined) patch.sku = body.sku != null ? String(body.sku) : null;
   if (body.isActive !== undefined) patch.isActive = Boolean(body.isActive);
   if (body.sort !== undefined) patch.sort = Math.round(Number(body.sort) || 0);
+  if (body.imageUrl !== undefined)
+    patch.imageUrl = body.imageUrl != null && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null;
 
   try {
     const variant = await updateVariant(id, patch);
