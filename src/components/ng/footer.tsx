@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Logo } from "./logo";
 import { Button } from "./button";
 import { FooterScene } from "./footer-scene";
 import { Icon } from "@/components/ui/icon";
@@ -80,29 +79,32 @@ export function Footer() {
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 md:px-8">
-        {/* Top: newsletter */}
-        <div className="grid lg:grid-cols-[1fr_1fr] gap-12 mb-20 pb-16 border-b border-ng-cream/15">
-          <div className="space-y-4">
-            <Logo variant="wordmark" tone="white" className="h-8" />
-            <p className="font-display text-[clamp(28px,3.4vw,42px)] leading-[1.1] text-ng-cream max-w-md">
-              No middlemen. No mystery. Real food from real farmers.
+        {/* Top: Harvest Letter — one calm, centered newsletter band */}
+        <div className="mb-16 border-b border-ng-cream/15 pb-14 md:pb-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="ng-eyebrow text-ng-clay">Harvest Letter</span>
+            <h2 className="mt-4 font-display text-[clamp(28px,4vw,44px)] leading-[1.08] text-ng-cream">
+              Born in soil. Built for tomorrow.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-ng-cream/70">
+              No middlemen, no mystery — just harvest news, seasonal recipes from our
+              partner kitchens, and the occasional member-only offer.
             </p>
-            <p className="text-[15px] text-ng-cream/70 max-w-md">
-              Born in soil. Built for tomorrow. Get harvest news, recipes from our partner kitchens, and member-only offers.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 justify-end">
-            <form className="flex gap-3 items-stretch">
+
+            <form className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 aria-label="Email address"
                 placeholder="your@email.com"
-                className="h-12 flex-1 rounded-xl border border-ng-cream/35 bg-ng-cream/10 px-4 text-[15px] text-ng-cream outline-none transition-colors placeholder:text-ng-cream/60 focus:border-ng-clay focus:bg-ng-cream/15"
+                className="h-14 w-full flex-1 rounded-full border border-ng-cream/30 bg-ng-cream/10 px-6 text-[15px] text-ng-cream outline-none transition-colors placeholder:text-ng-cream/55 focus:border-ng-clay focus:bg-ng-cream/15 focus:ring-2 focus:ring-ng-clay/30"
               />
-              <Button variant="gold" size="md" className="shrink-0">Subscribe</Button>
+              <Button variant="gold" size="lg" className="w-full shrink-0 sm:w-auto">
+                Subscribe
+              </Button>
             </form>
-            <p className="text-[12px] text-ng-cream/50">
-              We send one letter a month. No spam. Unsubscribe anytime.
+
+            <p className="mt-4 text-[12px] text-ng-cream/60">
+              One letter a month. No spam. Unsubscribe anytime.
             </p>
           </div>
         </div>

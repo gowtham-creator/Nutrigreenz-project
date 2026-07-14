@@ -10,7 +10,6 @@ import { ProductInFocus, type FocusSubTab } from "@/components/ng/sections/produ
 import { Farms } from "@/components/ng/sections/farms";
 import { Testimonials } from "@/components/ng/sections/testimonials";
 import { Journal } from "@/components/ng/sections/journal";
-import { CommunityCTA } from "@/components/ng/sections/community-cta";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getHeroPromotion } from "@/lib/promotions";
 import type { ProductCard } from "@/types/nutrigreenz";
@@ -165,7 +164,6 @@ export default async function Home() {
       )}
 
       <Journal />
-      <CommunityCTA />
       <Footer />
     </main>
   );
