@@ -5,10 +5,15 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { ProductCard } from "@/components/ng/product-card";
-import { FARMS, PRODUCTS } from "@/components/ng/data";
+import { Reveal } from "@/components/ng/motion";
+import { PRODUCTS } from "@/components/ng/data";
+import { getFarm, listFarms } from "@/lib/content";
 
+export const revalidate = 60;
+
+// Fallback gallery used when a farm has no uploaded gallery images (keeps the
+// two-up grid looking exactly as it did before the switch to DB content).
 const FARM_GALLERY = [
-  "/images/placeholder.svg",
   "/images/placeholder.svg",
   "/images/placeholder.svg",
   "/images/placeholder.svg",
@@ -16,8 +21,10 @@ const FARM_GALLERY = [
 
 export default async function FarmDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const farm = FARMS.find((f) => f.id === id) ?? FARMS[0];
+  const farm = await getFarm(id);
   if (!farm) notFound();
+
+  const galleryImages = farm.gallery.length > 0 ? farm.gallery : FARM_GALLERY;
 
   return (
     <PageShell>
@@ -29,17 +36,19 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
 
       {/* Hero */}
       <section className="relative">
-        <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
-          <Image src={farm.image ?? FARM_GALLERY[0]!} alt={farm.name} fill className="object-cover" sizes="100vw" priority />
+        <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden bg-ng-forest-deep">
+          <Image src={farm.image ?? "/images/placeholder.svg"} alt={farm.name} fill className="object-cover" sizes="100vw" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep/85 via-ng-forest-deep/30 to-transparent" />
           <div className="absolute inset-0 flex items-end">
             <div className="mx-auto max-w-7xl w-full px-5 md:px-8 pb-10 md:pb-16 text-ng-cream">
-              <span className="ng-eyebrow text-ng-clay">Partner since {new Date(farm.partneredSince ?? "").getFullYear()}</span>
+              <span className="ng-eyebrow text-ng-clay">
+                Partner since {farm.partneredSince ? new Date(farm.partneredSince).getFullYear() : "—"}
+              </span>
               <h1 className="font-display text-[clamp(40px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl">
                 {farm.name}
               </h1>
               <p className="text-[17px] text-ng-cream/80 mt-3">
-                {farm.region}{farm.hectares ? ` · ${farm.hectares} ha` : ""} · run by {farm.farmerName}
+                {farm.region}{farm.hectares ? ` · ${farm.hectares} ha` : ""}{farm.farmerName ? ` · run by ${farm.farmerName}` : ""}
               </p>
             </div>
           </div>
@@ -62,10 +71,12 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
 
             {/* Gallery */}
             <div className="grid grid-cols-2 gap-3">
-              {FARM_GALLERY.slice(1).map((src, i) => (
-                <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-                  <Image src={src} alt="" fill className="object-cover" sizes="(max-width: 1024px) 50vw, 25vw" />
-                </div>
+              {galleryImages.slice(0, 3).map((src, i) => (
+                <Reveal key={i} delay={i * 0.08}>
+                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+                    <Image src={src} alt="" fill className="object-cover" sizes="(max-width: 1024px) 50vw, 25vw" />
+                  </div>
+                </Reveal>
               ))}
             </div>
 
@@ -88,13 +99,13 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
                 <Row label="Region" value={farm.region} />
                 <Row label="Hectares" value={farm.hectares ? `${farm.hectares} ha` : "—"} />
                 <Row label="Farmer" value={farm.farmerName ?? "—"} />
-                <Row label="Partnered since" value={new Date(farm.partneredSince ?? "").toLocaleDateString("en-IN", { month: "short", year: "numeric" })} />
+                <Row label="Partnered since" value={farm.partneredSince ? new Date(farm.partneredSince).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "—"} />
               </dl>
             </div>
 
             <div className="rounded-3xl bg-ng-forest-deep text-ng-cream p-7">
               <div className="text-[11px] uppercase tracking-wider text-ng-clay">Direct support</div>
-              <h3 className="font-display text-[22px] mt-2 leading-tight">Contribute to {farm.farmerName}'s drip-irrigation upgrade</h3>
+              <h3 className="font-display text-[22px] mt-2 leading-tight">Contribute to {farm.farmerName ?? "this farm"}'s drip-irrigation upgrade</h3>
               <p className="text-[13px] text-ng-cream/70 mt-3">
                 We co-fund infrastructure with our member community. Every ₹50 from your order is matched.
               </p>
@@ -111,8 +122,10 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
         heading={<>Sourced from <em className="italic text-ng-leaf">{farm.name}.</em></>}
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {PRODUCTS.slice(0, 4).map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {PRODUCTS.slice(0, 4).map((p, i) => (
+            <Reveal key={p.id} className="h-full" delay={(i % 4) * 0.06}>
+              <ProductCard product={p} />
+            </Reveal>
           ))}
         </div>
       </Section>
@@ -129,6 +142,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function generateStaticParams() {
-  return FARMS.map((f) => ({ id: f.id }));
+export async function generateStaticParams() {
+  const farms = await listFarms();
+  return farms.map((f) => ({ id: f.id }));
 }

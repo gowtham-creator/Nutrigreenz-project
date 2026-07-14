@@ -17,6 +17,9 @@ const NAV: NavItem[] = [
   // admin (products, pricing, stock, variants). The old mock catalog route now
   // redirects here, so there is no separate "Inventory" nav item.
   { href: "/admin/inventory", label: "Catalog", icon: "bag-4-bold" },
+  // Editorial content surfaces — the storefront Journal + Farms directories.
+  { href: "/admin/journal", label: "Journal", icon: "notebook-bold" },
+  { href: "/admin/farms", label: "Farms", icon: "leaf-bold" },
   { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold" },
   { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", superadminOnly: true },
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
