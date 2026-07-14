@@ -53,7 +53,8 @@ export default function AboutPage() {
   return (
     <PageShell>
       <PageHero
-        tint="story"
+        tone="forest"
+        serifTitle
         image="/images/about/about-hero.webp"
         eyebrow="Our story"
         title={
@@ -64,10 +65,10 @@ export default function AboutPage() {
         description="Nutri Greenz began with one farm, one press and one stubborn belief — that good food should be honest about where it comes from. Today we bring fully traceable produce from 42 partner farms to kitchens across Hyderabad."
       >
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild variant="primary" size="lg">
+          <Button asChild variant="primary" size="lg" className="!bg-ng-cream !text-ng-forest-deep hover:!bg-white">
             <Link href="/shop">Shop the pantry</Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="outline" size="lg" className="!border-ng-cream/60 !text-ng-cream hover:!bg-ng-cream/10">
             <Link href="/farms">Meet the farms</Link>
           </Button>
         </div>
