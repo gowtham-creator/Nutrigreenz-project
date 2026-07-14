@@ -9,6 +9,7 @@ import {
   type AdminRole,
   type AdminStatus,
 } from "@/lib/admins";
+import { sanitizePermissions } from "@/lib/admin-permissions";
 import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
@@ -57,7 +58,13 @@ export async function PATCH(
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const patch: { name?: string; phone?: string; role?: AdminRole; status?: AdminStatus } = {};
+  const patch: {
+    name?: string;
+    phone?: string;
+    role?: AdminRole;
+    status?: AdminStatus;
+    permissions?: string[];
+  } = {};
 
   if (body.name !== undefined) {
     const name = String(body.name).trim();
@@ -82,6 +89,11 @@ export async function PATCH(
       return Response.json({ ok: false, error: "invalid" }, { status: 400 });
     }
     patch.status = status as AdminStatus;
+  }
+  // Granted portal sections — sanitised against the catalogue. Irrelevant for a
+  // superadmin (they always hold every permission), but harmless to store.
+  if (body.permissions !== undefined) {
+    patch.permissions = sanitizePermissions(body.permissions);
   }
 
   const admin = await updateAdmin(id, patch);

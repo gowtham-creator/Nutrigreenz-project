@@ -29,6 +29,10 @@ export interface AdminRecord {
   mustChangePassword: boolean;
   createdAt: string;
   lastLoginAt: string | null;
+  /** Granted portal section keys, or null/empty ⇒ "use the default admin set"
+   *  (see admin-permissions.ts). Raw stored value — never resolved here; it is
+   *  irrelevant for superadmins, who always hold every permission. */
+  permissions: string[] | null;
   /** Per-admin sign-in factors (from admin_security); present after listAdmins. */
   factors?: AdminFactorFlags;
 }
@@ -44,10 +48,11 @@ interface AdminRow {
   must_change_password: boolean;
   created_at: string;
   last_login_at: string | null;
+  permissions: string[] | null;
 }
 
 const COLS =
-  "id, email, name, phone, photo_url, role, status, must_change_password, created_at, last_login_at";
+  "id, email, name, phone, photo_url, role, status, must_change_password, created_at, last_login_at, permissions";
 
 const norm = (email: string) => email.trim().toLowerCase();
 
@@ -63,6 +68,7 @@ function toRecord(r: AdminRow): AdminRecord {
     mustChangePassword: r.must_change_password,
     createdAt: r.created_at,
     lastLoginAt: r.last_login_at,
+    permissions: r.permissions ?? null,
   };
 }
 
@@ -268,6 +274,9 @@ export interface NewAdminInput {
   phone: string;
   password: string;
   role?: AdminRole;
+  /** Granted section keys (already sanitised by the caller). Omit/null ⇒ the
+   *  default admin set applies at resolve time (see admin-permissions.ts). */
+  permissions?: string[] | null;
 }
 
 /** Create an admin (defaults to role `admin`, must change password on first login). */
@@ -280,6 +289,7 @@ export async function createAdmin(input: NewAdminInput): Promise<AdminRecord> {
       name: input.name.trim() || null,
       phone: input.phone.trim() || null,
       role: input.role ?? "admin",
+      permissions: input.permissions ?? null,
       passcode_hash,
       status: "active",
       must_change_password: true,
@@ -347,15 +357,19 @@ export interface AdminUpdateInput {
   phone?: string;
   role?: AdminRole;
   status?: AdminStatus;
+  /** Granted section keys (already sanitised by the caller), or null to clear
+   *  back to the default admin set. Ignored for superadmins at resolve time. */
+  permissions?: string[] | null;
 }
 
 /** Apply an editable subset of fields to an admin and return the fresh record. */
 export async function updateAdmin(id: string, input: AdminUpdateInput): Promise<AdminRecord | null> {
-  const patch: Record<string, string | null> = {};
+  const patch: Record<string, string | string[] | null> = {};
   if (input.name !== undefined) patch.name = input.name.trim() || null;
   if (input.phone !== undefined) patch.phone = input.phone.trim() || null;
   if (input.role !== undefined) patch.role = input.role;
   if (input.status !== undefined) patch.status = input.status;
+  if (input.permissions !== undefined) patch.permissions = input.permissions;
   if (Object.keys(patch).length === 0) return getAdminById(id);
 
   const { data, error } = await supabaseAdmin()
