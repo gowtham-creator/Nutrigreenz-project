@@ -23,6 +23,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { CustomerProvider } from "@/lib/customer-identity";
+import type { AutoDetectedLocation } from "@/types/nutrigreenz";
 
 /** A single linked live sign-in row (`public.users`) under a canonical customer. */
 export interface LinkedUser {
@@ -88,6 +89,12 @@ export interface AdminCustomerDetail {
   identities: CustomerIdentitySummary[];
   addresses: CustomerAddressSummary[];
   linkedUsers: LinkedUser[];
+  /**
+   * Best-effort GPS location captured by the storefront "Deliver to" auto-detect
+   * for this customer while they had no saved address. `null` when never
+   * captured (or once cleared). Read-only admin surface.
+   */
+  autoDetectedLocation: AutoDetectedLocation | null;
 }
 
 /** A page of deduped customers plus the total count of LIVE canonical rows. */
@@ -175,6 +182,23 @@ function maxIso(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
   return a > b ? a : b;
+}
+
+/** Validate the stored `auto_detected_location` JSONB into our typed shape. */
+function parseAutoDetectedLocation(raw: unknown): AutoDetectedLocation | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const area = typeof r.area === "string" ? r.area : "";
+  const pincode = typeof r.pincode === "string" ? r.pincode : "";
+  if (!area && !pincode) return null;
+  return {
+    area,
+    pincode,
+    city: typeof r.city === "string" ? r.city : undefined,
+    lat: typeof r.lat === "number" ? r.lat : undefined,
+    lng: typeof r.lng === "number" ? r.lng : undefined,
+    detectedAt: typeof r.detectedAt === "string" ? r.detectedAt : "",
+  };
 }
 
 export interface ListCustomersInput {
@@ -328,13 +352,13 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
 
   const { data: customerData, error } = await db
     .from("customers")
-    .select(CUSTOMER_COLS)
+    .select(`${CUSTOMER_COLS}, auto_detected_location`)
     .eq("id", id)
     .is("merged_into", null)
     .maybeSingle();
 
   if (error || !customerData) return null;
-  const c = customerData as CustomerRow;
+  const c = customerData as CustomerRow & { auto_detected_location: unknown };
 
   const [identitiesRes, addressesRes, usersRes] = await Promise.all([
     db
@@ -413,5 +437,11 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
     createdAt: r.created_at,
   }));
 
-  return { customer, identities, addresses, linkedUsers };
+  return {
+    customer,
+    identities,
+    addresses,
+    linkedUsers,
+    autoDetectedLocation: parseAutoDetectedLocation(c.auto_detected_location),
+  };
 }

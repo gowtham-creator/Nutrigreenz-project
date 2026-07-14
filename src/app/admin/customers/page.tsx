@@ -74,12 +74,22 @@ interface CustomerPage {
   customersTotal: number;
 }
 
+interface AutoLocationRow {
+  area: string;
+  pincode: string;
+  city?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  detectedAt?: string | null;
+}
+
 interface CustomerDetail {
   ok: boolean;
   customer: CustomerRow;
   identities: IdentityRow[];
   addresses: AddressRow[];
   linkedUsers: LinkedUserRow[];
+  autoDetectedLocation: AutoLocationRow | null;
 }
 
 const PROVIDER_LABEL: Record<Provider, string> = {
@@ -577,6 +587,42 @@ function CustomerDrawer({
                   </ul>
                 ) : (
                   <EmptyLine>No saved addresses.</EmptyLine>
+                )}
+              </Section>
+
+              <Section icon="gps-bold" title="Auto-detected location">
+                {detail?.autoDetectedLocation ? (
+                  <div className="rounded-xl border border-ng-line-soft bg-ng-paper p-3">
+                    <div className="flex items-center gap-2">
+                      <Icon name="map-point-bold" size={15} className="text-ng-forest" />
+                      <span className="text-[13px] font-semibold text-ng-ink">
+                        {[
+                          detail.autoDetectedLocation.area,
+                          detail.autoDetectedLocation.pincode,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "—"}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] font-medium text-ng-ink-muted">
+                      {detail.autoDetectedLocation.city ? (
+                        <span>{detail.autoDetectedLocation.city}</span>
+                      ) : null}
+                      {typeof detail.autoDetectedLocation.lat === "number" &&
+                      typeof detail.autoDetectedLocation.lng === "number" ? (
+                        <span>
+                          {detail.autoDetectedLocation.lat.toFixed(5)},{" "}
+                          {detail.autoDetectedLocation.lng.toFixed(5)}
+                        </span>
+                      ) : null}
+                      <span>Detected {fmtDate(detail.autoDetectedLocation.detectedAt ?? null)}</span>
+                    </div>
+                    <p className="mt-2 text-[11px] text-ng-ink-soft">
+                      Captured by the storefront locator while this customer had no saved address.
+                    </p>
+                  </div>
+                ) : (
+                  <EmptyLine>No auto-detected location captured.</EmptyLine>
                 )}
               </Section>
 

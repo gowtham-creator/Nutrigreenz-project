@@ -268,6 +268,21 @@ export interface LocationZone {
   lng?: number;
 }
 
+/**
+ * Best-effort delivery hint captured from the storefront "Deliver to" GPS
+ * auto-detect and persisted on a signed-in customer who has not yet saved an
+ * address. Superseded once the customer saves a real delivery address.
+ */
+export interface AutoDetectedLocation {
+  area: string;
+  pincode: string;
+  city?: string;
+  lat?: number;
+  lng?: number;
+  /** ISO timestamp of when geolocation captured this hint. */
+  detectedAt: string;
+}
+
 /** A walk-in / phone customer captured by store staff (offline order source). */
 export interface OfflineCustomer {
   id: string;
