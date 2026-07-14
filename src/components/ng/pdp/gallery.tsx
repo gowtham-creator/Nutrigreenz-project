@@ -113,7 +113,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             {isPlaceholderSrc(img.src) ? (
               <PhotoPlaceholder icon={produceIcon} variant="thumb" />
             ) : (
-              <Image src={img.src} alt={img.alt} fill className="scale-[1.08] object-contain p-1" sizes="80px" />
+              <Image src={img.src} alt={img.alt} fill className="object-contain p-1.5" sizes="80px" />
             )}
           </button>
         ))}
@@ -165,8 +165,12 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
                     draggable={false}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className={cn(
-                      "object-contain p-3",
-                      reduce ? "scale-100" : "scale-[1.12] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.17]",
+                      // Fit fully INSIDE the frame — never scale past 100% at rest
+                      // (that overflowed the stage and looked oversized/cropped).
+                      "object-contain p-4",
+                      reduce
+                        ? ""
+                        : "transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]",
                     )}
                   />
                 )}
