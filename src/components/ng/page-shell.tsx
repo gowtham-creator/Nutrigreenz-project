@@ -42,6 +42,7 @@ export function PageHero({
   tone = "cream",
   tint,
   wash,
+  image,
   children,
 }: {
   eyebrow?: string;
@@ -52,6 +53,9 @@ export function PageHero({
   tint?: HeroTint;
   /** Arbitrary per-category hero wash (CSS `background`); wins over `tint`. */
   wash?: string;
+  /** Optional background photo — sits behind a left→right cream scrim so the
+   *  left-aligned dark text stays fully legible over the image. Wins over wash. */
+  image?: string;
   children?: ReactNode;
 }) {
   const toneClass =
@@ -64,10 +68,35 @@ export function PageHero({
   const eyebrowColor = tone === "forest" ? "text-ng-clay" : "text-ng-forest";
   const descColor = tone === "forest" ? "text-ng-cream/70" : "text-ng-ink-muted";
   return (
-    <section className={cn("relative overflow-hidden", toneClass)}>
-      {/* Forest tone gets a green-forward gradient + texture so the dark hero
-          reads with depth and on-brand green contrast (instead of flat green). */}
-      {tone === "forest" ? (
+    <section
+      className={cn(
+        "relative overflow-hidden",
+        toneClass,
+        image && "min-h-[300px] md:min-h-[400px]",
+      )}
+    >
+      {/* A background photo (farms / journal heroes) behind a cream scrim. */}
+      {image ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          {/* Left→right cream scrim so the left-aligned dark text stays legible. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(100deg, rgba(244,241,232,0.97) 0%, rgba(244,241,232,0.9) 30%, rgba(244,241,232,0.58) 52%, rgba(244,241,232,0.16) 78%, rgba(244,241,232,0) 100%)",
+            }}
+          />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-ng-forest/15 to-transparent" />
+        </div>
+      ) : /* Forest tone gets a green-forward gradient + texture so the dark hero
+          reads with depth and on-brand green contrast (instead of flat green). */
+      tone === "forest" ? (
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {/* Layered leaf / bright-green glows for contrast + depth */}
           <div

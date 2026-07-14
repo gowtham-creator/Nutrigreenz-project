@@ -19,6 +19,7 @@ export default async function FarmsPage() {
     <PageShell>
       <PageHero
         tint="field"
+        image="/images/farms/farms-hero.webp"
         eyebrow="42 partner farms · 7 states"
         title={<>The hands that <em className="italic text-ng-leaf">feed your pantry.</em></>}
         description="We don't say 'sourced from select farmers.' We name every one. Each farm is a long-term partnership: minimum 3-year contracts, soil-health programmes, transition financing for organic conversion."

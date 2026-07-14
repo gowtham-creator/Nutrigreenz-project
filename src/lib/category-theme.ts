@@ -73,15 +73,15 @@ const SEEDS: Record<string, Seed> = {
   },
   // Ghee — warm buttery gold.
   ghee: {
-    accent: "#C79A3A", accentDeep: "#8A6420", tintTop: "#FAF3DA",
-    halo: "rgba(199,154,58,0.15)", soft: "rgba(199,154,58,0.09)",
-    placeholderBg: "linear-gradient(135deg,#FCF6DF 0%,#F5ECCB 60%,#EFE3B8 100%)",
+    accent: "#C99A2E", accentDeep: "#8A6420", tintTop: "#F7EEC2",
+    halo: "rgba(201,154,46,0.14)", soft: "rgba(201,154,46,0.09)",
+    placeholderBg: "linear-gradient(135deg,#FBF4D0 0%,#F2E8B8 60%,#E9DEA2 100%)",
   },
   // Honey — deep amber / warm gold.
   honey: {
-    accent: "#DE9327", accentDeep: "#B0741A", tintTop: "#FBF1D3",
-    halo: "rgba(222,147,39,0.16)", soft: "rgba(222,147,39,0.10)",
-    placeholderBg: "linear-gradient(135deg,#FDF4D6 0%,#F8E9BE 60%,#F2DDA6 100%)",
+    accent: "#DD7E1F", accentDeep: "#AE5F16", tintTop: "#FAE1B6",
+    halo: "rgba(221,126,31,0.17)", soft: "rgba(221,126,31,0.11)",
+    placeholderBg: "linear-gradient(135deg,#FCEBC6 0%,#F6DBA2 60%,#F0CB84 100%)",
   },
   // Rice — soft wheat / cream.
   rice: {

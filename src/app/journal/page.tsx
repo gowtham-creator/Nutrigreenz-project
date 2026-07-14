@@ -27,6 +27,7 @@ export default async function JournalIndex() {
     <PageShell>
       <PageHero
         tint="editorial"
+        image="/images/journal/journal-hero.webp"
         eyebrow="The Nutrigreenz Journal"
         title={<>Long-form reporting <em className="italic text-ng-leaf">from the field.</em></>}
         description="Updated every fortnight. Stories from the farms, recipes from our partner kitchens, deep dives on lab science, and the occasional honest mistake."
