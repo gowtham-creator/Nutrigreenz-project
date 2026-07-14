@@ -9,6 +9,7 @@
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../orders/guard";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import {
   listOrdersAdmin,
   type OrderStatus,
@@ -27,6 +28,8 @@ const STATUSES: readonly OrderStatus[] = [
 const PAYMENT_STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed"];
 
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("orders");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

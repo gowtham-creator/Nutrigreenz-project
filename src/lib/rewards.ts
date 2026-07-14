@@ -19,9 +19,11 @@ import { hasVerifiedPhone } from "@/lib/customer-identity";
  * FALLBACK values only. The live programme config is read from the DB row
  * `public.loyalty_config` via {@link getLoyaltyConfig}; these constants are used
  * solely when Supabase is unconfigured or the row is missing (see
- * {@link DEFAULT_LOYALTY_CONFIG}). REDEEM_PAISE_PER_POINT is also the coarse
- * conversion the create-order route uses to turn a client-sent paise amount back
- * into points before the server re-clamps everything against the live config.
+ * {@link DEFAULT_LOYALTY_CONFIG}). REDEEM_PAISE_PER_POINT is the DEFAULT redeem
+ * rate only; the create-order route converts a client-sent paise amount back into
+ * points using the LIVE rate ({@link redeemPaisePerPoint} over the configured
+ * {@link getLoyaltyConfig}), and the server re-clamps the redemption against the
+ * live config regardless.
  */
 
 /** Default redeem rate: 10 points = ₹1, i.e. 1 point = 10 paise. */
@@ -166,7 +168,7 @@ export async function updateLoyaltyConfig(patch: LoyaltyConfigPatch): Promise<Lo
 }
 
 /** Paise redeemed per point, derived from the live redeem rate (₹1 = 100 paise). */
-function redeemPaisePerPoint(config: LoyaltyProgramConfig): number {
+export function redeemPaisePerPoint(config: LoyaltyProgramConfig): number {
   return Math.max(1, Math.round(100 / config.redeemPointsPerRupee));
 }
 

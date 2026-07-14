@@ -12,6 +12,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../../../inventory/guard";
 import { buildProductAnalytics, type AnalyticsBucket, type ProductAnalytics } from "@/lib/analytics";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,8 @@ export async function GET(
   request: Request,
   ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
+  const denied = await requireApiPermission("analytics");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

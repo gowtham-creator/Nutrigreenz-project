@@ -14,6 +14,7 @@ import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import { advanceOrderStatus } from "@/lib/orders";
 import { sendOrderShippedEmail, sendOrderDeliveredEmail } from "@/lib/order-emails";
 
@@ -23,6 +24,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
+  const denied = await requireApiPermission("orders");
+  if (denied) return denied;
   const session = await verifyToken((await cookies()).get(ADMIN_COOKIE)?.value);
   if (!session) {
     return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });

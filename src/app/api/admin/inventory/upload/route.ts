@@ -12,6 +12,7 @@
  */
 import { isSignedInAdmin } from "../guard";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,8 @@ function slugifyName(name: string): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });

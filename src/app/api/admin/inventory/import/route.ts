@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { importProductsCsv, type ProductCsvRow } from "@/lib/catalog";
 import { parseCsv } from "@/lib/csv";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 /** A single previewed row plus any validation note. */
 interface PreviewRow extends ProductCsvRow {
@@ -71,6 +72,8 @@ function buildPreview(text: string): PreviewRow[] {
  *   - `{ csv, commit: true }`   → import the valid rows and return a summary.
  */
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   // CSV import can change prices in bulk → super-admin only (preview included).
   if (!(await isSuperAdmin())) {

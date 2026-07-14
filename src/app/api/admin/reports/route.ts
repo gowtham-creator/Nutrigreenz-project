@@ -14,6 +14,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../inventory/guard";
 import { buildAdminReport, type AdminReport } from "@/lib/reports";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,8 @@ function emptyReport(from: string | null, to: string | null): AdminReport {
 }
 
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("reports");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

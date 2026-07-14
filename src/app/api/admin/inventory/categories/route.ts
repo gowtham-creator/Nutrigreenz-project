@@ -1,9 +1,12 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 /** GET — list all categories. */
 export async function GET(): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: true, categories: [] });
   const categories = await listCategories();
@@ -12,6 +15,8 @@ export async function GET(): Promise<Response> {
 
 /** POST — create a category. Super-admin only. */
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!(await isSuperAdmin())) {
     return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });

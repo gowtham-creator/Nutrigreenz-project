@@ -7,12 +7,15 @@ import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertFarm, deleteFarm } from "@/lib/content";
 import { farmDraftFromBody } from "@/lib/content-input";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+  const denied = await requireApiPermission("farms");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!(await isSuperAdmin())) {
     return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
@@ -42,6 +45,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 }
 
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
+  const denied = await requireApiPermission("farms");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!(await isSuperAdmin())) {
     return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });

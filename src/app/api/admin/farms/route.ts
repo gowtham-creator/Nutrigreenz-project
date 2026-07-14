@@ -7,10 +7,13 @@ import { isSignedInAdmin, isSuperAdmin } from "./guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listFarms, upsertFarm } from "@/lib/content";
 import { farmDraftFromBody } from "@/lib/content-input";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
+  const denied = await requireApiPermission("farms");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: true, farms: [] });
   const farms = await listFarms(false);
@@ -18,6 +21,8 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("farms");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!(await isSuperAdmin())) {
     return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });

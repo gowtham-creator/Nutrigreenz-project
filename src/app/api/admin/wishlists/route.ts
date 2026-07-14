@@ -12,10 +12,13 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../inventory/guard";
 import { aggregateWishlists } from "@/lib/wishlist-store";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("wishlists");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

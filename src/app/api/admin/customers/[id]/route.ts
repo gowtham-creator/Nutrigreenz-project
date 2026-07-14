@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import { getCustomer } from "@/lib/admin-customers";
 
 /**
@@ -24,6 +25,8 @@ export async function GET(
   _request: Request,
   ctx: RouteContext<"/api/admin/customers/[id]">,
 ): Promise<Response> {
+  const denied = await requireApiPermission("customers");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

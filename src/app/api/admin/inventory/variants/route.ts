@@ -1,9 +1,12 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listVariants, createVariant } from "@/lib/catalog";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 
 /** GET — list a product's variants (`?productId=`). */
 export async function GET(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: true, variants: [] });
 
@@ -17,6 +20,8 @@ export async function GET(request: Request): Promise<Response> {
 
 /** POST — create a variant for a product. */
 export async function POST(request: Request): Promise<Response> {
+  const denied = await requireApiPermission("catalog");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
 

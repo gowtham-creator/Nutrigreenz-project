@@ -6,6 +6,7 @@
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../guard";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import { getOrder } from "@/lib/orders";
 
 export const runtime = "nodejs";
@@ -14,6 +15,8 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
+  const denied = await requireApiPermission("orders");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }

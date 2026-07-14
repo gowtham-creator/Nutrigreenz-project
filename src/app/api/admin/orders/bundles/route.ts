@@ -12,11 +12,14 @@
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isSignedInAdmin } from "../guard";
+import { requireApiPermission } from "@/lib/admin-api-guard";
 import { buildOrderBundles } from "@/lib/order-bundles";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
+  const denied = await requireApiPermission("orders");
+  if (denied) return denied;
   if (!(await isSignedInAdmin())) {
     return Response.json({ ok: false }, { status: 401 });
   }
