@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
+import { CartIcon } from "@/components/ng/cart-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
 import type { ProductCard } from "@/types/nutrigreenz";
 import { VariantSelector, type PdpVariant } from "./variant-selector";
@@ -183,43 +184,43 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             Currently sold out — we&apos;re restocking from the farm soon.
           </div>
           <Button disabled size="lg" fullWidth>
-            <Icon name="cart-large-2-bold" size={18} />
+            <CartIcon size={18} tone="white" />
             Out of stock
           </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-stretch gap-3">
-            <div className="flex items-center rounded-full border border-ng-line">
+            <div className="flex items-center gap-1 rounded-full border border-ng-line bg-ng-cream/50 p-1">
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
                 aria-label="Decrease quantity"
                 disabled={qty <= 1}
-                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage disabled:opacity-40"
+                className="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-ng-paper text-ng-forest-deep shadow-[0_1px_3px_rgba(20,51,31,0.12)] ring-1 ring-ng-line/60 transition-colors hover:bg-ng-sage disabled:opacity-40 disabled:shadow-none"
               >
-                <Icon name="minus-square-linear" size={18} />
+                <span className="text-[22px] font-semibold leading-none">−</span>
               </button>
-              <span className="w-8 text-center text-[15px] font-semibold text-ng-forest-deep" aria-live="polite">
+              <span className="w-9 text-center text-[16px] font-bold text-ng-forest-deep tabular-nums" aria-live="polite">
                 {qty}
               </span>
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.min(20, q + 1))}
                 aria-label="Increase quantity"
-                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-ng-forest transition-colors hover:bg-ng-sage"
+                className="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-ng-forest text-ng-cream shadow-[0_2px_6px_rgba(20,51,31,0.28)] transition-colors hover:bg-ng-forest-deep"
               >
-                <Icon name="add-square-linear" size={18} />
+                <span className="text-[22px] font-semibold leading-none">+</span>
               </button>
             </div>
             <Button onClick={add} size="lg" fullWidth className="min-w-0 flex-1 cursor-pointer px-4 sm:px-8">
-              <Icon name="cart-large-2-bold" size={18} />
+              <CartIcon size={18} tone="white" />
               <span className="min-w-0 truncate">Add to cart · ₹{lineTotal.toLocaleString()}</span>
             </Button>
           </div>
           <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
             <Icon name="wallet-money-bold" size={18} />
-            Buy Now
+            <span className="font-display tracking-wide">Buy Now</span>
           </Button>
         </div>
       )}

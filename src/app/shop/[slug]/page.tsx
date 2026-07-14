@@ -26,6 +26,16 @@ const CATEGORY_BLURBS: Record<string, string> = {
   gifting: "Curated hampers of our best-loved jars — ready to give, fully traceable.",
 };
 
+// Categories with a finished, labelled product render use it as the hero
+// background: the labelled bottle/jar sits on the right, the title + copy read
+// over the left→right cream scrim. Categories without a render fall back to the
+// tinted wash so the hero is never a flat, empty field.
+const CATEGORY_HERO: Record<string, string> = {
+  oils: "/images/hero/launch-oils.webp",
+  ghee: "/images/hero/launch-ghee.webp",
+  honey: "/images/hero/launch-honey.webp",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -62,6 +72,7 @@ export default async function ShopCategoryPage({
       <PageHero
         eyebrow={`Category · ${count} ${count === 1 ? "product" : "products"}`}
         wash={theme.heroWash}
+        image={CATEGORY_HERO[slug]}
         title={
           <>
             {words.map((w, i) =>

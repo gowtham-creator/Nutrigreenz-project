@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { CartIcon } from "@/components/ng/cart-icon";
 import { FloatIn, Reveal } from "@/components/ng/motion";
 
 const PICKS: { icon: string; label: string }[] = [
@@ -24,7 +25,7 @@ export function CartEmpty() {
         <div className="relative z-10 flex flex-col items-center">
           <FloatIn>
             <div className="grid h-24 w-24 place-items-center rounded-full bg-ng-sage/50 text-ng-forest ring-8 ring-ng-sage/20">
-              <Icon name="bag-4-bold" size={42} />
+              <CartIcon size={42} tone="dark" />
             </div>
           </FloatIn>
           <h2 className="mt-7 font-display text-[28px] text-ng-forest-deep">
