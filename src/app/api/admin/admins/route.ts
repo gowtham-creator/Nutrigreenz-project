@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/admins";
+import { sanitizePermissions } from "@/lib/admin-permissions";
 import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
@@ -68,6 +69,9 @@ export async function POST(request: Request): Promise<Response> {
     string,
     unknown
   >;
+  // Sanitise the granted sections against the catalogue — never trust the body.
+  // New admins are always role `admin`, so these govern what they can access.
+  const permissions = sanitizePermissions(body.permissions);
 
   if (!name || !EMAIL_RE.test(email) || phoneDigits.length !== 10) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
@@ -90,6 +94,7 @@ export async function POST(request: Request): Promise<Response> {
     phone,
     password,
     role: "admin",
+    permissions,
   });
 
   // Persist the per-admin sign-in factors the super-admin selected. otpEmail /

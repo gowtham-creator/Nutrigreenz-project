@@ -17,6 +17,13 @@ import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ng/admin/admin-shell";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
+import {
+  ADMIN_PERMISSIONS,
+  ALWAYS_GRANTED,
+  DEFAULT_ADMIN_PERMISSIONS,
+  resolvePermissions,
+  type PermissionKey,
+} from "@/lib/admin-permissions";
 
 type RoleKey = "admin" | "superadmin";
 type StatusKey = "active" | "invited" | "disabled";
@@ -35,6 +42,8 @@ type AdminUser = {
   status: StatusKey;
   lastLoginAt: string | null;
   factors: FactorFlags;
+  /** Raw STORED section grants; empty ⇒ nothing stored (default admin set). */
+  permissions: string[];
 };
 
 type AdminRecord = {
@@ -46,6 +55,7 @@ type AdminRecord = {
   status: string;
   lastLoginAt: string | null;
   factors?: FactorFlags;
+  permissions?: string[] | null;
 };
 
 type NewAdminPayload = {
@@ -54,6 +64,7 @@ type NewAdminPayload = {
   phone: string;
   password: string;
   factors: FactorFlags;
+  permissions: PermissionKey[];
 };
 type Credentials = { email: string; password: string };
 
@@ -74,6 +85,7 @@ function recordToUser(a: AdminRecord): AdminUser {
     status: toStatus(a.status),
     lastLoginAt: a.lastLoginAt,
     factors: a.factors ?? { ...NO_FACTORS },
+    permissions: Array.isArray(a.permissions) ? a.permissions : [],
   };
 }
 
@@ -276,7 +288,14 @@ export function AdminsManagement() {
 
   async function handleEdit(
     id: string,
-    patch: { name: string; phone: string; role: RoleKey; status: StatusKey; factors: FactorFlags },
+    patch: {
+      name: string;
+      phone: string;
+      role: RoleKey;
+      status: StatusKey;
+      factors: FactorFlags;
+      permissions: PermissionKey[];
+    },
   ): Promise<boolean> {
     try {
       const res = await fetch(`/api/admin/admins/${id}`, {
@@ -534,15 +553,19 @@ export function AdminsManagement() {
 /* ----------------------------------------------------------------------- */
 /* Shared switch + per-admin sign-in factor selector.                       */
 /* ----------------------------------------------------------------------- */
-/** iOS-style switch with a clearly visible knob (white + shadow + ring). */
+/** iOS-style switch with a clearly visible knob (white + shadow + ring). When
+ *  `disabled` it is locked (used for always-granted rows and superadmin's fixed
+ *  "full access"): it renders on but ignores clicks. */
 function Switch({
   checked,
   onChange,
   label,
+  disabled,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -550,10 +573,12 @@ function Switch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer",
+        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
         checked ? "bg-ng-forest" : "bg-ng-line",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
       )}
     >
       <span
@@ -616,6 +641,87 @@ function SecurityFactors({
 }
 
 /* ----------------------------------------------------------------------- */
+/* Access & permissions — per-admin section grants.                          */
+/* ----------------------------------------------------------------------- */
+/**
+ * The grouped section catalogue as a checkbox (Switch) list, mirroring the
+ * sign-in factors pattern. For a SUPERADMIN every row is shown checked +
+ * disabled with a "Full access" note (they always hold everything). For a plain
+ * ADMIN the rows are editable, except `overview`, which is always granted. The
+ * `value` set holds the currently-granted keys; `overview` is implied on.
+ */
+function PermissionSelector({
+  role,
+  value,
+  onChange,
+}: {
+  role: RoleKey;
+  value: Set<PermissionKey>;
+  onChange: (next: Set<PermissionKey>) => void;
+}) {
+  const isSuper = role === "superadmin";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-semibold text-ng-ink">Access &amp; permissions</span>
+        {isSuper ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
+            <Icon name="crown-bold" size={10} />
+            Full access
+          </span>
+        ) : null}
+      </div>
+      <p className="text-[11px] font-medium leading-snug text-ng-ink-soft">
+        {isSuper
+          ? "Super Admins can open every section — this can’t be narrowed."
+          : "Choose which portal sections this admin can open. Overview is always available."}
+      </p>
+      <div className="divide-y divide-ng-line-soft rounded-xl border border-ng-line bg-ng-paper">
+        {ADMIN_PERMISSIONS.map((p) => {
+          const always = p.key === ALWAYS_GRANTED;
+          // Superadmin ⇒ everything on & locked; overview ⇒ always on & locked.
+          const checked = isSuper || always || value.has(p.key);
+          const locked = isSuper || always;
+          return (
+            <div key={p.key} className="flex items-center gap-3 px-3.5 py-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-ng-line-soft text-ng-forest-deep">
+                <Icon name={p.icon} size={16} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12.5px] font-semibold text-ng-ink">{p.label}</span>
+                  {always ? (
+                    <span className="rounded-full bg-ng-forest/10 text-ng-forest font-bold px-1.5 py-0.5 text-[9px] uppercase tracking-wider">
+                      Always on
+                    </span>
+                  ) : p.superOnly ? (
+                    <span className="rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-1.5 py-0.5 text-[9px] uppercase tracking-wider">
+                      Super only
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-[11px] font-medium leading-snug text-ng-ink-soft">{p.description}</p>
+              </div>
+              <Switch
+                checked={checked}
+                disabled={locked}
+                onChange={(v) => {
+                  const next = new Set(value);
+                  if (v) next.add(p.key);
+                  else next.delete(p.key);
+                  onChange(next);
+                }}
+                label={`Toggle ${p.label} access`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
 /* Add / Invite admin modal (mirrors stock-adjust-dialog a11y pattern).     */
 /* ----------------------------------------------------------------------- */
 function AddInviteAdminModal({
@@ -635,6 +741,8 @@ function AddInviteAdminModal({
   const [password, setPassword] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["email"]);
   const [factors, setFactors] = useState<FactorFlags>({ ...NO_FACTORS });
+  // New admins are role `admin`; seed the granted sections with the default set.
+  const [perms, setPerms] = useState<Set<PermissionKey>>(() => new Set(DEFAULT_ADMIN_PERMISSIONS));
   const [submitting, setSubmitting] = useState(false);
   const [mobileTaken, setMobileTaken] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
@@ -721,7 +829,7 @@ function AddInviteAdminModal({
     }
     setSubmitting(true);
     const ok = await onInvite(
-      { name: name.trim(), email: email.trim(), phone: digits, password, factors },
+      { name: name.trim(), email: email.trim(), phone: digits, password, factors, permissions: [...perms] },
       channels,
     );
     setSubmitting(false);
@@ -831,6 +939,9 @@ function AddInviteAdminModal({
           {/* Sign-in security (per-admin factors) */}
           <SecurityFactors value={factors} onChange={setFactors} />
 
+          {/* Access & permissions (per-admin section grants) */}
+          <PermissionSelector role="admin" value={perms} onChange={setPerms} />
+
           {/* Send credentials via */}
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold text-ng-ink">Send credentials via</span>
@@ -889,7 +1000,14 @@ function EditAdminModal({
   onClose: () => void;
   onSave: (
     id: string,
-    patch: { name: string; phone: string; role: RoleKey; status: StatusKey; factors: FactorFlags },
+    patch: {
+      name: string;
+      phone: string;
+      role: RoleKey;
+      status: StatusKey;
+      factors: FactorFlags;
+      permissions: PermissionKey[];
+    },
   ) => Promise<boolean>;
 }) {
   const headingId = useId();
@@ -902,6 +1020,12 @@ function EditAdminModal({
   const [role, setRole] = useState<RoleKey>(admin.role);
   const [active, setActive] = useState(admin.status !== "disabled");
   const [factors, setFactors] = useState<FactorFlags>({ ...NO_FACTORS, ...admin.factors });
+  // Prefill the granted sections from the stored value — resolving null/empty to
+  // the default admin set so an admin that predates permissions shows the right
+  // baseline. Superadmin rows resolve to every section (shown locked below).
+  const [perms, setPerms] = useState<Set<PermissionKey>>(() =>
+    resolvePermissions(admin.role, admin.permissions.length ? admin.permissions : null),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; mobile?: string }>({});
 
@@ -946,6 +1070,7 @@ function EditAdminModal({
       role,
       status: active ? "active" : "disabled",
       factors,
+      permissions: [...perms],
     });
     setSubmitting(false);
     if (ok) onClose();
@@ -1041,6 +1166,10 @@ function EditAdminModal({
 
           {/* Sign-in security (per-admin factors) */}
           <SecurityFactors value={factors} onChange={setFactors} />
+
+          {/* Access & permissions (per-admin section grants) — tracks the role
+              selection above, so switching to Super Admin shows full access. */}
+          <PermissionSelector role={role} value={perms} onChange={setPerms} />
 
           {/* Status */}
           <div className="flex items-center justify-between rounded-xl border border-ng-line bg-ng-paper px-4 py-3">

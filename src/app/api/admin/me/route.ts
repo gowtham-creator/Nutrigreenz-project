@@ -9,6 +9,7 @@
  */
 import { currentAdminSession } from "./guard";
 import { getAdminByEmail, updateAdminProfile } from "@/lib/admins";
+import { permissionList } from "@/lib/admin-permissions";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
 import type { AdminRole } from "@/lib/admin-session";
@@ -55,6 +56,9 @@ export async function GET(): Promise<Response> {
   return Response.json({
     ok: true,
     profile: buildProfile(session.email, session.role, record),
+    // Effective section grants (superadmin ⇒ all). Drives the client nav filter;
+    // the server-side page guard resolves the same set independently.
+    permissions: permissionList(session.role, record?.permissions ?? null),
   });
 }
 

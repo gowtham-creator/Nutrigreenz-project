@@ -8,33 +8,37 @@ import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
+import { DEFAULT_ADMIN_PERMISSIONS, type PermissionKey } from "@/lib/admin-permissions";
 
-type NavItem = { href: string; label: string; icon: string; superadminOnly?: boolean };
+// Each nav item carries its permission `key` (see admin-permissions.ts). The nav
+// is filtered by the signed-in admin's EFFECTIVE grants; `superadminOnly` is an
+// ADDITIONAL gate kept intact (the Edge proxy still enforces those routes).
+type NavItem = { href: string; label: string; icon: string; key: PermissionKey; superadminOnly?: boolean };
 
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: "widget-5-bold" },
+  { href: "/admin", label: "Overview", icon: "widget-5-bold", key: "overview" },
   // Catalog is the single product surface — it maps onto the real inventory
   // admin (products, pricing, stock, variants). The old mock catalog route now
   // redirects here, so there is no separate "Inventory" nav item.
-  { href: "/admin/inventory", label: "Catalog", icon: "bag-4-bold" },
+  { href: "/admin/inventory", label: "Catalog", icon: "bag-4-bold", key: "catalog" },
   // Editorial content surfaces — the storefront Journal + Farms directories.
-  { href: "/admin/journal", label: "Journal", icon: "notebook-bold" },
-  { href: "/admin/farms", label: "Farms", icon: "leaf-bold" },
-  { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold" },
-  { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", superadminOnly: true },
+  { href: "/admin/journal", label: "Journal", icon: "notebook-bold", key: "journal" },
+  { href: "/admin/farms", label: "Farms", icon: "leaf-bold", key: "farms" },
+  { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold", key: "orders" },
+  { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", key: "marketing", superadminOnly: true },
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
-  { href: "/admin/reports", label: "Reports", icon: "chart-2-bold" },
+  { href: "/admin/reports", label: "Reports", icon: "chart-2-bold", key: "reports" },
   // Product & customer analytics (demand signals + sign-in mix) — both roles.
-  { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold" },
+  { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold", key: "analytics" },
   // DEDUPED canonical customer directory (one row per real person).
-  { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold" },
-  { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", superadminOnly: true },
+  { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold", key: "customers" },
+  { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", key: "people", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
-  { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold" },
+  { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold", key: "wishlists" },
   // Audit log — the completed-action trail for the whole team. Both roles.
-  { href: "/admin/audit", label: "Audit log", icon: "history-2-bold" },
+  { href: "/admin/audit", label: "Audit log", icon: "history-2-bold", key: "audit" },
   // Super Admin control center — gated below; only superadmins see this item.
-  { href: "/admin/config", label: "Config", icon: "settings-bold", superadminOnly: true },
+  { href: "/admin/config", label: "Config", icon: "settings-bold", key: "config", superadminOnly: true },
 ];
 
 /** Human-friendly label for an admin role, shown under the identity chip. */
@@ -279,13 +283,40 @@ export function AdminShell({
   // Role gates the nav: the Config (Super Admin) item is shown only to
   // superadmins; the edge proxy enforces the actual route protection.
   const [role, setRole] = useState<AdminRole | null>(null);
+  // The signed-in admin's EFFECTIVE section grants (from /api/admin/me). Null
+  // until it loads — we fall back to the default admin set so the nav paints
+  // immediately without flashing (superadmins short-circuit to every item).
+  const [perms, setPerms] = useState<Set<string> | null>(null);
   // Mobile-only: the sidebar collapses below `lg` and opens as an overlay drawer.
   const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {
     setRole(getAdminRole());
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/me");
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        if (alive && Array.isArray(data.permissions)) {
+          setPerms(new Set<string>(data.permissions));
+        }
+      } catch {
+        /* ignore — the nav falls back to the default admin set */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
   const isSuper = role === "superadmin";
-  const navItems = NAV.filter((n) => !n.superadminOnly || isSuper);
+  // Filter the nav by BOTH the effective grants AND the intact `superadminOnly`
+  // gate. Superadmins always see every item. Denied sections are also blocked
+  // server-side by each section's `requirePermission` guard — this is UX, not
+  // the security boundary.
+  const effectivePerms = perms ?? new Set<string>(DEFAULT_ADMIN_PERMISSIONS);
+  const navItems = NAV.filter(
+    (n) => (!n.superadminOnly || isSuper) && (isSuper || effectivePerms.has(n.key)),
+  );
 
   return (
     <div className="min-h-screen bg-ng-cream text-ng-ink flex">
