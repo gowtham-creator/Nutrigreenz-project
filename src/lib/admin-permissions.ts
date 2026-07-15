@@ -29,6 +29,7 @@ export const ADMIN_PERMISSION_KEYS = [
   "reports",
   "analytics",
   "customers",
+  "captains",
   "people",
   "wishlists",
   "journal",
@@ -102,6 +103,12 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
     label: "Customers",
     description: "The deduped customer directory.",
     icon: "user-rounded-bold",
+  },
+  {
+    key: "captains",
+    label: "Captains",
+    description: "Field-sales captains — the roster, their stall sales, settlements and pickups.",
+    icon: "map-point-bold",
   },
   {
     key: "people",

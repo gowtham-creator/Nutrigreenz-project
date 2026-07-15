@@ -11,15 +11,25 @@ import {
   CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
-import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
+import {
+  useCaptain,
+  formatCaptainDate,
+  submitSettlement,
+  type CaptainSettlementView,
+} from "@/components/ng/captain/captain-store";
 
 export default function CaptainSettle() {
   const { stats, todayCustomers, captain } = useCaptain();
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  // The server-computed settlement (variance + commission), in rupees.
+  const [result, setResult] = useState<CaptainSettlementView | null>(null);
 
-  // Captain confirms the physical cash they actually hold. Pre-filled to the
-  // expected figure; any edit surfaces a variance the captain must own.
-  const [cashCounted, setCashCounted] = useState<number>(stats.cash);
+  // Captain confirms the physical cash they actually hold. Until they edit it,
+  // the field tracks the expected figure (which settles as the day's stats
+  // hydrate); any edit surfaces a variance the captain must own.
+  const [countedInput, setCountedInput] = useState<number | null>(null);
+  const cashCounted = countedInput ?? stats.cash;
   const cashVariance = cashCounted - stats.cash;
   const expectedTotal = stats.gmv;
   const reconciledTotal = cashCounted + stats.upi;
@@ -30,11 +40,25 @@ export default function CaptainSettle() {
   const cashShare = stats.gmv > 0 ? Math.round((stats.cash / stats.gmv) * 100) : 0;
   const upiShare = stats.gmv > 0 ? 100 - cashShare : 0;
 
-  function submit() {
-    setSubmitted(true);
-    toast.success("Settlement submitted to HQ", {
-      description: `₹${reconciledTotal.toLocaleString("en-IN")} across ${stats.count} customers · ${captain.area}`,
-    });
+  async function submit() {
+    if (stats.count === 0 || submitting || submitted) return;
+    setSubmitting(true);
+    try {
+      // The server recomputes expected GMV/cash/UPI, variance and commission
+      // from today's captures — the client can't game them.
+      const settlement = await submitSettlement(cashCounted);
+      setResult(settlement);
+      setSubmitted(true);
+      toast.success("Settlement submitted to HQ", {
+        description: `₹${(settlement.cashCounted + settlement.upiExpected).toLocaleString("en-IN")} across ${stats.count} customers · ${captain?.area ?? "your area"}`,
+      });
+    } catch {
+      toast.error("Couldn't submit settlement", {
+        description: "Check your connection and try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const today = formatCaptainDate();
@@ -141,13 +165,13 @@ export default function CaptainSettle() {
               min={0}
               value={cashCounted}
               disabled={submitted}
-              onChange={(e) => setCashCounted(Math.max(0, Number(e.target.value) || 0))}
+              onChange={(e) => setCountedInput(Math.max(0, Number(e.target.value) || 0))}
               className="flex-1 bg-transparent outline-none font-display text-[19px] text-ng-forest-deep disabled:opacity-60"
             />
             {!submitted && cashVariance !== 0 ? (
               <button
                 type="button"
-                onClick={() => setCashCounted(stats.cash)}
+                onClick={() => setCountedInput(stats.cash)}
                 className="text-[11px] font-semibold text-ng-forest rounded-full bg-ng-sage/50 px-2.5 py-1 cursor-pointer hover:bg-ng-sage transition-colors"
               >
                 Reset
@@ -182,16 +206,32 @@ export default function CaptainSettle() {
                 </div>
               </div>
             </div>
+            {result ? (
+              <div className="mt-3 pt-3 border-t border-ng-cream/12 grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-ng-leaf-soft">Commission</div>
+                  <div className="font-display text-[18px] text-ng-cream leading-none mt-1">
+                    ₹{result.commission.toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-ng-leaf-soft">Cash variance</div>
+                  <div className="font-display text-[18px] text-ng-cream leading-none mt-1">
+                    {result.variance > 0 ? "+" : ""}₹{result.variance.toLocaleString("en-IN")}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </CaptainHero>
         ) : (
           <button
             type="button"
             onClick={submit}
-            disabled={stats.count === 0}
+            disabled={stats.count === 0 || submitting}
             className="w-full flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-4 text-[15px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf active:scale-[0.99] shadow-[0_12px_28px_-10px_rgba(102,191,115,0.75)]"
           >
             <Icon name="square-arrow-right-up-bold" size={19} />
-            Submit settlement to HQ
+            {submitting ? "Submitting…" : "Submit settlement to HQ"}
           </button>
         )}
         {stats.count === 0 && !submitted ? (

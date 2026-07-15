@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
+import { readCaptainSession } from "@/lib/captain-session";
 
 /**
  * Host-aware admin guard + subdomain router (Next.js 16 Proxy).
@@ -46,8 +47,28 @@ export default async function proxy(req: NextRequest) {
     adminRoute = path;
   }
 
-  // Not an admin request → leave the storefront completely untouched.
-  if (!adminRoute) return NextResponse.next();
+  // Not an admin request. On the storefront host, guard the captain field tool
+  // (`/captain/*`) with the captain's own signed httpOnly session (`ng_captain`),
+  // then leave every other storefront path completely untouched. `/captain/login`
+  // and the `/api/captain/*` routes (login/logout) stay reachable unauthenticated
+  // — the latter automatically, since the matcher below excludes `/api`.
+  if (!adminRoute) {
+    if (path === "/captain" || path.startsWith("/captain/")) {
+      const isCaptainLogin = path === "/captain/login";
+      const captain = await readCaptainSession(req);
+      // Unauthenticated → bounce to the captain login, remembering the target.
+      if (!isCaptainLogin && !captain) {
+        const url = new URL("/captain/login", req.nextUrl);
+        url.searchParams.set("next", path);
+        return NextResponse.redirect(url);
+      }
+      // Already signed in and sitting on the login page → send to the home tab.
+      if (isCaptainLogin && captain) {
+        return NextResponse.redirect(new URL("/captain", req.nextUrl));
+      }
+    }
+    return NextResponse.next();
+  }
 
   const isLogin = adminRoute === "/admin/login";
   // Pre-login pages reachable WITHOUT a session (sign-in + password recovery).

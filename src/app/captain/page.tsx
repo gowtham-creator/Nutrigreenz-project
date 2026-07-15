@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   CaptainShell,
@@ -11,16 +12,16 @@ import {
   CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
-import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
+import {
+  useCaptain,
+  formatCaptainDate,
+  formatPickupWhen,
+  fetchCaptainPickups,
+} from "@/components/ng/captain/captain-store";
+import type { CaptainPickup } from "@/types/nutrigreenz";
 
 /** Captain's daily capture target — the "mission" the dashboard tracks toward. */
 const DAILY_GOAL = 15;
-
-/** Community pickups due today — demo data (managed on the Pickups tab). */
-const PICKUPS_DUE = [
-  { community: "My Home Avatar", slot: "Today · 5–7 PM", orders: 12 },
-  { community: "Aparna Sarovar Zenith", slot: "Today · 6–8 PM", orders: 8 },
-];
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -34,19 +35,36 @@ export default function CaptainHome() {
   const today = formatCaptainDate();
   const remaining = Math.max(0, DAILY_GOAL - stats.count);
   const goalPct = Math.min(100, Math.round((stats.count / DAILY_GOAL) * 100));
-  const nextStop = PICKUPS_DUE[0];
+
+  // Real community pickups due today (managed on the Pickups tab).
+  const [duePickups, setDuePickups] = useState<CaptainPickup[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const list = await fetchCaptainPickups();
+      if (!cancelled) setDuePickups(list.filter((p) => p.status === "due"));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const nextStop = duePickups[0];
+
+  const firstName = captain?.name?.trim() ? captain.name.split(" ")[0] : "";
 
   return (
     <CaptainShell
       eyebrow={today}
       title={
         <>
-          {greeting()}, {captain.name.split(" ")[0]}.
+          {greeting()}
+          {firstName ? `, ${firstName}` : ""}.
         </>
       }
       subtitle={
         <>
-          Your stall is live at <span className="text-ng-forest font-semibold">{captain.stall}</span>. Let&apos;s
+          Your stall is live at{" "}
+          <span className="text-ng-forest font-semibold">{captain?.stall ?? "your community stall"}</span>. Let&apos;s
           capture the day.
         </>
       }
@@ -146,31 +164,29 @@ export default function CaptainHome() {
                   <div className="font-display text-[15px] text-ng-forest-deep truncate leading-tight mt-0.5">
                     {nextStop.community}
                   </div>
-                  <div className="text-[12px] text-ng-ink-muted mt-0.5">{nextStop.slot}</div>
+                  <div className="text-[12px] text-ng-ink-muted mt-0.5">{formatPickupWhen(nextStop.dueAt)}</div>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="font-display text-[20px] text-ng-forest-deep leading-none">{nextStop.orders}</div>
-                  <div className="text-[9.5px] uppercase tracking-wider text-ng-forest mt-1">orders</div>
+                <div className="shrink-0 text-ng-forest">
+                  <Icon name="arrow-right-linear" size={20} />
                 </div>
               </div>
             </div>
           </Link>
 
-          {PICKUPS_DUE.slice(1).length > 0 ? (
+          {duePickups.slice(1).length > 0 ? (
             <div className="space-y-2.5 mt-2.5">
-              {PICKUPS_DUE.slice(1).map((p) => (
-                <Link key={p.community} href="/captain/pickups" className="block">
+              {duePickups.slice(1).map((p) => (
+                <Link key={p.id} href="/captain/pickups" className="block">
                   <CaptainCard className="flex items-center gap-3 cursor-pointer hover:border-ng-leaf transition-colors">
                     <div className="size-10 rounded-xl bg-ng-sage/60 flex items-center justify-center shrink-0">
                       <Icon name="box-bold" size={20} className="text-ng-forest" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-[14px] text-ng-forest-deep truncate">{p.community}</div>
-                      <div className="text-[12px] text-ng-ink-muted mt-0.5">{p.slot}</div>
+                      <div className="text-[12px] text-ng-ink-muted mt-0.5">{formatPickupWhen(p.dueAt)}</div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-display text-[18px] text-ng-forest-deep leading-none">{p.orders}</div>
-                      <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft mt-1">orders</div>
+                    <div className="shrink-0 text-ng-ink-soft">
+                      <Icon name="arrow-right-linear" size={18} />
                     </div>
                   </CaptainCard>
                 </Link>

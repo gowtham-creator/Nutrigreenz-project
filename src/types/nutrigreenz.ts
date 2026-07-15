@@ -321,3 +321,98 @@ export interface Referral {
   invitedAt: string; // ISO
   rewardedAt?: string; // ISO
 }
+
+/* ── Captain module (field-sales "captain" PWA + admin management) ────────────
+ * A captain runs a stall in a residential community and captures walk-up sales
+ * on the /captain tool. Money is INTEGER PAISE end-to-end (DB + API layer),
+ * converted to rupees only at the UI edge — mirroring the storefront/admin.
+ * Captain phones are stored as a normalized 10-digit string (the OTP sign-in
+ * key); captured customer mobiles are cross-matched to canonical customers.
+ */
+
+/** How a captured stall sale was paid. Stored lowercase in the DB. */
+export type CaptainPayMode = "cash" | "upi";
+
+/** A captain — a field agent who runs community stalls (admin-managed). */
+export interface Captain {
+  id: string;
+  name: string;
+  /** Normalized 10-digit mobile (unique). The captain signs in by phone-OTP. */
+  phone: string;
+  area: string | null;
+  stall: string | null;
+  /** Communities this captain rotates stalls through. */
+  communities: string[];
+  /** Whole-number commission percent (0..100) applied to settled GMV. */
+  commissionPercent: number;
+  active: boolean;
+  createdBy: string | null;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+}
+
+/** One line item within a captured stall sale. Price is INTEGER PAISE. */
+export interface CaptainCaptureItem {
+  sku: string;
+  title: string;
+  unit: string;
+  pricePaise: number;
+  qty: number;
+}
+
+/** A single walk-up sale captured by a captain at a stall. Money is paise. */
+export interface CaptainCapture {
+  id: string;
+  captainId: string;
+  customerName: string;
+  /** Normalized 10-digit mobile — cross-matched to a canonical customer. */
+  customerMobile: string;
+  community: string | null;
+  items: CaptainCaptureItem[];
+  totalPaise: number;
+  payMode: CaptainPayMode;
+  notes: string | null;
+  /** Set when `customerMobile` matched a canonical customer (`customers.id`). */
+  linkedCustomerId: string | null;
+  capturedAt: string; // ISO
+}
+
+/** A captain's end-of-day cash-up. One row per captain per day. Money is paise. */
+export interface CaptainSettlement {
+  id: string;
+  captainId: string;
+  settleDate: string; // YYYY-MM-DD
+  expectedGmvPaise: number;
+  cashExpectedPaise: number;
+  upiExpectedPaise: number;
+  cashCountedPaise: number;
+  variancePaise: number; // cashCounted - cashExpected (negative ⇒ short)
+  commissionPaise: number; // round(gmv * commissionPercent / 100)
+  submittedAt: string; // ISO
+}
+
+/** The lifecycle of a community pickup a captain collects + hands over. */
+export type CaptainPickupStatus = "due" | "collected" | "handed_over";
+
+/** A community pickup a captain must collect and hand over. */
+export interface CaptainPickup {
+  id: string;
+  captainId: string;
+  community: string;
+  address: string | null;
+  status: CaptainPickupStatus;
+  dueAt: string | null; // ISO
+  updatedAt: string; // ISO
+  createdAt: string; // ISO
+}
+
+/** Aggregate day figures for a captain. Money is INTEGER PAISE. */
+export interface CaptainStats {
+  /** Captures recorded today. */
+  count: number;
+  /** Captures today that carried at least one line item. */
+  orders: number;
+  gmvPaise: number;
+  cashPaise: number;
+  upiPaise: number;
+}
