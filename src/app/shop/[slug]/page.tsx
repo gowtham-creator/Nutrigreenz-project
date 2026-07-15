@@ -26,14 +26,14 @@ const CATEGORY_BLURBS: Record<string, string> = {
   gifting: "Curated hampers of our best-loved jars — ready to give, fully traceable.",
 };
 
-// Categories with a finished, labelled product render use it as the hero
-// background: the labelled bottle/jar sits on the right, the title + copy read
-// over the left→right cream scrim. Categories without a render fall back to the
-// tinted wash so the hero is never a flat, empty field.
+// Category heroes use real origin/craft photography — NOT the product banners —
+// so a category page evokes the whole category (its source + how it's made)
+// rather than advertising one SKU. The subject sits behind the left→right cream
+// scrim; categories without a photo fall back to the tinted wash.
 const CATEGORY_HERO: Record<string, string> = {
-  oils: "/images/hero/launch-oils.webp",
-  ghee: "/images/hero/launch-ghee.webp",
-  honey: "/images/hero/launch-honey.webp",
+  oils: "/images/categories/oils-hero.webp", // hands pressing groundnuts on a wooden ghani, oil pouring
+  ghee: "/images/farm/gir-farm.webp", // Gir cows at golden hour — the source of A2 ghee
+  honey: "/images/farm/bee-coop.webp", // beekeeper lifting a honeycomb frame
 };
 
 export async function generateMetadata({
