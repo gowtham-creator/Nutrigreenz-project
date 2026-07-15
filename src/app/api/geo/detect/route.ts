@@ -23,25 +23,19 @@ import type { AutoDetectedLocation } from "@/types/nutrigreenz";
  */
 
 /**
- * Persist the detected hint for an eligible signed-in customer. Eligible =
- * signed in AND has zero saved addresses. Never throws.
+ * Persist the latest detected hint for a signed-in customer so admins can see
+ * where each customer actually is. It is informational only — it lives in its
+ * own `auto_detected_location` column and never overrides the delivery address
+ * the customer chooses at checkout. Anonymous callers store nothing (anonymous
+ * browsing stays anonymous). Never throws.
  */
 async function persistIfEligible(zone: AutoDetectedLocation): Promise<void> {
   if (!isSupabaseConfigured) return;
 
   const session = await getCustomerSession();
-  if (!session) return; // anonymous → store nothing (keep anonymous browsing anonymous)
+  if (!session) return; // anonymous → store nothing
 
-  const db = supabaseAdmin();
-
-  // Don't overwrite a customer who already told us where they are.
-  const { count } = await db
-    .from("addresses")
-    .select("id", { count: "exact", head: true })
-    .eq("customer_id", session.customerId);
-  if ((count ?? 0) > 0) return;
-
-  await db
+  await supabaseAdmin()
     .from("customers")
     .update({ auto_detected_location: zone })
     .eq("id", session.customerId)

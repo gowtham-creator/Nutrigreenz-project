@@ -8,6 +8,7 @@ import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getCategoryTheme } from "@/lib/category-theme";
+import { cn } from "@/lib/utils";
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits surface
 // on category pages without a redeploy.
@@ -65,6 +66,9 @@ export default async function ShopCategoryPage({
   const words = cat.title.split(" ");
   // Per-category look — an Oils page shouldn't read like Honey or Spices.
   const theme = getCategoryTheme(slug);
+  // Categories with a real origin/craft photo get the dark forest hero + soft
+  // serif treatment (matching About / Farms / Journal); others keep the light wash.
+  const heroImage = CATEGORY_HERO[slug];
 
   return (
     <PageShell>
@@ -72,7 +76,9 @@ export default async function ShopCategoryPage({
       <PageHero
         eyebrow={`Category · ${count} ${count === 1 ? "product" : "products"}`}
         wash={theme.heroWash}
-        image={CATEGORY_HERO[slug]}
+        image={heroImage}
+        tone={heroImage ? "forest" : "cream"}
+        serifTitle={Boolean(heroImage)}
         title={
           <>
             {words.map((w, i) =>
@@ -89,16 +95,16 @@ export default async function ShopCategoryPage({
         description={CATEGORY_BLURBS[slug] ?? "Direct from named partner farms. Every lot lab-tested before it ships."}
       >
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mt-6 flex items-center gap-1.5 text-[13px] text-ng-ink-muted">
-          <Link href="/" className="transition-colors hover:text-ng-forest">
+        <nav aria-label="Breadcrumb" className={cn("mt-6 flex items-center gap-1.5 text-[13px]", heroImage ? "text-ng-cream/70" : "text-ng-ink-muted")}>
+          <Link href="/" className={cn("transition-colors", heroImage ? "hover:text-ng-cream" : "hover:text-ng-forest")}>
             Home
           </Link>
           <Icon name="alt-arrow-right-linear" size={14} />
-          <Link href="/shop" className="transition-colors hover:text-ng-forest">
+          <Link href="/shop" className={cn("transition-colors", heroImage ? "hover:text-ng-cream" : "hover:text-ng-forest")}>
             Shop
           </Link>
           <Icon name="alt-arrow-right-linear" size={14} />
-          <span className="font-medium text-ng-forest">{cat.title}</span>
+          <span className={cn("font-medium", heroImage ? "text-ng-cream" : "text-ng-forest")}>{cat.title}</span>
         </nav>
 
         {/* Category switcher */}

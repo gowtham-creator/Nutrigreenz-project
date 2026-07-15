@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { PromoBar } from "./promo-bar";
 import { Header } from "./header";
 import { Footer } from "./footer";
@@ -81,11 +82,13 @@ export function PageHero({
       {/* A background photo (farms / journal heroes) behind a cream scrim. */}
       {image ? (
         <div aria-hidden className="pointer-events-none absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={image}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
           />
           {/* Left→right cream scrim so the left-aligned dark text stays legible. */}
           <div
