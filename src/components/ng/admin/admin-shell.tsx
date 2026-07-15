@@ -32,6 +32,8 @@ const NAV: NavItem[] = [
   { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold", key: "analytics" },
   // DEDUPED canonical customer directory (one row per real person).
   { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold", key: "customers" },
+  // Field-sales captains — roster, community stalls, commissions and settlements.
+  { href: "/admin/captains", label: "Captains", icon: "map-point-bold", key: "captains" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", key: "people", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
   { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold", key: "wishlists" },

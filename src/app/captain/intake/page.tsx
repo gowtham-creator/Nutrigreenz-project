@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CaptainShell,
@@ -12,7 +12,6 @@ import { Icon } from "@/components/ui/icon";
 import {
   useCaptain,
   STALL_CATALOG,
-  COMMUNITIES,
   type PayMode,
   type CapturedLineItem,
 } from "@/components/ng/captain/captain-store";
@@ -20,11 +19,16 @@ import {
 type Cart = Record<string, number>;
 
 export default function CaptainIntake() {
-  const { addCustomer, todayCustomers } = useCaptain();
+  const { addCustomer, todayCustomers, communities } = useCaptain();
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [community, setCommunity] = useState(COMMUNITIES[0]);
+  const [community, setCommunity] = useState(communities[0]);
+  // Snap the selection into the captain's assigned communities once identity loads.
+  useEffect(() => {
+    if (!communities.includes(community)) setCommunity(communities[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communities]);
   const [cart, setCart] = useState<Cart>({});
   const [payMode, setPayMode] = useState<PayMode>("Cash");
   const [notes, setNotes] = useState("");
@@ -63,7 +67,7 @@ export default function CaptainIntake() {
   function reset() {
     setName("");
     setMobile("");
-    setCommunity(COMMUNITIES[0]);
+    setCommunity(communities[0]);
     setCart({});
     setPayMode("Cash");
     setNotes("");
@@ -165,7 +169,7 @@ export default function CaptainIntake() {
               onChange={(e) => setCommunity(e.target.value)}
               className={`${inputCls(false)} appearance-none pr-9 cursor-pointer`}
             >
-              {COMMUNITIES.map((c) => (
+              {communities.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

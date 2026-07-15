@@ -72,7 +72,7 @@ export function CaptainShell({
                   className="relative size-9 rounded-full bg-ng-leaf text-ng-forest-deep flex items-center justify-center font-display text-[13px] font-semibold ring-2 ring-ng-leaf/30 ring-offset-2 ring-offset-ng-forest-deep"
                   aria-hidden
                 >
-                  {captain.initials}
+                  {captain?.initials ?? ""}
                 </div>
               </div>
             </div>
@@ -81,9 +81,9 @@ export function CaptainShell({
             <div className="mt-3.5 rounded-2xl bg-ng-forest-soft/30 ring-1 ring-ng-leaf/12 divide-y divide-ng-leaf/10">
               <div className="flex items-center gap-2 px-3 py-2">
                 <Icon name="map-point-bold" size={14} className="text-ng-leaf shrink-0" />
-                <span className="font-semibold text-ng-cream truncate text-[12px]">{captain.name}</span>
+                <span className="font-semibold text-ng-cream truncate text-[12px]">{captain?.name ?? ""}</span>
                 <span className="text-ng-cream/30">·</span>
-                <span className="truncate text-[12px] text-ng-cream/70">{captain.area}</span>
+                <span className="truncate text-[12px] text-ng-cream/70">{captain?.area ?? ""}</span>
                 <span className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[10px] text-ng-cream/60">
                   <Icon name="cloud-bold" size={12} className="text-ng-leaf-soft" />
                   Offline-ready
@@ -93,7 +93,7 @@ export function CaptainShell({
                 <Icon name="routing-2-bold" size={14} className="text-ng-leaf shrink-0" />
                 <span className="text-[11.5px] text-ng-cream/55 shrink-0">Today · {today}</span>
                 <span className="text-ng-cream/25">·</span>
-                <span className="text-[11.5px] font-semibold text-ng-cream truncate">{captain.stall}</span>
+                <span className="text-[11.5px] font-semibold text-ng-cream truncate">{captain?.stall ?? ""}</span>
               </div>
             </div>
           </div>

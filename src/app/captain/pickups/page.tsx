@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   CaptainShell,
@@ -10,93 +10,92 @@ import {
   CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
+import {
+  fetchCaptainPickups,
+  advanceCaptainPickup,
+  formatPickupWhen,
+} from "@/components/ng/captain/captain-store";
+import type { CaptainPickup, CaptainPickupStatus } from "@/types/nutrigreenz";
 
-type Status = "Due" | "Collected" | "Handed over";
+type UiStatus = "Due" | "Collected" | "Handed over";
 
-interface Pickup {
-  id: string;
-  community: string;
-  slot: string;
-  orders: number;
-  items: string;
-  status: Status;
-}
-
-const INITIAL: Pickup[] = [
-  {
-    id: "BND-Avatar-0604",
-    community: "My Home Avatar",
-    slot: "Today · 5–7 PM",
-    orders: 12,
-    items: "9 oils · 6 millet · 4 ghee · 3 honey",
-    status: "Due",
-  },
-  {
-    id: "BND-Aparna-0604",
-    community: "Aparna Sarovar Zenith",
-    slot: "Today · 6–8 PM",
-    orders: 8,
-    items: "5 oils · 4 superfood · 2 ghee",
-    status: "Collected",
-  },
-  {
-    id: "BND-Lodha-0604",
-    community: "Lodha Bellezza",
-    slot: "Today · 7–9 PM",
-    orders: 6,
-    items: "4 oils · 3 honey · 2 millet",
-    status: "Due",
-  },
-  {
-    id: "BND-Manjeera-0605",
-    community: "Manjeera Trinity",
-    slot: "Tomorrow · 5–7 PM",
-    orders: 9,
-    items: "7 oils · 5 millet · 3 superfood",
-    status: "Due",
-  },
-];
+/** DB status → the label the route UI renders. */
+const UI_STATUS: Record<CaptainPickupStatus, UiStatus> = {
+  due: "Due",
+  collected: "Collected",
+  handed_over: "Handed over",
+};
 
 // Monochrome-green progression: neutral (pending) → leaf (mid) → forest (done).
-const STATUS_STYLE: Record<Status, string> = {
+const STATUS_STYLE: Record<UiStatus, string> = {
   Due: "bg-ng-cream-deep text-ng-ink-muted",
   Collected: "bg-ng-leaf/25 text-ng-forest",
   "Handed over": "bg-ng-forest text-ng-cream",
 };
 
 /** Progression order for the per-stop stepper. */
-const STAGES: Status[] = ["Due", "Collected", "Handed over"];
+const STAGES: UiStatus[] = ["Due", "Collected", "Handed over"];
+
+/** The natural forward transition, mirroring the server's `nextPickupStatus`. */
+const NEXT: Record<CaptainPickupStatus, CaptainPickupStatus | null> = {
+  due: "collected",
+  collected: "handed_over",
+  handed_over: null,
+};
 
 export default function CaptainPickups() {
-  const [pickups, setPickups] = useState<Pickup[]>(INITIAL);
+  const [pickups, setPickups] = useState<CaptainPickup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"All" | "Due" | "Done">("All");
+  const [advancing, setAdvancing] = useState<string | null>(null);
 
-  function advance(id: string) {
-    setPickups((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        if (p.status === "Due") {
-          toast.success(`${p.community} marked collected`, { description: `${p.orders} orders picked from hub` });
-          return { ...p, status: "Collected" };
-        }
-        if (p.status === "Collected") {
-          toast.success(`${p.community} handed over`, { description: "Community pickup complete" });
-          return { ...p, status: "Handed over" };
-        }
-        return p;
-      }),
-    );
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const list = await fetchCaptainPickups();
+      if (!cancelled) {
+        setPickups(list);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function advance(id: string) {
+    const current = pickups.find((p) => p.id === id);
+    if (!current) return;
+    const next = NEXT[current.status];
+    if (!next) return;
+
+    setAdvancing(id);
+    // Optimistic advance…
+    setPickups((prev) => prev.map((p) => (p.id === id ? { ...p, status: next } : p)));
+    try {
+      const updated = await advanceCaptainPickup(id, next);
+      setPickups((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      toast.success(
+        next === "collected" ? `${current.community} marked collected` : `${current.community} handed over`,
+        { description: next === "collected" ? "Picked from the community hub" : "Community pickup complete" },
+      );
+    } catch {
+      // …revert on failure.
+      setPickups((prev) => prev.map((p) => (p.id === id ? current : p)));
+      toast.error("Couldn't update pickup", { description: "Check your connection and try again." });
+    } finally {
+      setAdvancing(null);
+    }
   }
 
   const visible = pickups.filter((p) =>
-    filter === "All" ? true : filter === "Due" ? p.status === "Due" : p.status !== "Due",
+    filter === "All" ? true : filter === "Due" ? p.status === "due" : p.status !== "due",
   );
-  const dueCount = pickups.filter((p) => p.status === "Due").length;
-  const collectedCount = pickups.filter((p) => p.status === "Collected").length;
-  const doneCount = pickups.filter((p) => p.status === "Handed over").length;
-  const totalOrders = pickups.reduce((s, p) => s + p.orders, 0);
+  const dueCount = pickups.filter((p) => p.status === "due").length;
+  const collectedCount = pickups.filter((p) => p.status === "collected").length;
+  const doneCount = pickups.filter((p) => p.status === "handed_over").length;
   // First DUE stop on the route — the captain's immediate next action.
-  const nextStop = pickups.find((p) => p.status === "Due");
+  const nextStop = pickups.find((p) => p.status === "due");
 
   return (
     <CaptainShell
@@ -108,7 +107,7 @@ export default function CaptainPickups() {
       <div className="grid grid-cols-3 gap-2.5 mb-4">
         <CaptainStat label="Due" value={dueCount} icon="box-bold" />
         <CaptainStat label="Collected" value={collectedCount} icon="bag-check-bold" />
-        <CaptainStat label="Orders" value={totalOrders} icon="checklist-minimalistic-bold" />
+        <CaptainStat label="Done" value={doneCount} icon="check-circle-bold" />
       </div>
 
       {/* Next stop emphasis */}
@@ -119,12 +118,12 @@ export default function CaptainPickups() {
               <Icon name="map-point-wave-bold" size={12} />
               Next stop
             </span>
-            <span className="text-[11px] text-ng-cream/55">{nextStop.slot}</span>
+            <span className="text-[11px] text-ng-cream/55">{formatPickupWhen(nextStop.dueAt)}</span>
           </div>
           <div className="font-display text-[19px] text-ng-cream mt-2.5 leading-tight">{nextStop.community}</div>
           <div className="flex items-center gap-1.5 text-[11.5px] text-ng-cream/65 mt-1.5">
             <Icon name="box-minimalistic-linear" size={13} />
-            {nextStop.items}
+            {nextStop.address ?? "Community pickup"}
           </div>
           <div className="mt-4 flex items-center gap-2.5">
             <button
@@ -138,10 +137,11 @@ export default function CaptainPickups() {
             <button
               type="button"
               onClick={() => advance(nextStop.id)}
-              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3 text-[13.5px] cursor-pointer hover:bg-ng-green-bright transition-colors active:scale-[0.98] shadow-[0_8px_20px_-8px_rgba(102,191,115,0.7)]"
+              disabled={advancing === nextStop.id}
+              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3 text-[13.5px] cursor-pointer hover:bg-ng-green-bright transition-colors active:scale-[0.98] disabled:opacity-45 disabled:hover:bg-ng-leaf shadow-[0_8px_20px_-8px_rgba(102,191,115,0.7)]"
             >
               <Icon name="box-bold" size={16} />
-              Collect {nextStop.orders} orders
+              Collect pickup
             </button>
           </div>
         </CaptainHero>
@@ -175,22 +175,23 @@ export default function CaptainPickups() {
         ) : null}
         <div className="space-y-3">
           {visible.map((p) => {
-            const stageIdx = STAGES.indexOf(p.status);
+            const ui = UI_STATUS[p.status];
+            const stageIdx = STAGES.indexOf(ui);
             return (
               <div key={p.id} className="relative flex gap-3">
                 {/* route node */}
                 <div className="shrink-0 pt-4">
                   <span
                     className={`relative z-10 flex size-10 items-center justify-center rounded-full ring-4 ring-ng-paper ${
-                      p.status === "Handed over"
+                      p.status === "handed_over"
                         ? "bg-ng-forest text-ng-cream"
-                        : p.status === "Collected"
+                        : p.status === "collected"
                           ? "bg-ng-leaf/25 text-ng-forest"
                           : "bg-ng-cream-deep text-ng-ink-muted"
                     }`}
                   >
                     <Icon
-                      name={p.status === "Handed over" ? "check-circle-bold" : "box-bold"}
+                      name={p.status === "handed_over" ? "check-circle-bold" : "box-bold"}
                       size={19}
                     />
                   </span>
@@ -204,26 +205,22 @@ export default function CaptainPickups() {
                           {p.community}
                         </span>
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[9.5px] uppercase tracking-wider font-bold ${STATUS_STYLE[p.status]}`}
+                          className={`inline-block px-2 py-0.5 rounded-full text-[9.5px] uppercase tracking-wider font-bold ${STATUS_STYLE[ui]}`}
                         >
-                          {p.status}
+                          {ui}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[12px] text-ng-ink-muted mt-1.5">
                         <Icon name="clock-circle-linear" size={13} className="text-ng-ink-soft" />
-                        {p.slot}
+                        {formatPickupWhen(p.dueAt)}
                       </div>
-                      <div className="text-[11.5px] text-ng-ink-soft font-mono mt-1">{p.id}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-display text-[20px] text-ng-forest-deep leading-none">{p.orders}</div>
-                      <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft mt-1">orders</div>
+                      <div className="text-[11.5px] text-ng-ink-soft font-mono mt-1">#{p.id.slice(0, 8)}</div>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-start gap-1.5 text-[12px] text-ng-ink-muted">
                     <Icon name="box-minimalistic-linear" size={14} className="text-ng-ink-soft mt-0.5 shrink-0" />
-                    <span>{p.items}</span>
+                    <span>{p.address ?? "Community pickup"}</span>
                   </div>
 
                   {/* stage stepper */}
@@ -259,7 +256,7 @@ export default function CaptainPickups() {
                       <Icon name="phone-linear" size={15} />
                       Call
                     </button>
-                    {p.status === "Handed over" ? (
+                    {p.status === "handed_over" ? (
                       <span className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-sage/40 text-ng-forest font-bold">
                         <Icon name="check-circle-bold" size={15} />
                         Done
@@ -268,10 +265,11 @@ export default function CaptainPickups() {
                       <button
                         type="button"
                         onClick={() => advance(p.id)}
-                        className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98]"
+                        disabled={advancing === p.id}
+                        className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98] disabled:opacity-45 disabled:hover:bg-ng-forest"
                       >
-                        <Icon name={p.status === "Due" ? "box-bold" : "hand-stars-bold"} size={15} />
-                        {p.status === "Due" ? "Collect" : "Hand over"}
+                        <Icon name={p.status === "due" ? "box-bold" : "hand-stars-bold"} size={15} />
+                        {p.status === "due" ? "Collect" : "Hand over"}
                       </button>
                     )}
                   </div>
@@ -280,7 +278,11 @@ export default function CaptainPickups() {
             );
           })}
 
-          {visible.length === 0 ? (
+          {loading && visible.length === 0 ? (
+            <p className="py-8 text-center text-[12.5px] text-ng-ink-soft">Loading your route…</p>
+          ) : null}
+
+          {!loading && visible.length === 0 ? (
             <CaptainEmpty
               icon="check-circle-bold"
               title={filter === "Due" ? "All caught up" : "Nothing here"}
@@ -292,4 +294,3 @@ export default function CaptainPickups() {
     </CaptainShell>
   );
 }
-
