@@ -416,3 +416,8 @@ export interface CaptainStats {
   cashPaise: number;
   upiPaise: number;
 }
+
+/** A captain enriched with their day figures (for the admin roster). */
+export interface CaptainWithStats extends Captain {
+  todayStats: CaptainStats;
+}

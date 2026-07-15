@@ -28,6 +28,7 @@ import type {
   CaptainPickupStatus,
   CaptainSettlement,
   CaptainStats,
+  CaptainWithStats,
 } from "@/types/nutrigreenz";
 
 /* ── phone + day helpers ──────────────────────────────────────────────────── */
@@ -252,11 +253,6 @@ export interface CaptainUpdateInput {
   communities?: string[];
   commissionPercent?: number;
   active?: boolean;
-}
-
-/** A captain enriched with their day figures (for the admin roster). */
-export interface CaptainWithStats extends Captain {
-  todayStats: CaptainStats;
 }
 
 const ZERO_STATS: CaptainStats = { count: 0, orders: 0, gmvPaise: 0, cashPaise: 0, upiPaise: 0 };
