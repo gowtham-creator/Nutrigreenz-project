@@ -9,10 +9,12 @@ import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
 
 /**
- * /admin/forgot — Milestone-1 placeholder for operator password recovery.
- * "Send reset link" validates the email locally and fires a success toast;
- * there is NO API call. Real reset-link delivery (Firebase / Brevo) ships in
- * Milestone 2. This page is intentionally pre-login and publicly reachable.
+ * /admin/forgot — operator password recovery (Milestone 2, real backend).
+ * "Send reset link" POSTs the email to `/api/admin/forgot`, which — for a known
+ * operator — mints a signed, single-use, 30-minute token and emails a
+ * `/admin/reset` link via Brevo. The endpoint ALWAYS returns a generic success
+ * (no account-enumeration), so this page shows the same confirmation regardless
+ * of whether the email exists. This page is intentionally pre-login and public.
  *
  * Chrome matches /admin/login exactly (the animated `.login-gradient` brand +
  * form panels, floating glows, rising particles, the paper card, and the
@@ -24,11 +26,12 @@ export default function AdminForgotPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+    const value = email.trim();
+    if (!value || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
       const msg = "Enter a valid email address.";
       setError(msg);
       toast.error("Couldn’t send reset link", { description: msg });
@@ -36,12 +39,25 @@ export default function AdminForgotPage() {
     }
 
     setSubmitting(true);
-    // M2: POST /api/admin/send-forgot-email — mocked for the demo.
-    toast.success("Reset link sent", {
-      description: `If an account exists for ${email.trim()}, a reset link is on its way.`,
-    });
-    setEmail("");
-    setSubmitting(false);
+    try {
+      // The endpoint always returns a generic success — it never reveals whether
+      // the account exists — so we show the same confirmation either way.
+      await fetch("/api/admin/forgot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: value }),
+      });
+      toast.success("Reset link sent", {
+        description: `If an account exists for ${value}, a reset link is on its way.`,
+      });
+      setEmail("");
+    } catch {
+      toast.error("Couldn’t send reset link", {
+        description: "Please check your connection and try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (

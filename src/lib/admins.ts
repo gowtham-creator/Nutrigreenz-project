@@ -398,3 +398,20 @@ export async function resetAdminPassword(id: string): Promise<string | null> {
     .maybeSingle();
   return data ? password : null;
 }
+
+/**
+ * Set an admin's password to a specific plaintext (hashed with PBKDF2 before
+ * storage) and clear the must-change flag. Keyed by email so it can be driven by
+ * the self-service `/admin/reset` flow off a verified reset token. Returns true
+ * when a row was updated, false when no admin matched. Service-role only.
+ */
+export async function setAdminPassword(email: string, password: string): Promise<boolean> {
+  const passcode_hash = await hashPassword(password);
+  const { data } = await supabaseAdmin()
+    .from("admins")
+    .update({ passcode_hash, must_change_password: false })
+    .eq("email", norm(email))
+    .select("id")
+    .maybeSingle();
+  return Boolean(data);
+}
