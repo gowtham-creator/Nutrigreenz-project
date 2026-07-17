@@ -71,8 +71,10 @@ export default async function proxy(req: NextRequest) {
   }
 
   const isLogin = adminRoute === "/admin/login";
-  // Pre-login pages reachable WITHOUT a session (sign-in + password recovery).
-  const isPublicAdmin = isLogin || adminRoute === "/admin/forgot";
+  // Pre-login pages reachable WITHOUT a session (sign-in + password recovery:
+  // request a reset link at /admin/forgot, choose a new password at /admin/reset).
+  const isPublicAdmin =
+    isLogin || adminRoute === "/admin/forgot" || adminRoute === "/admin/reset";
   const session = await verifyToken(req.cookies.get(ADMIN_COOKIE)?.value);
 
   // Unauthenticated → bounce to login on the SAME host, remembering the target.
