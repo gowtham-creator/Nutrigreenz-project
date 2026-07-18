@@ -12,6 +12,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { otpProvider } from "@/lib/otp-provider";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
@@ -85,6 +86,9 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/admin";
+
+  // Phone-OTP delivery: Firebase (default) or MSG91 (flag). Stable per build.
+  const msg91 = otpProvider() === "msg91";
 
   const [method, setMethod] = useState<Method>("passcode");
   const [error, setError] = useState<string | null>(null);
@@ -328,6 +332,42 @@ function LoginForm() {
   async function verifyMfaPhone(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (msg91) {
+      // MSG91: the code was verified server-side against the admin's saved number.
+      if (!/^\d{6}$/.test(code)) {
+        setError("Enter the 6-digit code.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/admin/login-2fa", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ method: "phone", code }),
+        });
+        if (res.ok) {
+          toast.success("Welcome back", { description: "Signed in to Admin." });
+          router.push(next);
+          return;
+        }
+        const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
+        if (data.restart) {
+          resetMfa();
+          const msg = "That took too long — enter your passcode again.";
+          setError(msg);
+          toast.error("Session expired", { description: msg });
+          return;
+        }
+        const msg = "We couldn't verify that code — request a fresh one and try again.";
+        setError(msg);
+        toast.error("Verification failed", { description: msg });
+      } catch {
+        setError("Could not reach the server. Try again.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     const confirmation = confirmationRef.current;
     if (!confirmation) {
       setError("Request a code first.");
@@ -385,6 +425,64 @@ function LoginForm() {
 
   async function requestCode(isResend: boolean, overrideNumber?: string) {
     setError(null);
+    if (msg91) {
+      // MSG91: primary phone sign-in texts the ENTERED number via the generic
+      // route; the 2FA factor (method="passcode") texts the admin's SERVER-STORED
+      // number via a ticket-gated route — the client never supplies it.
+      const isTwoFactor = method === "passcode";
+      const e164 = isTwoFactor ? null : toE164(phone);
+      if (!isTwoFactor && !e164) {
+        setError("Enter a valid mobile number with country code.");
+        return;
+      }
+      if (isResend) setResending(true);
+      else setSubmitting(true);
+      try {
+        const res = isTwoFactor
+          ? await fetch("/api/admin/mfa/phone-send", { method: "POST" })
+          : await fetch("/api/auth/otp/send", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ phone: e164 }),
+            });
+        if (res.ok) {
+          setCodeSent(true);
+          setCode("");
+          setResendIn(30);
+          toast.success(isResend ? "New code sent" : "Code sent", {
+            description: isTwoFactor
+              ? `OTP sent to ${otpPhone ?? "your mobile"}.`
+              : `OTP sent to ${e164}.`,
+          });
+        } else {
+          const data = (await res.json().catch(() => ({}))) as {
+            restart?: boolean;
+            error?: string;
+          };
+          if (data.restart) {
+            resetMfa();
+            const msg = "That took too long — enter your passcode again.";
+            setError(msg);
+            toast.error("Session expired", { description: msg });
+          } else {
+            const msg =
+              res.status === 429
+                ? "Too many attempts — wait a few minutes and retry."
+                : data.error === "SMS OTP not configured"
+                  ? "SMS sign-in isn't configured yet."
+                  : "Couldn't send the code.";
+            setError(msg);
+            toast.error("Sign in failed", { description: msg });
+          }
+        }
+      } catch {
+        setError("Could not reach the server. Try again.");
+      } finally {
+        if (isResend) setResending(false);
+        else setSubmitting(false);
+      }
+      return;
+    }
     if (!auth) {
       setError("Phone sign-in isn't configured yet — add your Firebase keys.");
       return;
@@ -450,6 +548,46 @@ function LoginForm() {
   async function verifyCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (msg91) {
+      // MSG91 primary phone sign-in: post phone + code; server verifies + mints.
+      const e164 = toE164(phone);
+      if (!e164) {
+        setError("Enter a valid mobile number with country code.");
+        return;
+      }
+      if (!/^\d{6}$/.test(code)) {
+        setError("Enter the 6-digit code.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/admin/login-phone", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: e164, code }),
+        });
+        if (res.ok) {
+          toast.success("Welcome back", { description: "Signed in to Admin." });
+          router.push(next);
+          return;
+        }
+        const msg =
+          res.status === 403
+            ? "This number isn't an authorised operator."
+            : res.status === 401
+              ? "That code is incorrect or expired — request a fresh one."
+              : res.status >= 500
+                ? "Server couldn't verify the sign-in — please try again in a moment."
+                : "We couldn't verify your sign-in — request a fresh code and try again.";
+        setError(msg);
+        toast.error("Sign in failed", { description: msg });
+      } catch {
+        setError("Could not reach the server. Try again.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     const confirmation = confirmationRef.current;
     if (!confirmation) {
       setError("Request a code first.");

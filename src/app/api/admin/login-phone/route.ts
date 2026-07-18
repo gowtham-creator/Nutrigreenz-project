@@ -9,6 +9,8 @@ import { adminByPhone, touchAdminLastLogin } from "@/lib/admins";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
 import { logActivity } from "@/lib/activity-log";
+import { otpProvider } from "@/lib/otp-provider";
+import { verifyOtp, isMsg91OtpConfigured } from "@/lib/msg91-otp";
 
 // firebase-admin needs the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -33,41 +35,69 @@ const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
  * proxy matcher does not block it.
  */
 export async function POST(request: Request): Promise<Response> {
-  if (!isAdminConfigured) {
-    return Response.json({ ok: false, error: "auth-unavailable" }, { status: 503 });
-  }
-
-  let idToken: unknown;
-  try {
-    idToken = (await request.json())?.idToken;
-  } catch {
-    return Response.json({ ok: false }, { status: 400 });
-  }
-  if (typeof idToken !== "string" || !idToken) {
-    return Response.json({ ok: false }, { status: 400 });
-  }
-
-  // 1. Verify the Firebase ID token.
   let phone: string | undefined;
-  let provider: string | undefined;
-  try {
-    const decoded = await verifyIdToken(idToken);
-    phone = decoded.phone_number;
-    provider = decoded.firebase?.sign_in_provider;
-  } catch (err) {
-    // Surface the real reason in server logs. A client-side "expired code" is
-    // almost always THIS throwing (issuer/audience mismatch, clock skew, bad
-    // signature) rather than a genuinely-expired OTP.
-    console.error(
-      "[login-phone] verifyIdToken failed:",
-      err instanceof Error ? err.message : String(err),
-    );
-    return Response.json({ ok: false, error: "verify-failed" }, { status: 401 });
+
+  if (otpProvider() === "msg91") {
+    // MSG91 path — verify the SMS code, then trust the number it was sent to.
+    if (!isMsg91OtpConfigured()) {
+      return Response.json({ ok: false, error: "SMS OTP not configured" }, { status: 503 });
+    }
+    let body: { phone?: unknown; code?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ ok: false }, { status: 400 });
+    }
+    if (typeof body.phone !== "string" || !body.phone || typeof body.code !== "string") {
+      return Response.json({ ok: false }, { status: 400 });
+    }
+    const verified = await verifyOtp(body.phone, body.code);
+    if (!verified.ok) {
+      return Response.json({ ok: false, error: "verify-failed" }, { status: 401 });
+    }
+    phone = body.phone;
+  } else {
+    // Firebase path — unchanged from the original ID-token verification.
+    if (!isAdminConfigured) {
+      return Response.json({ ok: false, error: "auth-unavailable" }, { status: 503 });
+    }
+
+    let idToken: unknown;
+    try {
+      idToken = (await request.json())?.idToken;
+    } catch {
+      return Response.json({ ok: false }, { status: 400 });
+    }
+    if (typeof idToken !== "string" || !idToken) {
+      return Response.json({ ok: false }, { status: 400 });
+    }
+
+    // 1. Verify the Firebase ID token.
+    let provider: string | undefined;
+    try {
+      const decoded = await verifyIdToken(idToken);
+      phone = decoded.phone_number;
+      provider = decoded.firebase?.sign_in_provider;
+    } catch (err) {
+      // Surface the real reason in server logs. A client-side "expired code" is
+      // almost always THIS throwing (issuer/audience mismatch, clock skew, bad
+      // signature) rather than a genuinely-expired OTP.
+      console.error(
+        "[login-phone] verifyIdToken failed:",
+        err instanceof Error ? err.message : String(err),
+      );
+      return Response.json({ ok: false, error: "verify-failed" }, { status: 401 });
+    }
+
+    // 2. Must be a phone sign-in with a phone number.
+    if (provider !== "phone" || !phone) {
+      console.error("[login-phone] non-phone token", { provider, hasPhone: Boolean(phone) });
+      return Response.json({ ok: false, error: "not-phone" }, { status: 401 });
+    }
   }
 
-  // 2. Must be a phone sign-in with a phone number.
-  if (provider !== "phone" || !phone) {
-    console.error("[login-phone] non-phone token", { provider, hasPhone: Boolean(phone) });
+  // Both paths must have resolved a verified number by here (fail closed).
+  if (!phone) {
     return Response.json({ ok: false, error: "not-phone" }, { status: 401 });
   }
 

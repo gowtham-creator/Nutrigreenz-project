@@ -23,6 +23,7 @@ import {
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { runGoogleEnrich, type GoogleEnrichDetail } from "@/lib/google-enrich-client";
+import { otpProvider } from "@/lib/otp-provider";
 
 const NOT_CONFIGURED =
   "Authentication isn't configured yet — add your Firebase keys to .env.local.";
@@ -199,7 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mirror the sign-in to the server (upsert user + set ng_session cookie).
         void syncServerSession(u);
       } else {
-        setAccount(null);
+        // In MSG91 mode a phone sign-in has NO Firebase user, so this listener
+        // fires with `u = null` on load — don't let it wipe that server-backed
+        // phone session. Google sign-out (method "google") still clears normally.
+        // In the default Firebase mode this is an unconditional clear (unchanged).
+        setAccount((prev) =>
+          prev && prev.method === "phone" && otpProvider() === "msg91" ? prev : null,
+        );
       }
       setLoading(false);
     });
@@ -283,6 +290,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendOtp = useCallback(
     async (phone: string, recaptchaContainerId = "recaptcha-container") => {
+      if (otpProvider() === "msg91") {
+        // MSG91: no Firebase SDK / no reCAPTCHA — the server texts the code.
+        pendingPhoneRef.current = phone;
+        const res = await fetch("/api/auth/otp/send", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(
+            res.status === 429
+              ? "Too many attempts — please wait a few minutes and try again."
+              : data.error === "SMS OTP not configured"
+                ? "SMS sign-in isn't configured yet."
+                : "Couldn't send the code",
+          );
+        }
+        return;
+      }
       if (!auth) {
         // DEMO: no network — just remember the phone we'll "verify".
         pendingPhoneRef.current = phone;
@@ -308,6 +335,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const verifyOtp = useCallback(async (code: string) => {
+    if (otpProvider() === "msg91") {
+      // MSG91: the server verifies the code and sets the httpOnly ng_session
+      // cookie; we mirror it into a local phone account (as demo mode does) so
+      // `isAuthed` flips and the UI updates without a Firebase user.
+      if (!/^\d{6}$/.test(code)) throw new Error("Enter the 6-digit code");
+      const phone = pendingPhoneRef.current;
+      if (!phone) throw new Error("Request a code first");
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      });
+      if (!res.ok) throw new Error("Invalid or expired code");
+      setAccount({
+        name: "",
+        email: "",
+        phone,
+        method: "phone",
+        memberSince: new Date().toISOString(),
+      });
+      pendingPhoneRef.current = null;
+      return;
+    }
     if (!auth) {
       // DEMO: accept any 6-digit code; create a phone account (empty name → user
       // completes it on the profile page).

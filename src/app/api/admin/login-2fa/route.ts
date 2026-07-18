@@ -11,6 +11,8 @@ import { verifyEmailOtp, getAdminFactors, resolveTotpSecret } from "@/lib/admin-
 import { verifyIdToken } from "@/lib/firebase-admin";
 import { touchAdminLastLogin } from "@/lib/admins";
 import { logActivity } from "@/lib/activity-log";
+import { otpProvider } from "@/lib/otp-provider";
+import { verifyOtp as verifyMsg91Otp } from "@/lib/msg91-otp";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
@@ -47,7 +49,16 @@ export async function POST(request: Request): Promise<Response> {
   // Default to TOTP so the existing authenticator-only flow keeps working.
   const factor =
     method === "email" ? "email" : method === "phone" ? "phone" : "totp";
-  if (factor === "phone" ? typeof idToken !== "string" : typeof code !== "string") {
+  // When flag=msg91 the phone factor arrives as { method:"phone", code } (no
+  // Firebase idToken); the Firebase path still requires an idToken.
+  const phoneViaMsg91 = factor === "phone" && otpProvider() === "msg91";
+  const missingInput =
+    factor === "phone"
+      ? phoneViaMsg91
+        ? typeof code !== "string"
+        : typeof idToken !== "string"
+      : typeof code !== "string";
+  if (missingInput) {
     return Response.json({ ok: false }, { status: 400 });
   }
 
@@ -69,8 +80,14 @@ export async function POST(request: Request): Promise<Response> {
     ok = secret ? await verifyTotp(code as string, secret) : false;
   } else if (factor === "email") {
     ok = await verifyEmailOtp(email, code as string);
+  } else if (phoneViaMsg91) {
+    // MSG91 phone factor: verify the code against the admin's SERVER-STORED
+    // number (never a client-supplied one). The code was sent by
+    // /api/admin/mfa/phone-send, also gated by this same ticket.
+    const f = await getAdminFactors(email);
+    ok = f.otpPhone ? (await verifyMsg91Otp(f.otpPhone, code as string)).ok : false;
   } else {
-    // phone: verify the Firebase ID token and match the number on file.
+    // phone (Firebase): verify the ID token and match the number on file.
     try {
       const decoded = await verifyIdToken(idToken as string);
       const f = await getAdminFactors(email);

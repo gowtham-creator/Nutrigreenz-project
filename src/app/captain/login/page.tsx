@@ -10,6 +10,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { otpProvider } from "@/lib/otp-provider";
 import { clearCaptainCache } from "@/components/ng/captain/captain-store";
 import { Logo } from "@/components/ng/logo";
 import { OtpInput } from "@/components/ng/otp-input";
@@ -38,6 +39,9 @@ function CaptainLoginForm() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
 
+  // Phone-OTP delivery: Firebase (default) or MSG91 (flag). Stable per build.
+  const msg91 = otpProvider() === "msg91";
+
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -57,6 +61,47 @@ function CaptainLoginForm() {
 
   async function requestCode(isResend: boolean) {
     setError(null);
+    if (msg91) {
+      // MSG91: no Firebase SDK / no reCAPTCHA — the server texts the code.
+      const e164 = toE164(phone);
+      if (!e164) {
+        setError("Enter a valid 10-digit mobile number.");
+        return;
+      }
+      if (isResend) setResending(true);
+      else setSubmitting(true);
+      try {
+        const res = await fetch("/api/auth/otp/send", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: e164 }),
+        });
+        if (res.ok) {
+          setCodeSent(true);
+          setCode("");
+          setResendIn(30);
+          toast.success(isResend ? "New code sent" : "Code sent", {
+            description: `OTP sent to ${e164}.`,
+          });
+        } else {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          const msg =
+            res.status === 429
+              ? "Too many attempts — wait a few minutes and retry."
+              : data.error === "SMS OTP not configured"
+                ? "SMS sign-in isn't configured yet."
+                : "Couldn't send the code.";
+          setError(msg);
+          toast.error("Couldn't send code", { description: msg });
+        }
+      } catch {
+        setError("Couldn't reach the server. Try again.");
+      } finally {
+        if (isResend) setResending(false);
+        else setSubmitting(false);
+      }
+      return;
+    }
     if (!auth) {
       setError(NOT_CONFIGURED);
       return;
@@ -113,6 +158,48 @@ function CaptainLoginForm() {
   async function verifyCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (msg91) {
+      // MSG91: post the phone + code; the server verifies it and mints ng_captain.
+      const e164 = toE164(phone);
+      if (!e164) {
+        setError("Enter a valid 10-digit mobile number.");
+        return;
+      }
+      if (!/^\d{6}$/.test(code)) {
+        setError("Enter the 6-digit code.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/captain/login", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: e164, code }),
+        });
+        if (res.ok) {
+          clearCaptainCache();
+          toast.success("Signed in", { description: "Welcome back, Captain." });
+          window.location.assign(next);
+          return;
+        }
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        const msg =
+          res.status === 403
+            ? (data.message ?? "This number isn't registered as an active captain.")
+            : res.status === 401
+              ? "That code is incorrect or expired — request a fresh one."
+              : res.status === 503
+                ? "Sign-in isn't available right now — please try again shortly."
+                : "We couldn't verify your sign-in — request a fresh code and try again.";
+        setError(msg);
+        toast.error("Sign in failed", { description: msg });
+      } catch {
+        setError("Couldn't reach the server. Try again.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     const confirmation = confirmationRef.current;
     if (!confirmation) {
       setError("Request a code first.");
@@ -212,7 +299,7 @@ function CaptainLoginForm() {
 
         {/* ===== Body ===== */}
         <main className="flex-1 px-5 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
-          {!isFirebaseConfigured ? (
+          {!msg91 && !isFirebaseConfigured ? (
             <div className="flex gap-2.5 rounded-2xl bg-ng-amber/15 border border-ng-amber/30 px-3.5 py-3 mb-5">
               <Icon name="danger-triangle-bold" size={18} className="text-ng-soil shrink-0" />
               <p className="text-[12.5px] leading-snug text-ng-ink-muted">{NOT_CONFIGURED}</p>
@@ -240,7 +327,7 @@ function CaptainLoginForm() {
                 <span className="block text-[11px] text-ng-ink-soft mt-1">Registered captain numbers only.</span>
               </label>
               {error ? <p className="text-[11.5px] text-ng-danger">{error}</p> : null}
-              <button type="submit" disabled={submitting || !isFirebaseConfigured} className={leafCta}>
+              <button type="submit" disabled={submitting || (!msg91 && !isFirebaseConfigured)} className={leafCta}>
                 <Icon name="chat-round-dots-bold" size={18} />
                 {submitting ? "Sending…" : "Send OTP"}
               </button>
