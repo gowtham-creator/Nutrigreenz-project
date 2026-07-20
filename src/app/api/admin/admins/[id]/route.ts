@@ -6,6 +6,7 @@ import {
   updateAdmin,
   resetAdminPassword,
   deleteAdminById,
+  countActiveSuperadmins,
   type AdminRole,
   type AdminStatus,
 } from "@/lib/admins";
@@ -94,6 +95,28 @@ export async function PATCH(
   // superadmin (they always hold every permission), but harmless to store.
   if (body.permissions !== undefined) {
     patch.permissions = sanitizePermissions(body.permissions);
+  }
+
+  // Last-superadmin guard: never let the roster demote or deactivate the FINAL
+  // active superadmin (this also covers a superadmin demoting/deactivating
+  // themselves when they are the only one) — that would lock everyone out of
+  // admin management. Refuse with 409 before touching the row.
+  const current = await getAdminById(id);
+  if (!current) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  const willDemote = patch.role === "admin" && current.role === "superadmin";
+  const willDeactivate =
+    patch.status !== undefined && patch.status !== "active" && current.role === "superadmin";
+  if (current.status === "active" && (willDemote || willDeactivate)) {
+    if ((await countActiveSuperadmins()) <= 1) {
+      return Response.json(
+        {
+          ok: false,
+          error: "last-superadmin",
+          message: "Cannot demote or deactivate the last active superadmin.",
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const admin = await updateAdmin(id, patch);
@@ -213,6 +236,20 @@ export async function DELETE(
   const { id } = await ctx.params;
   const admin = await getAdminById(id);
   if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+
+  // Last-superadmin guard: refuse to delete the final active superadmin.
+  if (admin.role === "superadmin" && admin.status === "active") {
+    if ((await countActiveSuperadmins()) <= 1) {
+      return Response.json(
+        {
+          ok: false,
+          error: "last-superadmin",
+          message: "Cannot delete the last active superadmin.",
+        },
+        { status: 409 },
+      );
+    }
+  }
 
   await deleteAdminById(id);
 

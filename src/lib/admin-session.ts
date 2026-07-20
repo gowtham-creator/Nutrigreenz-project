@@ -36,6 +36,9 @@ export const ADMIN_SESSION_TTL_SECONDS = 30 * 60;
 export interface AdminSession {
   email: string;
   role: AdminRole;
+  /** Revocation counter carried in the token; 0 for legacy (v0) tokens. Compared
+   *  against `admins.token_version` in the Node guards to kill superseded tokens. */
+  tokenVersion: number;
 }
 
 /** Decoded, verified pre-auth MFA ticket payload (email + authenticated role). */
@@ -115,12 +118,18 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 export async function createToken(
   email: string,
   role: AdminRole,
+  tokenVersion = 0,
 ): Promise<string> {
   const secret = getSecret();
   if (!secret) {
     throw new Error("ADMIN_SESSION_SECRET is not configured");
   }
-  const claims = `${email}|${role}`;
+  const issuedAt = Date.now();
+  const expiresAt = issuedAt + ADMIN_SESSION_TTL_SECONDS * 1000;
+  // v1 payload: the `s1` tag distinguishes it from the legacy `${email}|${role}`
+  // (still accepted as v0) and from the `mfa`-tagged ticket. Carries issued-at,
+  // expiry, and the revocation counter, all covered by the HMAC.
+  const claims = `${email}|s1|${role}|${issuedAt}|${expiresAt}|${tokenVersion}`;
   const mac = await sign(claims, secret);
   const payload = toBase64Url(encoder.encode(claims));
   const signature = toBase64Url(mac);
@@ -154,14 +163,29 @@ export async function verifyToken(
   // Verify the signature over the raw claims BEFORE trusting any field.
   if (!timingSafeEqual(providedSig, expectedSig)) return null;
 
-  // Split `${email}|${role}` from the right so emails containing "|" are safe.
+  const parts = claims.split("|");
+  // v1: `${email}|s1|${role}|${iat}|${exp}|${tv}` — the `s1` tag sits five from
+  // the end (four trailing claims), so emails containing "|" stay unambiguous.
+  if (parts.length >= 6 && parts[parts.length - 5] === "s1") {
+    const role = parts[parts.length - 4];
+    const expiresAt = Number(parts[parts.length - 2]);
+    const tv = Number(parts[parts.length - 1]);
+    const email = parts.slice(0, parts.length - 5).join("|");
+    if (!email || !isAdminRole(role)) return null;
+    // Reject expired tokens (defense in depth alongside the cookie's maxAge).
+    if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
+    return { email, role, tokenVersion: Number.isFinite(tv) ? tv : 0 };
+  }
+
+  // v0 (legacy, no expiry/version): `${email}|${role}`. Split from the right so
+  // emails containing "|" are safe; treat as tokenVersion 0 (backward-safe).
   const sep = claims.lastIndexOf("|");
   if (sep <= 0 || sep === claims.length - 1) return null;
   const email = claims.slice(0, sep);
   const role = claims.slice(sep + 1);
   if (!email || !isAdminRole(role)) return null;
 
-  return { email, role };
+  return { email, role, tokenVersion: 0 };
 }
 
 /**

@@ -28,18 +28,26 @@ import "server-only";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
-import { getAdminByEmail } from "@/lib/admins";
+import { getAdminByEmail, getAdminTokenVersion } from "@/lib/admins";
 import { resolvePermissions, type PermissionKey } from "@/lib/admin-permissions";
 
 /**
  * The signed-in admin's effective permission set, or `null` when there is no
- * valid admin session. Super-admins hold every permission, so the DB read is
- * skipped for them (mirrors {@link currentAdminPermissions} in the page guard).
+ * valid admin session. Super-admins hold every permission, so the permission DB
+ * read is skipped for them (mirrors {@link currentAdminPermissions} in the page
+ * guard).
+ *
+ * Token revocation: the token embeds the `token_version` it was minted with; we
+ * reject it here when it falls behind the live `admins.token_version` (bumped by
+ * a password reset or "log out everywhere"). Missing/env-only rows resolve to 0,
+ * matching v0 tokens, so this is fully back-compat.
  */
 export async function currentApiPermissions(): Promise<Set<PermissionKey> | null> {
   const c = await cookies();
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
   if (!session) return null;
+  const liveVersion = await getAdminTokenVersion(session.email);
+  if (session.tokenVersion !== liveVersion) return null;
   if (session.role === "superadmin") return resolvePermissions("superadmin", null);
   const record = await getAdminByEmail(session.email); // never throws
   return resolvePermissions(session.role, record?.permissions ?? null);

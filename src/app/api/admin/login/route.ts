@@ -18,10 +18,15 @@ import {
   resolveTotpSecret,
   isEnvTotpAdmin,
 } from "@/lib/admin-security";
-import { verifyAdminLogin, touchAdminLastLogin } from "@/lib/admins";
+import { verifyAdminLogin, touchAdminLastLogin, getAdminTokenVersion } from "@/lib/admins";
 import { isEmailConfigured } from "@/lib/email";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
+import {
+  checkLoginAllowed,
+  recordLoginFailure,
+  recordLoginSuccess,
+} from "@/lib/admin-login-guard";
 
 /** Session lifetime: 12 hours (seconds). */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
@@ -47,6 +52,21 @@ function envFlagEnabled(value: string | undefined): boolean {
   if (!value) return false;
   const v = value.trim().toLowerCase();
   return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+/** Best-effort caller IP from the standard proxy headers (throttling key). */
+function clientIp(request: Request): string | null {
+  const fwd = request.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]?.trim() || null;
+  return request.headers.get("x-real-ip")?.trim() || null;
+}
+
+/** Mask an E.164 number to its last two digits (a hint, never the full number). */
+function maskPhone(phone: string | null): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 2) return "••••••";
+  return `••••••${digits.slice(-2)}`;
 }
 
 /**
@@ -86,6 +106,22 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const inputEmail = email.trim().toLowerCase();
+  const ip = clientIp(request);
+
+  // Brute-force lockout: refuse before spending any credential check when this
+  // email or IP is currently locked (5 fails → 15-min window). Fails OPEN when
+  // Supabase is unconfigured, so the demo never locks every operator out.
+  const throttle = await checkLoginAllowed(inputEmail, ip);
+  if (!throttle.allowed) {
+    return Response.json(
+      {
+        ok: false,
+        error: "locked",
+        message: `Too many attempts. Try again in ${throttle.retryAfterSec}s.`,
+      },
+      { status: 429, headers: { "retry-after": String(throttle.retryAfterSec) } },
+    );
+  }
 
   // --- Super Admin: existing ADMIN_* credentials (always available) ---
   const superEmail = process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
@@ -131,10 +167,16 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  // No credential set matched → fail closed.
+  // No credential set matched → record the failed attempt (arming a lock once the
+  // cap is hit) and fail closed.
   if (!role || !normalizedEmail) {
+    await recordLoginFailure(inputEmail, ip);
     return Response.json({ ok: false }, { status: 401 });
   }
+
+  // Valid credential — clear the passcode counters even if a second factor is
+  // still owed, so a legitimate operator is never throttled on their own MFA.
+  await recordLoginSuccess(inputEmail, ip);
 
   // Second factors gate EVERY admin (not just super-admins): the enabled set comes
   // from each admin's saved settings (`admin_security`). A factor only counts when
@@ -202,11 +244,19 @@ export async function POST(request: Request): Promise<Response> {
       path: "/",
       maxAge: 60 * 5,
     });
-    return Response.json({ ok: true, mfaRequired: true, factors, otpPhone });
+    // Only a MASKED hint of the OTP number crosses the wire (last 2 digits) —
+    // the client needs a hint, never the full number pre-2FA.
+    return Response.json({
+      ok: true,
+      mfaRequired: true,
+      factors,
+      otpPhone: maskPhone(otpPhone),
+    });
   }
 
   void touchAdminLastLogin(normalizedEmail); // record the successful sign-in
-  const token = await createToken(normalizedEmail, role);
+  const tokenVersion = await getAdminTokenVersion(normalizedEmail);
+  const token = await createToken(normalizedEmail, role, tokenVersion);
   const secure = process.env.NODE_ENV === "production";
   const c = await cookies();
 

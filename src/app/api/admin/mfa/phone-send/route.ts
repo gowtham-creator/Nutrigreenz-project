@@ -3,6 +3,7 @@ import { ADMIN_MFA_COOKIE } from "@/lib/admin-auth";
 import { verifyMfaTicket } from "@/lib/admin-session";
 import { getAdminFactors } from "@/lib/admin-security";
 import { sendOtp, isMsg91OtpConfigured } from "@/lib/msg91-otp";
+import { checkOtpSendLimit } from "@/lib/otp-rate-limit";
 
 // Uses fetch to MSG91 from the server; keep on the Node runtime.
 export const runtime = "nodejs";
@@ -30,6 +31,16 @@ export async function POST(): Promise<Response> {
   const factors = await getAdminFactors(ticket.email);
   if (!factors.otpPhone) {
     return Response.json({ ok: false, error: "no_phone_factor" }, { status: 400 });
+  }
+
+  // Anti-abuse: 30s resend cooldown + max 5 sends / 15 min per number, before
+  // spending an SMS.
+  const limit = checkOtpSendLimit(factors.otpPhone);
+  if (!limit.ok) {
+    return Response.json(
+      { ok: false, error: "rate_limited" },
+      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const result = await sendOtp(factors.otpPhone);

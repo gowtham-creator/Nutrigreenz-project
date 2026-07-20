@@ -9,7 +9,7 @@
  * signature — the email is recovered from the signed payload, never the client.
  */
 import { consumeAdminResetToken } from "@/lib/admin-password-reset";
-import { setAdminPassword } from "@/lib/admins";
+import { setAdminPassword, bumpAdminTokenVersion } from "@/lib/admins";
 
 export const runtime = "nodejs";
 
@@ -46,6 +46,10 @@ export async function POST(request: Request): Promise<Response> {
     // Token consumed but the admin row vanished — treat as invalid.
     return Response.json({ ok: false, error: "invalid-token" }, { status: 400 });
   }
+
+  // Revoke every existing session for this admin: a password reset should sign
+  // out anyone still holding a token minted before the change.
+  await bumpAdminTokenVersion(email);
 
   return Response.json({ ok: true });
 }

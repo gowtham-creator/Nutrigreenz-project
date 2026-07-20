@@ -9,8 +9,13 @@ import { ADMIN_SESSION_TTL_SECONDS, createToken, verifyMfaTicket } from "@/lib/a
 import { verifyTotp } from "@/lib/totp";
 import { verifyEmailOtp, getAdminFactors, resolveTotpSecret } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
-import { touchAdminLastLogin } from "@/lib/admins";
+import { touchAdminLastLogin, getAdminTokenVersion } from "@/lib/admins";
 import { logActivity } from "@/lib/activity-log";
+import {
+  checkTotpAllowed,
+  recordTotpFailure,
+  clearTotpFailures,
+} from "@/lib/admin-login-guard";
 import { otpProvider } from "@/lib/otp-provider";
 import { verifyOtp as verifyMsg91Otp } from "@/lib/msg91-otp";
 
@@ -71,6 +76,23 @@ export async function POST(request: Request): Promise<Response> {
   // The identity AND role were fixed at the passcode step; carry them forward.
   const { email, role } = ticket;
 
+  // Cap TOTP guessing the same way the passcode step is capped (5 fails → 5-min
+  // lock, keyed `totp:<addr>`). Checked before verifying; fails OPEN when
+  // Supabase is unconfigured.
+  if (factor === "totp") {
+    const totpThrottle = await checkTotpAllowed(email);
+    if (!totpThrottle.allowed) {
+      return Response.json(
+        {
+          ok: false,
+          error: "locked",
+          message: `Too many attempts. Try again in ${totpThrottle.retryAfterSec}s.`,
+        },
+        { status: 429, headers: { "retry-after": String(totpThrottle.retryAfterSec) } },
+      );
+    }
+  }
+
   let ok = false;
   if (factor === "totp") {
     // The admin's OWN enrolled secret, or the shared env secret ONLY for the env
@@ -100,12 +122,19 @@ export async function POST(request: Request): Promise<Response> {
       ok = false;
     }
   }
+  // Record the TOTP outcome so repeated wrong codes arm the lock; a good code
+  // clears the counter. Only the TOTP factor is throttled here.
+  if (factor === "totp") {
+    if (ok) await clearTotpFailures(email);
+    else await recordTotpFailure(email);
+  }
   if (!ok) {
     return Response.json({ ok: false }, { status: 401 });
   }
 
   void touchAdminLastLogin(email); // record the successful (2FA) sign-in
-  const token = await createToken(email, role);
+  const tokenVersion = await getAdminTokenVersion(email);
+  const token = await createToken(email, role, tokenVersion);
   const secure = process.env.NODE_ENV === "production";
 
   c.set({

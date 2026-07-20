@@ -15,6 +15,8 @@ import "server-only";
 const WINDOW_MS = 15 * 60 * 1000;
 /** Max sends allowed per key within the window. */
 const MAX_SENDS = 5;
+/** Minimum gap between two sends to the same key (resend cooldown). */
+const COOLDOWN_MS = 30 * 1000;
 
 const buckets = new Map<string, number[]>();
 
@@ -32,6 +34,16 @@ export function checkOtpSendLimit(key: string): RateLimitResult {
   if (recent.length >= MAX_SENDS) {
     buckets.set(key, recent);
     const retryAfterSeconds = Math.max(1, Math.ceil((WINDOW_MS - (now - recent[0])) / 1000));
+    return { ok: false, retryAfterSeconds };
+  }
+
+  // Resend cooldown: block a burst of back-to-back sends to the same number even
+  // when the per-window cap has headroom, so a leaked/looping client can't fire
+  // an SMS every second.
+  const last = recent[recent.length - 1];
+  if (last !== undefined && now - last < COOLDOWN_MS) {
+    buckets.set(key, recent);
+    const retryAfterSeconds = Math.max(1, Math.ceil((COOLDOWN_MS - (now - last)) / 1000));
     return { ok: false, retryAfterSeconds };
   }
 

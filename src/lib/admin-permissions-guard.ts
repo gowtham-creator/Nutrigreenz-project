@@ -18,20 +18,23 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
-import { getAdminByEmail } from "@/lib/admins";
+import { getAdminByEmail, getAdminTokenVersion } from "@/lib/admins";
 import {
   resolvePermissions,
   type PermissionKey,
 } from "@/lib/admin-permissions";
 
 /**
- * The signed-in admin's effective permission set (or null when unauthenticated).
- * Skips the DB read for super-admins, who always hold every permission.
+ * The signed-in admin's effective permission set (or null when unauthenticated
+ * OR the token was revoked — its embedded `token_version` is behind the live
+ * `admins.token_version`). Skips the permission DB read for super-admins, who
+ * always hold every permission.
  */
 export async function currentAdminPermissions(): Promise<Set<PermissionKey> | null> {
   const c = await cookies();
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
   if (!session) return null;
+  if (session.tokenVersion !== (await getAdminTokenVersion(session.email))) return null;
   if (session.role === "superadmin") return resolvePermissions("superadmin", null);
   const record = await getAdminByEmail(session.email); // never throws
   return resolvePermissions(session.role, record?.permissions ?? null);
@@ -47,6 +50,9 @@ export async function requirePermission(key: PermissionKey): Promise<void> {
   const c = await cookies();
   const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
   if (!session) redirect("/admin/login");
+  // Revoked token (version bumped by a password reset / "log out everywhere")
+  // is treated as no session — bounce to login.
+  if (session.tokenVersion !== (await getAdminTokenVersion(session.email))) redirect("/admin/login");
   // Super-admins always have every section — no DB read needed.
   if (session.role === "superadmin") return;
   const record = await getAdminByEmail(session.email); // never throws

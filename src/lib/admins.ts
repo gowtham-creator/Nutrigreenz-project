@@ -415,3 +415,60 @@ export async function setAdminPassword(email: string, password: string): Promise
     .maybeSingle();
   return Boolean(data);
 }
+
+/**
+ * The admin's current session-revocation counter (`admins.token_version`), or 0
+ * when there is no DB row (env-only operators) or on any read error — so a
+ * missing/absent value maps to the same 0 that v0 tokens and `createToken`'s
+ * default carry (fully back-compat). Read by the Node session guards to reject a
+ * token whose embedded version is behind this one. Never throws.
+ */
+export async function getAdminTokenVersion(email: string): Promise<number> {
+  try {
+    const { data } = await supabaseAdmin()
+      .from("admins")
+      .select("token_version")
+      .eq("email", norm(email))
+      .maybeSingle();
+    const v = (data as { token_version?: number | null } | null)?.token_version;
+    return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Bump an admin's `token_version`, invalidating every session token that was
+ * minted with the old value ("log out everywhere" / after a password reset).
+ * No-op when there is no DB row (env-only operators have no persisted counter to
+ * bump) and never throws — safe to call best-effort. Returns the new version, or
+ * null when nothing was updated.
+ */
+export async function bumpAdminTokenVersion(email: string): Promise<number | null> {
+  try {
+    const next = (await getAdminTokenVersion(email)) + 1;
+    const { data } = await supabaseAdmin()
+      .from("admins")
+      .update({ token_version: next })
+      .eq("email", norm(email))
+      .select("id")
+      .maybeSingle();
+    return data ? next : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * How many ACTIVE superadmins exist in the `admins` table — the backstop for the
+ * last-superadmin guard, so the roster can never demote/deactivate/delete the
+ * final active superadmin and lock everyone out of admin management.
+ */
+export async function countActiveSuperadmins(): Promise<number> {
+  const { count } = await supabaseAdmin()
+    .from("admins")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "superadmin")
+    .eq("status", "active");
+  return count ?? 0;
+}
