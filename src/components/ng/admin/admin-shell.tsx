@@ -31,6 +31,7 @@ const NAV: NavItem[] = [
   // Product & customer analytics (demand signals + sign-in mix) — both roles.
   { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold", key: "analytics" },
   // DEDUPED canonical customer directory (one row per real person).
+  { href: "/admin/referrals", label: "Referrals", icon: "users-group-rounded-bold", key: "referrals" },
   { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold", key: "customers" },
   // Field-sales captains — roster, community stalls, commissions and settlements.
   { href: "/admin/captains", label: "Captains", icon: "map-point-bold", key: "captains" },

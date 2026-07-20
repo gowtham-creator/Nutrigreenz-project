@@ -28,6 +28,7 @@ export const ADMIN_PERMISSION_KEYS = [
   "marketing",
   "reports",
   "analytics",
+  "referrals",
   "customers",
   "captains",
   "people",
@@ -97,6 +98,12 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
     label: "Analytics",
     description: "Product demand signals and the customer sign-in mix.",
     icon: "chart-square-bold",
+  },
+  {
+    key: "referrals",
+    label: "Referrals",
+    description: "The referral programme — who referred whom, and the rewards paid out.",
+    icon: "users-group-rounded-bold",
   },
   {
     key: "customers",
