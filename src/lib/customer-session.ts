@@ -15,7 +15,7 @@
  * their own canonical customer's addresses.
  */
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { NG_SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import {
@@ -23,6 +23,29 @@ import {
   resolveCustomer,
   type CustomerProvider,
 } from "@/lib/customer-identity";
+import { recordAttribution } from "@/lib/referrals";
+
+/**
+ * Best-effort referral attribution: when the caller carries an `ng_ref` cookie
+ * (set by /r/<code>), tie this newly-resolved customer to the referrer. The
+ * engine is idempotent (unique on referee) so repeated calls are cheap no-ops
+ * once attributed. Never throws — attribution must never break the auth gate.
+ */
+async function maybeCaptureReferral(
+  customerId: string,
+  jar: Awaited<ReturnType<typeof cookies>>,
+): Promise<void> {
+  const code = jar.get("ng_ref")?.value;
+  if (!code) return;
+  try {
+    const h = await headers();
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+    const deviceHash = h.get("user-agent")?.slice(0, 200) ?? null;
+    await recordAttribution({ refereeCustomerId: customerId, code, ip, deviceHash });
+  } catch {
+    /* best-effort */
+  }
+}
 
 export interface ResolvedCustomerSession {
   /** Firebase UID embedded in the verified `ng_session` cookie. */
@@ -52,7 +75,10 @@ export async function getCustomerSession(): Promise<ResolvedCustomerSession | nu
       .maybeSingle();
 
     const linked = (userRow as { customer_id: string | null } | null)?.customer_id;
-    if (linked) return { uid, customerId: linked };
+    if (linked) {
+      await maybeCaptureReferral(linked, jar);
+      return { uid, customerId: linked };
+    }
 
     // 2. Best-effort: resolve (or create) the canonical customer for the
     //    current identity, then reuse it. Mirrors the link-phone fallback.
@@ -62,9 +88,13 @@ export async function getCustomerSession(): Promise<ResolvedCustomerSession | nu
         : "google";
 
     const existing = await getCustomerByIdentity(provider, uid);
-    if (existing) return { uid, customerId: existing.customer.id };
+    if (existing) {
+      await maybeCaptureReferral(existing.customer.id, jar);
+      return { uid, customerId: existing.customer.id };
+    }
 
     const resolved = await resolveCustomer({ provider, providerUid: uid });
+    await maybeCaptureReferral(resolved.customer.id, jar);
     return { uid, customerId: resolved.customer.id };
   } catch {
     // Supabase unconfigured / transient error → treat as unresolved (401).

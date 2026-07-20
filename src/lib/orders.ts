@@ -33,6 +33,7 @@ import {
   promoPercentForProduct,
   applyPromoPaise,
 } from "@/lib/promotions";
+import { rewardReferralIfEligible } from "@/lib/referrals";
 
 /**
  * Thrown by {@link createOrder} when one or more ordered lines cannot be
@@ -823,6 +824,16 @@ export async function advanceOrderStatus(
     by: byEmail.trim() || "system",
     note: note?.trim() || null,
   });
+
+  // Referral payout: when a sale is CONFIRMED, reward the referee's referral if
+  // the order qualifies. Idempotent + best-effort — never disrupts the update.
+  if (nextStatus === "confirmed") {
+    try {
+      await rewardReferralIfEligible(current.id);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   const order = await getOrder(current.id);
   return order ? { ok: true, order } : { ok: false, error: "not-found" };
