@@ -189,15 +189,15 @@ export async function recordAttribution(
     if (config.dedupeMobile) {
       const { data: refereeRow } = await db
         .from("customers")
-        .select("phone")
+        .select("primary_phone")
         .eq("id", input.refereeCustomerId)
         .maybeSingle();
-      const phone = (refereeRow as { phone: string | null } | null)?.phone;
+      const phone = (refereeRow as { primary_phone: string | null } | null)?.primary_phone;
       if (phone) {
         const { data: sameName } = await db
           .from("customers")
           .select("id")
-          .eq("phone", phone);
+          .eq("primary_phone", phone);
         const ids = ((sameName as { id: string }[] | null) ?? []).map((r) => r.id);
         if (ids.length > 0) {
           const { data: dupe } = await db
@@ -437,10 +437,10 @@ export async function listReferralAttributions(
   if (ids.size > 0) {
     const { data: custs } = await db
       .from("customers")
-      .select("id, name, email")
+      .select("id, display_name, primary_email")
       .in("id", Array.from(ids));
-    for (const c of (custs as Array<{ id: string; name: string | null; email: string | null }> | null) ?? []) {
-      nameByCustomer.set(c.id, { name: c.name, email: c.email });
+    for (const c of (custs as Array<{ id: string; display_name: string | null; primary_email: string | null }> | null) ?? []) {
+      nameByCustomer.set(c.id, { name: c.display_name, email: c.primary_email });
     }
   }
 
