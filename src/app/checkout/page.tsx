@@ -8,6 +8,7 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useCommerceRules } from "@/lib/commerce";
@@ -49,24 +50,41 @@ const CHECKOUT_STEPS = [
 ] as const;
 
 /** Horizontal step indicator giving the checkout a guided, premium feel. */
-function CheckoutStepper() {
+function CheckoutStepper({ current }: { current: number }) {
   return (
     <Reveal>
       <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-ng-line-soft bg-ng-paper/70 p-2.5 backdrop-blur sm:gap-2 sm:p-3">
-        {CHECKOUT_STEPS.map((step, i) => (
-          <li key={step.label} className="flex flex-1 items-center gap-1.5 last:flex-none sm:flex-none sm:shrink-0 sm:gap-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-ng-sage/40 px-3 py-1.5 text-[12px] font-semibold text-ng-forest sm:px-3.5">
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-ng-forest text-[10px] font-bold text-ng-cream tabular-nums">
-                {i + 1}
+        {CHECKOUT_STEPS.map((step, i) => {
+          // On mobile/tablet the chip reflects live progress (done/current vs
+          // upcoming); on desktop (lg+) every chip reads as active since the
+          // whole form is shown at once.
+          const on = i <= current;
+          const done = i < current;
+          return (
+            <li key={step.label} className="flex flex-1 items-center gap-1.5 last:flex-none sm:flex-none sm:shrink-0 sm:gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors sm:px-3.5",
+                  on ? "bg-ng-sage/50 text-ng-forest" : "bg-ng-sage/20 text-ng-ink-muted lg:bg-ng-sage/40 lg:text-ng-forest",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold tabular-nums transition-colors",
+                    on ? "bg-ng-forest text-ng-cream" : "bg-ng-line text-ng-ink-soft lg:bg-ng-forest lg:text-ng-cream",
+                  )}
+                >
+                  {i + 1}
+                </span>
+                <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
+                <span className="hidden sm:inline">{step.label}</span>
               </span>
-              <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
-              <span className="hidden sm:inline">{step.label}</span>
-            </span>
-            {i < CHECKOUT_STEPS.length - 1 ? (
-              <span aria-hidden className="h-px flex-1 bg-ng-line sm:w-5 sm:flex-none" />
-            ) : null}
-          </li>
-        ))}
+              {i < CHECKOUT_STEPS.length - 1 ? (
+                <span aria-hidden className={cn("h-px flex-1 sm:w-5 sm:flex-none", done ? "bg-ng-forest lg:bg-ng-line" : "bg-ng-line")} />
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
     </Reveal>
   );
@@ -117,6 +135,9 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   // Serviceability of the selected delivery pincode (null = not yet checked).
   const [serviceable, setServiceable] = useState<boolean | null>(null);
+  // Wizard position for the mobile/tablet stepped flow (ignored on desktop,
+  // where the whole form renders at once). 0 = Address … 4 = Review.
+  const [step, setStep] = useState(0);
 
   // Gate: require sign-in BEFORE checkout. If auth has settled and the visitor
   // isn't signed in, bounce them to /auth and bring them right back here.
@@ -172,6 +193,16 @@ export default function CheckoutPage() {
     };
   }, [selectedPincode]);
   const notServiceable = serviceable === false;
+
+  // Mobile/tablet wizard gate: may the shopper advance from the current step?
+  const stepReady =
+    step === 0
+      ? Boolean(resolvedAddressId) && !notServiceable
+      : step === 1
+        ? Boolean(resolvedSlotId)
+        : step === 3
+          ? Boolean(payment)
+          : true;
 
   const couponDiscount = applied?.discount ?? 0;
   // Loyalty redemption uses the Super-Admin-configured ratio + limits.
@@ -388,9 +419,9 @@ export default function CheckoutPage() {
         heading="Complete your order"
         description="Review your delivery details, apply rewards and pay securely. Everything is freshly packed from farm lots once you confirm."
       >
-        <CheckoutStepper />
+        <CheckoutStepper current={step} />
 
-        <div className="relative grid gap-8 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_400px]">
+        <div className="relative grid gap-8 lg:grid-cols-[1fr_400px]">
           {/* Soft background blooms behind the columns */}
           <span
             aria-hidden
@@ -430,7 +461,7 @@ export default function CheckoutPage() {
               </StaggerItem>
             ) : null}
 
-            <StaggerItem>
+            <StaggerItem className={cn(step !== 0 && "hidden", "lg:block")}>
               <AddressPicker
                 addresses={addresses}
                 selectedId={resolvedAddressId}
@@ -438,7 +469,7 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem>
+            <StaggerItem className={cn(step !== 1 && "hidden", "lg:block")}>
               <SlotPicker
                 slots={rules.deliverySlots}
                 selectedId={resolvedSlotId}
@@ -446,7 +477,7 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem>
+            <StaggerItem className={cn(step !== 2 && "hidden", "lg:block")}>
               <RewardsPanel
                 subtotal={subtotal}
                 appliedCoupon={applied}
@@ -461,11 +492,11 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem>
+            <StaggerItem className={cn(step !== 3 && "hidden", "lg:block")}>
               <PaymentPicker selected={payment} onSelect={setPayment} />
             </StaggerItem>
 
-            <StaggerItem>
+            <StaggerItem className={cn(step !== 4 && "hidden", "lg:block")}>
               <NoCancellationAck
                 checked={acknowledged}
                 onChange={setAcknowledged}
@@ -473,8 +504,30 @@ export default function CheckoutPage() {
             </StaggerItem>
           </Stagger>
 
+          {/* Mobile / tablet wizard nav — hidden on desktop (whole form shown). */}
+          <div className="flex items-center gap-3 lg:hidden">
+            {step > 0 ? (
+              <Button variant="secondary" size="lg" onClick={() => setStep((s) => Math.max(0, s - 1))}>
+                <Icon name="alt-arrow-left-linear" size={18} />
+                Back
+              </Button>
+            ) : null}
+            {step < CHECKOUT_STEPS.length - 1 ? (
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={!stepReady}
+                onClick={() => setStep((s) => Math.min(CHECKOUT_STEPS.length - 1, s + 1))}
+              >
+                Next
+                <Icon name="alt-arrow-right-linear" size={18} />
+              </Button>
+            ) : null}
+          </div>
+
           {/* Right column — summary + CTA */}
-          <aside className="space-y-5 md:sticky md:top-24 md:self-start lg:top-24">
+          <aside className={cn(step !== CHECKOUT_STEPS.length - 1 && "hidden", "space-y-5 lg:block lg:sticky lg:top-24 lg:self-start")}>
             <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-float)]">
               <OrderSummary
                 items={items}
