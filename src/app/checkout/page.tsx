@@ -54,7 +54,7 @@ function CheckoutStepper() {
     <Reveal>
       <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-ng-line-soft bg-ng-paper/70 p-2.5 backdrop-blur sm:gap-2 sm:p-3">
         {CHECKOUT_STEPS.map((step, i) => (
-          <li key={step.label} className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <li key={step.label} className="flex flex-1 items-center gap-1.5 last:flex-none sm:flex-none sm:shrink-0 sm:gap-2">
             <span className="inline-flex items-center gap-2 rounded-full bg-ng-sage/40 px-3 py-1.5 text-[12px] font-semibold text-ng-forest sm:px-3.5">
               <span className="grid h-5 w-5 place-items-center rounded-full bg-ng-forest text-[10px] font-bold text-ng-cream tabular-nums">
                 {i + 1}
@@ -63,7 +63,7 @@ function CheckoutStepper() {
               <span className="hidden sm:inline">{step.label}</span>
             </span>
             {i < CHECKOUT_STEPS.length - 1 ? (
-              <span aria-hidden className="h-px w-3 bg-ng-line sm:w-5" />
+              <span aria-hidden className="h-px flex-1 bg-ng-line sm:w-5 sm:flex-none" />
             ) : null}
           </li>
         ))}
