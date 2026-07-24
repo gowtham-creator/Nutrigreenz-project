@@ -169,7 +169,7 @@ export function ProductListing({
 
       {/* Sticky category chip strip — only on the all-products view */}
       {!categorySlug ? (
-        <div className="sticky top-[68px] z-30 -mt-px glass-strong border-y border-ng-line-soft">
+        <div className="z-30 -mt-px glass-strong border-y border-ng-line-soft md:sticky md:top-[68px]">
           <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-5 py-3 md:px-8 scrollbar-hide">
             <span className="hidden shrink-0 pr-1 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted md:inline">
               Browse

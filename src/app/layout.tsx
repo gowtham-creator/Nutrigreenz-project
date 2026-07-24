@@ -74,7 +74,14 @@ export default function RootLayout({
             </LoyaltyConfigProvider>
           </CommerceProvider>
         </AuthProvider>
-        <Toaster position="top-right" richColors closeButton />
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+          duration={3500}
+          offset={{ top: "84px" }}
+          mobileOffset={{ top: "84px" }}
+        />
       </body>
     </html>
   );

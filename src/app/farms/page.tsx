@@ -27,15 +27,15 @@ export default async function FarmsPage() {
       />
 
       {/* Filters */}
-      <div className="border-b border-ng-line-soft bg-ng-paper sticky top-[60px] z-30 glass-strong">
-        <div className="mx-auto max-w-7xl px-5 md:px-8 py-4 flex flex-wrap gap-3 items-center">
-          <span className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mr-2">Region</span>
+      <div className="border-b border-ng-line-soft bg-ng-paper z-30 glass-strong md:sticky md:top-[68px]">
+        <div className="mx-auto flex max-w-7xl items-center gap-2.5 overflow-x-auto scrollbar-none px-5 py-3.5 md:px-8 lg:flex-wrap lg:gap-3 lg:overflow-visible">
+          <span className="shrink-0 whitespace-nowrap text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mr-2">Region</span>
           {REGIONS.map((r, i) => (
-            <Chip key={r} data-active={i === 0 ? "true" : undefined}>{r}</Chip>
+            <Chip key={r} className="shrink-0" data-active={i === 0 ? "true" : undefined}>{r}</Chip>
           ))}
-          <span className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mr-2 ml-4">Practice</span>
+          <span className="shrink-0 whitespace-nowrap text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mr-2 ml-4">Practice</span>
           {PRACTICES.map((p, i) => (
-            <Chip key={p} data-active={i === 0 ? "true" : undefined}>{p}</Chip>
+            <Chip key={p} className="shrink-0" data-active={i === 0 ? "true" : undefined}>{p}</Chip>
           ))}
         </div>
       </div>

@@ -30,7 +30,7 @@ const PILLARS = [
 export function ShopTrustStrip() {
   return (
     <div className="border-b border-ng-line-soft bg-ng-paper">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px overflow-hidden px-5 md:grid-cols-4 md:px-8">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-x-6 px-5 sm:grid-cols-2 md:grid-cols-4 md:px-8">
         {PILLARS.map((p) => (
           <div
             key={p.title}
