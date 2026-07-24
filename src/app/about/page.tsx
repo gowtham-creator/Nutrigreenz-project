@@ -9,44 +9,44 @@ import { Icon } from "@/components/ui/icon";
 export const metadata: Metadata = {
   title: "Our story — Nutri Greenz",
   description:
-    "Nutri Greenz is a Hyderabad farm-to-table brand sourcing direct from 42 partner farms. Read our mission, our sourcing model and the traceability ethos behind every lot.",
+    "Nutrigreenz Farm Technologies Pvt Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
 };
 
-const STATS = [
-  { value: "42", label: "Partner farms" },
-  { value: "5", label: "Indian states sourced" },
-  { value: "100%", label: "Lots lab-tested" },
-  { value: "2019", label: "Sowing our first season" },
+const VISION_PILLARS = [
+  { icon: "leaf-bold", label: "Healthy soil" },
+  { icon: "tractor-bold", label: "Sustainable farming" },
+  { icon: "shield-check-bold", label: "Healthy customers" },
+  { icon: "star-bold", label: "Healthy Nation" },
 ];
 
-const PILLARS = [
+const FOUNDERS = [
   {
-    icon: "leaf-bold",
-    title: "Source direct, never through a mandi",
-    body: "We buy straight from named farmers and co-ops — no middle layers skimming the margin. The price you pay reaches the people who grew your food.",
+    name: "RamaKrishna Katakam",
+    role: "Founder",
+    initials: "RK",
+    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutrigreenz Farm Technologies Pvt Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases — organic food plays a crucial role in helping us stay healthy.",
   },
   {
-    icon: "test-tube-bold",
-    title: "Test every single lot",
-    body: "Nothing reaches your kitchen untested. Each batch is screened for pesticide residue, aflatoxin, heavy metals and adulteration before it is allowed to ship.",
-  },
-  {
-    icon: "magnifer-zoom-in-bold",
-    title: "Show our work",
-    body: "Every pack carries a lot code. Scan it and you see the farm, the harvest date and the lab report. Trust should be verifiable, not a slogan.",
-  },
-  {
-    icon: "scale-bold",
-    title: "Pay farmers fairly",
-    body: "Long-term partnerships and transparent pricing mean our growers can plan, invest in better practices, and transition land away from monoculture.",
+    name: "Surendra Madivada",
+    role: "Founder · Natural & organic farming",
+    initials: "SM",
+    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper, raising awareness about the crucial role of bees in pollination — guided by the spirit of “Jai Jawan, Jai Kisan”.",
   },
 ];
 
-const TIMELINE = [
-  { year: "2019", title: "The first season", body: "We partnered with a single dryland groundnut farm in Anantapur and cold-pressed our first batch of oil for friends and family in Hyderabad." },
-  { year: "2021", title: "From plot to pantry", body: "Demand outgrew the garage. We opened our Kukatpally hub, added A2 ghee from Junagadh and honey from the Nilgiris, and built our first lab-testing protocol." },
-  { year: "2023", title: "Traceability by default", body: "Every lot got a scannable code tied to its farm and lab report. Transparency stopped being a feature and became the way we operate." },
-  { year: "2026", title: "42 farms and counting", body: "Today we work with 42 partner farms across five states, delivering across Hyderabad on fixed slots — fresh, tested and fully traceable." },
+const TEAM = [
+  {
+    name: "Akhil Panja",
+    role: "Agri-export & corporate farming",
+    initials: "AP",
+    body: "Panja Narayana Akhil, from Tadepalligudem, West Godavari district, Andhra Pradesh, holds a B.Tech in Computer Science and Engineering from Bangalore. For the past three years he has been actively involved in the agri-export business, with his forefathers having a long-standing history of agri-trading. He is particularly passionate about agriculture and practises corporate farming in an organic manner.",
+  },
+  {
+    name: "Sudhakar Manchala",
+    role: "Packaging & supply chain",
+    initials: "SM",
+    body: "Venkata Sudhakar Manchala, from Kakinada, East Godavari district, Andhra Pradesh, holds a Post Graduate degree in Polymer Engineering and an MBA in Marketing. After seven years in multinational corporations, he ventured into entrepreneurship in 2001, building his own plastic engineering and packaging business. He is a board member of the Indian Institute of Packaging and treasurer of the Indian Plastic Institute's Hyderabad chapter, and brings his passion for agriculture and the food supply chain to Nutrigreenz.",
+  },
 ];
 
 export default function AboutPage() {
@@ -59,10 +59,10 @@ export default function AboutPage() {
         eyebrow="Our story"
         title={
           <>
-            Born in soil. <em className="italic text-ng-leaf">Built for trust.</em>
+            Chemical-free food, <em className="italic text-ng-leaf">direct from the farmer.</em>
           </>
         }
-        description="Nutri Greenz began with one farm, one press and one stubborn belief — that good food should be honest about where it comes from. Today we bring fully traceable produce from 42 partner farms to kitchens across Hyderabad."
+        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices — and to bring their honest, chemical-free harvest straight to your door."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild variant="primary" size="lg" className="!bg-ng-cream !text-ng-forest-deep hover:!bg-white">
@@ -74,131 +74,99 @@ export default function AboutPage() {
         </div>
       </PageHero>
 
-      {/* Stats */}
-      <Section className="!py-14">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-3xl overflow-hidden border border-ng-line-soft bg-ng-line-soft">
-          {STATS.map((s) => (
-            <Reveal key={s.label} className="h-full bg-ng-paper p-7 text-center">
-              <div className="font-display text-[clamp(34px,5vw,52px)] leading-none text-ng-forest-deep">{s.value}</div>
-              <div className="mt-2 text-[13px] uppercase tracking-wider text-ng-ink-muted">{s.label}</div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* Mission */}
-      <Section
-        eyebrow="Why we exist"
-        heading={<>Food you can trace back to the hands that grew it</>}
-        description="Most of what fills a supermarket shelf has travelled through so many hands that nobody can tell you where it really came from. We were tired of guessing — so we built the short, honest supply chain we wanted to buy from ourselves."
-      >
-        <div className="grid md:grid-cols-2 gap-5">
-          {PILLARS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="h-12 w-12 rounded-xl bg-ng-leaf/15 ring-1 ring-inset ring-ng-forest/12 inline-flex items-center justify-center text-ng-forest-deep">
-                <Icon name={p.icon} size={24} />
-              </div>
-              <h3 className="mt-5 font-display text-[21px] text-ng-forest-deep leading-snug">{p.title}</h3>
-              <p className="mt-2.5 text-[15px] leading-relaxed text-ng-ink-muted">{p.body}</p>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* The 42 farms / sourcing model */}
-      <Section className="bg-ng-sage/25" eyebrow="The sourcing model" heading="42 farms, five states, one standard">
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          <Reveal className="flex flex-col gap-4 text-[16px] leading-relaxed text-ng-ink-muted max-w-xl">
-            <p>
-              We don&rsquo;t list a thousand SKUs from anonymous suppliers. We work with a small,
-              carefully chosen network of <strong className="text-ng-ink font-semibold">42 partner farms and
-              co-operatives</strong> — from the groundnut belt of Anantapur to A2 dairies in Junagadh
-              and honey co-ops in the Nilgiris.
-            </p>
-            <p>
-              Each partnership is long-term and direct. We agree fair, transparent prices before a
-              season begins, so our farmers can plan, invest in regenerative practices, and move land
-              away from chemical monoculture. When they do well, our shelves do well.
-            </p>
-            <p>
-              Every farm is named on our{" "}
-              <Link href="/farms" className="text-ng-forest underline underline-offset-2 hover:text-ng-forest-deep">farms page</Link>
-              {" "}— because &ldquo;locally sourced&rdquo; means nothing if we can&rsquo;t tell you whose
-              soil it came from.
-            </p>
-          </Reveal>
-
-          <Reveal delay={0.08} className="rounded-3xl border border-ng-line-soft bg-ng-paper p-8">
-            <h3 className="font-display text-[22px] text-ng-forest-deep">From farm to your door</h3>
-            <ol className="mt-6 flex flex-col gap-5">
-              {[
-                { t: "Harvested to order", d: "Produce is picked, milled or churned against real demand — not stockpiled for months." },
-                { t: "Tested before it ships", d: "Each lot is screened at NABL-accredited labs plus our in-house QC. If it fails, it never ships." },
-                { t: "Coded for traceability", d: "Every pack gets a lot code linking it to its farm, harvest date and report." },
-                { t: "Delivered fresh in Hyderabad", d: "Onto fixed morning and evening slots, straight from our Kukatpally hub." },
-              ].map((step, i) => (
-                <li key={step.t} className="flex gap-4">
-                  <span className="mt-0.5 h-7 w-7 shrink-0 rounded-full bg-ng-forest text-ng-cream text-[13px] font-semibold inline-flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <div className="font-display text-[17px] text-ng-forest-deep leading-snug">{step.t}</div>
-                    <p className="mt-1 text-[14.5px] leading-relaxed text-ng-ink-muted">{step.d}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* Traceability ethos */}
-      <Section
-        eyebrow="The traceability ethos"
-        heading="If we can't prove it, we don't claim it"
-        description="Anyone can print &ldquo;natural&rdquo; on a label. We decided the only honest version of that promise is one you can check yourself."
-      >
-        <Reveal className="relative overflow-hidden rounded-3xl bg-ng-forest-deep text-ng-cream p-8 md:p-12">
-          {/* On-theme depth so the dark ethos panel reads with dimension, not a
-              flat green block — matching the traceability band. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 58% 70% at 92% 6%, rgba(102,191,115,0.16), transparent 60%), radial-gradient(ellipse 55% 60% at 4% 100%, rgba(76,175,80,0.10), transparent 62%)",
-            }}
-          />
-          <div className="relative grid md:grid-cols-3 gap-8">
-            {[
-              { icon: "qr-code-bold", t: "Scan the code", d: "Every pack carries a unique lot code printed on the label." },
-              { icon: "tractor-bold", t: "See the farm", d: "The code resolves to the exact farm, farmer and harvest date." },
-              { icon: "document-text-bold", t: "Read the report", d: "Open the lab report for that lot — pesticide, aflatoxin, the lot." },
-            ].map((b) => (
-              <div key={b.t}>
-                <Icon name={b.icon} size={28} className="text-ng-leaf" />
-                <h3 className="mt-4 font-display text-[20px] text-ng-cream">{b.t}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-ng-cream/70">{b.d}</p>
-              </div>
-            ))}
-          </div>
-          <div className="relative mt-9">
-            <Button asChild variant="gold" size="md">
-              <Link href="/traceability">Try the traceability scanner</Link>
-            </Button>
-          </div>
+      {/* Our story */}
+      <Section eyebrow="Our story" heading="How Nutrigreenz began">
+        <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
+          <p>
+            {
+              "Pooling our diverse backgrounds, we came together to establish a platform for organically cultivated produce. Recognizing the plight of many farmers who lack marketing opportunities and fair prices for their organic harvests, we joined forces."
+            }
+          </p>
+          <p>
+            {
+              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively — and today, we proudly present Nutrigreenz Farm Technologies Pvt Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
+            }
+          </p>
         </Reveal>
       </Section>
 
-      {/* Timeline */}
-      <Section className="bg-ng-cream/50" eyebrow="How we grew" heading="From one farm to forty-two">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {TIMELINE.map((t, i) => (
-            <Reveal key={t.year} delay={i * 0.06} className="relative h-full rounded-2xl border border-ng-line-soft bg-ng-paper p-6">
-              <span aria-hidden className="mb-4 block h-1 w-8 rounded-full bg-ng-leaf" />
-              <div className="font-display text-[28px] text-ng-forest leading-none">{t.year}</div>
-              <h3 className="mt-3 font-display text-[18px] text-ng-forest-deep leading-snug">{t.title}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-ng-ink-muted">{t.body}</p>
+      {/* Our vision */}
+      <Section
+        className="bg-ng-sage/25"
+        eyebrow="Our vision"
+        heading="Preserve the soil, nourish the nation"
+        description="We aim to preserve soil for the benefit of future generations through chemical-free, sustainable farming practices alongside our fellow farmers — while delivering wholesome, nutritious food to our valued customers."
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {VISION_PILLARS.map((p, i) => (
+            <Reveal
+              key={p.label}
+              delay={i * 0.05}
+              className="flex flex-col items-center text-center gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper p-6"
+            >
+              <span className="h-12 w-12 rounded-xl bg-ng-leaf/15 ring-1 ring-inset ring-ng-forest/12 inline-flex items-center justify-center text-ng-forest-deep">
+                <Icon name={p.icon} size={24} />
+              </span>
+              <span className="font-display text-[17px] text-ng-forest-deep leading-snug">{p.label}</span>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
+      {/* Our mission */}
+      <Section
+        eyebrow="Our mission"
+        heading="Fair prices for farmers, healthy food for you"
+      >
+        <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
+          <p>
+            {
+              "In pursuit of our vision, we've wholeheartedly embraced chemical-free farming for the past eight years. By forming collaborations with fellow farmers in groups, we ensure fair prices for their harvests."
+            }
+          </p>
+          <p>
+            {
+              "Our dedication to offering healthy food extends to our customers, facilitated by convenient online applications and doorstep delivery services. Our current objective is to broaden our network, incorporate a greater number of farmers, and transition more cultivable lands into organic fields."
+            }
+          </p>
+        </Reveal>
+      </Section>
+
+      {/* Founders */}
+      <Section className="bg-ng-cream/50" eyebrow="Our founders" heading="The people who started it">
+        <div className="grid md:grid-cols-2 gap-6">
+          {FOUNDERS.map((f, i) => (
+            <Reveal key={f.name} delay={i * 0.06} className="flex h-full flex-col rounded-3xl border border-ng-line-soft bg-ng-paper p-7">
+              <div className="flex items-center gap-4">
+                <span className="h-14 w-14 shrink-0 rounded-full bg-ng-forest text-ng-cream inline-flex items-center justify-center font-display text-[18px]">
+                  {f.initials}
+                </span>
+                <div>
+                  <h3 className="font-display text-[20px] text-ng-forest-deep leading-snug">{f.name}</h3>
+                  <p className="text-[13px] uppercase tracking-wider text-ng-ink-muted">{f.role}</p>
+                </div>
+              </div>
+              <p className="mt-5 text-[15px] leading-relaxed text-ng-ink-muted">{f.body}</p>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
+      {/* Team */}
+      <Section eyebrow="Our team" heading="The hands behind the harvest">
+        <div className="grid md:grid-cols-2 gap-6">
+          {TEAM.map((t, i) => (
+            <Reveal key={t.name} delay={i * 0.06} className="flex h-full flex-col rounded-3xl border border-ng-line-soft bg-ng-paper p-7">
+              <div className="flex items-center gap-4">
+                <span className="h-14 w-14 shrink-0 rounded-full bg-ng-leaf/20 text-ng-forest-deep inline-flex items-center justify-center font-display text-[18px]">
+                  {t.initials}
+                </span>
+                <div>
+                  <h3 className="font-display text-[20px] text-ng-forest-deep leading-snug">{t.name}</h3>
+                  <p className="text-[13px] uppercase tracking-wider text-ng-ink-muted">{t.role}</p>
+                </div>
+              </div>
+              <p className="mt-5 text-[15px] leading-relaxed text-ng-ink-muted">{t.body}</p>
             </Reveal>
           ))}
         </div>
@@ -209,8 +177,8 @@ export default function AboutPage() {
         <Reveal className="rounded-3xl bg-ng-forest text-ng-cream p-10 md:p-14 text-center">
           <h2 className="font-display text-[clamp(26px,4vw,42px)] leading-tight">Taste the difference honesty makes</h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-ng-cream/75">
-            Stock your pantry with produce you can trace back to the farm — delivered fresh across
-            Hyderabad.
+            Stock your pantry with chemical-free produce sourced directly from farmers — delivered
+            fresh across Hyderabad.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Button asChild variant="secondary" size="lg">

@@ -9,30 +9,30 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = {
   title: "Contact us — Nutri Greenz",
   description:
-    "Get in touch with Nutri Greenz. Our team is in KPHB Colony, Kukatpally, Hyderabad. Email hello@nutrigreenz.in or call +91 8888 555 411 — we reply within one business day.",
+    "Get in touch with Nutrigreenz Farm Technologies Pvt Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.in or call +91 94918 93370 — we reply within one business day.",
 };
 
 const CHANNELS = [
   {
     icon: "letter-bold",
     title: "Email",
-    value: "hello@nutrigreenz.in",
-    href: "mailto:hello@nutrigreenz.in",
+    value: "customersupport@nutrigreenz.in",
+    href: "mailto:customersupport@nutrigreenz.in",
     note: "For anything — orders, quality, wholesale.",
   },
   {
     icon: "phone-bold",
     title: "Phone & WhatsApp",
-    value: "+91 8888 555 411",
-    href: "tel:+918888555411",
+    value: "+91 94918 93370",
+    href: "tel:+919491893370",
     note: "Mon–Sat, 9 AM – 7 PM IST.",
   },
   {
     icon: "map-point-bold",
-    title: "Visit the hub",
-    value: "KPHB Colony, Kukatpally",
-    href: "https://maps.google.com/?q=KPHB+Colony+Kukatpally+Hyderabad",
-    note: "Plot 7, Hyderabad 500072.",
+    title: "Visit us",
+    value: "Kukatpally, Hyderabad",
+    href: "https://maps.google.com/?q=Prashanth+Nagar+Kukatpally+Hyderabad+500072",
+    note: "Prashanth Nagar, Hyderabad 500072.",
   },
 ];
 
@@ -94,16 +94,16 @@ export default function ContactPage() {
                 Our address
               </h3>
               <address className="mt-4 not-italic text-[15px] leading-relaxed text-ng-cream/80">
-                Nutrigreenz Farm Pvt. Ltd.
+                Nutrigreenz Farm Technologies Pvt Ltd
                 <br />
-                Plot 7, KPHB Colony, Kukatpally
+                1st Floor, H.No. 5-35/167, Double Road,
                 <br />
-                Hyderabad, Telangana 500072
+                Near Moosapet Y Junction, Prashanth Nagar,
                 <br />
-                India
+                Kukatpally, Hyderabad, Telangana 500072
               </address>
               <a
-                href="https://maps.google.com/?q=KPHB+Colony+Kukatpally+Hyderabad"
+                href="https://maps.google.com/?q=Prashanth+Nagar+Kukatpally+Hyderabad+500072"
                 className="mt-4 inline-flex items-center gap-1.5 text-[14px] text-ng-clay hover:text-ng-cream transition-colors"
               >
                 Open in Maps

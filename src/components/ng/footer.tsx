@@ -150,11 +150,12 @@ export function Footer() {
                 Find us
               </h4>
               <address className="not-italic text-[14px] text-ng-cream/75 space-y-1 mb-6">
-                <p>Nutrigreenz Farm Technologies Pvt. Ltd.</p>
-                <p>Plot 7, KPHB Colony, Kukatpally</p>
-                <p>Hyderabad, Telangana 500072</p>
-                <p>+91 8888 555 411</p>
-                <p>hello@nutrigreenz.in</p>
+                <p>Nutrigreenz Farm Technologies Pvt Ltd</p>
+                <p>1st Floor, H.No. 5-35/167, Double Road,</p>
+                <p>Near Moosapet Y Junction, Prashanth Nagar,</p>
+                <p>Kukatpally, Hyderabad, Telangana 500072</p>
+                <p>+91 94918 93370</p>
+                <p>customersupport@nutrigreenz.in</p>
               </address>
               <div className="flex flex-wrap gap-3">
                 {SOCIALS.map((s) => (
@@ -174,7 +175,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[12px] text-ng-cream/70">
-          <p>© {new Date().getFullYear()} Nutrigreenz Farm Pvt. Ltd. — FSSAI 10822005000123</p>
+          <p>© {new Date().getFullYear()} Nutrigreenz Farm Technologies Pvt Ltd. All rights reserved.</p>
           <ul className="flex flex-wrap gap-x-5 gap-y-1">
             <li><Link href="/policies/privacy" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Privacy</Link></li>
             <li><Link href="/policies/terms" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Terms</Link></li>

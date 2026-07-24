@@ -105,14 +105,15 @@ export function PolicyLayout({
 
             <div className="mt-14 rounded-2xl border border-ng-line-soft bg-ng-cream/60 p-6">
               <p className="text-[14px] leading-relaxed text-ng-ink-muted">
-                This page is a plain-language summary of how we operate. For the registered entity,
-                write to <strong className="text-ng-ink font-semibold">Nutrigreenz Farm Pvt. Ltd.</strong>,
-                Plot 7, KPHB Colony, Kukatpally, Hyderabad, Telangana 500072, or email{" "}
+                For any questions about these policies, write to{" "}
+                <strong className="text-ng-ink font-semibold">Nutrigreenz Farm Technologies Pvt Ltd</strong>,
+                1st Floor, H.No. 5-35/167, Double Road, Near Moosapet Y Junction, Prashanth Nagar,
+                Kukatpally, Hyderabad, Telangana 500072, or email{" "}
                 <a
-                  href="mailto:hello@nutrigreenz.in"
+                  href="mailto:customersupport@nutrigreenz.in"
                   className="text-ng-forest underline underline-offset-2 hover:text-ng-forest-deep"
                 >
-                  hello@nutrigreenz.in
+                  customersupport@nutrigreenz.in
                 </a>
                 .
               </p>

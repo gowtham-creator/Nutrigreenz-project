@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 export const metadata: Metadata = {
   title: "FAQs — Nutri Greenz",
   description:
-    "Answers to common questions about Nutri Greenz — orders, delivery slots across Hyderabad, our no-cancellation policy, loyalty, damaged-item returns and lot-code traceability.",
+    "Answers to common questions about Nutrigreenz — payments, wallet recharge and autopay, cashback offers and refunds.",
 };
 
 interface QA {
@@ -18,177 +18,120 @@ interface QA {
 
 const GROUPS: { title: string; icon: string; items: QA[] }[] = [
   {
-    title: "Orders & payment",
+    title: "Payments",
     icon: "bag-4-bold",
     items: [
       {
-        q: "How do I place an order?",
+        q: "What should I do if my payment fails?",
         a: (
           <p>
-            Sign in with your mobile number, add items to your cart and check out. We&rsquo;re a
-            prepaid-first store, so your order is confirmed the moment payment succeeds. You can pay by
-            UPI, card or netbanking.
+            {
+              "In case of a payment failure, please retry ensuring correct account details, billing address and password (for net banking), and make sure your Internet connection is not disrupted in the process. If your amount has been debited after a payment failure, it is usually rolled back to your source bank account within 7 business days. You can always contact our Customer Care helpdesk with your concern for any clarification further required."
+            }
           </p>
         ),
       },
       {
-        q: "Is there a minimum order value?",
+        q: "What payment methods do you accept?",
         a: (
-          <p>
-            A small minimum applies and is shown in your cart. Spend ₹599 or more and delivery is free;
-            below that, a flat delivery fee is shown transparently before you pay.
-          </p>
-        ),
-      },
-      {
-        q: "Can I change or cancel an order after paying?",
-        a: (
-          <p>
-            No — confirmed orders cannot be cancelled or modified. We start picking and packing fresh
-            produce against your slot right away. Please double-check your cart, address and slot
-            before paying. See our{" "}
-            <Link href="/policies/refund">cancellation &amp; refund policy</Link> for the full detail.
-          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1.5">
+            <li>{"Credit card"}</li>
+            <li>{"Debit card"}</li>
+            <li>{"Net banking"}</li>
+            <li>{"Wallets — Paytm, Amazon Pay, PayZapp, Freecharge, PhonePe"}</li>
+            <li>{"UPI — Google Pay, BHIM"}</li>
+          </ul>
         ),
       },
     ],
   },
   {
-    title: "Delivery & slots",
-    icon: "scooter-bold",
+    title: "Wallet & autopay",
+    icon: "scale-bold",
     items: [
       {
-        q: "Which areas do you deliver to?",
+        q: "How do I recharge my wallet?",
         a: (
-          <p>
-            We deliver across Hyderabad and the Greater Hyderabad area — Kukatpally, KPHB, Madhapur,
-            Gachibowli, Kondapur, Miyapur, Banjara Hills, Jubilee Hills and most pincodes inside the
-            ORR. Enter your pincode in the location bar to confirm we serve you.
-          </p>
+          <ol className="list-decimal pl-5 flex flex-col gap-1.5">
+            <li>{"Login to the Nutrigreenz app."}</li>
+            <li>{"Select Wallet from the Menu."}</li>
+            <li>{"Enter the amount and make payment from the various wallet / UPI / net banking options."}</li>
+          </ol>
         ),
       },
       {
-        q: "What are the delivery slots?",
+        q: "How can I recharge my wallet automatically when my balance goes below Rs.100?",
         a: (
-          <p>
-            Two fixed slots: a <strong>morning slot</strong> (7&ndash;11 AM) and an{" "}
-            <strong>evening slot</strong> (5&ndash;9 PM). Order before 9 PM for next-day delivery in
-            most pincodes. Full detail is in our{" "}
-            <Link href="/policies/shipping">shipping policy</Link>.
-          </p>
+          <ol className="list-decimal pl-5 flex flex-col gap-1.5">
+            <li>{"Tap the Wallet icon at the top right of the home screen."}</li>
+            <li>{"Select the auto-pay payment option and click Apply."}</li>
+            <li>{"Select the preferable payment method."}</li>
+            <li>{"After making the payment you’ll receive a payment confirmation screen."}</li>
+          </ol>
         ),
       },
       {
-        q: "How do I track my delivery?",
+        q: "When will autopay be triggered?",
+        a: <p>{"Every time your wallet balance reaches Rs 100, the wallet will be loaded automatically."}</p>,
+      },
+      {
+        q: "Where can I edit or delete the autopay configuration?",
+        a: (
+          <ol className="list-decimal pl-5 flex flex-col gap-1.5">
+            <li>{"Login to the Nutrigreenz app."}</li>
+            <li>{"Select Account and Preferences from the Menu section."}</li>
+            <li>{"Select the top-right three dots to edit or delete the autopay feature."}</li>
+          </ol>
+        ),
+      },
+      {
+        q: "What happens in case of low funds in my wallet?",
         a: (
           <p>
-            You&rsquo;ll get an SMS and email with a live link once your order is packed. You can also
-            follow it from <Link href="/orders/track">Track order</Link> or under{" "}
-            <Link href="/orders">your orders</Link>.
+            {
+              "Due to a low wallet balance, your services get stopped. So you have to maintain the balance to continue delivery."
+            }
           </p>
         ),
       },
     ],
   },
   {
-    title: "Returns & quality",
-    icon: "shield-check-bold",
-    items: [
-      {
-        q: "What if an item arrives damaged or incorrect?",
-        a: (
-          <p>
-            We refund or replace, free of charge, any item that arrives damaged, spoiled, incorrect or
-            missing. Report it within <strong>24 hours of delivery</strong> with a photo and your order
-            number to <a href="mailto:hello@nutrigreenz.in">hello@nutrigreenz.in</a> or{" "}
-            <a href="tel:+918888555411">+91 8888 555 411</a>.
-          </p>
-        ),
-      },
-      {
-        q: "Can I return something I simply didn't like?",
-        a: (
-          <p>
-            Because our produce is fresh and food-grade, we can&rsquo;t accept change-of-mind returns.
-            Refunds and replacements are limited to damaged, spoiled, incorrect or missing items, as set
-            out in our <Link href="/policies/refund">refund policy</Link>.
-          </p>
-        ),
-      },
-      {
-        q: "How are refunds paid back?",
-        a: (
-          <p>
-            To your original prepaid method (typically 3&ndash;7 business days) or instantly as Nutri
-            Greenz wallet credit — your choice.
-          </p>
-        ),
-      },
-    ],
-  },
-  {
-    title: "Loyalty & referrals",
+    title: "Cashback & offers",
     icon: "star-bold",
     items: [
       {
-        q: "How does the loyalty programme work?",
+        q: "When will the cashback be credited?",
         a: (
           <p>
-            You earn points on eligible orders that you can redeem on future purchases. Track your
-            balance and tier in your <Link href="/loyalty">loyalty wallet</Link>.
+            {
+              "Cashback is always credited when you recharge your wallet. If you haven’t received it, please wait for 24 hours for it to reflect in your wallet."
+            }
           </p>
         ),
       },
       {
-        q: "What happens to points if my order is refunded?",
+        q: "What are the live cashback offers?",
         a: (
-          <p>
-            Points earned on a refunded amount are reversed; any points you&rsquo;d already redeemed on
-            that order are credited back to your balance.
-          </p>
-        ),
-      },
-      {
-        q: "How do referrals work?",
-        a: (
-          <p>
-            Share your code from the <Link href="/referral">referral page</Link>. When a friend places
-            their first order, you both earn a reward. Programme rules apply.
-          </p>
+          <ol className="list-decimal pl-5 flex flex-col gap-1.5">
+            <li>{"Go to Wallet & payment modes from the Menu section in your Nutrigreenz app."}</li>
+            <li>{"Select the auto-pay mode (cashback will be provided one time)."}</li>
+          </ol>
         ),
       },
     ],
   },
   {
-    title: "Traceability & lot codes",
-    icon: "qr-code-bold",
+    title: "Refunds",
+    icon: "shield-check-bold",
     items: [
       {
-        q: "What is a lot code?",
+        q: "How much time is taken to process a refund?",
         a: (
           <p>
-            A unique code printed on every pack. It links that exact batch to the farm it came from, its
-            harvest date and its lab report.
-          </p>
-        ),
-      },
-      {
-        q: "How do I trace my product?",
-        a: (
-          <p>
-            Enter or scan the lot code on our{" "}
-            <Link href="/traceability">traceability page</Link> to see the farm, the harvest and the
-            full quality report for your batch.
-          </p>
-        ),
-      },
-      {
-        q: "Is everything really lab-tested?",
-        a: (
-          <p>
-            Yes — 100% of lots are screened for pesticide residue, aflatoxin, heavy metals and
-            adulteration before they ship. If a lot fails, it never reaches you. Read more on our{" "}
-            <Link href="/lab">quality lab</Link> page.
+            {"Refunds will be processed within 5-7 working days. See our "}
+            <Link href="/policies/refund">cancellation &amp; refund policy</Link>
+            {" for full details."}
           </p>
         ),
       },
@@ -206,7 +149,7 @@ export default function FaqPage() {
             Questions, <em className="italic text-ng-leaf">answered.</em>
           </>
         }
-        description="Everything you need to know about ordering, delivery across Hyderabad, returns and traceability. Can't find it here? Our team is a message away."
+        description="Everything you need to know about payments, your wallet and autopay, cashback offers and refunds. Can't find it here? Our team is a message away."
       />
 
       <Section>
@@ -219,7 +162,7 @@ export default function FaqPage() {
                   <li key={g.title} className="shrink-0">
                     <a
                       href={`#${slug(g.title)}`}
-                      className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-[13.5px] text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-forest-deep transition-colors"
+                      className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-[13.5px] text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-forest-deep transition-colors whitespace-nowrap"
                     >
                       <Icon name={g.icon} size={17} className="text-ng-forest" />
                       {g.title}
