@@ -96,7 +96,7 @@ export function Footer() {
                 type="email"
                 aria-label="Email address"
                 placeholder="your@email.com"
-                className="h-14 w-full flex-1 rounded-full border border-ng-cream/30 bg-ng-cream/10 px-6 text-[15px] text-ng-cream outline-none transition-colors placeholder:text-ng-cream/55 focus:border-ng-clay focus:bg-ng-cream/15 focus:ring-2 focus:ring-ng-clay/30"
+                className="h-14 w-full flex-1 rounded-full border border-ng-cream/40 bg-ng-cream px-6 text-[15px] text-ng-forest-deep outline-none transition-colors placeholder:text-ng-forest/45 focus:border-ng-clay focus:ring-2 focus:ring-ng-clay/40"
               />
               <Button variant="gold" size="lg" className="w-full shrink-0 sm:w-auto">
                 Subscribe
@@ -132,7 +132,7 @@ export function Footer() {
           ))}
 
           {/* Find us */}
-          <div className="relative col-span-2 md:col-span-1">
+          <div className="relative">
             {/* Soft local scrim — the sun + tallest tree row of the illustration
                 rise highest behind this column, so a gentle contained deepening
                 keeps the address perfectly crisp without dimming the scene
@@ -156,7 +156,7 @@ export function Footer() {
                 <p>+91 8888 555 411</p>
                 <p>hello@nutrigreenz.in</p>
               </address>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 {SOCIALS.map((s) => (
                   <Link
                     key={s.name}

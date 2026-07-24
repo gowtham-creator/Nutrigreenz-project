@@ -103,8 +103,33 @@ export function LinkPhonePrompt() {
       skipped = true; // storage blocked → don't nag
     }
     if (skipped) return;
-    const t = window.setTimeout(() => setOpen(true), 900);
-    return () => window.clearTimeout(t);
+
+    let cancelled = false;
+    let timer: number | undefined;
+    // The phone may already be linked SERVER-SIDE (verified on another device)
+    // even though this Firebase user has no `phoneNumber` — check the canonical
+    // customer before nagging, so a returning Google user isn't re-prompted.
+    void (async () => {
+      try {
+        const res = await fetch("/api/account/me", { cache: "no-store" });
+        const data = (await res.json().catch(() => null)) as { customer?: { phone?: string | null } } | null;
+        if (data?.customer?.phone) {
+          try {
+            window.localStorage.setItem(dismissedKey(user.uid), "1");
+          } catch {
+            /* storage blocked — fine */
+          }
+          return; // already verified → never prompt
+        }
+      } catch {
+        /* best-effort — fall through and prompt as before */
+      }
+      if (!cancelled) timer = window.setTimeout(() => setOpen(true), 900);
+    })();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [configured, user]);
 
   // Task T6 — when the People-API enrichment found a phone that COLLIDES with
