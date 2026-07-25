@@ -889,7 +889,7 @@ function AddInviteAdminModal({
           <Input
             label="Email"
             type="email"
-            placeholder="name@nutrigreenz.in"
+            placeholder="name@nutrigreenz.farm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             prefix={<Icon name="letter-bold" size={18} />}

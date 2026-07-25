@@ -36,7 +36,7 @@ export default function RefundPolicyPage() {
               {
                 "Any capitalized terms used but not defined herein shall have the meaning assigned to them under the Terms of Use which govern your use of our website "
               }
-              <a href="https://www.nutrigreenz.in">www.nutrigreenz.in</a>
+              <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
               {
                 " (the “Website”) and our ‘Nutrigreenz’ application for mobile and handheld devices (the “App”). The Website and the App are jointly referred to as the “Platform”."
               }

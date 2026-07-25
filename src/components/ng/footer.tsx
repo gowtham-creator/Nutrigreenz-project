@@ -155,7 +155,7 @@ export function Footer() {
                 <p>Near Moosapet Y Junction, Prashanth Nagar,</p>
                 <p>Kukatpally, Hyderabad, Telangana 500072</p>
                 <p>+91 94918 93370</p>
-                <p>customersupport@nutrigreenz.in</p>
+                <p>customersupport@nutrigreenz.farm</p>
               </address>
               <div className="flex flex-wrap gap-3">
                 {SOCIALS.map((s) => (

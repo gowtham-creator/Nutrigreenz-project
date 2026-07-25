@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /** Public base URL used to reference the sitemap. */
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://nutrigreenz.in").replace(/\/$/, "");
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://nutrigreenz.farm").replace(/\/$/, "");
 
 export default function robots(): MetadataRoute.Robots {
   return {

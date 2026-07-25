@@ -127,7 +127,7 @@ export default function CareersPage() {
                   </div>
                 </div>
                 <a
-                  href={`mailto:careers@nutrigreenz.in?subject=${encodeURIComponent(`Application: ${r.title}`)}`}
+                  href={`mailto:careers@nutrigreenz.farm?subject=${encodeURIComponent(`Application: ${r.title}`)}`}
                   className="shrink-0 inline-flex items-center gap-2 rounded-full bg-ng-forest text-ng-paper font-semibold px-6 py-3 text-[14px] hover:bg-ng-forest-deep transition-colors"
                 >
                   Apply
@@ -145,10 +145,10 @@ export default function CareersPage() {
             tell us how you&rsquo;d like to help.
           </p>
           <a
-            href="mailto:careers@nutrigreenz.in?subject=Open%20application"
+            href="mailto:careers@nutrigreenz.farm?subject=Open%20application"
             className="mt-5 inline-flex items-center gap-2 rounded-full border-2 border-ng-forest text-ng-forest font-semibold px-6 py-2.5 text-[14px] hover:bg-ng-forest hover:text-ng-paper transition-colors"
           >
-            Write to careers@nutrigreenz.in
+            Write to careers@nutrigreenz.farm
           </a>
         </Reveal>
       </Section>

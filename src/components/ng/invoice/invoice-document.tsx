@@ -15,7 +15,7 @@ const SELLER = {
   legalName: "Nutrigreenz Farm Technologies Pvt. Ltd.",
   address: "KPHB Colony, Kukatpally, Hyderabad, Telangana 500072",
   gstin: "36ABCDE1234F1Z5",
-  email: "support@nutrigreenz.in",
+  email: "support@nutrigreenz.farm",
   phone: "+91 90000 12345",
   cin: "U01400TG2024PTC012345",
 } as const;

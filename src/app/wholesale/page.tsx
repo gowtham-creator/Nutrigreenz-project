@@ -54,7 +54,7 @@ export default function WholesalePage() {
         description="Whether you're stocking a café pantry, a 200-person office, or gifting clients this festive season — get Nutri Greenz quality in bulk, sourced direct and delivered across Hyderabad."
       >
         <a
-          href="mailto:wholesale@nutrigreenz.in?subject=Bulk%20%26%20corporate%20enquiry"
+          href="mailto:wholesale@nutrigreenz.farm?subject=Bulk%20%26%20corporate%20enquiry"
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors"
         >
           <Icon name="letter-bold" size={17} />
@@ -117,10 +117,10 @@ export default function WholesalePage() {
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <a
-              href="mailto:wholesale@nutrigreenz.in?subject=Bulk%20%26%20corporate%20enquiry"
+              href="mailto:wholesale@nutrigreenz.farm?subject=Bulk%20%26%20corporate%20enquiry"
               className="inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[15px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors"
             >
-              Email wholesale@nutrigreenz.in
+              Email wholesale@nutrigreenz.farm
             </a>
             <Link href="/contact" className="inline-flex items-center gap-2 rounded-full glass-strong text-ng-cream font-semibold px-6 py-3 text-[15px]">
               Contact the team

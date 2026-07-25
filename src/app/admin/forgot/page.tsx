@@ -145,7 +145,7 @@ export default function AdminForgotPage() {
               label="Email"
               type="email"
               autoComplete="username"
-              placeholder="you@nutrigreenz.in"
+              placeholder="you@nutrigreenz.farm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               prefix={<Icon name="letter-bold" size={18} />}

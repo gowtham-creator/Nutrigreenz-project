@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { CATEGORIES, PRODUCTS, FARMS, JOURNAL } from "@/components/ng/data";
 
 /** Public base URL for absolute sitemap entries. */
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://nutrigreenz.in").replace(/\/$/, "");
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://nutrigreenz.farm").replace(/\/$/, "");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

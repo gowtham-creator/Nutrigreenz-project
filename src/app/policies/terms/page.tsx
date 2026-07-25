@@ -21,7 +21,7 @@ export default function TermsPage() {
           body: (
             <p>
               {"This website "}
-              <a href="https://www.nutrigreenz.in">www.nutrigreenz.in</a>
+              <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
               {
                 " is operated by Nutrigreenz Farm Technologies Pvt Ltd, an India based company incorporated under the Indian Companies Act of 2013. The policy is issued by ‘Nutrigreenz Farm Technologies Pvt Ltd’. By placing an order on this site, you are entering into a purchase/sale transaction with Nutrigreenz Farm Technologies Pvt Ltd. The terms and conditions are enumerated as follows."
               }
@@ -42,7 +42,7 @@ export default function TermsPage() {
                 {
                   "The “Site” means the online shopping portal owned and operated by Nutrigreenz Farm Technologies Pvt Ltd which provides a platform to the shoppers to buy the products listed on the site. “Vendor” / “Seller” / “Affiliate” shall mean the person or any legal entity who offers for sale, or sells the products or services on "
                 }
-                <a href="https://www.nutrigreenz.in">www.nutrigreenz.in</a>
+                <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
                 {"."}
               </p>
               <p>

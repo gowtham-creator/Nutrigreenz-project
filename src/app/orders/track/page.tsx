@@ -81,7 +81,7 @@ export default function TrackOrderPage() {
                   Call us
                 </Link>
                 <Link
-                  href="mailto:care@nutrigreenz.in"
+                  href="mailto:care@nutrigreenz.farm"
                   className="rounded-xl bg-ng-clay px-4 py-3 text-center text-[13px] font-semibold text-ng-forest-deep transition-colors hover:bg-ng-clay-deep"
                 >
                   Email care

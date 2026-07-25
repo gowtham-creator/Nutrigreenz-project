@@ -59,11 +59,11 @@ export default function PressPage() {
         description="Nutri Greenz is a Hyderabad farm-to-table brand building a fully traceable food supply chain — from 42 partner farms to kitchens across the city. Resources for journalists and partners are below."
       >
         <a
-          href="mailto:press@nutrigreenz.in?subject=Press%20enquiry"
+          href="mailto:press@nutrigreenz.farm?subject=Press%20enquiry"
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors"
         >
           <Icon name="letter-bold" size={17} />
-          press@nutrigreenz.in
+          press@nutrigreenz.farm
         </a>
       </PageHero>
 
@@ -121,8 +121,8 @@ export default function PressPage() {
         <p className="mt-6 text-[13px] text-ng-ink-soft">
           Quotes are illustrative of coverage themes. For interviews, data or a founder conversation,
           email{" "}
-          <a href="mailto:press@nutrigreenz.in" className="text-ng-forest underline underline-offset-2 hover:text-ng-forest-deep">
-            press@nutrigreenz.in
+          <a href="mailto:press@nutrigreenz.farm" className="text-ng-forest underline underline-offset-2 hover:text-ng-forest-deep">
+            press@nutrigreenz.farm
           </a>
           .
         </p>
@@ -150,7 +150,7 @@ export default function PressPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
-            <a href="mailto:press@nutrigreenz.in?subject=Media%20kit%20request" className="inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors">Request media kit</a>
+            <a href="mailto:press@nutrigreenz.farm?subject=Media%20kit%20request" className="inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors">Request media kit</a>
             <Link href="/about" className="inline-flex items-center gap-2 rounded-full glass-strong text-ng-cream font-semibold px-6 py-3 text-[14px]">Read our story</Link>
           </div>
         </Reveal>

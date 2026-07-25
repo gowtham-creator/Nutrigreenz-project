@@ -93,3 +93,4 @@ scripts/download-anveshan-assets.mjs
 *-tmp.mjs
 *-shots-tmp/
 *-tmp/
+.firecrawl/

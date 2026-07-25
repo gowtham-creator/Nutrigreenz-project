@@ -103,7 +103,7 @@ export async function POST(request: Request): Promise<Response> {
 
   // 3. Allowlist → operator identity (fail closed). The number maps back to the
   //    SAME canonical email as passcode sign-in, so phone sign-in lands in the
-  //    existing admin profile (e.g. admin@nutrigreenz.in) — not a phone-keyed one.
+  //    existing admin profile (e.g. admin@nutrigreenz.farm) — not a phone-keyed one.
   // Env allowlist first (fast path); then any admin whose OWN saved profile phone
   // matches, so a super-admin who changed their number can sign in with it.
   const op = operatorForPhone(phone) ?? (await adminByPhone(phone));

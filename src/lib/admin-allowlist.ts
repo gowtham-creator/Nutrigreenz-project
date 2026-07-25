@@ -25,13 +25,13 @@ export function normalizePhone(raw: string): string {
  * "+91 98765 43210" matches "+919876543210".
  */
 /** Default super-admin email — mirrors `/api/admin/login`. */
-const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.in";
+const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.farm";
 
 /**
  * Resolve a verified phone number to its operator identity (role + canonical
  * email), or null when the number is not an authorised operator. Mapping the
  * number back to the SAME email that passcode sign-in uses is what keeps phone
- * sign-in landing in the EXISTING admin profile (e.g. admin@nutrigreenz.in)
+ * sign-in landing in the EXISTING admin profile (e.g. admin@nutrigreenz.farm)
  * instead of minting a separate phone-keyed identity.
  */
 export function operatorForPhone(

@@ -110,10 +110,10 @@ export function PolicyLayout({
                 1st Floor, H.No. 5-35/167, Double Road, Near Moosapet Y Junction, Prashanth Nagar,
                 Kukatpally, Hyderabad, Telangana 500072, or email{" "}
                 <a
-                  href="mailto:customersupport@nutrigreenz.in"
+                  href="mailto:customersupport@nutrigreenz.farm"
                   className="text-ng-forest underline underline-offset-2 hover:text-ng-forest-deep"
                 >
-                  customersupport@nutrigreenz.in
+                  customersupport@nutrigreenz.farm
                 </a>
                 .
               </p>

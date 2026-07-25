@@ -33,7 +33,7 @@ import {
 const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /** Default operator email if `ADMIN_EMAIL` is not configured. */
-const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.in";
+const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.farm";
 
 const encoder = new TextEncoder();
 
@@ -74,7 +74,7 @@ function maskPhone(phone: string | null): string | null {
  *
  * Server-side credential validation for the admin portal. Two roles are
  * supported:
- *   - `superadmin` — the EXISTING `ADMIN_EMAIL` (default `admin@nutrigreenz.in`)
+ *   - `superadmin` — the EXISTING `ADMIN_EMAIL` (default `admin@nutrigreenz.farm`)
  *     / `ADMIN_PASSCODE` credentials. Always available (no new env required).
  *   - `admin`      — the OPTIONAL `STAFF_ADMIN_EMAIL` / `STAFF_ADMIN_PASSCODE`
  *     credentials. Only honoured when BOTH env vars are set; otherwise staff

@@ -516,7 +516,7 @@ export function CouponCampaignBuilder() {
                   {draft.expiresAt
                     ? `. Valid till ${new Date(draft.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
                     : ""}
-                  . Shop fresh → nutrigreenz.in
+                  . Shop fresh → nutrigreenz.farm
                 </p>
                 <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2 font-mono">
                   ~{160} char SMS · sent to {mode.label.toLowerCase()}

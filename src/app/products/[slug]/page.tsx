@@ -30,7 +30,7 @@ import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 import { getProductStory } from "@/components/ng/pdp/pdp-story";
 import { getCategoryTheme } from "@/lib/category-theme";
 
-const SITE = "https://nutrigreenz.in";
+const SITE = "https://nutrigreenz.farm";
 const PLACEHOLDER = "/images/placeholder.svg";
 /** Reuse the storefront's "harvest" coupon deal across PDP offer/best-price strips. */
 const COUPON_CODE = "HARVEST10";

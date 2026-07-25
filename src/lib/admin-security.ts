@@ -180,7 +180,7 @@ export async function getTotpSecret(email: string): Promise<string | null> {
 /** The env-configured super-admin owns the shared ADMIN_TOTP_SECRET; no other
  *  admin is gated/enrolled against it — they each get their own per-admin secret. */
 export function isEnvTotpAdmin(email: string): boolean {
-  const envAdmin = (process.env.ADMIN_EMAIL || "admin@nutrigreenz.in").trim().toLowerCase();
+  const envAdmin = (process.env.ADMIN_EMAIL || "admin@nutrigreenz.farm").trim().toLowerCase();
   return norm(email) === envAdmin;
 }
 

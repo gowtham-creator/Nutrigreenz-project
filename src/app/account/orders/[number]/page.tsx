@@ -404,7 +404,7 @@ export default function AccountOrderDetailPage({
             ) : null}
 
             <Button variant="ghost" fullWidth asChild>
-              <Link href="mailto:care@nutrigreenz.in">Report an issue</Link>
+              <Link href="mailto:care@nutrigreenz.farm">Report an issue</Link>
             </Button>
 
             {/* No cancel action — short no-cancellation note instead (§3.9). */}

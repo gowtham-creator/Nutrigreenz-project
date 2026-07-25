@@ -9,15 +9,15 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = {
   title: "Contact us — Nutri Greenz",
   description:
-    "Get in touch with Nutrigreenz Farm Technologies Pvt Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.in or call +91 94918 93370 — we reply within one business day.",
+    "Get in touch with Nutrigreenz Farm Technologies Pvt Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370 — we reply within one business day.",
 };
 
 const CHANNELS = [
   {
     icon: "letter-bold",
     title: "Email",
-    value: "customersupport@nutrigreenz.in",
-    href: "mailto:customersupport@nutrigreenz.in",
+    value: "customersupport@nutrigreenz.farm",
+    href: "mailto:customersupport@nutrigreenz.farm",
     note: "For anything — orders, quality, wholesale.",
   },
   {

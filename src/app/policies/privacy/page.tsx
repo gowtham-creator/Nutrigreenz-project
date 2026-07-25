@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
               {
                 "This Privacy Policy (“Policy”) describes the policies and procedures on the collection, use, disclosure and protection of your information when you use our website located at "
               }
-              <a href="https://www.nutrigreenz.in">www.nutrigreenz.in</a>
+              <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
               {
                 ", or the Nutrigreenz mobile application (collectively, the “Nutrigreenz Platform”) made available by "
               }
@@ -112,7 +112,7 @@ export default function PrivacyPolicyPage() {
                 {
                   "If you wish to withdraw your consent for the use and disclosure of your personal information or request the deletion of your data, please write to us at "
                 }
-                <a href="mailto:customersupport@nutrigreenz.in">customersupport@nutrigreenz.in</a>
+                <a href="mailto:customersupport@nutrigreenz.farm">customersupport@nutrigreenz.farm</a>
                 {". Your request will take effect within 5 business days."}
               </p>
             </>
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
                 {
                   "If you have any queries regarding the processing of your personal information, please email us at "
                 }
-                <a href="mailto:customersupport@nutrigreenz.in">customersupport@nutrigreenz.in</a>
+                <a href="mailto:customersupport@nutrigreenz.farm">customersupport@nutrigreenz.farm</a>
                 {" or contact our Grievance Officer at the following address:"}
               </p>
               <p>
@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <p>
                 {"If you come across any abuse or violation of the Policy, please report it to "}
-                <a href="mailto:customersupport@nutrigreenz.in">customersupport@nutrigreenz.in</a>
+                <a href="mailto:customersupport@nutrigreenz.farm">customersupport@nutrigreenz.farm</a>
                 {"."}
               </p>
             </>

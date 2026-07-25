@@ -256,7 +256,7 @@ export default function AccountOrdersPage() {
             Issue with an order? Our care team replies within 2 hours.
           </span>
           <Link
-            href="mailto:care@nutrigreenz.in"
+            href="mailto:care@nutrigreenz.farm"
             className="font-medium text-ng-forest hover:underline"
           >
             Contact support →
