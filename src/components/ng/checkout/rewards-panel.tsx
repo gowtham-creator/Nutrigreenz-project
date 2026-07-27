@@ -23,6 +23,7 @@ export function RewardsPanel({
   loyaltyRedeemed,
   onToggleLoyalty,
   redeemPointsPerRupee = POINTS_PER_RUPEE,
+  deliveryPincode,
 }: {
   subtotal: number;
   appliedCoupon: { coupon: Coupon; discount: number } | null;
@@ -35,6 +36,12 @@ export function RewardsPanel({
   onToggleLoyalty: (on: boolean) => void;
   /** Admin-configured points→₹ ratio, so the copy matches the real discount. */
   redeemPointsPerRupee?: number;
+  /**
+   * Pincode of the selected delivery address. Sent with the coupon quote so
+   * area-targeted codes (specific pincodes / gated communities) resolve
+   * correctly in the preview; the order path re-checks it authoritatively.
+   */
+  deliveryPincode?: string | null;
 }) {
   const [code, setCode] = useState("");
   const [applying, setApplying] = useState(false);
@@ -54,7 +61,7 @@ export function RewardsPanel({
     try {
       // Server-validated against the live coupon catalogue (the authoritative
       // charge is re-checked again when the order is actually placed).
-      const result = await validateCouponApi(code, Math.round(subtotal * 100));
+      const result = await validateCouponApi(code, Math.round(subtotal * 100), deliveryPincode);
       if (!result.valid || !result.code) {
         toast.error(couponReasonMessage(result.reason));
         // Welcome/first-order code without a verified phone → open OTP inline and

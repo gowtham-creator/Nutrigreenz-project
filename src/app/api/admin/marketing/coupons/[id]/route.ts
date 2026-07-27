@@ -34,6 +34,19 @@ function nullableStr(v: unknown): string | null | undefined {
   return typeof v === "string" ? v.trim() : undefined;
 }
 
+/** Area-targeting list: array or comma/newline string; blank → null (no restriction). */
+function nullableList(v: unknown): string[] | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  const parts = Array.isArray(v)
+    ? v.map((x) => (typeof x === "string" ? x : String(x ?? "")))
+    : typeof v === "string"
+      ? v.split(/[\n,]/)
+      : [];
+  const out = Array.from(new Set(parts.map((p) => p.trim()).filter(Boolean)));
+  return out.length > 0 ? out : null;
+}
+
 /** PATCH — edit a coupon's terms (not its code). Super-admin only. */
 export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
@@ -67,6 +80,13 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (usageLimit !== undefined) patch.usageLimit = usageLimit;
   const perCustomerLimit = nullableNum(body.perCustomerLimit);
   if (perCustomerLimit !== undefined) patch.perCustomerLimit = perCustomerLimit;
+  if (typeof body.requiresVerifiedPhone === "boolean") {
+    patch.requiresVerifiedPhone = body.requiresVerifiedPhone;
+  }
+  const pincodes = nullableList(body.pincodes);
+  if (pincodes !== undefined) patch.pincodes = pincodes;
+  const communities = nullableList(body.communities);
+  if (communities !== undefined) patch.communities = communities;
 
   try {
     const coupon = await updateCoupon(id, patch);

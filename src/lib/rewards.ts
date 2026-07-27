@@ -14,6 +14,7 @@
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 import { hasVerifiedPhone } from "@/lib/customer-identity";
+import { communitiesForPincode } from "@/lib/commerce-rules";
 
 /* ── program defaults ──────────────────────────────────────────────────────
  * FALLBACK values only. The live programme config is read from the DB row
@@ -200,6 +201,17 @@ export interface CouponRecord {
    * once-per-customer (a null `perCustomerLimit` is treated as 1).
    */
   requiresVerifiedPhone: boolean;
+  /**
+   * Delivery pincodes this coupon is valid in. `null` (or empty) = every
+   * pincode. Matched against the delivery address at validation time.
+   */
+  pincodes: string[] | null;
+  /**
+   * Gated communities this coupon is valid in. `null` (or empty) = every
+   * community. Resolved server-side from `serviceable_areas` via the delivery
+   * pincode, so the client can never claim a community it doesn't deliver to.
+   */
+  communities: string[] | null;
   usedCount: number;
   createdAt: string;
   updatedAt: string;
@@ -227,7 +239,9 @@ export type CouponRejection =
   | "usage-limit"
   | "customer-limit"
   /** Welcome/first-order code applied without an OTP-verified phone on file. */
-  | "phone-verification-required";
+  | "phone-verification-required"
+  /** Code is restricted to pincodes / communities the delivery address isn't in. */
+  | "area-not-eligible";
 
 export interface CouponValidation {
   valid: boolean;
@@ -271,6 +285,8 @@ interface CouponRow {
   usage_limit: number | null;
   per_customer_limit: number | null;
   requires_verified_phone: boolean;
+  pincodes: string[] | null;
+  communities: string[] | null;
   used_count: number;
   created_at: string;
   updated_at: string;
@@ -286,11 +302,28 @@ interface LedgerRow {
 }
 
 const COUPON_COLS =
-  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, requires_verified_phone, used_count, created_at, updated_at";
+  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, requires_verified_phone, pincodes, communities, used_count, created_at, updated_at";
 const LEDGER_COLS = "id, customer_id, order_id, delta_points, reason, created_at";
 
 function toKind(raw: string | null | undefined): CouponKind {
   return raw === "percent" ? "percent" : "flat";
+}
+
+/**
+ * Normalise a stored text[] targeting column: trims, drops blanks, de-dupes,
+ * and collapses an empty result to `null` so "no restriction" has exactly one
+ * representation everywhere downstream.
+ */
+function cleanList(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out = Array.from(
+    new Set(
+      raw
+        .map((v) => (typeof v === "string" ? v.trim() : ""))
+        .filter((v) => v.length > 0),
+    ),
+  );
+  return out.length > 0 ? out : null;
 }
 
 function toReason(raw: string | null | undefined): LoyaltyReason {
@@ -311,6 +344,8 @@ function toCoupon(r: CouponRow): CouponRecord {
     usageLimit: r.usage_limit,
     perCustomerLimit: r.per_customer_limit,
     requiresVerifiedPhone: Boolean(r.requires_verified_phone),
+    pincodes: cleanList(r.pincodes),
+    communities: cleanList(r.communities),
     usedCount: r.used_count,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -366,8 +401,13 @@ export async function validateCouponServer(
   code: string,
   subtotalPaise: number,
   customerId: string | null,
-  now: Date = new Date(),
+  opts: {
+    /** Delivery pincode for the order — required for area-targeted coupons. */
+    pincode?: string | null;
+    now?: Date;
+  } = {},
 ): Promise<CouponValidation> {
+  const now = opts.now ?? new Date();
   const reject = (reason: CouponRejection): CouponValidation => ({
     valid: false,
     discountPaise: 0,
@@ -385,6 +425,29 @@ export async function validateCouponServer(
   }
   if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
     return reject("usage-limit");
+  }
+
+  // Area targeting: a coupon may be scoped to specific delivery pincodes and/or
+  // gated communities (both dimensions are ANDed). Untargeted coupons skip this
+  // entirely. The community is resolved from the curated `serviceable_areas`
+  // list using the delivery pincode — never taken from the client — so a
+  // customer cannot claim a community they don't actually deliver to.
+  // Fail-CLOSED: a targeted coupon with no delivery pincode in context is
+  // rejected rather than silently granted.
+  if (coupon.pincodes || coupon.communities) {
+    const pincode = (opts.pincode ?? "").trim();
+    if (!pincode) return reject("area-not-eligible");
+
+    if (coupon.pincodes && !coupon.pincodes.includes(pincode)) {
+      return reject("area-not-eligible");
+    }
+
+    if (coupon.communities) {
+      const communities = await communitiesForPincode(pincode);
+      const targeted = coupon.communities.map((c) => c.toLowerCase());
+      const matched = communities.some((c) => targeted.includes(c.toLowerCase()));
+      if (!matched) return reject("area-not-eligible");
+    }
   }
 
   // Welcome / first-order gate: the code only applies for a canonical customer
@@ -599,6 +662,10 @@ export interface CouponInput {
   perCustomerLimit?: number | null;
   /** Welcome / first-order flag — gates the code behind an OTP-verified phone. */
   requiresVerifiedPhone?: boolean;
+  /** Restrict to these delivery pincodes; null/empty = all pincodes. */
+  pincodes?: string[] | null;
+  /** Restrict to these gated communities; null/empty = all communities. */
+  communities?: string[] | null;
 }
 
 /** Create a coupon (code stored UPPERCASE) and return the fresh record. */
@@ -630,6 +697,8 @@ export async function createCoupon(input: CouponInput): Promise<CouponRecord> {
               : null
             : Math.max(1, Math.round(input.perCustomerLimit)),
       requires_verified_phone: requiresVerifiedPhone,
+      pincodes: cleanList(input.pincodes),
+      communities: cleanList(input.communities),
     })
     .select(COUPON_COLS)
     .single();
@@ -648,6 +717,8 @@ export interface CouponPatch {
   usageLimit?: number | null;
   perCustomerLimit?: number | null;
   requiresVerifiedPhone?: boolean;
+  pincodes?: string[] | null;
+  communities?: string[] | null;
 }
 
 /**
@@ -660,7 +731,7 @@ export async function updateCoupon(
   patch: CouponPatch,
 ): Promise<CouponRecord | null> {
   const db = supabaseAdmin();
-  const row: Record<string, string | number | boolean | null> = {};
+  const row: Record<string, string | number | boolean | string[] | null> = {};
   if (patch.kind !== undefined) row.kind = toKind(patch.kind);
   if (patch.value !== undefined) row.value = Math.max(0, Math.round(patch.value));
   if (patch.minOrderPaise !== undefined) {
@@ -682,6 +753,8 @@ export async function updateCoupon(
   if (patch.requiresVerifiedPhone !== undefined) {
     row.requires_verified_phone = patch.requiresVerifiedPhone;
   }
+  if (patch.pincodes !== undefined) row.pincodes = cleanList(patch.pincodes);
+  if (patch.communities !== undefined) row.communities = cleanList(patch.communities);
 
   if (Object.keys(row).length === 0) {
     const { data } = await db.from("coupons").select(COUPON_COLS).eq("id", id).maybeSingle();

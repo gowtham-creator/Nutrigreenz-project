@@ -529,7 +529,14 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   let validatedCouponCode: string | null = null;
   const requestedCode = input.couponCode?.trim().toUpperCase() || null;
   if (requestedCode) {
-    const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId);
+    // Area-targeted coupons are matched against the pincode actually being
+    // delivered to, taken from the order's own address snapshot — not from
+    // anything the client asserted alongside the code.
+    const rawPincode = input.addressSnapshot?.pincode;
+    const deliveryPincode = typeof rawPincode === "string" ? rawPincode.trim() : null;
+    const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId, {
+      pincode: deliveryPincode,
+    });
     if (!check.valid) throw new CouponInvalidError(check.reason ?? "not-found");
     couponDiscount = check.discountPaise;
     validatedCouponCode = check.coupon?.code ?? requestedCode;

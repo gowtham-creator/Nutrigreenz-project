@@ -480,6 +480,7 @@ export default function CheckoutPage() {
             <StaggerItem className={cn(step !== 2 && "hidden", "lg:block")}>
               <RewardsPanel
                 subtotal={subtotal}
+                deliveryPincode={selectedPincode}
                 appliedCoupon={applied}
                 onApplyCoupon={(coupon, discount) =>
                   setApplied({ coupon, discount })

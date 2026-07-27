@@ -32,6 +32,23 @@ function nullableNum(v: unknown): number | null | undefined {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * A targeting list (pincodes / communities). Accepts either an array or a
+ * comma/newline-separated string from the admin form. Blank → null ("no
+ * restriction"); absent → undefined (leave unchanged).
+ */
+function nullableList(v: unknown): string[] | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  const parts = Array.isArray(v)
+    ? v.map((x) => (typeof x === "string" ? x : String(x ?? "")))
+    : typeof v === "string"
+      ? v.split(/[\n,]/)
+      : [];
+  const out = Array.from(new Set(parts.map((p) => p.trim()).filter(Boolean)));
+  return out.length > 0 ? out : null;
+}
+
 /** A nullable ISO-date string: null/blank → null (open-ended); absent → undefined. */
 function nullableStr(v: unknown): string | null | undefined {
   if (v === undefined) return undefined;
@@ -87,6 +104,12 @@ export async function POST(request: Request): Promise<Response> {
   if (typeof body.requiresVerifiedPhone === "boolean") {
     input.requiresVerifiedPhone = body.requiresVerifiedPhone;
   }
+  // Area targeting — restrict the code to specific delivery pincodes and/or
+  // gated communities. Both blank = valid everywhere (the default).
+  const pincodes = nullableList(body.pincodes);
+  if (pincodes !== undefined) input.pincodes = pincodes;
+  const communities = nullableList(body.communities);
+  if (communities !== undefined) input.communities = communities;
 
   try {
     const coupon = await createCoupon(input);
@@ -100,6 +123,8 @@ export async function POST(request: Request): Promise<Response> {
         value: coupon.value,
         active: coupon.active,
         requiresVerifiedPhone: coupon.requiresVerifiedPhone,
+        pincodes: coupon.pincodes,
+        communities: coupon.communities,
       },
     });
     return Response.json({ ok: true, coupon }, { status: 201 });

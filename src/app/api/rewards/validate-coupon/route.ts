@@ -44,8 +44,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "missing-code" }, { status: 400 });
   }
   const subtotalPaise = Math.max(0, int(body.subtotalPaise));
+  // Delivery pincode for area-targeted coupons. This is the QUOTE path, so the
+  // client-supplied pincode is accepted for the preview only — the create-order
+  // path re-checks against the order's real address snapshot before charging.
+  const pincode = typeof body.pincode === "string" ? body.pincode.trim() : null;
 
-  const result = await validateCouponServer(code, subtotalPaise, session.customerId);
+  const result = await validateCouponServer(code, subtotalPaise, session.customerId, { pincode });
   return Response.json({
     ok: true,
     valid: result.valid,

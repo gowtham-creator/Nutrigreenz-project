@@ -29,6 +29,10 @@ interface CouponRow {
   usageLimit: number | null;
   perCustomerLimit: number | null;
   requiresVerifiedPhone: boolean;
+  /** Delivery pincodes the code is limited to; null = every pincode. */
+  pincodes: string[] | null;
+  /** Gated communities the code is limited to; null = every community. */
+  communities: string[] | null;
   usedCount: number;
 }
 
@@ -49,6 +53,8 @@ const EMPTY = {
   cap: "",
   perCustomerLimit: "1",
   requiresPhone: false,
+  pincodes: "",
+  communities: "",
 };
 
 export function LiveCouponsPanel() {
@@ -94,6 +100,9 @@ export function LiveCouponsPanel() {
       perCustomerLimit: form.perCustomerLimit ? Math.round(Number(form.perCustomerLimit)) : null,
       // Welcome/first-order codes require an OTP-verified phone + are once-per-customer.
       requiresVerifiedPhone: form.requiresPhone,
+      // Area targeting — comma/newline separated; blank means "valid everywhere".
+      pincodes: form.pincodes.trim() || null,
+      communities: form.communities.trim() || null,
       active: true,
     };
 
@@ -197,6 +206,28 @@ export function LiveCouponsPanel() {
             </span>
           </span>
         </label>
+
+        {/* Area targeting — restrict the code to specific pincodes and/or gated
+            communities. Both blank = redeemable anywhere we deliver. */}
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:col-span-6">
+          <Input
+            label="Limit to pincodes (optional)"
+            placeholder="500072, 500085"
+            value={form.pincodes}
+            onChange={(e) => setForm((f) => ({ ...f, pincodes: e.target.value }))}
+          />
+          <Input
+            label="Limit to gated communities (optional)"
+            placeholder="My Home Bhooja, Aparna Sarovar"
+            value={form.communities}
+            onChange={(e) => setForm((f) => ({ ...f, communities: e.target.value }))}
+          />
+          <p className="text-[12px] leading-relaxed text-ng-ink-soft sm:col-span-2">
+            Comma-separated. Leave both blank for a code that works everywhere we deliver.
+            Community names must match the ones on your serviceable-areas list, and are
+            checked against the customer&rsquo;s delivery pincode at checkout.
+          </p>
+        </div>
       </div>
 
       {/* List */}
@@ -226,6 +257,26 @@ export function LiveCouponsPanel() {
                         <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome / first-order code — requires a verified phone, once per customer">
                           <Icon name="phone-bold" size={10} />
                           Welcome
+                        </span>
+                      ) : null}
+                      {c.pincodes?.length ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 px-2 py-0.5 text-[10px] font-semibold text-ng-forest-deep"
+                          title={`Valid only in pincodes: ${c.pincodes.join(", ")}`}
+                        >
+                          <Icon name="map-point-bold" size={10} />
+                          {c.pincodes.length === 1 ? c.pincodes[0] : `${c.pincodes.length} pincodes`}
+                        </span>
+                      ) : null}
+                      {c.communities?.length ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/20 px-2 py-0.5 text-[10px] font-semibold text-ng-forest-deep"
+                          title={`Valid only in communities: ${c.communities.join(", ")}`}
+                        >
+                          <Icon name="users-group-two-rounded-bold" size={10} />
+                          {c.communities.length === 1
+                            ? c.communities[0]
+                            : `${c.communities.length} communities`}
                         </span>
                       ) : null}
                     </span>

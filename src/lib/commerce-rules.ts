@@ -454,6 +454,31 @@ export async function isServiceable(pincode: string): Promise<boolean> {
   return Boolean(match && match > 0);
 }
 
+/**
+ * The gated-community names configured for a delivery pincode, taken from the
+ * ACTIVE `serviceable_areas` rows. Used by coupon area-targeting so a
+ * community-restricted code is matched against the curated list rather than
+ * anything the client claims. Returns an empty array when the pincode is
+ * unknown, has no community set, or the DB is unconfigured — never throws.
+ */
+export async function communitiesForPincode(pincode: string): Promise<string[]> {
+  const pin = (pincode ?? "").trim();
+  if (!pin || !isSupabaseConfigured) return [];
+  try {
+    const { data } = await supabaseAdmin()
+      .from("serviceable_areas")
+      .select("community")
+      .eq("active", true)
+      .eq("pincode", pin);
+    const rows = (data as { community: string | null }[] | null) ?? [];
+    return rows
+      .map((r) => (r.community ?? "").trim())
+      .filter((c): c is string => c.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 /* ── public-safe read ─────────────────────────────────────────────────── */
 
 /**

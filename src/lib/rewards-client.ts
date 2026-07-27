@@ -64,6 +64,7 @@ export type CouponQuoteReason =
   | "usage-limit"
   | "customer-limit"
   | "phone-verification-required"
+  | "area-not-eligible"
   | "unavailable";
 
 export interface CouponQuote {
@@ -84,6 +85,7 @@ const COUPON_REASON_COPY: Record<string, string> = {
   "customer-limit": "You've already used this coupon.",
   "phone-verification-required":
     "Verify your mobile number to use this welcome offer — we'll ask for a quick OTP.",
+  "area-not-eligible": "This code isn't available for your delivery address.",
   unavailable: "Coupons are unavailable right now. Please try again.",
   unauthenticated: "Please sign in to apply a coupon.",
 };
@@ -101,6 +103,8 @@ export function couponReasonMessage(reason: string): string {
 export async function validateCouponApi(
   code: string,
   subtotalPaise: number,
+  /** Delivery pincode — required for coupons targeted at specific areas. */
+  pincode?: string | null,
 ): Promise<CouponQuote> {
   const trimmed = code.trim();
   if (!trimmed) return { valid: false, discountPaise: 0, reason: "not-found", code: null };
@@ -108,7 +112,11 @@ export async function validateCouponApi(
     const res = await fetch("/api/rewards/validate-coupon", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ code: trimmed, subtotalPaise: Math.max(0, Math.round(subtotalPaise)) }),
+      body: JSON.stringify({
+        code: trimmed,
+        subtotalPaise: Math.max(0, Math.round(subtotalPaise)),
+        pincode: pincode?.trim() || null,
+      }),
     });
     if (res.status === 401) {
       return { valid: false, discountPaise: 0, reason: "unavailable", code: null };
