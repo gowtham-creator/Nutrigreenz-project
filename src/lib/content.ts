@@ -17,7 +17,7 @@ import { JOURNAL as STATIC_JOURNAL, FARMS as STATIC_FARMS } from "@/components/n
  * the sample articles). Used to seed the DB and as the fallback body so a
  * static-sourced article looks identical to a DB-sourced one.
  */
-export const DEFAULT_ARTICLE_BODY_HTML = `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. The slow pace of bilona — three days of churning, two days of resting — is not a marketing line; it's a chemical reality that nothing in modern dairy technology has been able to shortcut.</p>
+export const DEFAULT_ARTICLE_BODY_HTML = `<p>There is a faster version of almost every food we sell, and ghee is no exception — a modern creamery can take milk to finished fat in a matter of hours. We take five days. The slow pace of bilona — three days of churning, two days of resting — is not a marketing line; it's a chemical reality that nothing in modern dairy technology has been able to shortcut.</p>
 <h2>The science underneath the slowness</h2>
 <p>When milk is cultured at low temperature for 48 hours, the lactic-acid bacteria break down lactose more thoroughly. The resulting curd, churned by hand at the right rhythm, releases butter with a fundamentally different fatty-acid profile — shorter-chain triglycerides, more conjugated linoleic acid, and a richer aromatic compound bouquet.</p>
 <blockquote>"I learned from my grandmother. The butter tells you when it's done — you don't tell it."<footer>— Hetal Pateel, Junagadh</footer></blockquote>

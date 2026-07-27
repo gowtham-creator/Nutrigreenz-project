@@ -9,7 +9,7 @@ import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
 
 /**
- * /admin/forgot — operator password recovery (Milestone 2, real backend).
+ * /admin/forgot — operator password recovery.
  * "Send reset link" POSTs the email to `/api/admin/forgot`, which — for a known
  * operator — mints a signed, single-use, 30-minute token and emails a
  * `/admin/reset` link via Brevo. The endpoint ALWAYS returns a generic success

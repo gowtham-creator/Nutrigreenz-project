@@ -617,7 +617,7 @@ export default function AdminProfilePage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => toast.message("Connect Google", { description: "Google sign-in links up in Milestone 2." })}
+                  onClick={() => toast.message("Connect Google", { description: "Operator Google sign-in isn’t enabled. Use your email and password, or phone sign-in." })}
                   className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink-muted font-semibold px-3 py-1.5 text-[12px] hover:bg-ng-cream transition-colors cursor-pointer"
                 >
                   <Icon name="global-bold" size={14} className="text-ng-ink-soft" />

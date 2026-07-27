@@ -3,7 +3,7 @@
 /**
  * ProductFormDrawer — accessible slide-over for creating / editing a catalog
  * product. Demo persistence only: `onSave` hands a fully-formed `AdminProduct`
- * back to the page, which updates local React state. Real DB save = Milestone 2.
+ * back to the page, which updates local React state. Server-side save is not yet connected.
  *
  * Accessibility:
  *   - role="dialog" + aria-modal, labelled by the heading.

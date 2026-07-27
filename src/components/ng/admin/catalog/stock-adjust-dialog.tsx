@@ -4,7 +4,7 @@
  * StockAdjustDialog — accessible modal to adjust a SKU's stock level and toggle
  * its reorder flag from the Inventory screen. Demo persistence only: `onSave`
  * returns the new stock + reorder values and the page updates local state.
- * Real warehouse write = Milestone 2.
+ * Warehouse write-back is not yet connected.
  *
  * Accessibility: role="dialog" + aria-modal, Escape closes, focus moves to the
  * stock input on open and restores on close, labelled controls + quick steppers.

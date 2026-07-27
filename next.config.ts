@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
         hostname: supabaseImageHost,
         pathname: "/storage/v1/object/public/**",
       },
+      // Google account profile photos (Google sign-in). Google serves avatars
+      // from rotating lh3/lh4/lh5… hosts, so the subdomain is wildcarded.
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+      },
     ],
   },
 };

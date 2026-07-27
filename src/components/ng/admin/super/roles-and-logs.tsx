@@ -13,7 +13,7 @@ import { AdminsManagement } from "@/components/ng/admin/super/admins-management"
  * A read-only-ish governance view: the two platform roles and what each can
  * reach, the current admin roster, and a recent system activity log (config
  * changes + sign-ins). All rows are mocked for the demo — a real audit trail
- * and role mutations land in Milestone 2.
+ * and role mutations are not yet connected.
  */
 
 /* ----------------------------------------------------------------------- */

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/lib/auth";
+import { AccountAvatar } from "@/components/ng/account-avatar";
 
 /** Format a member-since ISO date as e.g. "Aug 2025". */
 function memberSinceLabel(iso?: string): string {
@@ -22,15 +23,20 @@ export function AccountIdentity() {
   const { account, isAuthed } = useAuth();
 
   const name = isAuthed ? (account?.name?.trim() || "Your account") : "Guest";
-  const initial = (account?.name?.trim()?.[0] ?? name[0] ?? "G").toUpperCase();
   const sub = isAuthed
     ? `Member · ${memberSinceLabel(account?.memberSince)}`
     : "Not signed in";
 
   return (
     <div className="mb-4 flex items-center gap-3.5 rounded-2xl border border-ng-line-soft bg-ng-paper/80 p-4 shadow-[var(--shadow-ng-card)] backdrop-blur-sm">
-      <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-ng-leaf/30 to-ng-sage font-display text-[19px] text-ng-forest-deep ring-1 ring-ng-leaf/40">
-        {initial}
+      <div className="relative shrink-0">
+        <AccountAvatar
+          name={isAuthed ? account?.name : "Guest"}
+          photoURL={isAuthed ? account?.photoURL : null}
+          size={48}
+          fallback="G"
+          className="ring-ng-leaf/40"
+        />
         {isAuthed ? (
           <span
             aria-hidden

@@ -6,7 +6,7 @@
  * Flow: pick a file → parse with `parseProductCsv` → show a small preview
  * (first rows) + valid/skipped counts + any row errors → confirm to append the
  * valid rows to the local product list. Malformed rows are reported, never
- * thrown. Demo persistence only (M2 = server-side import).
+ * thrown. Client-side parse only — server-side import is not yet connected.
  *
  * Accessibility: role="dialog" + aria-modal, Escape closes, focus moves to the
  * file input on open and is restored on close, all controls keyboard-reachable.

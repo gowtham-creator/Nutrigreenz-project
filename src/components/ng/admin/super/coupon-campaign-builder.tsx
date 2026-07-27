@@ -24,7 +24,7 @@ import { COUPONS } from "@/components/ng/data";
  * tracking (issued / redeemed / revenue / ROI — mocked). Existing seed coupons
  * from `COUPONS` are listed alongside campaigns built in-session.
  *
- * Demo only — SMS dispatch + real redemption tracking land in Milestone 2.
+ * SMS dispatch and live redemption tracking are not yet connected.
  * No store wiring here; all state is local so the headline commerce/loyalty
  * controls keep full ownership of persisted config.
  */
@@ -257,7 +257,7 @@ export function CouponCampaignBuilder() {
         ),
       );
       toast.success(`Campaign ${code} updated`, {
-        description: "Demo · SMS send + live tracking ship in Milestone 2.",
+        description: "Saved. SMS dispatch is not yet connected.",
       });
     } else {
       const created: Campaign = {
@@ -279,7 +279,7 @@ export function CouponCampaignBuilder() {
             ? `scheduled for ${new Date(draft.scheduleAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
             : "saved (no schedule set)";
       toast.success(`Campaign ${code} created`, {
-        description: `${mode.label} · ${when}. Demo · send/track = M2.`,
+        description: `${mode.label} · ${when}. `,
       });
     }
     resetForm();
@@ -529,7 +529,7 @@ export function CouponCampaignBuilder() {
           <div className="mt-5 pt-4 border-t border-ng-clay/20 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5 min-w-0">
               <Icon name="info-circle-bold" size={13} className="text-ng-clay-deep shrink-0" />
-              <span>Demo · campaign send &amp; live redemption tracking ship in Milestone 2.</span>
+              <span>Campaign send and live redemption tracking are not yet connected.</span>
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
@@ -560,7 +560,7 @@ export function CouponCampaignBuilder() {
                 <span className="text-[13px] font-semibold text-ng-ink-muted">Redemption &amp; ROI</span>
                 <span className="font-mono text-[12px] text-ng-forest-deep font-semibold">{tracked.code}</span>
               </div>
-              <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono font-medium">Mock · M2 live</span>
+              <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono font-medium">Preview</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
               <TrackTile icon="letter-bold" label="Issued" value={tracked.issued.toLocaleString("en-IN")} />

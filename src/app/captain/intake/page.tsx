@@ -120,7 +120,7 @@ export default function CaptainIntake() {
         </span>
       </div>
 
-      {/* M2 cross-match note */}
+      {/* Onboarding cross-match note */}
       <div className="flex gap-2.5 rounded-2xl bg-ng-sage/30 border border-ng-leaf/25 px-3.5 py-3 mb-5">
         <div className="size-7 rounded-lg bg-ng-forest/10 ring-1 ring-ng-leaf/25 flex items-center justify-center shrink-0">
           <Icon name="link-round-bold" size={16} className="text-ng-forest" />
@@ -128,7 +128,7 @@ export default function CaptainIntake() {
         <p className="text-[12px] leading-snug text-ng-ink-muted">
           On online signup, this mobile{" "}
           <span className="font-semibold text-ng-forest-deep">auto-links &amp; imports</span> stall purchases — marking
-          the customer “Onboarded”. <span className="text-ng-ink-soft">(OTP cross-match · Milestone 2)</span>
+          the customer “Onboarded”.
         </p>
       </div>
 
@@ -146,7 +146,7 @@ export default function CaptainIntake() {
           {touched && !nameValid ? <FieldError>Enter the customer&apos;s name.</FieldError> : null}
         </Field>
 
-        <Field label="Mobile number" required hint="10-digit Indian mobile — used for M2 onboarding match">
+        <Field label="Mobile number" required hint="10-digit Indian mobile — used to match the customer’s account">
           <div className={inputWrapCls(touched && !mobileValid)}>
             <span className="text-[14px] text-ng-ink-soft font-mono pl-0.5">+91</span>
             <input
