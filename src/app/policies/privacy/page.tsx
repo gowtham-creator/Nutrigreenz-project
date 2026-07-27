@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 export const metadata: Metadata = {
   title: "Privacy policy — Nutri Greenz",
   description:
-    "How Nutrigreenz Farm Technologies Pvt Ltd collects, uses, discloses and protects your information when you use the Nutrigreenz Platform.",
+    "How Nutri Greenz Farm Technologies Pvt. Ltd collects, uses, discloses and protects your information when you use the Nutrigreenz Platform.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
               {
                 ", or the Nutrigreenz mobile application (collectively, the “Nutrigreenz Platform”) made available by "
               }
-              <strong>Nutrigreenz Farm Technologies Pvt Ltd</strong>
+              <strong>Nutri Greenz Farm Technologies Pvt. Ltd</strong>
               {
                 " (“Nutrigreenz”, “Company”, “we”, “us” and “our”), a private company established under the laws of India having its registered office at Plot 209/A, Visweswara Residency, Street No 9, Wester Hills, Addagutta Society, KPHB, Pragathi Nagar Road, Hyderabad, 500085, Telangana, India."
               }

@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 export const metadata: Metadata = {
   title: "Terms & conditions — Nutri Greenz",
   description:
-    "The terms and conditions governing your use of the Nutrigreenz Platform, operated by Nutrigreenz Farm Technologies Pvt Ltd.",
+    "The terms and conditions governing your use of the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
 };
 
 export default function TermsPage() {
@@ -23,7 +23,7 @@ export default function TermsPage() {
               {"This website "}
               <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
               {
-                " is operated by Nutrigreenz Farm Technologies Pvt Ltd, an India based company incorporated under the Indian Companies Act of 2013. The policy is issued by ‘Nutrigreenz Farm Technologies Pvt Ltd’. By placing an order on this site, you are entering into a purchase/sale transaction with Nutrigreenz Farm Technologies Pvt Ltd. The terms and conditions are enumerated as follows."
+                " is operated by Nutri Greenz Farm Technologies Pvt. Ltd, an India based company incorporated under the Indian Companies Act of 2013. The policy is issued by ‘Nutri Greenz Farm Technologies Pvt. Ltd’. By placing an order on this site, you are entering into a purchase/sale transaction with Nutri Greenz Farm Technologies Pvt. Ltd. The terms and conditions are enumerated as follows."
               }
             </p>
           ),
@@ -40,7 +40,7 @@ export default function TermsPage() {
               </p>
               <p>
                 {
-                  "The “Site” means the online shopping portal owned and operated by Nutrigreenz Farm Technologies Pvt Ltd which provides a platform to the shoppers to buy the products listed on the site. “Vendor” / “Seller” / “Affiliate” shall mean the person or any legal entity who offers for sale, or sells the products or services on "
+                  "The “Site” means the online shopping portal owned and operated by Nutri Greenz Farm Technologies Pvt. Ltd which provides a platform to the shoppers to buy the products listed on the site. “Vendor” / “Seller” / “Affiliate” shall mean the person or any legal entity who offers for sale, or sells the products or services on "
                 }
                 <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
                 {"."}
@@ -81,7 +81,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "Either User/You or Nutrigreenz Farm Technologies Pvt Ltd may terminate the agreement at any time, with or without cause. However, Nutrigreenz Farm Technologies Pvt Ltd reserves the right, in its sole discretion, to terminate your access to the products and services offered on the site or any portion thereof at any time, without notice."
+                "Either User/You or Nutri Greenz Farm Technologies Pvt. Ltd may terminate the agreement at any time, with or without cause. However, Nutri Greenz Farm Technologies Pvt. Ltd reserves the right, in its sole discretion, to terminate your access to the products and services offered on the site or any portion thereof at any time, without notice."
               }
             </p>
           ),
@@ -92,7 +92,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "Nutrigreenz Farm Technologies Pvt Ltd may at any time modify the terms and conditions contained on the Site without any prior notification to you. You can access the latest version of the Terms and Conditions at any given time. You should regularly review the Terms and Conditions. In the event the modified Terms and Conditions are not acceptable to you, you should discontinue using the site. However, if you continue to use the site you agree to accept and abide by the modified Terms and Conditions."
+                "Nutri Greenz Farm Technologies Pvt. Ltd may at any time modify the terms and conditions contained on the Site without any prior notification to you. You can access the latest version of the Terms and Conditions at any given time. You should regularly review the Terms and Conditions. In the event the modified Terms and Conditions are not acceptable to you, you should discontinue using the site. However, if you continue to use the site you agree to accept and abide by the modified Terms and Conditions."
               }
             </p>
           ),
@@ -109,12 +109,12 @@ export default function TermsPage() {
               </p>
               <p>
                 {
-                  "Nutrigreenz Farm Technologies Pvt Ltd accepts no liability for any errors or omissions, whether on behalf of itself or third parties. The address at which delivery of the products ordered by you is to be made should be correct and proper in all respects."
+                  "Nutri Greenz Farm Technologies Pvt. Ltd accepts no liability for any errors or omissions, whether on behalf of itself or third parties. The address at which delivery of the products ordered by you is to be made should be correct and proper in all respects."
                 }
               </p>
               <p>
                 {
-                  "After the receipt of payment by the Buyer, or on cash on delivery as the case may be, Nutrigreenz Farm Technologies Pvt Ltd shall arrange for the delivery of the product to the recipient at the shipping address provided by the Buyer. All orders placed by you on this site are a firm commitment to purchase and you are obligated to complete the transaction and not contest it in any way. Before placing an order you are advised to check the product description carefully. By placing an order for a product, you agree to be bound by the conditions of sale included in the item’s description."
+                  "After the receipt of payment by the Buyer, or on cash on delivery as the case may be, Nutri Greenz Farm Technologies Pvt. Ltd shall arrange for the delivery of the product to the recipient at the shipping address provided by the Buyer. All orders placed by you on this site are a firm commitment to purchase and you are obligated to complete the transaction and not contest it in any way. Before placing an order you are advised to check the product description carefully. By placing an order for a product, you agree to be bound by the conditions of sale included in the item’s description."
                 }
               </p>
             </>
@@ -126,7 +126,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "Product prices listed on the website are current. While every care has been taken to label the products accurately, errors in data entry and updating may occur. Nutrigreenz Farm Technologies Pvt Ltd reserves the right to cancel the order in case a wallet (excluding any cashback benefit) is refundable by placing the request to customer support. The refundable amount is credited to the customer’s bank account shared using the link sent by SMS by Nutrigreenz Farm Technologies Pvt Ltd. Refund is credited within 5-7 working days of sharing the bank details. In case payments are done through credit card, it will be refunded to the same mode of payment."
+                "Product prices listed on the website are current. While every care has been taken to label the products accurately, errors in data entry and updating may occur. Nutri Greenz Farm Technologies Pvt. Ltd reserves the right to cancel the order in case a wallet (excluding any cashback benefit) is refundable by placing the request to customer support. The refundable amount is credited to the customer’s bank account shared using the link sent by SMS by Nutri Greenz Farm Technologies Pvt. Ltd. Refund is credited within 5-7 working days of sharing the bank details. In case payments are done through credit card, it will be refunded to the same mode of payment."
               }
             </p>
           ),
@@ -156,7 +156,7 @@ export default function TermsPage() {
               </p>
               <p>
                 {
-                  "Multiple accounts cannot be created with the same address; if found, then Nutrigreenz Farm Technologies Pvt Ltd has the right to cancel/stop the Customer’s subscription."
+                  "Multiple accounts cannot be created with the same address; if found, then Nutri Greenz Farm Technologies Pvt. Ltd has the right to cancel/stop the Customer’s subscription."
                 }
               </p>
             </>
@@ -168,7 +168,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "These Terms and Conditions, together with the privacy policy, and other rules and policies posted on the site, which are hereby incorporated as set forth fully in these Terms and Conditions, constitute the entire agreement between you and Nutrigreenz Farm Technologies Pvt Ltd with respect to your use of and material available through the site, and supersede all prior or contemporaneous communications and proposals between you and Nutrigreenz Farm Technologies Pvt Ltd with respect to this site. Any rights not expressly granted in these Terms and Conditions are reserved."
+                "These Terms and Conditions, together with the privacy policy, and other rules and policies posted on the site, which are hereby incorporated as set forth fully in these Terms and Conditions, constitute the entire agreement between you and Nutri Greenz Farm Technologies Pvt. Ltd with respect to your use of and material available through the site, and supersede all prior or contemporaneous communications and proposals between you and Nutri Greenz Farm Technologies Pvt. Ltd with respect to this site. Any rights not expressly granted in these Terms and Conditions are reserved."
               }
             </p>
           ),
@@ -179,7 +179,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "By registering with Nutrigreenz Farm Technologies Pvt Ltd, you give us the permission to send you notifications on WhatsApp, SMS and email."
+                "By registering with Nutri Greenz Farm Technologies Pvt. Ltd, you give us the permission to send you notifications on WhatsApp, SMS and email."
               }
             </p>
           ),
@@ -203,7 +203,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "The return policy has been revised. As per the new policy, Nutrigreenz Farm Technologies Pvt Ltd doesn’t have a return policy unless it is related to product quality. Hence if the customer wants to return a product because he/she doesn’t require it, in such cases we will simply deny the customer."
+                "The return policy has been revised. As per the new policy, Nutri Greenz Farm Technologies Pvt. Ltd doesn’t have a return policy unless it is related to product quality. Hence if the customer wants to return a product because he/she doesn’t require it, in such cases we will simply deny the customer."
               }
             </p>
           ),
@@ -214,13 +214,13 @@ export default function TermsPage() {
           body: (
             <ul className="list-disc pl-5 flex flex-col gap-2">
               <li>{"One user can refer a maximum of 15 new users. However, the Referee and the Referrer cannot have the same address."}</li>
-              <li>{"The Referrer should have placed at least one order with Nutrigreenz Farm Technologies Pvt Ltd in the last thirty (30) days of minimum value of Rs.100 or more in their lifetime."}</li>
+              <li>{"The Referrer should have placed at least one order with Nutri Greenz Farm Technologies Pvt. Ltd in the last thirty (30) days of minimum value of Rs.100 or more in their lifetime."}</li>
               <li>{"To be considered a successful Referral, the person you refer (the Referee) must place at least one order with a minimum value of Rs.100."}</li>
               <li>{"The Referrer gets 100% cashback up to a maximum of Rs.100 per Referee, on the Referee’s first order of minimum amount Rs.100. Nutrigreenz reserves the right to revise the maximum cashback percentage and amount at any point during this referral programme."}</li>
               <li>{"Referral bonus cannot be clubbed with any other promotional offer or bonus."}</li>
               <li>{"‘Bonus’ amount can be used only for purchases on the Nutrigreenz website and/or mobile application, is not transferable, and in no case can be used as an exchange for tender of money."}</li>
               <li>{"Nutrigreenz reserves the right to modify or amend these Terms and Conditions at any time, and to disqualify any Referrer from participation at any time at its sole discretion, including if he/she does not comply with any of these Terms and Conditions."}</li>
-              <li>{"The Referrer and the Referee agree to indemnify, release and hold harmless Nutrigreenz Farm Technologies Pvt Ltd from any and all claims, actions, demands, damages, losses, liabilities, costs or expenses arising out of or related to the Referrer’s participation in the referral program. No person under 18 years of age may use, access or participate in the referral program."}</li>
+              <li>{"The Referrer and the Referee agree to indemnify, release and hold harmless Nutri Greenz Farm Technologies Pvt. Ltd from any and all claims, actions, demands, damages, losses, liabilities, costs or expenses arising out of or related to the Referrer’s participation in the referral program. No person under 18 years of age may use, access or participate in the referral program."}</li>
               <li>{"Nutrigreenz shall not be liable for late, delayed, stolen, misdirected, or inaccurate credits in relation to any information provided by the Referee or Referrer, and reserves the right to hold back or debit the cashback bonus in case of violation of these terms."}</li>
               <li>{"Any and all disputes, claims and causes of action arising out of or related to the referral program shall be resolved under applicable Indian law."}</li>
             </ul>
@@ -246,7 +246,7 @@ export default function TermsPage() {
             <>
               <p>
                 {
-                  "Nutrigreenz Farm Technologies Pvt Ltd assumes no responsibility and shall incur no liability if it is unable to effect the Transaction against the NACH Mandate owing to any one or more of the following circumstances:"
+                  "Nutri Greenz Farm Technologies Pvt. Ltd assumes no responsibility and shall incur no liability if it is unable to effect the Transaction against the NACH Mandate owing to any one or more of the following circumstances:"
                 }
               </p>
               <ul className="list-disc pl-5 flex flex-col gap-2">
@@ -275,7 +275,7 @@ export default function TermsPage() {
           body: (
             <p>
               {
-                "By signing up with Nutrigreenz Farm Technologies Pvt Ltd, the customer agrees to receive communication on WhatsApp, push notifications, SMS, Email, Customer Support Call, App and Website as per the Site Agreement."
+                "By signing up with Nutri Greenz Farm Technologies Pvt. Ltd, the customer agrees to receive communication on WhatsApp, push notifications, SMS, Email, Customer Support Call, App and Website as per the Site Agreement."
               }
             </p>
           ),

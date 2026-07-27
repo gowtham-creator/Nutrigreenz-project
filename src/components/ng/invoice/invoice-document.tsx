@@ -12,7 +12,7 @@ import {
 
 /* ── Seller (legal entity) constants ─────────────────────────────── */
 const SELLER = {
-  legalName: "Nutrigreenz Farm Technologies Pvt. Ltd.",
+  legalName: "Nutri Greenz Farm Technologies Pvt. Ltd",
   address: "KPHB Colony, Kukatpally, Hyderabad, Telangana 500072",
   gstin: "36ABCDE1234F1Z5",
   email: "support@nutrigreenz.farm",

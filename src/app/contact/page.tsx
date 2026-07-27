@@ -9,7 +9,7 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = {
   title: "Contact us — Nutri Greenz",
   description:
-    "Get in touch with Nutrigreenz Farm Technologies Pvt Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370 — we reply within one business day.",
+    "Get in touch with Nutri Greenz Farm Technologies Pvt. Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370 — we reply within one business day.",
 };
 
 const CHANNELS = [
@@ -94,7 +94,7 @@ export default function ContactPage() {
                 Our address
               </h3>
               <address className="mt-4 not-italic text-[15px] leading-relaxed text-ng-cream/80">
-                Nutrigreenz Farm Technologies Pvt Ltd
+                Nutri Greenz Farm Technologies Pvt. Ltd
                 <br />
                 1st Floor, H.No. 5-35/167, Double Road,
                 <br />

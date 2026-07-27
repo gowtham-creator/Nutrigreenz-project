@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/icon";
 export const metadata: Metadata = {
   title: "Our story — Nutri Greenz",
   description:
-    "Nutrigreenz Farm Technologies Pvt Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
+    "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
 };
 
 const VISION_PILLARS = [
@@ -24,7 +24,7 @@ const FOUNDERS = [
     name: "RamaKrishna Katakam",
     role: "Founder",
     initials: "RK",
-    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutrigreenz Farm Technologies Pvt Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases — organic food plays a crucial role in helping us stay healthy.",
+    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases — organic food plays a crucial role in helping us stay healthy.",
   },
   {
     name: "Surendra Madivada",
@@ -84,7 +84,7 @@ export default function AboutPage() {
           </p>
           <p>
             {
-              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively — and today, we proudly present Nutrigreenz Farm Technologies Pvt Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
+              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively — and today, we proudly present Nutri Greenz Farm Technologies Pvt. Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
             }
           </p>
         </Reveal>

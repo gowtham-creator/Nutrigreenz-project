@@ -106,7 +106,7 @@ export function PolicyLayout({
             <div className="mt-14 rounded-2xl border border-ng-line-soft bg-ng-cream/60 p-6">
               <p className="text-[14px] leading-relaxed text-ng-ink-muted">
                 For any questions about these policies, write to{" "}
-                <strong className="text-ng-ink font-semibold">Nutrigreenz Farm Technologies Pvt Ltd</strong>,
+                <strong className="text-ng-ink font-semibold">Nutri Greenz Farm Technologies Pvt. Ltd</strong>,
                 1st Floor, H.No. 5-35/167, Double Road, Near Moosapet Y Junction, Prashanth Nagar,
                 Kukatpally, Hyderabad, Telangana 500072, or email{" "}
                 <a

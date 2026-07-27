@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 export const metadata: Metadata = {
   title: "Cancellation & refund policy — Nutri Greenz",
   description:
-    "The cancellation and refund policy for orders placed on the Nutrigreenz Platform, operated by Nutrigreenz Farm Technologies Pvt Ltd.",
+    "The cancellation and refund policy for orders placed on the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
 };
 
 const REFUND_TAT: { method: string; source: string; tat: string }[] = [
