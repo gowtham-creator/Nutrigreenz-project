@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 const VISION_PILLARS = [
   { icon: "leaf-bold", label: "Healthy soil" },
-  { icon: "tractor-bold", label: "Sustainable farming" },
+  { icon: "earth-bold", label: "Sustainable farming" },
   { icon: "shield-check-bold", label: "Healthy customers" },
   { icon: "star-bold", label: "Healthy Nation" },
 ];

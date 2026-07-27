@@ -252,7 +252,7 @@ export default function AccountOrdersPage() {
         {/* No-cancellation aware support affordance (no cancel action anywhere) */}
         <div className="flex flex-col gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper p-5 text-[13px] sm:flex-row sm:items-center sm:justify-between">
           <span className="flex items-center gap-2.5 text-ng-ink-muted">
-            <Icon name="headphone-round-bold" size={18} className="text-ng-forest" />
+            <Icon name="headphones-round-bold" size={18} className="text-ng-forest" />
             Issue with an order? Our care team replies within 2 hours.
           </span>
           <Link
