@@ -432,7 +432,7 @@ function LoginForm() {
       const isTwoFactor = method === "passcode";
       const e164 = isTwoFactor ? null : toE164(phone);
       if (!isTwoFactor && !e164) {
-        setError("Enter a valid mobile number with country code.");
+        setError("Enter your 10-digit mobile number.");
         return;
       }
       if (isResend) setResending(true);
@@ -491,7 +491,7 @@ function LoginForm() {
     // doesn't depend on the (async) `phone` state; the Phone-OTP tab uses input.
     const e164 = overrideNumber ? toE164(overrideNumber) : toE164(phone);
     if (!e164) {
-      setError("Enter a valid mobile number with country code.");
+      setError("Enter your 10-digit mobile number.");
       return;
     }
     const fbAuth = auth;
@@ -552,7 +552,7 @@ function LoginForm() {
       // MSG91 primary phone sign-in: post phone + code; server verifies + mints.
       const e164 = toE164(phone);
       if (!e164) {
-        setError("Enter a valid mobile number with country code.");
+        setError("Enter your 10-digit mobile number.");
         return;
       }
       if (!/^\d{6}$/.test(code)) {
@@ -1012,11 +1012,21 @@ function LoginForm() {
                           autoComplete="tel"
                           placeholder="98XXX XXXXX"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => {
+                            // The field already shows a +91 prefix, so it holds
+                            // the 10 national digits. Be forgiving about what is
+                            // typed or pasted: strip spaces/dashes/brackets, and
+                            // drop a leading +91 / 91 / 0 so pasting the full
+                            // international number works instead of being
+                            // silently truncated into an invalid one.
+                            let d = e.target.value.replace(/\D/g, "");
+                            if (d.length > 10 && d.startsWith("91")) d = d.slice(2);
+                            if (d.length > 10 && d.startsWith("0")) d = d.slice(1);
+                            setPhone(d.slice(0, 10));
+                          }}
                           prefix={
                             <span className="text-[15px] font-medium text-ng-ink">+91</span>
                           }
-                          maxLength={10}
                           hint="Authorised operator numbers only."
                           error={error ?? undefined}
                         />
