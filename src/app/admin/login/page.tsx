@@ -176,13 +176,44 @@ function LoginForm() {
     }
   }
 
+  /**
+   * Resolve the REAL number to send the mobile-OTP second factor to.
+   *
+   * `otpPhone` from the passcode step is only a masked hint (`••••••70`) so a
+   * stolen passcode can't reveal the number on screen. Firebase phone auth is
+   * client-side and needs the true E.164, so for that provider we fetch it from
+   * the MFA-ticket-gated endpoint. MSG91 never needs it — the server sends the
+   * SMS itself and the number stays server-side.
+   */
+  async function resolveMfaPhone(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/admin/mfa/phone-target", { method: "POST" });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { phone?: string };
+      return data.phone ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   // Auto-send the mobile-OTP 2FA code once the phone step (and its reCAPTCHA
   // container) has actually rendered — fixes the first send silently failing
   // while "Resend code" worked.
   useEffect(() => {
-    if (mfaChoice === "phone" && otpPhone && !codeSent && !submitting && !resending) {
-      void requestCode(false, otpPhone);
-    }
+    if (mfaChoice !== "phone" || codeSent || submitting || resending) return;
+    void (async () => {
+      // MSG91 posts to its own ticket-gated send route and ignores the number.
+      if (msg91) {
+        await requestCode(false);
+        return;
+      }
+      const real = await resolveMfaPhone();
+      if (!real) {
+        setError("Couldn't start mobile verification — try another method.");
+        return;
+      }
+      await requestCode(false, real);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mfaChoice]);
 
@@ -931,7 +962,17 @@ function LoginForm() {
                         <button
                           type="button"
                           disabled={resendIn > 0 || resending || submitting}
-                          onClick={() => (otpPhone ? void requestCode(true, otpPhone) : undefined)}
+                          onClick={() =>
+                            void (async () => {
+                              // Same masked-hint problem as the initial send:
+                              // resolve the real number for Firebase; MSG91
+                              // sends server-side and needs no number.
+                              if (msg91) return requestCode(true);
+                              const real = await resolveMfaPhone();
+                              if (real) return requestCode(true, real);
+                              setError("Couldn't resend — try another method.");
+                            })()
+                          }
                           className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"
                         >
                           {resending
