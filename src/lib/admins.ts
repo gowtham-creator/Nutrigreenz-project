@@ -33,6 +33,12 @@ export interface AdminRecord {
    *  (see admin-permissions.ts). Raw stored value — never resolved here; it is
    *  irrelevant for superadmins, who always hold every permission. */
   permissions: string[] | null;
+  /**
+   * Owner account. Keeps every super-admin power over other operators, but no
+   * one else — not even another super-admin — may edit, demote, suspend, reset
+   * or delete it. Granted via SQL only; never writable through the admin API.
+   */
+  isProtected: boolean;
   /** Per-admin sign-in factors (from admin_security); present after listAdmins. */
   factors?: AdminFactorFlags;
 }
@@ -49,10 +55,11 @@ interface AdminRow {
   created_at: string;
   last_login_at: string | null;
   permissions: string[] | null;
+  is_protected: boolean | null;
 }
 
 const COLS =
-  "id, email, name, phone, photo_url, role, status, must_change_password, created_at, last_login_at, permissions";
+  "id, email, name, phone, photo_url, role, status, must_change_password, created_at, last_login_at, permissions, is_protected";
 
 const norm = (email: string) => email.trim().toLowerCase();
 
@@ -69,6 +76,7 @@ function toRecord(r: AdminRow): AdminRecord {
     createdAt: r.created_at,
     lastLoginAt: r.last_login_at,
     permissions: r.permissions ?? null,
+    isProtected: Boolean(r.is_protected),
   };
 }
 

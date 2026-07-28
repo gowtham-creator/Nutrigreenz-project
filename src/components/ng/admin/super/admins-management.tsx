@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Pill } from "@/components/ng/admin/admin-shell";
+import { getAdminEmail } from "@/lib/admin-auth";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import {
@@ -44,6 +45,11 @@ type AdminUser = {
   factors: FactorFlags;
   /** Raw STORED section grants; empty ⇒ nothing stored (default admin set). */
   permissions: string[];
+  /**
+   * Owner account. Only the holder may change it — every destructive control is
+   * disabled for other operators, and the server refuses them regardless.
+   */
+  isProtected: boolean;
 };
 
 type AdminRecord = {
@@ -56,6 +62,7 @@ type AdminRecord = {
   lastLoginAt: string | null;
   factors?: FactorFlags;
   permissions?: string[] | null;
+  isProtected?: boolean;
 };
 
 type NewAdminPayload = {
@@ -86,6 +93,7 @@ function recordToUser(a: AdminRecord): AdminUser {
     lastLoginAt: a.lastLoginAt,
     factors: a.factors ?? { ...NO_FACTORS },
     permissions: Array.isArray(a.permissions) ? a.permissions : [],
+    isProtected: Boolean(a.isProtected),
   };
 }
 
@@ -219,6 +227,13 @@ function CredentialsPanel({
 }
 
 export function AdminsManagement() {
+  // Read once on mount: the cookie is unavailable during SSR, and this is used
+  // only to decide which controls to grey out. Authorisation is the server's job.
+  const [meEmail, setMeEmail] = useState<string | null>(null);
+  useEffect(() => setMeEmail(getAdminEmail()), []);
+  const isSelf = (email: string) =>
+    !!meEmail && meEmail.trim().toLowerCase() === email.trim().toLowerCase();
+
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [staffEmail, setStaffEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -475,8 +490,17 @@ export function AdminsManagement() {
               <span className="font-semibold text-ng-ink truncate">{a.name}</span>
             </span>
             <span className="font-mono text-[12px] font-medium text-ng-ink-muted truncate">{a.email}</span>
-            <span>
+            <span className="flex flex-wrap items-center gap-1">
               {a.role === "superadmin" ? <Pill tone="warn">Super Admin</Pill> : <Pill tone="info">Admin</Pill>}
+              {a.isProtected ? (
+                <span
+                  title="Owner account — only the account holder can change it"
+                  className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest-deep"
+                >
+                  <Icon name="lock-keyhole-bold" size={10} />
+                  Owner
+                </span>
+              ) : null}
             </span>
             <span>
               {a.status === "disabled" ? (
@@ -491,32 +515,48 @@ export function AdminsManagement() {
               {humanizeLastActive(a.lastLoginAt)}
             </span>
             <span className="flex items-center justify-end gap-0.5">
-              <RowAction icon="pen-new-square-bold" label="Edit" onClick={() => setEditing(a)} disabled={busyId === a.id} />
-              <RowAction
-                icon="key-bold"
-                label="Reset password"
-                onClick={() => credentialAction(a, "reset-password")}
-                disabled={busyId === a.id}
-              />
-              <RowAction
-                icon="plain-2-bold"
-                label="Resend credentials"
-                onClick={() => credentialAction(a, "resend")}
-                disabled={busyId === a.id}
-              />
-              <RowAction
-                icon={a.status === "disabled" ? "play-bold" : "pause-bold"}
-                label={a.status === "disabled" ? "Activate" : "Deactivate"}
-                onClick={() => toggleStatus(a)}
-                disabled={busyId === a.id}
-              />
-              <RowAction
-                icon="trash-bin-trash-bold"
-                label="Delete"
-                onClick={() => removeAdmin(a)}
-                danger
-                disabled={busyId === a.id}
-              />
+              {/* The owner row is read-only for everyone except the holder. The
+                  server enforces this too — these disabled states only spare an
+                  operator a pointless click and a 403. */}
+              {(() => {
+                const locked = a.isProtected && !isSelf(a.email);
+                const lockNote = locked ? "Owner account — only the account holder can change it" : undefined;
+                return (
+                  <>
+                    <RowAction
+                      icon="pen-new-square-bold"
+                      label={lockNote ?? "Edit"}
+                      onClick={() => setEditing(a)}
+                      disabled={locked || busyId === a.id}
+                    />
+                    <RowAction
+                      icon="key-bold"
+                      label={lockNote ?? "Reset password"}
+                      onClick={() => credentialAction(a, "reset-password")}
+                      disabled={locked || busyId === a.id}
+                    />
+                    <RowAction
+                      icon="plain-2-bold"
+                      label={lockNote ?? "Resend credentials"}
+                      onClick={() => credentialAction(a, "resend")}
+                      disabled={locked || busyId === a.id}
+                    />
+                    <RowAction
+                      icon={a.status === "disabled" ? "play-bold" : "pause-bold"}
+                      label={lockNote ?? (a.status === "disabled" ? "Activate" : "Deactivate")}
+                      onClick={() => toggleStatus(a)}
+                      disabled={locked || busyId === a.id}
+                    />
+                    <RowAction
+                      icon="trash-bin-trash-bold"
+                      label={lockNote ?? "Delete"}
+                      onClick={() => removeAdmin(a)}
+                      danger
+                      disabled={locked || busyId === a.id}
+                    />
+                  </>
+                );
+              })()}
             </span>
           </li>
         ))}

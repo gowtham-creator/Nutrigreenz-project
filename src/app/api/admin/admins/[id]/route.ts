@@ -26,6 +26,47 @@ async function superAdminEmail(): Promise<string | null> {
 const ROLES: AdminRole[] = ["admin", "superadmin"];
 const STATUSES: AdminStatus[] = ["active", "invited", "disabled"];
 
+/**
+ * Owner guard.
+ *
+ * A PROTECTED admin (the owner) may only ever be mutated by itself. Every other
+ * operator — including another super-admin — is refused, which is what makes the
+ * owner account impossible to demote, suspend, password-reset or delete from
+ * inside the portal. Returns a 403 Response to short-circuit with, or null when
+ * the mutation is allowed.
+ *
+ * Note the flag is never accepted from a request body anywhere in this API, so
+ * protection cannot be granted or stripped by a compromised session; it is set
+ * in SQL only.
+ */
+async function protectedTargetDenial(
+  targetId: string,
+  actorEmail: string,
+): Promise<Response | null> {
+  const target = await getAdminById(targetId);
+  if (!target) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  if (!target.isProtected) return null;
+  if (target.email.trim().toLowerCase() === actorEmail.trim().toLowerCase()) return null;
+
+  await logActivity({
+    actorEmail,
+    actorRole: "superadmin",
+    action: "admin.protected_denied",
+    target: target.email,
+    meta: { reason: "attempted mutation of the protected owner account" },
+  });
+
+  return Response.json(
+    {
+      ok: false,
+      error: "protected-account",
+      message:
+        "This is the owner account. It can only be changed by the account holder.",
+    },
+    { status: 403 },
+  );
+}
+
 function credentialsEmailHtml(name: string, email: string, password: string): string {
   return `<!doctype html><html><body style="margin:0;background:#f4f1e8;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#1a2b22">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px">
@@ -51,6 +92,10 @@ export async function PATCH(
   }
 
   const { id } = await ctx.params;
+
+  // Owner guard — refuse before reading the body or touching the row.
+  const denied = await protectedTargetDenial(id, actorEmail);
+  if (denied) return denied;
 
   let body: Record<string, unknown>;
   try {
@@ -164,6 +209,10 @@ export async function POST(
 
   const { id } = await ctx.params;
 
+  // Owner guard — no other operator may reset the owner's credentials.
+  const denied = await protectedTargetDenial(id, actorEmail);
+  if (denied) return denied;
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -234,6 +283,11 @@ export async function DELETE(
   }
 
   const { id } = await ctx.params;
+
+  // Owner guard — the protected account cannot be deleted by anyone else.
+  const denied = await protectedTargetDenial(id, actorEmail);
+  if (denied) return denied;
+
   const admin = await getAdminById(id);
   if (!admin) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
 
