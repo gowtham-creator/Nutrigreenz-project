@@ -1,6 +1,8 @@
 import "server-only";
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import type { OrderWithDetail } from "@/lib/orders";
+import { NOTO_SANS_REGULAR_B64, NOTO_SANS_BOLD_B64 } from "@/lib/invoice-fonts";
 
 /**
  * Server-side INVOICE and RECEIPT PDFs.
@@ -38,19 +40,25 @@ const SELLER = {
 };
 
 const money = (paise: number) =>
-  `Rs.${(Math.round(paise) / 100).toLocaleString("en-IN", {
+  `₹${(Math.round(paise) / 100).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
-/** The standard PDF fonts are Latin-1 only — the rupee glyph is not encodable. */
+/**
+ * Normalise text for the embedded font.
+ *
+ * The rupee sign is deliberately preserved — the subset Noto Sans face carries
+ * U+20B9, which is the whole reason it is embedded. Only typographic quotes and
+ * dashes are folded to ASCII equivalents, and anything the subset genuinely
+ * cannot draw is dropped rather than rendered as a blank box.
+ */
 function safe(text: string): string {
   return text
-    .replace(/₹/g, "Rs.")
     .replace(/[—–]/g, "-")
     .replace(/[’‘]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/[^ -ÿ]/g, "");
+    .replace(/[^ -ÿ₹·°]/g, "");
 }
 
 function longDate(iso: string | null): string {
@@ -72,12 +80,16 @@ type Kind = "invoice" | "receipt";
 async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
   const isReceipt = kind === "receipt";
   const doc = await PDFDocument.create();
+  // Required before embedding a custom (non-standard) font.
+  doc.registerFontkit(fontkit);
   doc.setTitle(`${isReceipt ? "Receipt" : "Invoice"} ${order.orderNumber}`);
   doc.setProducer("Nutri Greenz");
 
   const page: PDFPage = doc.addPage(A4);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const body = await doc.embedFont(StandardFonts.Helvetica);
+  // Noto Sans rather than Helvetica: the standard PDF faces cannot encode the
+  // rupee sign, which is not optional on an Indian tax invoice.
+  const bold = await doc.embedFont(Buffer.from(NOTO_SANS_BOLD_B64, "base64"), { subset: true });
+  const body = await doc.embedFont(Buffer.from(NOTO_SANS_REGULAR_B64, "base64"), { subset: true });
   const W = page.getWidth();
   let y = page.getHeight() - M;
 
