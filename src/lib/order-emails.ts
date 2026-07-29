@@ -5,6 +5,7 @@ import { render, type NotifyType } from "@/lib/notification-templates";
 import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
 import { billingAttachments } from "@/lib/invoice-pdf";
+import { gstFor } from "@/lib/gst";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -82,50 +83,92 @@ function addressLines(order: OrderWithDetail): string[] {
  * modern silently collapses into a single column of unstyled text. Width is
  * capped at 600px, the standard safe render width.
  */
+/**
+ * The transactional order email.
+ *
+ * Restrained on purpose, following the billing reference the client supplied: a
+ * light page, the amount as the loudest element, muted label/value meta, and a
+ * borderless totals ladder. A receipt is a record — heavy cards and coloured
+ * banners make it read like marketing and bury the number that matters.
+ *
+ * Built entirely from tables with inline styles. Outlook and most Indian webmail
+ * ignore flexbox, grid and <style> blocks, so anything more modern collapses into
+ * unstyled text. Width is capped at 600px, the standard safe render width.
+ *
+ * The palette is pinned light: `color-scheme: light only` stops Gmail and Apple
+ * Mail force-inverting it, which previously turned the body near-black and left
+ * the text unreadable in dark mode.
+ */
 function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const c = COPY[kind];
+  const INK = "#141414";
+  const MUTED = "#6B6F72";
+  const LINE = "#E4E4E5";
+  const PAGE = "#FFFFFF";
   const GREEN = "#14331F";
-  const CREAM = "#F5F2E0";
-  const PAPER = "#FFFFFF";
-  const LINE = "#E3DFD0";
-  const MUTED = "#6B7A70";
 
-  // Only the first email is a receipt: it carries the money breakdown and the
+  // Only the first email is a receipt: it carries the tax breakdown and the
   // invoice PDF. Later status emails recap the order without re-billing it.
   const isReceipt = kind === "placed";
+  const paid = order.paymentStatus === "paid";
+  const gst = gstFor(order);
+
+  const when = new Date(order.placedAt ?? order.createdAt).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const itemRows = order.items
     .map(
       (it) => `
         <tr>
-          <td style="padding:12px 0;border-bottom:1px solid ${LINE};font-size:14px;color:#1A2B22;line-height:1.4">
+          <td style="padding:9px 0 0;font-size:14px;color:${INK};line-height:1.4">
             ${escapeHtml(it.title)}
             <div style="font-size:12px;color:${MUTED};margin-top:2px">Qty ${it.qty}</div>
           </td>
-          <td style="padding:12px 0;border-bottom:1px solid ${LINE};font-size:14px;color:#1A2B22;text-align:right;white-space:nowrap;vertical-align:top">
+          <td style="padding:9px 0 0;font-size:14px;color:${INK};text-align:right;white-space:nowrap;vertical-align:top">
             ${rupees(it.lineTotalPaise)}
           </td>
         </tr>`,
     )
     .join("");
 
-  /** One line of the money breakdown; omitted entirely when zero. */
-  const money = (label: string, paise: number, opts?: { negative?: boolean }) =>
-    paise > 0
-      ? `<tr>
-           <td style="padding:4px 0;font-size:13px;color:${MUTED}">${label}</td>
-           <td style="padding:4px 0;font-size:13px;color:${opts?.negative ? "#2F6B3A" : "#1A2B22"};text-align:right;white-space:nowrap">${opts?.negative ? "−" : ""}${rupees(paise)}</td>
-         </tr>`
-      : "";
+  /**
+   * One line of the totals ladder. `always` keeps a zero row visible: on a tax
+   * invoice a missing tax line reads as an error rather than as a saving, so the
+   * full ladder is printed even when a value is nil.
+   */
+  const row = (
+    label: string,
+    paise: number,
+    opts: { negative?: boolean; strong?: boolean; always?: boolean; zeroText?: string } = {},
+  ) => {
+    if (paise <= 0 && !opts.always) return "";
+    const value =
+      paise <= 0 && opts.zeroText ? opts.zeroText : `${opts.negative ? "-" : ""}${rupees(paise)}`;
+    const weight = opts.strong ? "font-weight:700;" : "";
+    const size = opts.strong ? "15px" : "13.5px";
+    return `<tr>
+      <td style="padding:11px 0;border-top:1px solid ${LINE};font-size:${size};color:${opts.strong ? INK : MUTED};${weight}">${label}</td>
+      <td style="padding:11px 0;border-top:1px solid ${LINE};font-size:${size};color:${INK};text-align:right;white-space:nowrap;${weight}">${value}</td>
+    </tr>`;
+  };
+
+  const meta = (label: string, value: string) => `
+    <tr>
+      <td style="padding:7px 0;font-size:13.5px;color:${MUTED}">${label}</td>
+      <td style="padding:7px 0;font-size:13.5px;color:${INK};text-align:right">${value}</td>
+    </tr>`;
 
   const address = addressLines(order);
   const slot = order.slotSnapshot as Record<string, unknown> | null;
   const slotLabel = [snap(slot, "label"), snap(slot, "windowText")].filter(Boolean).join(" · ");
 
-  const detailBlock = (title: string, body: string) => `
-    <td style="vertical-align:top;padding:0 8px 0 0;width:50%">
-      <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED};margin-bottom:6px">${title}</div>
-      <div style="font-size:13px;color:#1A2B22;line-height:1.55">${body}</div>
+  const detailBlock = (title: string, bodyHtml: string) => `
+    <td style="vertical-align:top;padding:0 10px 0 0;width:50%">
+      <div style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:${MUTED};margin-bottom:6px">${title}</div>
+      <div style="font-size:13px;color:${INK};line-height:1.6">${bodyHtml}</div>
     </td>`;
 
   return `<!doctype html>
@@ -133,71 +176,112 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light only" />
+<meta name="supported-color-schemes" content="light only" />
 <title>${escapeHtml(c.heading)}</title>
 </head>
-<body style="margin:0;padding:0;background:${CREAM};-webkit-font-smoothing:antialiased">
+<body style="margin:0;padding:0;background:${PAGE};color:${INK};color-scheme:light only;-webkit-font-smoothing:antialiased">
   <!-- Preheader: the grey preview line in the inbox, hidden in the body. -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(c.intro)}</div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:28px 12px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE};padding:36px 16px">
     <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${PAPER};border:1px solid ${LINE};border-radius:16px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
 
-        <!-- Masthead -->
+        <!-- Brand -->
         <tr>
-          <td style="background:${GREEN};padding:22px 28px" align="left">
-            <img src="${SITE}/brand/logo-horizontal-light.png" alt="Nutri Greenz" width="150"
-                 style="display:block;border:0;height:auto;width:150px;max-width:150px" />
+          <td style="padding:0 0 34px">
+            <img src="${SITE}/brand/logo-horizontal.png" alt="Nutri Greenz" width="132"
+                 style="display:block;border:0;height:auto;width:132px;max-width:132px" />
           </td>
         </tr>
 
-        <!-- Headline -->
+        <!-- Amount, front and centre -->
         <tr>
-          <td style="padding:30px 28px 0">
-            <h1 style="margin:0;font-size:24px;line-height:1.25;color:${GREEN};font-weight:700">${c.heading}</h1>
-            <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#3A4A40">${c.intro}</p>
-            <p style="margin:14px 0 0;font-size:13px;color:${MUTED}">
-              Order <strong style="color:${GREEN};font-size:14px">${escapeHtml(order.orderNumber)}</strong>
-            </p>
+          <td style="padding:0 0 6px;font-size:13.5px;color:${MUTED}">
+            ${isReceipt ? "Order from Nutri Greenz" : c.heading}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0;font-size:38px;line-height:1.1;font-weight:700;color:${INK}">
+            ${rupees(order.totalPaise)}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0 0;font-size:13.5px;color:${MUTED}">
+            ${paid ? `Paid ${when}` : `Placed ${when}`}
           </td>
         </tr>
 
-        <!-- Order summary.
-             The full itemised breakdown belongs on the receipt, so it appears
-             only on the "placed" email (which also carries the invoice PDF).
-             A status update repeating the whole price breakdown reads like a
-             second bill; those get a one-line recap instead. -->
+        <!-- Documents -->
         <tr>
-          <td style="padding:22px 28px 0">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                   style="border-collapse:collapse;background:#FBFAF5;border:1px solid ${LINE};border-radius:12px">
-              <tr><td style="padding:6px 18px 0">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
-                  ${itemRows}
-                  ${
-                    isReceipt
-                      ? `${money("Subtotal", order.subtotalPaise)}
-                  ${money("Discount", order.discountPaise, { negative: true })}
-                  ${money("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
-                  ${money("Delivery", order.shippingPaise)}
-                  ${money("Tax", order.taxPaise)}`
-                      : ""
-                  }
-                  <tr>
-                    <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:15px;font-weight:700;color:${GREEN}">Total</td>
-                    <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:17px;font-weight:700;color:${GREEN};text-align:right;white-space:nowrap">${rupees(order.totalPaise)}</td>
-                  </tr>
-                </table>
-              </td></tr>
+          <td style="padding:22px 0 0;font-size:13.5px">
+            <a href="${SITE}/orders/${order.id}/invoice" style="color:${GREEN};text-decoration:none;font-weight:600">&darr; Download invoice</a>
+            ${paid ? `&nbsp;&nbsp;&nbsp;<a href="${SITE}/orders/${order.id}/invoice?doc=receipt" style="color:${GREEN};text-decoration:none;font-weight:600">&darr; Download receipt</a>` : ""}
+          </td>
+        </tr>
+
+        <!-- Meta -->
+        <tr>
+          <td style="padding:26px 0 0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${meta("Order number", escapeHtml(order.orderNumber))}
+              ${paid ? meta("Receipt number", `${escapeHtml(order.orderNumber)}-R`) : ""}
+              ${meta("Payment", paid ? `Paid${order.paymentProvider ? ` · ${escapeHtml(order.paymentProvider)}` : ""}` : "Pending")}
+              ${meta("Status", escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1)))}
+            </table>
+          </td>
+        </tr>
+
+        <!-- Items + totals -->
+        <tr>
+          <td style="padding:34px 0 0;font-size:15px;font-weight:700;color:${INK}">
+            ${isReceipt ? "Order summary" : c.heading}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0 0;font-size:14px;line-height:1.6;color:${MUTED}">${c.intro}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px 0 0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+              ${itemRows}
+              <tr><td colspan="2" style="height:14px"></td></tr>
+              ${
+                isReceipt
+                  ? `
+              ${row("Subtotal", order.subtotalPaise, { always: true })}
+              ${row(order.couponCode ? `Discount (${escapeHtml(order.couponCode)})` : "Discount", order.discountPaise, { negative: true })}
+              ${row("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
+              ${row("Delivery", order.shippingPaise, { always: true, zeroText: "Free" })}
+              ${row("Total excluding tax", gst.taxablePaise, { always: true })}
+              ${
+                gst.intraState
+                  ? `${row(`CGST (${gst.halfRatePercent}%)`, gst.cgstPaise, { always: true })}
+              ${row(`SGST (${gst.halfRatePercent}%)`, gst.sgstPaise, { always: true })}`
+                  : row(`IGST (${gst.ratePercent}%)`, gst.igstPaise, { always: true })
+              }`
+                  : ""
+              }
+              ${row(paid ? "Amount paid" : "Total", order.totalPaise, { always: true, strong: true })}
             </table>
           </td>
         </tr>
 
         ${
+          isReceipt
+            ? `<tr>
+          <td style="padding:10px 0 0;font-size:11.5px;color:${MUTED};line-height:1.6">
+            Prices include GST at ${gst.ratePercent}%. Place of supply: ${escapeHtml(gst.placeOfSupply)}.
+          </td>
+        </tr>`
+            : ""
+        }
+
+        ${
           (address.length || slotLabel) && isReceipt
-            ? `<!-- Delivery details -->
-        <tr>
-          <td style="padding:22px 28px 0">
+            ? `<tr>
+          <td style="padding:30px 0 0">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 ${address.length ? detailBlock("Delivering to", address.map(escapeHtml).join("<br />")) : ""}
@@ -209,13 +293,13 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
             : ""
         }
 
-        <!-- CTA -->
+        <!-- Action -->
         <tr>
-          <td style="padding:26px 28px 4px" align="left">
+          <td style="padding:32px 0 0">
             <table role="presentation" cellpadding="0" cellspacing="0"><tr>
               <td style="background:${GREEN};border-radius:999px">
                 <a href="${SITE}/orders/${order.id}"
-                   style="display:inline-block;padding:13px 30px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none">
+                   style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none">
                   Track your order
                 </a>
               </td>
@@ -223,32 +307,23 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           </td>
         </tr>
 
-        <tr>
-          <td style="padding:18px 28px 26px">
-            <p style="margin:0;font-size:13px;line-height:1.6;color:${MUTED}">
-              Questions about this order? Reply to this email or write to
-              <a href="mailto:customersupport@nutrigreenz.farm" style="color:${GREEN};text-decoration:underline">customersupport@nutrigreenz.farm</a>.
-            </p>
-          </td>
-        </tr>
-
         <!-- Footer -->
         <tr>
-          <td style="background:#FBFAF5;border-top:1px solid ${LINE};padding:22px 28px">
-            <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:${MUTED}">
-              <strong style="color:${GREEN}">Nutri Greenz Farm Technologies Pvt. Ltd.</strong><br />
+          <td style="padding:36px 0 0;border-top:1px solid ${LINE}">
+            <p style="margin:22px 0 10px;font-size:12.5px;line-height:1.7;color:${MUTED}">
+              Questions about this order? Just reply to this email, or write to
+              <a href="mailto:customersupport@nutrigreenz.farm" style="color:${GREEN}">customersupport@nutrigreenz.farm</a>.
+            </p>
+            <p style="margin:0 0 10px;font-size:12px;line-height:1.7;color:${MUTED}">
+              <strong style="color:${INK}">Nutri Greenz Farm Technologies Pvt. Ltd.</strong><br />
               1st Floor, H.No. 5-35/167, Double Road, Near Moosapet Y Junction,<br />
-              Prashanth Nagar, Kukatpally, Hyderabad, Telangana 500072<br />
-              +91 94918 93370
+              Prashanth Nagar, Kukatpally, Hyderabad, Telangana 500072 &nbsp;·&nbsp; +91 94918 93370
             </p>
             <p style="margin:0;font-size:12px;color:${MUTED}">
               <a href="${SITE}/shop" style="color:${GREEN};text-decoration:none">Shop</a> &nbsp;·&nbsp;
               <a href="${SITE}/orders/track" style="color:${GREEN};text-decoration:none">Track an order</a> &nbsp;·&nbsp;
               <a href="${SITE}/faq" style="color:${GREEN};text-decoration:none">Help</a> &nbsp;·&nbsp;
               <a href="${SITE}/policies/refund" style="color:${GREEN};text-decoration:none">Refunds</a>
-            </p>
-            <p style="margin:12px 0 0;font-size:11px;color:#9AA89F">
-              Farm-fresh, fully traceable, from our partner farms to your kitchen.
             </p>
           </td>
         </tr>
