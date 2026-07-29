@@ -3,10 +3,25 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
+import { getCustomerSession } from "@/lib/customer-session";
+import { getLoyaltyConfig, loyaltyBalance, listLoyaltyLedger } from "@/lib/rewards";
+import { getReferralConfig } from "@/lib/referrals";
 
+/**
+ * /loyalty — the customer's real Harvest Credit wallet.
+ *
+ * Every figure on this page is read from the append-only `loyalty_ledger` and
+ * the admin-configured programme; nothing is illustrative. A customer with no
+ * orders sees a genuine zero balance and an empty ledger, not a sample one.
+ */
+export const dynamic = "force-dynamic";
+
+/** Tier ladder. Thresholds are annual spend; the rates mirror the programme. */
 const TIERS = [
   {
     name: "Seedling",
+    floor: 0,
+    ceil: 5000,
     range: "0 – ₹4,999 / yr",
     rate: "3% back",
     icon: "leaf-bold",
@@ -14,14 +29,17 @@ const TIERS = [
   },
   {
     name: "Sapling",
+    floor: 5000,
+    ceil: 15000,
     range: "₹5,000 – ₹14,999 / yr",
     rate: "5% back",
     icon: "sun-2-bold",
     perks: ["Free shipping always", "Early access to harvests (48h)", "2× referral credit", "Quarterly harvest letter"],
-    featured: true,
   },
   {
     name: "Banyan",
+    floor: 15000,
+    ceil: Number.POSITIVE_INFINITY,
     range: "₹15,000+ / yr",
     rate: "8% back",
     icon: "crown-bold",
@@ -29,26 +47,64 @@ const TIERS = [
   },
 ];
 
-const TRANSACTIONS = [
-  { date: "12 May 2026", note: "Order NG-25-1042 · 5% back", amount: 132, icon: "box-bold" },
-  { date: "28 Apr 2026", note: "Order NG-25-0981 · 5% back", amount: 71, icon: "box-bold" },
-  { date: "14 Apr 2026", note: "Order NG-25-0863 · 5% back", amount: 198, icon: "box-bold" },
-  { date: "01 Apr 2026", note: "Referral bonus · Priya K. signed up", amount: 250, icon: "users-group-rounded-bold" },
-  { date: "12 Mar 2026", note: "Wallet redeemed at checkout", amount: -300, icon: "tag-price-bold" },
-];
+/** A ledger reason mapped to human copy + an icon. */
+function describeEntry(reason: string, orderId: string | null): { note: string; icon: string } {
+  if (reason === "order_earn") {
+    return { note: orderId ? "Earned on an order" : "Points earned", icon: "box-bold" };
+  }
+  if (reason === "order_redeem") return { note: "Redeemed at checkout", icon: "tag-price-bold" };
+  return { note: "Adjustment", icon: "users-group-rounded-bold" };
+}
 
-// Current-tier progress for the ring + ladder. Sapling: ₹5,000–₹14,999.
-const SPENT_THIS_YEAR = 9120;
-const TIER_FLOOR = 5000;
-const TIER_CEIL = 15000;
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
-export default function LoyaltyPage() {
-  const balance = TRANSACTIONS.reduce((s, t) => s + t.amount, 0);
-  const progress = Math.min(
-    1,
-    (SPENT_THIS_YEAR - TIER_FLOOR) / (TIER_CEIL - TIER_FLOOR),
+export default async function LoyaltyPage() {
+  const session = await getCustomerSession();
+  const customerId = session?.customerId ?? null;
+
+  const [config, referralConfig, points, ledger] = await Promise.all([
+    getLoyaltyConfig(),
+    getReferralConfig().catch(() => null),
+    customerId ? loyaltyBalance(customerId) : Promise.resolve(0),
+    customerId ? listLoyaltyLedger(customerId, 20) : Promise.resolve([]),
+  ]);
+
+  // Points → rupees at the live redemption rate.
+  const perRupee = config.redeemPointsPerRupee > 0 ? config.redeemPointsPerRupee : 10;
+  const toRupees = (p: number) => Math.floor(Math.abs(p) / perRupee);
+  const balance = toRupees(points);
+
+  // Spend-equivalent of everything earned, used only to place the tier — derived
+  // from the real ledger, never assumed.
+  const earnedPoints = ledger
+    .filter((e) => e.deltaPoints > 0 && e.reason === "order_earn")
+    .reduce((s, e) => s + e.deltaPoints, 0);
+  const earnRate = config.earnPointsPerRupee > 0 ? config.earnPointsPerRupee : 1;
+  const spend = Math.round(earnedPoints / earnRate);
+
+  const tierIndex = Math.max(
+    0,
+    TIERS.findIndex((t) => spend >= t.floor && spend < t.ceil),
   );
-  const toNext = TIER_CEIL - SPENT_THIS_YEAR;
+  const tier = TIERS[tierIndex] ?? TIERS[0];
+  const isTop = tierIndex === TIERS.length - 1;
+  const nextTier = isTop ? null : TIERS[tierIndex + 1];
+  const progress = isTop
+    ? 1
+    : Math.min(1, Math.max(0, (spend - tier.floor) / (tier.ceil - tier.floor)));
+  const toNext = nextTier ? Math.max(0, tier.ceil - spend) : 0;
+
+  const hasActivity = ledger.length > 0;
+  // Referrer is rewarded in POINTS; the referee gets a straight discount in paise.
+  const referralReward =
+    referralConfig && referralConfig.enabled && referralConfig.referrerPoints > 0
+      ? toRupees(referralConfig.referrerPoints)
+      : null;
+  const refereeReward =
+    referralConfig && referralConfig.refereeDiscountPaise > 0
+      ? Math.round(referralConfig.refereeDiscountPaise / 100)
+      : null;
 
   return (
     <AccountShell active="loyalty">
@@ -58,11 +114,12 @@ export default function LoyaltyPage() {
           Your wallet
         </span>
         <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
-          ₹{balance.toLocaleString()} in <em className="italic text-ng-leaf">harvest credit</em>
+          ₹{balance.toLocaleString("en-IN")} in <em className="italic text-ng-leaf">harvest credit</em>
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
-          Loyalty here is simple: every order, every referral, every review earns wallet credit you
-          can redeem on anything in the pantry. Up to 30% of any order, no expiry.
+          {hasActivity
+            ? `Every order and every referral earns wallet credit you can redeem on anything in the pantry — up to ${config.maxRedeemPercent}% of an order.`
+            : `Place your first order to start earning. Every order and every referral earns wallet credit you can redeem on anything in the pantry — up to ${config.maxRedeemPercent}% of an order.`}
         </p>
       </Reveal>
 
@@ -75,21 +132,41 @@ export default function LoyaltyPage() {
             <div className="relative">
               <div className="ng-eyebrow text-ng-clay">Current balance</div>
               <div className="mt-2 font-display text-[clamp(40px,6vw,64px)] leading-none text-ng-cream tabular-nums">
-                ₹{balance.toLocaleString()}
+                ₹{balance.toLocaleString("en-IN")}
+              </div>
+              <div className="mt-1 text-[13px] text-ng-cream/60 tabular-nums">
+                {points.toLocaleString("en-IN")} points · {perRupee} points = ₹1
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/25 px-3 py-1.5 text-[12px] font-semibold text-ng-clay">
                   <Icon name="medal-ribbon-star-bold" size={14} />
-                  Sapling member · 5% back
+                  {tier.name} member · {tier.rate}
                 </span>
-                <span className="text-[13px] text-ng-cream/65">No expiry · redeem any time</span>
+                <span className="text-[13px] text-ng-cream/65">
+                  {config.expiryMonths > 0
+                    ? `Credit expires ${config.expiryMonths} months after earning`
+                    : "No expiry · redeem any time"}
+                </span>
               </div>
               <p className="mt-5 max-w-sm text-[13px] leading-relaxed text-ng-cream/70">
-                Spend <span className="font-semibold text-ng-cream tabular-nums">₹{toNext.toLocaleString()}</span> more this year to reach
-                <span className="font-semibold text-ng-clay"> Banyan</span> and unlock 8% back.
+                {!hasActivity ? (
+                  <>Your credit appears here the moment your first order is delivered.</>
+                ) : nextTier ? (
+                  <>
+                    Spend{" "}
+                    <span className="font-semibold text-ng-cream tabular-nums">
+                      ₹{toNext.toLocaleString("en-IN")}
+                    </span>{" "}
+                    more this year to reach
+                    <span className="font-semibold text-ng-clay"> {nextTier.name}</span> and unlock{" "}
+                    {nextTier.rate}.
+                  </>
+                ) : (
+                  <>You&rsquo;re at our highest tier — thank you for shopping with us.</>
+                )}
               </p>
               <Button variant="gold" size="md" className="mt-6" asChild>
-                <Link href="/shop">Redeem at checkout →</Link>
+                <Link href="/shop">{hasActivity ? "Redeem at checkout →" : "Start shopping →"}</Link>
               </Button>
             </div>
 
@@ -101,72 +178,81 @@ export default function LoyaltyPage() {
         {/* Stat strip */}
         <Stagger className="grid items-stretch sm:grid-cols-3 gap-4 mb-12">
           <StaggerItem className="h-full">
-            <Tile icon="wallet-money-bold" big={`₹${balance.toLocaleString()}`} small="Current balance" tone="forest" />
+            <Tile
+              icon="wallet-money-bold"
+              big={`₹${balance.toLocaleString("en-IN")}`}
+              small="Current balance"
+              tone="forest"
+            />
           </StaggerItem>
           <StaggerItem className="h-full">
-            <Tile icon="medal-ribbon-star-bold" big="Sapling" small="Current tier · 5% back" tone="clay" />
+            <Tile
+              icon="medal-ribbon-star-bold"
+              big={tier.name}
+              small={`Current tier · ${tier.rate}`}
+              tone="clay"
+            />
           </StaggerItem>
           <StaggerItem className="h-full">
-            <Tile icon="graph-up-bold" big="₹3,560" small="Earned this year" tone="sage" />
+            <Tile
+              icon="graph-up-bold"
+              big={`₹${toRupees(earnedPoints).toLocaleString("en-IN")}`}
+              small="Earned so far"
+              tone="sage"
+            />
           </StaggerItem>
         </Stagger>
 
         {/* Tiers — ladder */}
         <Reveal className="mb-16">
-          <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mb-7">Three tiers. <em className="italic text-ng-leaf">No tricks.</em></h2>
+          <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mb-7">
+            Three tiers. <em className="italic text-ng-leaf">No tricks.</em>
+          </h2>
           <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:items-end">
-            {TIERS.map((t) => (
-              <StaggerItem key={t.name}>
-                <article
-                  className={`relative h-full rounded-3xl p-7 transition-all ${
-                    t.featured
-                      ? "bg-ng-forest-deep text-ng-cream shadow-[var(--shadow-ng-float)] ring-1 ring-ng-clay/25 lg:scale-[1.04]"
-                      : "ng-float bg-ng-paper text-ng-ink border border-ng-line-soft"
-                  }`}
-                >
-                  {t.featured ? (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-ng-clay text-ng-forest-deep text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full shadow-[0_4px_12px_-4px_rgba(181,134,47,0.6)]">
-                      You are here
-                    </span>
-                  ) : null}
-                  <div className="flex items-center justify-between">
-                    <h3 className={`font-display text-[24px] ${t.featured ? "text-ng-cream" : "text-ng-forest-deep"}`}>{t.name}</h3>
-                    <span
-                      className={`grid h-10 w-10 place-items-center rounded-full ${
-                        t.featured ? "bg-ng-clay/25 text-ng-clay" : "bg-ng-sage/60 text-ng-forest"
-                      }`}
-                    >
-                      <Icon name={t.icon} size={20} />
-                    </span>
-                  </div>
-                  <p className={`text-[12px] mt-1 ${t.featured ? "text-ng-cream/60" : "text-ng-ink-soft"}`}>{t.range}</p>
-                  <div className={`font-display text-[40px] mt-4 leading-none ${t.featured ? "text-ng-clay" : "text-ng-forest"}`}>
-                    {t.rate}
-                  </div>
-                  {t.featured ? (
-                    <div className="mt-4">
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-ng-cream/15">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-ng-leaf to-ng-clay"
-                          style={{ width: `${Math.round(progress * 100)}%` }}
-                        />
-                      </div>
-                      <div className="mt-1.5 text-[11px] text-ng-cream/60 tabular-nums">
-                        {Math.round(progress * 100)}% toward Banyan
-                      </div>
+            {TIERS.map((t) => {
+              const featured = t.name === tier.name;
+              return (
+                <StaggerItem key={t.name}>
+                  <article
+                    className={
+                      featured
+                        ? "h-full rounded-3xl border-2 border-ng-clay bg-ng-paper p-7 shadow-[var(--shadow-ng-float)]"
+                        : "h-full rounded-3xl border border-ng-line-soft bg-ng-paper p-7"
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`grid h-11 w-11 place-items-center rounded-2xl ${
+                          featured ? "bg-ng-clay/20 text-ng-clay-deep" : "bg-ng-sage/50 text-ng-forest"
+                        }`}
+                      >
+                        <Icon name={t.icon} size={22} />
+                      </span>
+                      {featured ? (
+                        <span className="rounded-full bg-ng-clay/20 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-ng-clay-deep">
+                          You&rsquo;re here
+                        </span>
+                      ) : null}
                     </div>
-                  ) : null}
-                  <ul className={`mt-5 space-y-2 text-[13px] ${t.featured ? "text-ng-cream/80" : "text-ng-ink-muted"}`}>
-                    {t.perks.map((p) => (
-                      <li key={p} className="flex gap-2">
-                        <Icon name="check-circle-bold" size={15} className={`mt-0.5 shrink-0 ${t.featured ? "text-ng-clay" : "text-ng-forest"}`} />
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              </StaggerItem>
-            ))}
+                    <h3 className="mt-5 font-display text-[24px] text-ng-forest-deep">{t.name}</h3>
+                    <div className="mt-1 text-[13px] text-ng-ink-soft">{t.range}</div>
+                    <div className="mt-3 font-display text-[20px] text-ng-forest">{t.rate}</div>
+                    <ul className="mt-5 space-y-2.5 text-[14px] text-ng-ink-muted">
+                      {t.perks.map((p) => (
+                        <li key={p} className="flex gap-2">
+                          <Icon
+                            name="check-circle-bold"
+                            size={15}
+                            className={`mt-0.5 shrink-0 ${featured ? "text-ng-clay" : "text-ng-forest"}`}
+                          />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </StaggerItem>
+              );
+            })}
           </Stagger>
         </Reveal>
 
@@ -175,60 +261,99 @@ export default function LoyaltyPage() {
           <div className="grid lg:grid-cols-[1.4fr_1fr] gap-10">
             <div className="rounded-3xl bg-ng-paper border border-ng-line-soft p-7 shadow-[var(--shadow-ng-card)]">
               <h2 className="font-display text-[22px] text-ng-forest-deep mb-5">Recent activity</h2>
-              <ul className="divide-y divide-ng-line-soft">
-                {TRANSACTIONS.map((tx, i) => {
-                  const credit = tx.amount > 0;
-                  return (
-                    <li key={i} className="py-3.5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <span
-                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-                            credit ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-terracotta/15 text-ng-terracotta"
+              {hasActivity ? (
+                <ul className="divide-y divide-ng-line-soft">
+                  {ledger.map((tx) => {
+                    const credit = tx.deltaPoints > 0;
+                    const { note, icon } = describeEntry(tx.reason, tx.orderId);
+                    return (
+                      <li key={tx.id} className="py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <span
+                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                              credit ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-terracotta/15 text-ng-terracotta"
+                            }`}
+                          >
+                            <Icon name={icon} size={16} />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-[14px] text-ng-ink truncate">{note}</div>
+                            <div className="text-[12px] text-ng-ink-soft mt-0.5">
+                              {fmtDate(tx.createdAt)} · {Math.abs(tx.deltaPoints).toLocaleString("en-IN")} pts
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`font-display text-[18px] tabular-nums shrink-0 ${
+                            credit ? "text-ng-success" : "text-ng-terracotta"
                           }`}
                         >
-                          <Icon name={tx.icon} size={16} />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-[14px] text-ng-ink truncate">{tx.note}</div>
-                          <div className="text-[12px] text-ng-ink-soft mt-0.5">{tx.date}</div>
+                          {credit ? "+" : "−"}₹{toRupees(tx.deltaPoints).toLocaleString("en-IN")}
                         </div>
-                      </div>
-                      <div className={`font-display text-[18px] tabular-nums shrink-0 ${credit ? "text-ng-success" : "text-ng-terracotta"}`}>
-                        {credit ? "+" : "−"}₹{Math.abs(tx.amount).toLocaleString()}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-sage/50 text-ng-forest">
+                    <Icon name="wallet-money-bold" size={24} />
+                  </span>
+                  <p className="max-w-xs text-[14px] leading-relaxed text-ng-ink-muted">
+                    No credit yet. Your first order will show up here with the points it earned.
+                  </p>
+                  <Button variant="outline" size="sm" asChild className="mt-1">
+                    <Link href="/shop">Browse the pantry</Link>
+                  </Button>
+                </div>
+              )}
             </div>
 
             <aside className="rounded-3xl bg-ng-sage/40 border border-ng-line p-7">
-              <h3 className="font-display text-[22px] text-ng-forest-deep">How to earn faster</h3>
+              <h3 className="font-display text-[22px] text-ng-forest-deep">How to earn</h3>
               <ul className="mt-5 space-y-4 text-[14px] text-ng-ink-muted">
                 <li className="flex gap-3">
-                  <Icon name="users-group-rounded-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
+                  <Icon name="box-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
                   <span>
-                    <span className="block font-display text-[15px] text-ng-forest-deep">Refer a friend · ₹250</span>
-                    You earn ₹250, they get ₹100 off their first order.
+                    <span className="block font-display text-[15px] text-ng-forest-deep">
+                      Every order
+                    </span>
+                    Earn {config.earnPointsPerRupee} point{config.earnPointsPerRupee === 1 ? "" : "s"} per ₹1
+                    spent, credited once the order is delivered.
                   </span>
                 </li>
+                {referralReward !== null ? (
+                  <li className="flex gap-3">
+                    <Icon
+                      name="users-group-rounded-bold"
+                      size={20}
+                      className="mt-0.5 shrink-0 text-ng-forest"
+                    />
+                    <span>
+                      <span className="block font-display text-[15px] text-ng-forest-deep">
+                        Refer a friend · ₹{referralReward.toLocaleString("en-IN")}
+                      </span>
+                      {refereeReward
+                        ? `You earn ₹${referralReward}, they get ₹${refereeReward} on their first order.`
+                        : `Credited when your friend's first order is delivered.`}
+                    </span>
+                  </li>
+                ) : null}
                 <li className="flex gap-3">
-                  <Icon name="star-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
+                  <Icon name="tag-price-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
                   <span>
-                    <span className="block font-display text-[15px] text-ng-forest-deep">Verified reviews · ₹100</span>
-                    Every review on a real order earns ₹100 credit.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <Icon name="gift-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
-                  <span>
-                    <span className="block font-display text-[15px] text-ng-forest-deep">Birthday treat · ₹500</span>
-                    A month before your birthday, we slip ₹500 into your wallet.
+                    <span className="block font-display text-[15px] text-ng-forest-deep">
+                      Redeem any time
+                    </span>
+                    Use your credit for up to {config.maxRedeemPercent}% of an order
+                    {config.minRedeemPoints > 0
+                      ? `, once you have ${config.minRedeemPoints.toLocaleString("en-IN")} points.`
+                      : "."}
                   </span>
                 </li>
               </ul>
-              <Button variant="primary" fullWidth className="mt-6" asChild>
-                <Link href="/referral">Get your referral link →</Link>
+              <Button variant="primary" size="sm" className="mt-6 w-full" asChild>
+                <Link href="/referral">Get your referral link</Link>
               </Button>
             </aside>
           </div>
@@ -238,58 +363,68 @@ export default function LoyaltyPage() {
   );
 }
 
-/** Pure-SVG progress ring with a gradient stroke — no chart library. */
+/** Circular progress toward the next tier. */
 function ProgressRing({ progress, className }: { progress: number; className?: string }) {
-  const size = 188;
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - progress);
+  const R = 62;
+  const C = 2 * Math.PI * R;
+  const dash = Math.max(0, Math.min(1, progress)) * C;
   return (
     <div className={className}>
-      <div className="relative grid place-items-center">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-          <defs>
-            <linearGradient id="ng-loyalty-ring" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#66BF73" />
-              <stop offset="100%" stopColor="#B5862F" />
-            </linearGradient>
-          </defs>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(245,240,228,0.14)" strokeWidth={stroke} />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="url(#ng-loyalty-ring)"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={offset}
-          />
-        </svg>
-        <div className="absolute inset-0 grid place-items-center text-center">
-          <div>
-            <div className="font-display text-[34px] leading-none text-ng-cream tabular-nums">{Math.round(progress * 100)}%</div>
-            <div className="mt-1 text-[10.5px] uppercase tracking-wider text-ng-cream/55">to Banyan</div>
-          </div>
+      <svg width="160" height="160" viewBox="0 0 160 160" className="rotate-[-90deg]">
+        <circle cx="80" cy="80" r={R} fill="none" stroke="rgba(245,242,224,0.15)" strokeWidth="10" />
+        <circle
+          cx="80"
+          cy="80"
+          r={R}
+          fill="none"
+          stroke="url(#ringGrad)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${C}`}
+        />
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#B5862F" />
+            <stop offset="100%" stopColor="#8FCB8F" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="pointer-events-none -mt-[104px] mb-[48px] text-center">
+        <div className="font-display text-[26px] leading-none text-ng-cream tabular-nums">
+          {Math.round(Math.max(0, Math.min(1, progress)) * 100)}%
         </div>
+        <div className="mt-1 text-[10.5px] uppercase tracking-wider text-ng-cream/55">this tier</div>
       </div>
     </div>
   );
 }
 
-function Tile({ icon, big, small, tone }: { icon: string; big: string; small: string; tone: "forest" | "clay" | "sage" }) {
-  const map: Record<string, string> = {
-    forest: "bg-ng-forest-deep text-ng-cream",
-    clay: "bg-ng-clay/30 text-ng-clay-deep border border-ng-clay/40",
-    sage: "bg-ng-sage/60 text-ng-forest-deep border border-ng-line",
-  };
+function Tile({
+  icon,
+  big,
+  small,
+  tone,
+}: {
+  icon: string;
+  big: string;
+  small: string;
+  tone: "forest" | "clay" | "sage";
+}) {
+  const styles =
+    tone === "forest"
+      ? "bg-ng-forest-deep text-ng-cream"
+      : tone === "clay"
+        ? "bg-ng-clay/15 text-ng-forest-deep border border-ng-clay/30"
+        : "bg-ng-sage/40 text-ng-forest-deep border border-ng-line";
   return (
-    <div className={`ng-float flex h-full flex-col rounded-2xl p-6 ${map[tone]}`}>
-      <Icon name={icon} size={22} className="opacity-80" />
-      <div className="font-display text-[36px] leading-none mt-3 tabular-nums">{big}</div>
-      <div className="text-[12px] uppercase tracking-wider opacity-70 mt-2.5">{small}</div>
+    <div className={`flex h-full flex-col justify-between rounded-3xl p-6 ${styles}`}>
+      <Icon name={icon} size={22} className={tone === "forest" ? "text-ng-clay" : "text-ng-forest"} />
+      <div className="mt-6">
+        <div className="font-display text-[26px] leading-none tabular-nums">{big}</div>
+        <div className={`mt-1.5 text-[12.5px] ${tone === "forest" ? "text-ng-cream/60" : "text-ng-ink-muted"}`}>
+          {small}
+        </div>
+      </div>
     </div>
   );
 }
