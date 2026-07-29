@@ -49,29 +49,192 @@ function escapeHtml(s: string): string {
   );
 }
 
+/** Pull a string field out of a JSON snapshot without trusting its shape. */
+function snap(source: Record<string, unknown> | null, key: string): string {
+  const v = source?.[key];
+  return typeof v === "string" ? v.trim() : "";
+}
+
+/** The delivery address as display lines, skipping anything not captured. */
+function addressLines(order: OrderWithDetail): string[] {
+  const a = order.addressSnapshot as Record<string, unknown> | null;
+  if (!a) return [];
+  const street = [snap(a, "line1"), snap(a, "line2")].filter(Boolean).join(", ");
+  const city = [snap(a, "city"), snap(a, "state"), snap(a, "pincode")].filter(Boolean).join(" ");
+  return [snap(a, "fullName"), street, city, snap(a, "phone")].filter(Boolean);
+}
+
+/**
+ * The transactional order email.
+ *
+ * Built entirely from tables with inline styles — Outlook and most Indian
+ * webmail clients ignore flexbox, grid and <style> blocks, so anything more
+ * modern silently collapses into a single column of unstyled text. Width is
+ * capped at 600px, the standard safe render width.
+ */
 function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const c = COPY[kind];
-  const rows = order.items
+  const GREEN = "#14331F";
+  const CREAM = "#F5F2E0";
+  const PAPER = "#FFFFFF";
+  const LINE = "#E3DFD0";
+  const MUTED = "#6B7A70";
+
+  const itemRows = order.items
     .map(
-      (it) =>
-        `<tr><td style="padding:6px 0;font-size:14px;color:#1a2b22">${escapeHtml(it.title)} <span style="color:#5b6b60">× ${it.qty}</span></td><td style="padding:6px 0;font-size:14px;color:#1a2b22;text-align:right;white-space:nowrap">${rupees(it.lineTotalPaise)}</td></tr>`,
+      (it) => `
+        <tr>
+          <td style="padding:12px 0;border-bottom:1px solid ${LINE};font-size:14px;color:#1A2B22;line-height:1.4">
+            ${escapeHtml(it.title)}
+            <div style="font-size:12px;color:${MUTED};margin-top:2px">Qty ${it.qty}</div>
+          </td>
+          <td style="padding:12px 0;border-bottom:1px solid ${LINE};font-size:14px;color:#1A2B22;text-align:right;white-space:nowrap;vertical-align:top">
+            ${rupees(it.lineTotalPaise)}
+          </td>
+        </tr>`,
     )
     .join("");
-  return `<!doctype html><html><body style="margin:0;background:#f4f1e8;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#1a2b22">
-  <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-    <div style="font-size:19px;font-weight:700;color:#14532d">Nutri Greenz</div>
-    <h1 style="font-size:22px;color:#14532d;margin:18px 0 6px">${c.heading}</h1>
-    <p style="font-size:14px;line-height:1.6;color:#3a4a40;margin:0 0 4px">${c.intro}</p>
-    <p style="font-size:13px;color:#5b6b60;margin:0 0 18px">Order <b style="color:#14532d">${escapeHtml(order.orderNumber)}</b></p>
-    <div style="background:#fff;border:1px solid #d9d3c2;border-radius:14px;padding:16px 18px">
-      <table style="width:100%;border-collapse:collapse">${rows}
-        <tr><td colspan="2" style="border-top:1px solid #eee;padding-top:10px"></td></tr>
-        <tr><td style="font-size:15px;font-weight:700;color:#14532d">Total</td><td style="font-size:15px;font-weight:700;color:#14532d;text-align:right">${rupees(order.totalPaise)}</td></tr>
+
+  /** One line of the money breakdown; omitted entirely when zero. */
+  const money = (label: string, paise: number, opts?: { negative?: boolean }) =>
+    paise > 0
+      ? `<tr>
+           <td style="padding:4px 0;font-size:13px;color:${MUTED}">${label}</td>
+           <td style="padding:4px 0;font-size:13px;color:${opts?.negative ? "#2F6B3A" : "#1A2B22"};text-align:right;white-space:nowrap">${opts?.negative ? "−" : ""}${rupees(paise)}</td>
+         </tr>`
+      : "";
+
+  const address = addressLines(order);
+  const slot = order.slotSnapshot as Record<string, unknown> | null;
+  const slotLabel = [snap(slot, "label"), snap(slot, "windowText")].filter(Boolean).join(" · ");
+
+  const detailBlock = (title: string, body: string) => `
+    <td style="vertical-align:top;padding:0 8px 0 0;width:50%">
+      <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:${MUTED};margin-bottom:6px">${title}</div>
+      <div style="font-size:13px;color:#1A2B22;line-height:1.55">${body}</div>
+    </td>`;
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${escapeHtml(c.heading)}</title>
+</head>
+<body style="margin:0;padding:0;background:${CREAM};-webkit-font-smoothing:antialiased">
+  <!-- Preheader: the grey preview line in the inbox, hidden in the body. -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(c.intro)}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:28px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${PAPER};border:1px solid ${LINE};border-radius:16px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+
+        <!-- Masthead -->
+        <tr>
+          <td style="background:${GREEN};padding:22px 28px" align="left">
+            <img src="${SITE}/brand/logo-horizontal-light.png" alt="Nutri Greenz" width="150"
+                 style="display:block;border:0;height:auto;width:150px;max-width:150px" />
+          </td>
+        </tr>
+
+        <!-- Headline -->
+        <tr>
+          <td style="padding:30px 28px 0">
+            <h1 style="margin:0;font-size:24px;line-height:1.25;color:${GREEN};font-weight:700">${c.heading}</h1>
+            <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#3A4A40">${c.intro}</p>
+            <p style="margin:14px 0 0;font-size:13px;color:${MUTED}">
+              Order <strong style="color:${GREEN};font-size:14px">${escapeHtml(order.orderNumber)}</strong>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Items + money -->
+        <tr>
+          <td style="padding:22px 28px 0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="border-collapse:collapse;background:#FBFAF5;border:1px solid ${LINE};border-radius:12px">
+              <tr><td style="padding:6px 18px 0">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+                  ${itemRows}
+                  ${money("Subtotal", order.subtotalPaise)}
+                  ${money("Discount", order.discountPaise, { negative: true })}
+                  ${money("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
+                  ${money("Delivery", order.shippingPaise)}
+                  ${money("Tax", order.taxPaise)}
+                  <tr>
+                    <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:15px;font-weight:700;color:${GREEN}">Total</td>
+                    <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:17px;font-weight:700;color:${GREEN};text-align:right;white-space:nowrap">${rupees(order.totalPaise)}</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+
+        ${
+          address.length || slotLabel
+            ? `<!-- Delivery details -->
+        <tr>
+          <td style="padding:22px 28px 0">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                ${address.length ? detailBlock("Delivering to", address.map(escapeHtml).join("<br />")) : ""}
+                ${slotLabel ? detailBlock("Delivery slot", escapeHtml(slotLabel)) : ""}
+              </tr>
+            </table>
+          </td>
+        </tr>`
+            : ""
+        }
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:26px 28px 4px" align="left">
+            <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+              <td style="background:${GREEN};border-radius:999px">
+                <a href="${SITE}/orders/${order.id}"
+                   style="display:inline-block;padding:13px 30px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none">
+                  Track your order
+                </a>
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px 26px">
+            <p style="margin:0;font-size:13px;line-height:1.6;color:${MUTED}">
+              Questions about this order? Reply to this email or write to
+              <a href="mailto:customersupport@nutrigreenz.farm" style="color:${GREEN};text-decoration:underline">customersupport@nutrigreenz.farm</a>.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#FBFAF5;border-top:1px solid ${LINE};padding:22px 28px">
+            <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:${MUTED}">
+              <strong style="color:${GREEN}">Nutri Greenz Farm Technologies Pvt. Ltd.</strong><br />
+              1st Floor, H.No. 5-35/167, Double Road, Near Moosapet Y Junction,<br />
+              Prashanth Nagar, Kukatpally, Hyderabad, Telangana 500072<br />
+              +91 94918 93370
+            </p>
+            <p style="margin:0;font-size:12px;color:${MUTED}">
+              <a href="${SITE}/shop" style="color:${GREEN};text-decoration:none">Shop</a> &nbsp;·&nbsp;
+              <a href="${SITE}/orders/track" style="color:${GREEN};text-decoration:none">Track an order</a> &nbsp;·&nbsp;
+              <a href="${SITE}/faq" style="color:${GREEN};text-decoration:none">Help</a> &nbsp;·&nbsp;
+              <a href="${SITE}/policies/refund" style="color:${GREEN};text-decoration:none">Refunds</a>
+            </p>
+            <p style="margin:12px 0 0;font-size:11px;color:#9AA89F">
+              Farm-fresh, fully traceable, from our partner farms to your kitchen.
+            </p>
+          </td>
+        </tr>
+
       </table>
-    </div>
-    <a href="${SITE}/orders/${order.id}" style="display:inline-block;margin-top:20px;background:#14532d;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px">Track your order</a>
-    <p style="font-size:12px;color:#8a978d;margin-top:22px">Farm-fresh, from our partner farms to your kitchen. 🌱</p>
-  </div></body></html>`;
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 async function send(orderId: string, kind: Kind): Promise<void> {

@@ -366,28 +366,80 @@ export async function voidReferralForOrder(orderId: string): Promise<void> {
 export interface CustomerReferralSummary {
   code: string | null;
   link: string | null;
+  /** Referrals that paid out (the friend's qualifying order completed). */
   rewardedCount: number;
+  /** Signed up via the code but not yet qualified. */
+  pendingCount: number;
+  /** Everyone who has ever signed up on this code (excludes voided). */
+  totalCount: number;
+  /** Points actually credited to this customer from referrals. */
+  earnedPoints: number;
+  /** Most recent invitees, newest first — for the customer's own activity list. */
+  recent: {
+    status: ReferralStatus;
+    pointsAwarded: number;
+    createdAt: string;
+    rewardedAt: string | null;
+  }[];
 }
 
-/** The signed-in customer's own code, share link, and how many referrals paid. */
+/**
+ * The signed-in customer's own referral standing: code, share link, real counts
+ * by status, and the points actually credited. Everything is derived from
+ * `referral_attributions` — nothing here is estimated or illustrative.
+ */
 export async function getCustomerReferralSummary(
   customerId: string,
 ): Promise<CustomerReferralSummary> {
   const code = await getOrCreateReferralCode(customerId);
-  let rewardedCount = 0;
-  if (isSupabaseConfigured) {
-    const { count } = await supabaseAdmin()
-      .from("referral_attributions")
-      .select("id", { count: "exact", head: true })
-      .eq("referrer_customer_id", customerId)
-      .eq("status", "rewarded");
-    rewardedCount = count ?? 0;
-  }
-  return {
+  const empty = {
     code,
     link: code ? `${SITE}/r/${code}` : null,
-    rewardedCount,
+    rewardedCount: 0,
+    pendingCount: 0,
+    totalCount: 0,
+    earnedPoints: 0,
+    recent: [] as CustomerReferralSummary["recent"],
   };
+  if (!isSupabaseConfigured) return empty;
+
+  try {
+    const { data } = await supabaseAdmin()
+      .from("referral_attributions")
+      .select("status, referrer_points_awarded, created_at, rewarded_at")
+      .eq("referrer_customer_id", customerId)
+      .order("created_at", { ascending: false });
+
+    const rows =
+      (data as
+        | {
+            status: string;
+            referrer_points_awarded: number | null;
+            created_at: string;
+            rewarded_at: string | null;
+          }[]
+        | null) ?? [];
+
+    // A voided attribution (fraud, cancelled order) is excluded from the totals
+    // shown to the customer rather than presented as a lost invite.
+    const live = rows.filter((r) => r.status !== "void");
+
+    return {
+      ...empty,
+      rewardedCount: live.filter((r) => r.status === "rewarded").length,
+      pendingCount: live.filter((r) => r.status === "pending").length,
+      totalCount: live.length,
+      earnedPoints: live.reduce((s, r) => s + (r.referrer_points_awarded ?? 0), 0),
+      recent: live.slice(0, 10).map((r) => ({
+        status: (r.status === "rewarded" ? "rewarded" : "pending") as ReferralStatus,
+        pointsAwarded: r.referrer_points_awarded ?? 0,
+        createdAt: r.created_at,
+        rewardedAt: r.rewarded_at,
+      })),
+    };
+  } catch {
+    return empty;
+  }
 }
 
 export interface AdminReferralRow {
