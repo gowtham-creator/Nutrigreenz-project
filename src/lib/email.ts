@@ -14,14 +14,24 @@ export function isEmailConfigured(): boolean {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_SENDER_EMAIL);
 }
 
+/** A file to attach, as base64 content (Brevo's `attachment` shape). */
+export interface EmailAttachment {
+  /** File name shown to the recipient, e.g. "Invoice-NG-26-1000.pdf". */
+  name: string;
+  /** Base64-encoded file content. */
+  content: string;
+}
+
 interface SendEmailArgs {
   to: string;
   subject: string;
   html: string;
+  /** Optional attachments — used to send the tax invoice with the order email. */
+  attachments?: EmailAttachment[];
 }
 
 /** Send a single transactional email. Throws on misconfiguration or API error. */
-export async function sendEmail({ to, subject, html }: SendEmailArgs): Promise<void> {
+export async function sendEmail({ to, subject, html, attachments }: SendEmailArgs): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "Nutri Greenz";
@@ -41,6 +51,9 @@ export async function sendEmail({ to, subject, html }: SendEmailArgs): Promise<v
       to: [{ email: to }],
       subject,
       htmlContent: html,
+      ...(attachments && attachments.length
+        ? { attachment: attachments.map((a) => ({ name: a.name, content: a.content })) }
+        : {}),
     }),
   });
 

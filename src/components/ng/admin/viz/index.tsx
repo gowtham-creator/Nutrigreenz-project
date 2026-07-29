@@ -259,13 +259,28 @@ export function AreaChart({
         })}
       </svg>
 
-      {/* x labels */}
-      <div className="flex justify-between px-1 mt-1">
-        {labels.map((l, i) => (
-          <span key={i} className="text-[11px] text-ng-ink-soft font-mono font-medium">
-            {l}
-          </span>
-        ))}
+      {/* x labels — thinned to fit.
+          Rendering one label per point collides as soon as a range covers more
+          than a couple of weeks: the dates overlap into an unreadable smear and
+          each one wraps onto two lines. Every point still gets a slot so labels
+          stay aligned with their data, but only every Nth prints its text, with
+          the first and last always shown to anchor the range. */}
+      <div className="mt-1.5 flex px-1">
+        {labels.map((l, i, arr) => {
+          const stride = Math.max(1, Math.ceil(arr.length / 8));
+          const isLast = i === arr.length - 1;
+          const show = i === 0 || isLast || i % stride === 0;
+          // Suppress a label that would sit right beside the final one.
+          const crowdsLast = show && !isLast && arr.length - 1 - i < stride;
+          return (
+            <span
+              key={i}
+              className="min-w-0 flex-1 whitespace-nowrap text-center text-[10.5px] font-mono font-medium text-ng-ink-soft"
+            >
+              {show && !crowdsLast ? l : ""}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -293,7 +308,16 @@ export function DonutChart({
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
-  let offset = 0;
+
+  // Each arc starts where the previous one ended. Precomputed rather than
+  // accumulated inside the render loop — mutating during render is not safe
+  // under the React Compiler and can desync across re-renders.
+  const arcs = segments.reduce<{ len: number; start: number }[]>((acc, s) => {
+    const prev = acc[acc.length - 1];
+    const start = prev ? prev.start + prev.len : 0;
+    acc.push({ len: (s.value / total) * c, start });
+    return acc;
+  }, []);
 
   return (
     <div className={cn("flex items-center gap-6", className)}>
@@ -301,9 +325,8 @@ export function DonutChart({
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ng-line-soft)" strokeWidth={thickness} />
           {segments.map((s, i) => {
-            const len = (s.value / total) * c;
-            const dash = `${len} ${c - len}`;
-            const el = (
+            const { len, start } = arcs[i];
+            return (
               <circle
                 key={i}
                 cx={size / 2}
@@ -312,13 +335,11 @@ export function DonutChart({
                 fill="none"
                 stroke={TONE_STROKE[s.tone]}
                 strokeWidth={thickness}
-                strokeDasharray={dash}
-                strokeDashoffset={-offset}
+                strokeDasharray={`${len} ${c - len}`}
+                strokeDashoffset={-start}
                 strokeLinecap="butt"
               />
             );
-            offset += len;
-            return el;
           })}
         </svg>
         {(centerLabel || centerValue) && (

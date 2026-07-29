@@ -366,7 +366,12 @@ function ActivityRow({ entry, viewerEmail }: { entry: AuditEntry; viewerEmail: s
     <li
       className={cn(
         "flex items-start gap-3 px-1 py-3 transition-colors",
-        d.isSelf && "border-l-2 border-ng-forest/40 -ml-px pl-3 rounded-r-md bg-ng-forest/[0.025]",
+        // Highlight the operator's own events with an inset left rule rather than
+        // a real border. A bordered row with a negative margin sat 1px outside
+        // its container, so the right edge overhung the card and the rounding
+        // broke where consecutive rows met.
+        d.isSelf &&
+          "rounded-xl bg-ng-forest/[0.025] pl-3 shadow-[inset_2px_0_0_0_var(--ng-forest)]",
       )}
     >
       <span className={cn("grid place-items-center size-9 rounded-xl shrink-0 mt-0.5", TONE_CHIP[d.meta.tone])}>

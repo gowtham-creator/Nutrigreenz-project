@@ -24,7 +24,7 @@ import {
   redeemPaisePerPoint,
 } from "@/lib/rewards";
 import { createPaymentIntent } from "@/lib/payments-razorpay";
-import { sendOrderConfirmedEmail } from "@/lib/order-emails";
+import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
@@ -139,9 +139,13 @@ export async function POST(request: Request): Promise<Response> {
     // Order-placed confirmation email (best-effort, fire-and-forget so it never
     // delays the response). When a live gateway is wired, move this to the PAID
     // webhook so it fires on payment rather than placement.
+    // The order is created with status `placed`; "confirmed" is a separate step an
+    // operator takes, and has its own email. Sending the confirmation here meant
+    // the customer was told it was confirmed before anyone had looked at it, then
+    // received the identical mail again when it actually was.
     afterResponse(
-      `order ${order.orderNumber} confirmation`,
-      sendOrderConfirmedEmail(order.id),
+      `order ${order.orderNumber} placed notification`,
+      sendOrderPlacedEmail(order.id),
     );
 
     // Payment seam: open an intent when the gateway is configured. Today this is

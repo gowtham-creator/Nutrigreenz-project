@@ -4,6 +4,7 @@ import { getOrder, type OrderWithDetail } from "@/lib/orders";
 import { render, type NotifyType } from "@/lib/notification-templates";
 import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
+import { invoicePdfBase64 } from "@/lib/invoice-pdf";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -17,13 +18,22 @@ import { sendWhatsApp } from "@/lib/whatsapp";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
 const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
 
-type Kind = "confirmed" | "packed" | "shipped" | "delivered";
+type Kind = "placed" | "confirmed" | "packed" | "shipped" | "delivered";
 
 const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intro: string }> = {
+  // Sent the moment the customer completes checkout — the order exists, but the
+  // team has not accepted it yet. Previously this said "confirmed", which then
+  // repeated verbatim when an operator moved the order to the confirmed status.
+  placed: {
+    subject: (n) => `Order ${n} received · Nutri Greenz`,
+    heading: "Order received 🌿",
+    intro:
+      "Thank you — we've got your order and our team is reviewing it. Your tax invoice is attached. We'll email you again the moment it's confirmed.",
+  },
   confirmed: {
     subject: (n) => `Order ${n} confirmed · Nutri Greenz`,
     heading: "Order confirmed 🌿",
-    intro: "Thank you for your order — we're getting it ready. Here's your summary:",
+    intro: "Good news — your order is confirmed and we're preparing it for your delivery slot.",
   },
   packed: {
     subject: (n) => `Order ${n} is packed · Nutri Greenz`,
@@ -242,22 +252,40 @@ async function send(orderId: string, kind: Kind): Promise<void> {
     const order = await getOrder(orderId);
     if (!order) return;
 
-    // Email keeps its existing on-brand template.
     if (isEmailConfigured() && order.userEmail) {
+      // The tax invoice rides with the first email, so the customer has it the
+      // moment they order rather than having to open the site to print one.
+      // Generating it must never cost them the notification, so a failure here
+      // is logged and the email still goes out without the attachment.
+      let attachments: { name: string; content: string }[] | undefined;
+      if (kind === "placed") {
+        try {
+          attachments = [
+            {
+              name: `Invoice-${order.orderNumber}.pdf`,
+              content: await invoicePdfBase64(order),
+            },
+          ];
+        } catch (err) {
+          console.error(`[order-emails] invoice PDF for ${order.orderNumber} failed:`, err);
+        }
+      }
+
       await sendEmail({
         to: order.userEmail,
         subject: COPY[kind].subject(order.orderNumber),
         html: orderEmailHtml(order, kind),
+        attachments,
       });
     }
 
     // SMS + WhatsApp share the single source-of-truth templates. Both no-op until
     // MSG91 / WhatsApp is configured, so this is safe to call unconditionally.
     if (order.userPhone) {
-      const type: NotifyType = kind === "confirmed" ? "orderPlaced" : "orderStatus";
+      const type: NotifyType = kind === "placed" ? "orderPlaced" : "orderStatus";
       const vars = {
         orderNumber: order.orderNumber,
-        status: kind === "confirmed" ? "placed" : kind,
+        status: kind,
         total: rupees(order.totalPaise),
         itemsSummary: order.items.map((it) => `${it.title} x${it.qty}`).join(", "),
         trackUrl: `${SITE}/orders/${order.id}`,
@@ -275,6 +303,12 @@ async function send(orderId: string, kind: Kind): Promise<void> {
   }
 }
 
+/** Sent at checkout, with the tax invoice attached. */
+export function sendOrderPlacedEmail(orderId: string): Promise<void> {
+  return send(orderId, "placed");
+}
+
+/** Sent when an operator accepts the order — a distinct step from placing it. */
 export function sendOrderConfirmedEmail(orderId: string): Promise<void> {
   return send(orderId, "confirmed");
 }
