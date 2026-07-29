@@ -7,6 +7,17 @@ import { Icon } from "@/components/ui/icon";
 type Setup = { secret: string; qrDataUri: string };
 
 /**
+ * Fired by any surface that wants to start authenticator enrolment on demand —
+ * currently the Security section of /admin/profile, whose toggle cannot enable
+ * TOTP directly (that would gate sign-in behind an app that was never set up).
+ * Dispatching this opens the same modal the post-login prompt uses.
+ */
+export const ENROLL_AUTHENTICATOR_EVENT = "ng:enroll-authenticator";
+
+/** Fired after a successful enrolment so open screens can refresh their state. */
+export const AUTHENTICATOR_ENROLLED_EVENT = "ng:authenticator-enrolled";
+
+/**
  * Post-login authenticator (TOTP) enrollment prompt — Zoho-style.
  *
  * Mounted across the admin portal: on load it asks /api/admin/me/totp whether the
@@ -51,6 +62,36 @@ export function AuthenticatorEnrollPrompt() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
+  // On-demand enrolment: the profile toggle asks for the QR rather than setting
+  // the factor itself. Fetches a fresh secret and opens the same modal, ignoring
+  // the snooze that governs the automatic post-login prompt.
+  useEffect(() => {
+    async function onRequest() {
+      try {
+        const s = await fetch("/api/admin/me/totp/setup", { method: "POST" });
+        if (!s.ok) {
+          const d = await s.json().catch(() => ({}));
+          toast.error(
+            d?.error === "already-enrolled"
+              ? "Authenticator is already set up."
+              : "Couldn't start setup — try again.",
+          );
+          return;
+        }
+        const sd = await s.json();
+        if (sd?.qrDataUri) {
+          setSetup({ secret: sd.secret as string, qrDataUri: sd.qrDataUri as string });
+          setCode("");
+          setOpen(true);
+        }
+      } catch {
+        toast.error("Couldn't start setup — try again.");
+      }
+    }
+    window.addEventListener(ENROLL_AUTHENTICATOR_EVENT, onRequest);
+    return () => window.removeEventListener(ENROLL_AUTHENTICATOR_EVENT, onRequest);
+  }, []);
+
   async function snooze(mode: "skip" | "later") {
     setOpen(false);
     try {
@@ -82,6 +123,8 @@ export function AuthenticatorEnrollPrompt() {
           description: "You'll use it at your next sign-in.",
         });
         setOpen(false);
+        // Let an open Security section flip its toggle without a page reload.
+        window.dispatchEvent(new Event(AUTHENTICATOR_ENROLLED_EVENT));
       } else {
         toast.error("That code didn't match", {
           description: "Check your phone's time and try the current code.",

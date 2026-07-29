@@ -8,6 +8,10 @@ import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
 import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
+import {
+  ENROLL_AUTHENTICATOR_EVENT,
+  AUTHENTICATOR_ENROLLED_EVENT,
+} from "@/components/ng/admin/authenticator-enroll-prompt";
 
 /**
  * /admin/profile — an operator's own account.
@@ -152,6 +156,8 @@ export default function AdminProfilePage() {
     email: false,
     phone: false,
   });
+  /** Whether an authenticator secret has actually been scanned and confirmed. */
+  const [totpEnrolled, setTotpEnrolled] = useState(false);
 
   useEffect(() => {
     const e = getAdminEmail();
@@ -262,6 +268,7 @@ export default function AdminProfilePage() {
           email: Boolean(data.available?.email),
           phone: Boolean(data.available?.phone),
         });
+        setTotpEnrolled(Boolean(data.totpEnrolled));
         // Note: the editable mobile field is seeded from the DB profile
         // (`/api/admin/me`), not from the OTP destination — Save syncs the
         // number the other way (profile → OTP destination) below.
@@ -269,7 +276,17 @@ export default function AdminProfilePage() {
         /* ignore — the section just stays in its default state */
       }
     })();
+
+    // The enrolment modal arms the factor server-side; mirror it here so the
+    // toggle flips without needing a page reload.
+    function onEnrolled() {
+      setTotpEnrolled(true);
+      setFactors((f) => (f ? { ...f, totp: true } : f));
+    }
+    window.addEventListener(AUTHENTICATOR_ENROLLED_EVENT, onEnrolled);
+
     return () => {
+      window.removeEventListener(AUTHENTICATOR_ENROLLED_EVENT, onEnrolled);
       alive = false;
     };
   }, [role]);
@@ -420,6 +437,14 @@ export default function AdminProfilePage() {
     });
   }
   async function setFactor(key: "totp" | "emailOtp" | "phoneOtp", value: boolean) {
+    // Switching the authenticator ON is an ENROLMENT, not a setting: the server
+    // refuses to arm the factor without a confirmed secret, because doing so
+    // would demand a code at sign-in from an app that was never set up. Open the
+    // QR flow instead; it turns the factor on itself once a code is confirmed.
+    if (key === "totp" && value && !totpEnrolled) {
+      window.dispatchEvent(new Event(ENROLL_AUTHENTICATOR_EVENT));
+      return;
+    }
     const prev = factors;
     setFactors((f) => (f ? { ...f, [key]: value } : f)); // optimistic
     try {
@@ -431,6 +456,12 @@ export default function AdminProfilePage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setFactors(prev);
+        // Belt-and-braces: if the server still says "not enrolled" (e.g. the
+        // enrolment status was stale), open the QR flow rather than dead-ending.
+        if (data.error === "totp-not-enrolled") {
+          window.dispatchEvent(new Event(ENROLL_AUTHENTICATOR_EVENT));
+          return;
+        }
         const msg =
           data.error === "totp-unavailable"
             ? "Scan the authenticator QR first."
