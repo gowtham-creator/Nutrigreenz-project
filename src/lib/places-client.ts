@@ -43,6 +43,16 @@ export function newSessionToken(): string {
 export async function autocompleteAddress(
   input: string,
   sessionToken: string,
+  opts: {
+    /**
+     * Bias results toward the Hyderabad delivery area. On by default for the
+     * customer address form, where local societies should outrank same-named
+     * places elsewhere. Turn OFF for nationwide lookups (e.g. assigning a
+     * captain to a community in another city) — a bias would bury real matches
+     * outside Hyderabad.
+     */
+    biasHyderabad?: boolean;
+  } = {},
 ): Promise<PlaceSuggestion[]> {
   if (!isPlacesConfigured || input.trim().length < 3) return [];
   try {
@@ -57,14 +67,16 @@ export async function autocompleteAddress(
         sessionToken,
         includedRegionCodes: ["in"],
         languageCode: "en",
-        // Bias (not restrict) matches toward the Hyderabad delivery area so
-        // local societies/streets rank above same-named places elsewhere.
-        locationBias: {
-          circle: {
-            center: { latitude: 17.4485, longitude: 78.3908 },
-            radius: 50000,
-          },
-        },
+        ...(opts.biasHyderabad === false
+          ? {}
+          : {
+              locationBias: {
+                circle: {
+                  center: { latitude: 17.4485, longitude: 78.3908 },
+                  radius: 50000,
+                },
+              },
+            }),
       }),
     });
     if (!res.ok) return [];

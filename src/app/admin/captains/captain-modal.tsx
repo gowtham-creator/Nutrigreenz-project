@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import type { Captain } from "@/types/nutrigreenz";
+import { CommunityPicker } from "@/components/ng/admin/community-picker";
 
 /**
  * Admin · Captains — create / edit modal.
@@ -25,26 +26,9 @@ export interface CaptainDraft {
   active: boolean;
 }
 
-/**
- * A reasonable static list of Hyderabad gated communities a captain rotates
- * stalls through. The live captain tool keeps its own list in client code we
- * must not import here, so this is an independent, sensible default — any
- * community already saved on a captain is unioned in so editing never drops it.
- */
-const COMMUNITY_OPTIONS = [
-  "My Home Bhooja",
-  "Aparna Sarovar Zenith",
-  "Prestige High Fields",
-  "Lodha Bellezza",
-  "Rainbow Vistas",
-  "Manjeera Trinity",
-  "Aparna Cyberzon",
-  "My Home Avatar",
-  "Cybercity Rendezvous",
-  "Vasavi Signature",
-  "Salarpuria Sattva",
-  "SMR Vinay Iconia",
-] as const;
+// Communities are searched live through Google Places (see CommunityPicker)
+// rather than chosen from a fixed list. The previous hardcoded set covered only
+// a dozen Hyderabad societies, which cannot serve a national catalogue.
 
 /** Human-readable copy for each API error code, keyed by the field it belongs to. */
 const ERROR_COPY: Record<string, string> = {
@@ -158,11 +142,6 @@ export function CaptainModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const communityChoices = useMemo(() => {
-    const set = new Set<string>(COMMUNITY_OPTIONS);
-    for (const c of draft.communities) set.add(c);
-    return [...set];
-  }, [draft.communities]);
 
   if (!open) return null;
 
@@ -181,14 +160,6 @@ export function CaptainModal({
   const serverField = errorField(error);
   const serverMessage = error ? ERROR_COPY[error] ?? "Something went wrong. Please try again." : null;
 
-  function toggleCommunity(name: string) {
-    setDraft((d) => ({
-      ...d,
-      communities: d.communities.includes(name)
-        ? d.communities.filter((x) => x !== name)
-        : [...d.communities, name],
-    }));
-  }
 
   function submit() {
     setTouched(true);
@@ -310,35 +281,15 @@ export function CaptainModal({
             </div>
           </div>
 
-          <div>
-            <label className={LABEL}>Communities</label>
-            <div className="flex flex-wrap gap-2">
-              {communityChoices.map((name) => {
-                const selected = draft.communities.includes(name);
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => toggleCommunity(name)}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors cursor-pointer",
-                      selected
-                        ? "border-ng-forest bg-ng-forest text-ng-cream"
-                        : "border-ng-line bg-ng-white text-ng-ink-muted hover:border-ng-leaf hover:text-ng-ink",
-                    )}
-                  >
-                    {name}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-1.5 text-[10.5px] font-medium text-ng-ink-muted">
-              {draft.communities.length > 0
-                ? `${draft.communities.length} selected`
-                : "Pick the communities this captain runs stalls in."}
-            </p>
-          </div>
+          <CommunityPicker
+            value={draft.communities}
+            onChange={(next) => set("communities", next)}
+            hint={
+              draft.communities.length > 0
+                ? `${draft.communities.length} assigned. Search to add another, anywhere in India.`
+                : "Search and assign the communities this captain runs stalls in — anywhere in India."
+            }
+          />
 
           <div className="flex items-center justify-between gap-4 rounded-xl border border-ng-line-soft bg-ng-white px-3.5 py-3">
             <div className="min-w-0">
