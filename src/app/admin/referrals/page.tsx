@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/admin-permissions-guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listReferralAttributions, type AdminReferralPage } from "@/lib/referrals";
+import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
 
 // Reporting reads live data on each visit.
 export const revalidate = 0;
@@ -40,31 +41,24 @@ export default async function AdminReferralsPage() {
     }
   }
 
-  const stats = [
-    { label: "Total referrals", value: page.total },
-    { label: "Rewarded", value: page.rewarded },
-    { label: "Pending", value: page.pending },
-  ];
-
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8 md:px-8">
-      <header className="mb-6">
-        <h1 className="font-display text-[26px] text-ng-forest-deep">Referrals</h1>
-        <p className="mt-1 text-[14px] text-ng-ink-muted">
-          Who referred whom, and the rewards paid when a referee&apos;s first qualifying order confirms.
-        </p>
-      </header>
-
-      <div className="mb-7 grid grid-cols-3 gap-3">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-ng-line-soft bg-ng-paper px-4 py-4">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ng-ink-muted">{s.label}</div>
-            <div className="mt-1 font-display text-[28px] tabular-nums text-ng-forest-deep">{s.value}</div>
-          </div>
-        ))}
+    <AdminShell
+      active="/admin/referrals"
+      title={
+        <span>
+          Referral <em className="italic text-ng-clay font-display">ledger</em>
+        </span>
+      }
+      subtitle="Who referred whom, and the rewards paid when a referee's first qualifying order confirms"
+    >
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatTile label="Total referrals" value={String(page.total)} />
+        <StatTile label="Rewarded" value={String(page.rewarded)} />
+        <StatTile label="Pending" value={String(page.pending)} />
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-ng-line-soft bg-ng-paper">
+      <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-[13.5px]">
           <thead>
             <tr className="border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted">
@@ -111,7 +105,8 @@ export default async function AdminReferralsPage() {
             )}
           </tbody>
         </table>
-      </div>
-    </div>
+        </div>
+      </Card>
+    </AdminShell>
   );
 }

@@ -90,6 +90,10 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const LINE = "#E3DFD0";
   const MUTED = "#6B7A70";
 
+  // Only the first email is a receipt: it carries the money breakdown and the
+  // invoice PDF. Later status emails recap the order without re-billing it.
+  const isReceipt = kind === "placed";
+
   const itemRows = order.items
     .map(
       (it) => `
@@ -158,7 +162,11 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           </td>
         </tr>
 
-        <!-- Items + money -->
+        <!-- Order summary.
+             The full itemised breakdown belongs on the receipt, so it appears
+             only on the "placed" email (which also carries the invoice PDF).
+             A status update repeating the whole price breakdown reads like a
+             second bill; those get a one-line recap instead. -->
         <tr>
           <td style="padding:22px 28px 0">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
@@ -166,11 +174,15 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
               <tr><td style="padding:6px 18px 0">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
                   ${itemRows}
-                  ${money("Subtotal", order.subtotalPaise)}
+                  ${
+                    isReceipt
+                      ? `${money("Subtotal", order.subtotalPaise)}
                   ${money("Discount", order.discountPaise, { negative: true })}
                   ${money("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
                   ${money("Delivery", order.shippingPaise)}
-                  ${money("Tax", order.taxPaise)}
+                  ${money("Tax", order.taxPaise)}`
+                      : ""
+                  }
                   <tr>
                     <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:15px;font-weight:700;color:${GREEN}">Total</td>
                     <td style="padding:12px 0 14px;border-top:2px solid ${GREEN};font-size:17px;font-weight:700;color:${GREEN};text-align:right;white-space:nowrap">${rupees(order.totalPaise)}</td>
@@ -182,7 +194,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
         </tr>
 
         ${
-          address.length || slotLabel
+          (address.length || slotLabel) && isReceipt
             ? `<!-- Delivery details -->
         <tr>
           <td style="padding:22px 28px 0">
