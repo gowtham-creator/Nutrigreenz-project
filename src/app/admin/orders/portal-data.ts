@@ -212,17 +212,74 @@ export function readSnapshotString(
   return null;
 }
 
-/** Flatten a snapshot object into label/value rows for display. */
+/**
+ * Internal plumbing an operator should never be shown: record ids, foreign keys
+ * and row bookkeeping. Printing a raw UUID next to a delivery slot is noise that
+ * pushes the useful fields off the line.
+ */
+const SNAPSHOT_HIDDEN = new Set([
+  "id",
+  "customerid",
+  "addressid",
+  "slotid",
+  "userid",
+  "createdat",
+  "updatedat",
+]);
+
+/** Friendlier wording than a mechanical de-camelCasing of the stored key. */
+const SNAPSHOT_LABELS: Record<string, string> = {
+  line1: "Address",
+  line2: "Area",
+  fullname: "Recipient",
+  windowtext: "Window",
+  isdefault: "Default address",
+  label: "Slot",
+  type: "Address type",
+  pincode: "PIN code",
+};
+
+/** The order fields read best in, rather than however the JSON happened to be built. */
+const SNAPSHOT_ORDER = [
+  "Recipient",
+  "Phone",
+  "Address",
+  "Area",
+  "City",
+  "State",
+  "PIN code",
+  "Address type",
+  "Slot",
+  "Window",
+];
+
+/**
+ * Flatten a snapshot object into label/value rows for display.
+ *
+ * Snapshots are raw JSON captured at checkout, so a naive dump surfaces internal
+ * ids and shows keys in insertion order. This hides the plumbing, gives the
+ * remaining fields readable labels, and sorts them into a sensible reading order
+ * so an operator scans an address like an address.
+ */
 export function snapshotRows(
   snapshot: Record<string, unknown> | null,
 ): { label: string; value: string }[] {
   if (!snapshot) return [];
   const rows: { label: string; value: string }[] = [];
+
   for (const [key, raw] of Object.entries(snapshot)) {
     if (raw === null || raw === undefined || raw === "") continue;
+
+    const norm = key.toLowerCase().replace(/[_-]/g, "");
+    if (SNAPSHOT_HIDDEN.has(norm)) continue;
+
     let value: string;
-    if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
-      value = String(raw);
+    if (typeof raw === "boolean") {
+      value = raw ? "Yes" : "No";
+    } else if (typeof raw === "string" || typeof raw === "number") {
+      value = String(raw).trim();
+      // A bare UUID carries no operator meaning wherever it appears.
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) continue;
     } else {
       try {
         value = JSON.stringify(raw);
@@ -230,9 +287,17 @@ export function snapshotRows(
         continue;
       }
     }
-    rows.push({ label: humanizeKey(key), value });
+    if (!value) continue;
+
+    rows.push({ label: SNAPSHOT_LABELS[norm] ?? humanizeKey(key), value });
   }
-  return rows;
+
+  return rows.sort((a, b) => {
+    const ai = SNAPSHOT_ORDER.indexOf(a.label);
+    const bi = SNAPSHOT_ORDER.indexOf(b.label);
+    // Anything unrecognised keeps its relative position, after the known fields.
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
 }
 
 /** "addressLine1" → "Address line 1". */

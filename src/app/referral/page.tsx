@@ -1,58 +1,133 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Icon } from "@/components/ui/icon";
 
-const REFERRAL_CODE = "GOWTHAM-NG-2026";
-const REFERRAL_LINK = `https://nutrigreenz.farm/r/${REFERRAL_CODE}`;
+/**
+ * /referral — the customer's real Refer & Earn standing.
+ *
+ * Code, link, invite counts and credited earnings all come from
+ * `/api/referrals/me`, which reads `referral_attributions`. The reward figures in
+ * the copy come from the live programme config, so the page can never promise
+ * terms the engine won't pay.
+ *
+ * Invitees are shown WITHOUT names. We hold only the referred customer's id, and
+ * surfacing who signed up using someone's code would leak another customer's
+ * personal data — the date and status are enough to track a referral.
+ */
 
-const STEPS = [
-  {
-    n: "01",
-    title: "Share your link",
-    body: "Send it via WhatsApp, email, or copy the code. There's no cap on how many friends you can invite.",
-    icon: "share-bold",
-    block: "bg-ng-sage/45 border-ng-leaf/30",
-    num: "text-ng-forest",
-    chip: "bg-ng-forest/10 text-ng-forest",
-  },
-  {
-    n: "02",
-    title: "They get ₹100 off",
-    body: "Your friend gets ₹100 off their first order over ₹399. No tricks, no expiry within 90 days.",
-    icon: "tag-price-bold",
-    block: "bg-ng-clay/15 border-ng-clay/30",
-    num: "text-ng-clay-deep",
-    chip: "bg-ng-clay/20 text-ng-clay-deep",
-  },
-  {
-    n: "03",
-    title: "You get ₹250 wallet",
-    body: "The moment their first order ships, ₹250 lands in your harvest wallet. Redeemable on anything.",
-    icon: "wallet-money-bold",
-    block: "bg-ng-leaf/15 border-ng-leaf/30",
-    num: "text-ng-forest",
-    chip: "bg-ng-leaf/25 text-ng-forest",
-  },
-];
+interface Terms {
+  enabled: boolean;
+  referrerReward: number;
+  refereeDiscount: number;
+  minOrder: number;
+  expiryDays: number;
+  maxPerMonth: number;
+}
 
-const FRIENDS = [
-  { name: "Priya K.", status: "Ordered · ₹250 credited", date: "01 Apr 2026", credit: 250 },
-  { name: "Rahul M.", status: "Signed up · waiting first order", date: "08 Apr 2026", credit: 0 },
-  { name: "Anjali S.", status: "Ordered · ₹250 credited", date: "22 Mar 2026", credit: 250 },
-  { name: "Vikram T.", status: "Link opened · not signed up", date: "12 Apr 2026", credit: 0 },
-];
+interface RecentInvite {
+  status: "pending" | "rewarded" | "void";
+  pointsAwarded: number;
+  createdAt: string;
+  rewardedAt: string | null;
+}
+
+interface Summary {
+  code: string | null;
+  link: string | null;
+  rewardedCount: number;
+  pendingCount: number;
+  totalCount: number;
+  earnedRupees: number;
+  recent: RecentInvite[];
+  terms: Terms;
+}
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+/** Days remaining before an invite's window closes, or null when it has lapsed. */
+function daysLeft(iso: string, expiryDays: number): number | null {
+  if (expiryDays <= 0) return null;
+  const end = new Date(iso).getTime() + expiryDays * 86_400_000;
+  const left = Math.ceil((end - Date.now()) / 86_400_000);
+  return left > 0 ? left : null;
+}
 
 export default function ReferralPage() {
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
-  const totalEarned = FRIENDS.reduce((s, f) => s + f.credit, 0);
+  const [data, setData] = useState<Summary | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const copy = (text: string, kind: "link" | "code") => {
-    navigator.clipboard.writeText(text);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/referrals/me", { cache: "no-store" });
+        if (!res.ok || !alive) return;
+        const json = (await res.json()) as Summary & { ok?: boolean };
+        if (alive && json.ok !== false) setData(json);
+      } catch {
+        /* leave the page in its empty state */
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const copy = useCallback((text: string, kind: "link" | "code") => {
+    void navigator.clipboard.writeText(text);
     setCopied(kind);
     setTimeout(() => setCopied(null), 1800);
-  };
+  }, []);
+
+  const code = data?.code ?? "";
+  const link = data?.link ?? "";
+  const t = data?.terms;
+  const reward = t?.referrerReward ?? 0;
+  const friendGets = t?.refereeDiscount ?? 0;
+  const expiryDays = t?.expiryDays ?? 0;
+
+  const steps = [
+    {
+      n: "01",
+      title: "Share your link",
+      body:
+        t && t.maxPerMonth > 0
+          ? `Send it by WhatsApp, email or copy the code. Up to ${t.maxPerMonth} rewarded invites a month.`
+          : "Send it by WhatsApp, email, or copy the code and share it however you like.",
+      icon: "share-bold",
+      block: "bg-ng-sage/45 border-ng-leaf/30",
+      num: "text-ng-forest",
+      chip: "bg-ng-forest/10 text-ng-forest",
+    },
+    {
+      n: "02",
+      title: friendGets ? `They get ₹${friendGets} off` : "They get a welcome discount",
+      body: t?.minOrder
+        ? `Your friend saves on their first order over ₹${t.minOrder.toLocaleString("en-IN")}.`
+        : "Your friend saves on their first order with you.",
+      icon: "tag-price-bold",
+      block: "bg-ng-clay/15 border-ng-clay/30",
+      num: "text-ng-clay-deep",
+      chip: "bg-ng-clay/20 text-ng-clay-deep",
+    },
+    {
+      n: "03",
+      title: reward ? `You get ₹${reward} credit` : "You earn wallet credit",
+      body: "It lands in your harvest wallet once their first order is complete — redeemable on anything.",
+      icon: "wallet-money-bold",
+      block: "bg-ng-leaf/15 border-ng-leaf/30",
+      num: "text-ng-forest",
+      chip: "bg-ng-leaf/25 text-ng-forest",
+    },
+  ];
+
+  const shareText = `Try Nutri Greenz — farm-traceable pantry${friendGets ? `, ₹${friendGets} off your first order` : ""}: ${link}`;
 
   return (
     <AccountShell active="referral">
@@ -62,8 +137,10 @@ export default function ReferralPage() {
           Good food spreads <em className="italic text-ng-leaf">by word of mouth</em>
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
-          Share your link with a friend. They get ₹100 off their first order. You get ₹250 wallet
-          credit when they receive it. Both win. No marketing budget burned.
+          {reward && friendGets
+            ? `Share your link. They get ₹${friendGets} off their first order, you get ₹${reward} in wallet credit once it completes. Both win.`
+            : "Share your link with a friend. When their first order completes, you both earn."}
+          {expiryDays > 0 ? ` Each invite is valid for ${expiryDays} days.` : ""}
         </p>
       </div>
 
@@ -79,18 +156,22 @@ export default function ReferralPage() {
                 Your referral link
               </span>
               <h2 className="font-display text-[clamp(26px,3.4vw,36px)] mt-3 leading-tight">
-                Share this — it's the most useful thing you'll send today.
+                Share this — it&rsquo;s the most useful thing you&rsquo;ll send today.
               </h2>
 
               <div className="mt-7 space-y-4">
                 <div className="rounded-2xl bg-ng-cream/[0.08] border border-ng-cream/20 p-4 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-[11px] uppercase tracking-wider text-ng-clay">Link</div>
-                    <div className="text-[14px] text-ng-cream truncate font-mono">{REFERRAL_LINK}</div>
+                    <div className="text-[14px] text-ng-cream truncate font-mono">
+                      {loading ? "Loading…" : link || "Unavailable"}
+                    </div>
                   </div>
                   <button
-                    onClick={() => copy(REFERRAL_LINK, "link")}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-clay text-ng-forest-deep font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay-deep hover:text-ng-cream transition-colors"
+                    type="button"
+                    disabled={!link}
+                    onClick={() => copy(link, "link")}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-clay text-ng-forest-deep font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay-deep hover:text-ng-cream transition-colors disabled:opacity-40"
                   >
                     <Icon name={copied === "link" ? "check-circle-bold" : "copy-bold"} size={14} />
                     {copied === "link" ? "Copied" : "Copy"}
@@ -100,11 +181,15 @@ export default function ReferralPage() {
                 <div className="rounded-2xl bg-ng-cream/[0.06] border-2 border-dashed border-ng-clay/45 p-4 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-[11px] uppercase tracking-wider text-ng-clay">Code</div>
-                    <div className="text-[18px] text-ng-cream font-mono tracking-[0.18em]">{REFERRAL_CODE}</div>
+                    <div className="text-[18px] text-ng-cream font-mono tracking-[0.18em] truncate">
+                      {loading ? "…" : code || "—"}
+                    </div>
                   </div>
                   <button
-                    onClick={() => copy(REFERRAL_CODE, "code")}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay/25 transition-colors"
+                    type="button"
+                    disabled={!code}
+                    onClick={() => copy(code, "code")}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay/25 transition-colors disabled:opacity-40"
                   >
                     <Icon name={copied === "code" ? "check-circle-bold" : "copy-bold"} size={14} />
                     {copied === "code" ? "Copied" : "Copy"}
@@ -114,41 +199,51 @@ export default function ReferralPage() {
 
               <div className="flex flex-wrap gap-3 mt-6">
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Try Nutrigreenz — farm-traceable pantry, ₹100 off your first order: ${REFERRAL_LINK}`)}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
                   target="_blank"
                   rel="noreferrer"
+                  aria-disabled={!link}
                   className="inline-flex items-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-leaf/90 transition-colors"
                 >
                   <Icon name="chat-round-line-bold" size={15} />
                   WhatsApp
                 </a>
                 <a
-                  href={`mailto:?subject=Try Nutrigreenz&body=${encodeURIComponent(`Use my code ${REFERRAL_CODE} for ₹100 off your first order. ${REFERRAL_LINK}`)}`}
+                  href={`mailto:?subject=${encodeURIComponent("Try Nutri Greenz")}&body=${encodeURIComponent(shareText)}`}
                   className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-clay/25 transition-colors"
                 >
                   <Icon name="letter-bold" size={15} />
                   Email
                 </a>
-                <button className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-clay/25 transition-colors">
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-clay/25 transition-colors"
+                >
                   <Icon name="share-bold" size={15} />
                   X / Twitter
-                </button>
+                </a>
               </div>
             </div>
           </div>
 
-          {/* Stat tile */}
+          {/* Stat tile — real figures */}
           <aside className="rounded-3xl bg-ng-clay/20 border border-ng-clay/40 p-8 flex flex-col justify-between">
             <div>
               <span className="ng-eyebrow text-ng-forest">Lifetime earned</span>
               <div className="font-display text-[64px] leading-none text-ng-forest-deep mt-4 tabular-nums">
-                ₹{totalEarned.toLocaleString()}
+                ₹{(data?.earnedRupees ?? 0).toLocaleString("en-IN")}
               </div>
-              <div className="text-[14px] text-ng-ink-muted mt-3">From {FRIENDS.filter((f) => f.credit > 0).length} successful invites</div>
+              <div className="text-[14px] text-ng-ink-muted mt-3">
+                {data && data.rewardedCount > 0
+                  ? `From ${data.rewardedCount} successful invite${data.rewardedCount === 1 ? "" : "s"}`
+                  : "No completed referrals yet"}
+              </div>
             </div>
             <div className="mt-8 pt-6 border-t border-ng-clay/40 grid grid-cols-2 gap-4">
-              <Stat label="Sent" value={FRIENDS.length} />
-              <Stat label="Converted" value={FRIENDS.filter((f) => f.credit > 0).length} />
+              <Stat label="Invited" value={data?.totalCount ?? 0} />
+              <Stat label="Converted" value={data?.rewardedCount ?? 0} />
             </div>
           </aside>
         </div>
@@ -157,7 +252,7 @@ export default function ReferralPage() {
         <div className="mb-20">
           <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mb-10">How it works.</h2>
           <div className="grid items-stretch md:grid-cols-3 gap-5">
-            {STEPS.map((s) => (
+            {steps.map((s) => (
               <article
                 key={s.n}
                 className={`flex h-full flex-col rounded-2xl border p-7 ${s.block} transition-shadow hover:shadow-[0_18px_40px_-26px_rgba(10,31,18,0.4)]`}
@@ -175,57 +270,107 @@ export default function ReferralPage() {
           </div>
         </div>
 
-        {/* Friend list */}
+        {/* Invite activity — real, and anonymised by design */}
         <div className="rounded-3xl bg-ng-paper border border-ng-line-soft p-7 md:p-10">
           <div className="flex items-center justify-between mb-7">
-            <h2 className="font-display text-[24px] text-ng-forest-deep">Friends you've invited</h2>
-            <span className="text-[12px] text-ng-ink-soft">{FRIENDS.length} total</span>
+            <h2 className="font-display text-[24px] text-ng-forest-deep">Your invites</h2>
+            <span className="text-[12px] text-ng-ink-soft">
+              {data?.totalCount ?? 0} total
+              {data && data.pendingCount > 0 ? ` · ${data.pendingCount} pending` : ""}
+            </span>
           </div>
-          <ul className="divide-y divide-ng-line-soft">
-            {FRIENDS.map((f) => {
-              const credited = f.credit > 0;
-              return (
-                <li key={f.name} className="py-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`size-10 rounded-full flex items-center justify-center font-display ring-2 ${
-                        credited
-                          ? "bg-ng-leaf/15 text-ng-forest ring-ng-leaf/40"
-                          : "bg-ng-clay/15 text-ng-clay-deep ring-ng-clay/30"
-                      }`}
-                    >
-                      {f.name.charAt(0)}
+
+          {loading ? (
+            <p className="py-8 text-center text-[14px] text-ng-ink-soft">Loading…</p>
+          ) : data && data.recent.length > 0 ? (
+            <ul className="divide-y divide-ng-line-soft">
+              {data.recent.map((f, i) => {
+                const credited = f.status === "rewarded";
+                const left = credited ? null : daysLeft(f.createdAt, expiryDays);
+                return (
+                  <li key={`${f.createdAt}-${i}`} className="py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`size-10 rounded-full flex items-center justify-center ring-2 ${
+                          credited
+                            ? "bg-ng-leaf/15 text-ng-forest ring-ng-leaf/40"
+                            : "bg-ng-clay/15 text-ng-clay-deep ring-ng-clay/30"
+                        }`}
+                      >
+                        <Icon name={credited ? "check-circle-bold" : "clock-circle-bold"} size={18} />
+                      </div>
+                      <div>
+                        <div className="text-[15px] text-ng-ink">
+                          {credited ? "Friend ordered" : "Friend signed up"}
+                        </div>
+                        <div className="text-[12px] text-ng-ink-soft mt-0.5">
+                          Invited {fmtDate(f.createdAt)}
+                          {credited && f.rewardedAt ? ` · credited ${fmtDate(f.rewardedAt)}` : ""}
+                          {!credited && left !== null ? ` · ${left} day${left === 1 ? "" : "s"} left` : ""}
+                          {!credited && left === null && expiryDays > 0 ? " · window closed" : ""}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[15px] text-ng-ink">{f.name}</div>
-                      <div className="text-[12px] text-ng-ink-soft mt-0.5">{f.status} · {f.date}</div>
-                    </div>
-                  </div>
-                  {credited ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 text-ng-forest font-semibold px-3 py-1.5 text-[13px]">
-                      <span className="size-1.5 rounded-full bg-ng-success" aria-hidden />
-                      +₹{f.credit}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-amber/15 text-ng-clay-deep font-semibold px-3 py-1.5 text-[13px]">
-                      <span className="size-1.5 rounded-full bg-ng-amber" aria-hidden />
-                      Pending
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                    {credited ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 text-ng-forest font-semibold px-3 py-1.5 text-[13px] whitespace-nowrap">
+                        <span className="size-1.5 rounded-full bg-ng-success" aria-hidden />
+                        +₹{reward.toLocaleString("en-IN")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-amber/15 text-ng-clay-deep font-semibold px-3 py-1.5 text-[13px] whitespace-nowrap">
+                        <span className="size-1.5 rounded-full bg-ng-amber" aria-hidden />
+                        Pending
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-sage/50 text-ng-forest">
+                <Icon name="users-group-rounded-bold" size={24} />
+              </span>
+              <p className="max-w-sm text-[14px] leading-relaxed text-ng-ink-muted">
+                No invites yet. Share your link above — friends who join with it will appear here, and
+                your credit lands once their first order completes.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* FAQ */}
+        {/* FAQ — driven by the live programme terms */}
         <div className="mt-20">
           <h2 className="font-display text-[clamp(24px,3vw,32px)] text-ng-forest-deep mb-7">Common questions.</h2>
           <div className="grid items-stretch md:grid-cols-2 gap-5">
-            <Faq tint="sage" q="Is there a cap on referrals?" a="No. Invite as many friends as you like. We've had members earn over ₹15,000 in wallet credit through referrals alone." />
-            <Faq tint="paper" q="When does my credit appear?" a="The moment your friend's first order is marked 'shipped' in our system. Usually within 48 hours of their order." />
-            <Faq tint="paper" q="Can I refer existing customers?" a="The ₹100 bonus is for new customers only. But if you refer a lapsed customer (no order in 12+ months), they qualify." />
-            <Faq tint="sage" q="Does wallet credit expire?" a="No. Your referral wallet credit never expires. Redeem it on any order, up to 30% of the cart value." />
+            <Faq
+              tint="sage"
+              q="How long is my link valid?"
+              a={
+                expiryDays > 0
+                  ? `Each invite is valid for ${expiryDays} days from the day it's issued. If your friend hasn't ordered by then, that invite closes — but you can always share your link again.`
+                  : "Your link doesn't expire. Share it as often as you like."
+              }
+            />
+            <Faq
+              tint="paper"
+              q="When does my credit appear?"
+              a={`Once your friend's first order${t?.minOrder ? ` of ₹${t.minOrder.toLocaleString("en-IN")} or more` : ""} is complete, the credit is added to your harvest wallet automatically.`}
+            />
+            <Faq
+              tint="paper"
+              q="Is there a limit?"
+              a={
+                t && t.maxPerMonth > 0
+                  ? `Up to ${t.maxPerMonth} rewarded invites per month. There's no limit on how many people you share with.`
+                  : "No cap — invite as many friends as you like."
+              }
+            />
+            <Faq
+              tint="sage"
+              q="Who can use my code?"
+              a="New customers only, and it can't be used on an account that already exists. Your friend applies it at checkout on their first order."
+            />
           </div>
         </div>
       </div>
@@ -243,10 +388,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function Faq({ q, a, tint }: { q: string; a: string; tint: "sage" | "paper" }) {
-  const block =
-    tint === "sage"
-      ? "bg-ng-sage/25 border-ng-leaf/25"
-      : "bg-ng-paper border-ng-line-soft";
+  const block = tint === "sage" ? "bg-ng-sage/25 border-ng-leaf/25" : "bg-ng-paper border-ng-line-soft";
   return (
     <div className={`flex h-full flex-col rounded-2xl border p-6 ${block}`}>
       <h3 className="font-display text-[18px] text-ng-forest-deep flex items-start gap-2.5">
