@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
@@ -82,10 +82,44 @@ function SpringPress({
   );
 }
 
+/**
+ * Constrain `?next=` to a same-origin path.
+ *
+ * The value was previously used raw, so a crafted link
+ * (`/admin/login?next=https://example.com`) would send an operator off-site
+ * immediately AFTER they authenticated — a post-auth open redirect, and a
+ * convincing one because the sign-in genuinely succeeded first. Anything
+ * absolute, scheme-relative ("//host") or backslash-escaped is discarded in
+ * favour of the dashboard.
+ */
+function safeNextPath(raw: string | null): string {
+  const fallback = "/admin";
+  if (!raw) return fallback;
+  const value = raw.trim();
+  if (!value.startsWith("/")) return fallback;
+  if (value.startsWith("//") || value.startsWith("/\\")) return fallback;
+  return value;
+}
+
+/**
+ * Finish sign-in with a FULL document navigation.
+ *
+ * `router.push()` resolves against the client Router Cache, which still holds
+ * the UNAUTHENTICATED render of the destination from the redirect that sent the
+ * operator to this screen. The session cookie is set server-side, so the cached
+ * payload never reflected it and the portal appeared not to open until a manual
+ * refresh. A real navigation guarantees the server re-renders with the cookie.
+ *
+ * `replace` rather than `assign`, so the login screen — and the one-time code
+ * still sitting in its inputs — is not left in history for a Back press.
+ */
+function completeSignIn(path: string): void {
+  window.location.replace(path);
+}
+
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/admin";
+  const next = safeNextPath(params.get("next"));
 
   // Phone-OTP delivery: Firebase (default) or MSG91 (flag). Stable per build.
   const msg91 = otpProvider() === "msg91";
@@ -266,7 +300,7 @@ function LoginForm() {
           return;
         }
         toast.success("Welcome back", { description: "Signed in to Admin." });
-        router.push(next);
+        completeSignIn(next);
         return;
       }
       const msg = "Invalid credentials.";
@@ -297,7 +331,7 @@ function LoginForm() {
       });
       if (res.ok) {
         toast.success("Welcome back", { description: "Signed in to Admin." });
-        router.push(next);
+        completeSignIn(next);
         return;
       }
       // 401 with restart → the short-lived ticket expired; send them back.
@@ -337,7 +371,7 @@ function LoginForm() {
       });
       if (res.ok) {
         toast.success("Welcome back", { description: "Signed in to Admin." });
-        router.push(next);
+        completeSignIn(next);
         return;
       }
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
@@ -378,7 +412,7 @@ function LoginForm() {
         });
         if (res.ok) {
           toast.success("Welcome back", { description: "Signed in to Admin." });
-          router.push(next);
+          completeSignIn(next);
           return;
         }
         const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
@@ -423,7 +457,7 @@ function LoginForm() {
       if (auth) await signOut(auth).catch(() => {});
       if (res.ok) {
         toast.success("Welcome back", { description: "Signed in to Admin." });
-        router.push(next);
+        completeSignIn(next);
         return;
       }
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
@@ -599,7 +633,7 @@ function LoginForm() {
         });
         if (res.ok) {
           toast.success("Welcome back", { description: "Signed in to Admin." });
-          router.push(next);
+          completeSignIn(next);
           return;
         }
         const msg =
@@ -639,7 +673,7 @@ function LoginForm() {
       });
       if (res.ok) {
         toast.success("Welcome back", { description: "Signed in to Admin." });
-        router.push(next);
+        completeSignIn(next);
         return;
       }
       // Not an authorised operator (or expired) — drop the Firebase phone session

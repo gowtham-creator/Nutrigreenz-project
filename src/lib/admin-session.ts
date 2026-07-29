@@ -30,7 +30,7 @@ export type AdminRole = "admin" | "superadmin";
  * bounces the next admin request to the login screen. Single source of truth —
  * the login routes and the client idle guard all read this window.
  */
-export const ADMIN_SESSION_TTL_SECONDS = 30 * 60;
+export const ADMIN_SESSION_TTL_SECONDS = 35 * 60;
 
 /** Decoded, verified session payload. */
 export interface AdminSession {
