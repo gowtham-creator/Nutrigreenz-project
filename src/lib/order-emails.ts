@@ -17,7 +17,19 @@ import { gstFor } from "@/lib/gst";
  */
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
-const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+/**
+ * Money for display, always to two decimals.
+ *
+ * Rounding to whole rupees broke the tax ladder: the taxable value and the
+ * CGST/SGST halves would each round independently and stop summing to the total,
+ * and the same order rendered different figures in the email than in the PDF.
+ * A tax document has to reconcile line by line.
+ */
+const rupees = (paise: number) =>
+  `₹${(Math.round(paise) / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 type Kind = "placed" | "confirmed" | "packed" | "shipped" | "delivered";
 
