@@ -4,7 +4,7 @@ import { getOrder, type OrderWithDetail } from "@/lib/orders";
 import { render, type NotifyType } from "@/lib/notification-templates";
 import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
-import { invoicePdfBase64 } from "@/lib/invoice-pdf";
+import { billingAttachments } from "@/lib/invoice-pdf";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -272,14 +272,9 @@ async function send(orderId: string, kind: Kind): Promise<void> {
       let attachments: { name: string; content: string }[] | undefined;
       if (kind === "placed") {
         try {
-          attachments = [
-            {
-              name: `Invoice-${order.orderNumber}.pdf`,
-              content: await invoicePdfBase64(order),
-            },
-          ];
+          attachments = await billingAttachments(order);
         } catch (err) {
-          console.error(`[order-emails] invoice PDF for ${order.orderNumber} failed:`, err);
+          console.error(`[order-emails] billing PDFs for ${order.orderNumber} failed:`, err);
         }
       }
 
