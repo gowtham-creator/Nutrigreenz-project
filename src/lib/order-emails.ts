@@ -14,16 +14,21 @@ import { sendWhatsApp } from "@/lib/whatsapp";
  * approved templates when they arrive; the trigger wiring below stays the same.
  */
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz-project.vercel.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
 const rupees = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
 
-type Kind = "confirmed" | "shipped" | "delivered";
+type Kind = "confirmed" | "packed" | "shipped" | "delivered";
 
 const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intro: string }> = {
   confirmed: {
     subject: (n) => `Order ${n} confirmed · Nutri Greenz`,
     heading: "Order confirmed 🌿",
     intro: "Thank you for your order — we're getting it ready. Here's your summary:",
+  },
+  packed: {
+    subject: (n) => `Order ${n} is packed · Nutri Greenz`,
+    heading: "Packed and ready 📦",
+    intro: "Your order is packed and waiting for its delivery slot. Here's your summary:",
   },
   shipped: {
     subject: (n) => `Order ${n} is on its way 🚚 · Nutri Greenz`,
@@ -99,14 +104,21 @@ async function send(orderId: string, kind: Kind): Promise<void> {
         sendWhatsApp({ to: order.userPhone, body: render(type, "whatsapp", vars).body }),
       ]);
     }
-  } catch {
-    /* best-effort — never throw into the order / status flow */
+  } catch (err) {
+    // Best-effort: a failed notification must never break the order or status
+    // flow. But it must not vanish either — this was silent for weeks while
+    // Brevo rejections and torn-down instances went unnoticed.
+    console.error(`[order-emails] ${kind} notification for ${orderId} failed:`, err);
   }
 }
 
 export function sendOrderConfirmedEmail(orderId: string): Promise<void> {
   return send(orderId, "confirmed");
 }
+export function sendOrderPackedEmail(orderId: string): Promise<void> {
+  return send(orderId, "packed");
+}
+
 export function sendOrderShippedEmail(orderId: string): Promise<void> {
   return send(orderId, "shipped");
 }

@@ -16,7 +16,13 @@ import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { advanceOrderStatus } from "@/lib/orders";
-import { sendOrderShippedEmail, sendOrderDeliveredEmail } from "@/lib/order-emails";
+import {
+  sendOrderConfirmedEmail,
+  sendOrderPackedEmail,
+  sendOrderShippedEmail,
+  sendOrderDeliveredEmail,
+} from "@/lib/order-emails";
+import { afterResponse } from "@/lib/after-response";
 
 export const runtime = "nodejs";
 
@@ -67,8 +73,19 @@ export async function POST(
   // Notify the customer on the shipped / delivered milestones (best-effort).
   const oid = result.order?.id;
   if (oid) {
-    if (nextStatus === "shipped") void sendOrderShippedEmail(oid);
-    else if (nextStatus === "delivered") void sendOrderDeliveredEmail(oid);
+    // Notify on every customer-meaningful milestone, not just the last two.
+    // Registered with the platform so the send survives this response — a bare
+    // fire-and-forget promise is killed when the instance freezes.
+    const NOTIFY: Record<string, (id: string) => Promise<void>> = {
+      confirmed: sendOrderConfirmedEmail,
+      packed: sendOrderPackedEmail,
+      shipped: sendOrderShippedEmail,
+      delivered: sendOrderDeliveredEmail,
+    };
+    const notify = NOTIFY[nextStatus];
+    if (notify) {
+      afterResponse(`order ${oid} ${nextStatus} notification`, notify(oid));
+    }
   }
 
   return Response.json({ ok: true, order: result.order });

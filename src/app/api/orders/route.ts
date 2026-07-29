@@ -25,6 +25,7 @@ import {
 } from "@/lib/rewards";
 import { createPaymentIntent } from "@/lib/payments-razorpay";
 import { sendOrderConfirmedEmail } from "@/lib/order-emails";
+import { afterResponse } from "@/lib/after-response";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
 export const runtime = "nodejs";
@@ -138,7 +139,10 @@ export async function POST(request: Request): Promise<Response> {
     // Order-placed confirmation email (best-effort, fire-and-forget so it never
     // delays the response). When a live gateway is wired, move this to the PAID
     // webhook so it fires on payment rather than placement.
-    void sendOrderConfirmedEmail(order.id);
+    afterResponse(
+      `order ${order.orderNumber} confirmation`,
+      sendOrderConfirmedEmail(order.id),
+    );
 
     // Payment seam: open an intent when the gateway is configured. Today this is
     // a no-op (returns null) and the order stays `pending` — we never fake paid.
