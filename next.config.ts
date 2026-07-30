@@ -16,10 +16,46 @@ const supabaseImageHost = (() => {
 const nextConfig: NextConfig = {
   // Token verification is done with `jose` (see src/lib/firebase-admin.ts), so
   // no firebase-admin externalisation or `output: "standalone"` is needed.
+
+  /**
+   * Cache headers for everything under `public/`.
+   *
+   * This is a bandwidth fix, not a cosmetic one. Next serves files from
+   * `public/` with `cache-control: public, max-age=0, must-revalidate` by
+   * default — unlike `/_next/static/*`, which it fingerprints and marks
+   * immutable. So every visit re-fetched every logo, hero and product photo
+   * from the origin instead of reusing the copy the browser already had. With
+   * ~7.7 MB of assets that is how a 10 GB origin-transfer allowance disappears
+   * without any single file being large.
+   *
+   * These paths are safe to pin because their contents are replaced by
+   * uploading a NEW file (the admin image picker writes to Supabase Storage
+   * with a fresh name), not by overwriting an existing one. If a file at a
+   * fixed path ever does need replacing in place, change its filename too —
+   * that is the tradeoff `immutable` asks for.
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path((?:images|brand|videos|seo)/.*)",
+        headers: [
+          { key: "cache-control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
+  },
+
   images: {
     // Allow higher-quality optimised variants (default is 75, which softens the
     // fine label detail on product shots at high-DPR mobile/tablet screens).
     qualities: [75, 90],
+    /**
+     * How long an OPTIMISED variant stays in the edge cache before Next
+     * re-generates it at the origin. The default is short, so popular product
+     * shots were being re-optimised and re-transferred repeatedly. Product
+     * photography changes rarely, and when it does the URL changes with it.
+     */
+    minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
       {
         protocol: "https",
