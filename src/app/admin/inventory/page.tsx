@@ -144,6 +144,7 @@ export default function AdminInventory() {
         status: draft.status,
         description: draft.description.trim() || null,
         imageUrl: draft.imageUrl.trim() || null,
+        gallery: draft.gallery.map((u) => u.trim()).filter(Boolean),
       };
       try {
         if (editing) {

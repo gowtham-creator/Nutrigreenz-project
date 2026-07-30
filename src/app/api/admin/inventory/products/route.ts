@@ -99,6 +99,7 @@ export async function POST(request: Request): Promise<Response> {
       description: body.description != null ? String(body.description) : null,
       pricePaise,
       imageUrl: body.imageUrl != null ? String(body.imageUrl) : null,
+      gallery: Array.isArray(body.gallery) ? body.gallery.map(String) : undefined,
       sku: body.sku != null ? String(body.sku) : null,
       status: asStatus(body.status) ?? "active",
       stock,

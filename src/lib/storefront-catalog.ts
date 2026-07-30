@@ -157,6 +157,7 @@ export function mapRecordToProductCard(
     title: record.name,
     subtitle: record.categoryName ?? undefined,
     image: record.imageUrl || PLACEHOLDER,
+    gallery: record.gallery,
     rating,
     reviewCount,
     price,

@@ -50,6 +50,13 @@ export interface ProductCard {
   title: string;
   subtitle?: string;
   image: string;
+  /**
+   * Additional photos for this product, in the order the operator arranged
+   * them. Only the PDP uses these; cards show `image` alone. Empty/absent means
+   * there are no extra shots — the PDP then shows captioned placeholders rather
+   * than borrowing another product's photographs.
+   */
+  gallery?: string[];
   rating: number;
   reviewCount: number;
   price: number;

@@ -21,6 +21,8 @@ export interface Product {
   description: string | null;
   pricePaise: number;
   imageUrl: string | null;
+  /** Extra photos beyond the lead shot, in the operator's display order. */
+  gallery?: string[];
   sku: string | null;
   status: ProductStatus;
   stock: number;

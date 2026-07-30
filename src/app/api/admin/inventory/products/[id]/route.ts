@@ -52,6 +52,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (body.description !== undefined) patch.description = body.description != null ? String(body.description) : null;
   if (body.pricePaise !== undefined) patch.pricePaise = Math.max(0, Math.round(Number(body.pricePaise) || 0));
   if (body.imageUrl !== undefined) patch.imageUrl = body.imageUrl != null ? String(body.imageUrl) : null;
+  if (body.gallery !== undefined) patch.gallery = Array.isArray(body.gallery) ? body.gallery.map(String) : [];
   if (body.sku !== undefined) patch.sku = body.sku != null ? String(body.sku) : null;
   if (body.status !== undefined) {
     const status = asStatus(body.status);

@@ -270,30 +270,53 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const others = allProducts.filter((x) => x.id !== p.id && getPdpContent(x).categoryId !== categoryId);
   const relatedRail = [...sameCat, ...others].slice(0, 4);
 
-  // Gallery — the product's own real photo always LEADS when it exists, so a
-  // per-SKU shot is never buried behind curated/placeholder frames. After it we
-  // append the category's curated detail set (per-product `gallery`, else the
-  // shared range set, e.g. all cold-pressed oils share one pack/why/kitchen set).
-  // With no real photo and no curated set, we fall back to branded placeholders
-  // (now tinted per category), captioned so the client knows which shot belongs.
+  /*
+   * Gallery — every frame here is THIS product's own photography.
+   *
+   * It used to fill the empty slots from `story.sharedGallery`: a curated set
+   * shared across a whole category, on the theory that "all cold-pressed oils
+   * share one pack/why/kitchen set". In practice that showed a shopper on the
+   * groundnut oil page photographs of a different oil — a different bottle, a
+   * different label, a different product. Borrowed photography on a product
+   * page is misdescription, not decoration, so the borrow is gone.
+   *
+   * The order is: the lead shot (`image_url`), then the operator-arranged
+   * `gallery`, then the per-product curated set if one is configured. When
+   * there is nothing else, the remaining slots are branded, category-tinted,
+   * captioned placeholders — honest about being awaiting-photography rather
+   * than passing off someone else's bottle.
+   */
   const hasRealImage = p.image.length > 0 && p.image !== PLACEHOLDER;
-  const curated =
+  const ownShots = (p.gallery ?? [])
+    .filter((src) => src && src !== PLACEHOLDER && src !== p.image)
+    .map((src, i) => ({ src, alt: `${p.title} — photo ${i + 2}`, label: undefined }));
+
+  // Only a set curated FOR THIS PRODUCT counts; the category-wide range set is
+  // deliberately not consulted.
+  const curatedShots =
     story?.gallery && story.gallery.length > 0
-      ? story.gallery
-      : story?.sharedGallery && story.sharedGallery.length > 0
-        ? story.sharedGallery
-        : null;
-  const curatedShots = curated?.map((g) => ({ src: g.src, alt: g.alt, label: g.label })) ?? [];
-  const images = curated
-    ? hasRealImage
-      ? [{ src: p.image, alt: p.title, label: "Front of pack" }, ...curatedShots]
-      : curatedShots
-    : [
-        { src: p.image || PLACEHOLDER, alt: p.title, label: "Front of pack" },
-        { src: PLACEHOLDER, alt: `${p.title} — pack & label`, label: "Pack & label" },
-        { src: PLACEHOLDER, alt: `${p.title} — texture & pour`, label: "Texture & pour" },
-        { src: PLACEHOLDER, alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
-      ];
+      ? story.gallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label }))
+      : [];
+
+  const real = [
+    ...(hasRealImage ? [{ src: p.image, alt: p.title, label: "Front of pack" }] : []),
+    ...ownShots,
+    ...curatedShots,
+  ];
+
+  const PLACEHOLDER_SLOTS = [
+    { alt: `${p.title} — pack & label`, label: "Pack & label" },
+    { alt: `${p.title} — texture & pour`, label: "Texture & pour" },
+    { alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
+  ];
+
+  const images =
+    real.length > 1
+      ? real
+      : [
+          ...(real.length === 1 ? real : [{ src: PLACEHOLDER, alt: p.title, label: "Front of pack" }]),
+          ...PLACEHOLDER_SLOTS.map((slot) => ({ src: PLACEHOLDER, ...slot })),
+        ];
 
   const jsonLd = {
     "@context": "https://schema.org",

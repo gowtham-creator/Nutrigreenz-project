@@ -2,6 +2,7 @@
 
 import { useRef, useState, type DragEvent } from "react";
 import { Icon } from "@/components/ui/icon";
+import { GalleryField } from "@/components/ng/admin/image-picker";
 import { STATUS_OPTIONS, type Category, type Product, type ProductStatus } from "./types";
 
 export interface ProductDraft {
@@ -13,6 +14,8 @@ export interface ProductDraft {
   status: ProductStatus;
   description: string;
   imageUrl: string;
+  /** Extra photos shown on the PDP after the lead shot, in this order. */
+  gallery: string[];
 }
 
 function draftFromProduct(p: Product | null): ProductDraft {
@@ -25,6 +28,7 @@ function draftFromProduct(p: Product | null): ProductDraft {
     status: p?.status ?? "active",
     description: p?.description ?? "",
     imageUrl: p?.imageUrl ?? "",
+    gallery: p?.gallery ?? [],
   };
 }
 
@@ -312,6 +316,18 @@ export function ProductModal({
                 e.target.value = "";
               }}
             />
+
+            {/* More photos. The product page used to pad its gallery with a set
+                shared across the whole category, so a shopper saw another
+                product's bottle; it now shows only what is uploaded here. */}
+            <div className="mt-5 border-t border-ng-line-soft pt-5">
+              <GalleryField
+                label="More photos"
+                values={draft.gallery}
+                onChange={(v) => setDraft((d) => ({ ...d, gallery: v }))}
+                hint="Shown on the product page after the main image, in this order — the label, the texture, the product in use. Leave empty and the page shows captioned placeholders instead."
+              />
+            </div>
           </div>
         </div>
 

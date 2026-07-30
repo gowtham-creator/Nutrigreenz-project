@@ -30,6 +30,12 @@ export interface ProductRecord {
   description: string | null;
   pricePaise: number;
   imageUrl: string | null;
+  /**
+   * Additional photos, in the operator's order. `imageUrl` stays the single
+   * lead shot used by the grid, cart, emails and invoices; these are the extra
+   * frames the PDP shows after it. Empty when none have been uploaded.
+   */
+  gallery: string[];
   sku: string | null;
   status: ProductStatus;
   stock: number;
@@ -61,6 +67,7 @@ interface ProductRow {
   description: string | null;
   price_paise: number;
   image_url: string | null;
+  gallery: string[] | null;
   sku: string | null;
   status: ProductStatus;
   created_at: string;
@@ -77,7 +84,7 @@ function firstOf<T>(value: T | T[] | null | undefined): T | null {
 }
 
 const PRODUCT_COLS =
-  "id, category_id, name, slug, description, price_paise, image_url, sku, status, created_at, updated_at, categories(name), inventory(stock, reserved)";
+  "id, category_id, name, slug, description, price_paise, image_url, gallery, sku, status, created_at, updated_at, categories(name), inventory(stock, reserved)";
 
 const VALID_STATUS: readonly ProductStatus[] = ["active", "draft", "archived"];
 
@@ -126,6 +133,7 @@ function toProduct(r: ProductRow): ProductRecord {
     description: r.description,
     pricePaise: r.price_paise,
     imageUrl: r.image_url,
+    gallery: (r.gallery ?? []).filter((u): u is string => typeof u === "string" && u.trim().length > 0),
     sku: r.sku,
     status: VALID_STATUS.includes(r.status) ? r.status : "active",
     stock: inventory?.stock ?? 0,
@@ -274,10 +282,30 @@ export interface NewProductInput {
   description?: string | null;
   pricePaise: number;
   imageUrl?: string | null;
+  /** Extra photos beyond the lead shot, in display order. */
+  gallery?: readonly string[];
   sku?: string | null;
   status?: ProductStatus;
   stock?: number;
   reserved?: number;
+}
+
+/**
+ * Normalise a gallery before it is written: trim, drop blanks, and de-duplicate
+ * while keeping the operator's order. The same URL twice would render as two
+ * identical thumbnails that look like a bug.
+ */
+function cleanGallery(urls: readonly string[] | undefined): string[] {
+  if (!urls) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of urls) {
+    const url = typeof raw === "string" ? raw.trim() : "";
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
 }
 
 /** Create a product and its inventory row, returning the joined record. */
@@ -294,6 +322,7 @@ export async function createProduct(input: NewProductInput): Promise<ProductReco
       description: input.description?.trim() || null,
       price_paise: Math.max(0, Math.round(input.pricePaise)),
       image_url: input.imageUrl?.trim() || null,
+      gallery: cleanGallery(input.gallery),
       sku: input.sku?.trim() || null,
       status: input.status ?? "active",
     })
@@ -320,6 +349,8 @@ export interface ProductUpdateInput {
   description?: string | null;
   pricePaise?: number;
   imageUrl?: string | null;
+  /** Extra photos beyond the lead shot, in display order. */
+  gallery?: readonly string[];
   sku?: string | null;
   status?: ProductStatus;
 }
@@ -329,13 +360,14 @@ export async function updateProduct(
   id: string,
   input: ProductUpdateInput,
 ): Promise<ProductRecord | null> {
-  const patch: Record<string, string | number | null> = {};
+  const patch: Record<string, string | number | string[] | null> = {};
   if (input.name !== undefined) patch.name = input.name.trim();
   if (input.slug !== undefined) patch.slug = input.slug.trim() || slugify(input.name ?? "");
   if (input.categoryId !== undefined) patch.category_id = input.categoryId;
   if (input.description !== undefined) patch.description = input.description?.trim() || null;
   if (input.pricePaise !== undefined) patch.price_paise = Math.max(0, Math.round(input.pricePaise));
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl?.trim() || null;
+  if (input.gallery !== undefined) patch.gallery = cleanGallery(input.gallery);
   if (input.sku !== undefined) patch.sku = input.sku?.trim() || null;
   if (input.status !== undefined) patch.status = input.status;
   if (Object.keys(patch).length === 0) return getProduct(id);
