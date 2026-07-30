@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { shortCommunity } from "@/lib/community-label";
 import {
   autocompleteAddress,
   isPlacesConfigured,
@@ -110,14 +111,19 @@ export function CommunityPicker({
           {value.map((c) => (
             <span
               key={c}
-              className="inline-flex items-center gap-1.5 rounded-full border border-ng-forest/25 bg-ng-forest/10 py-1.5 pl-3 pr-1.5 text-[13px] font-medium text-ng-forest-deep"
+              title={c}
+              /* max-w + truncate: a Places result is the full formatted address
+                 ("SAS Crown, Golden Mile Road, Kokapet, Hyderabad, Telangana,
+                 India"), which wrapped this chip onto four lines. The full
+                 value stays in the title and in the saved record. */
+              className="inline-flex max-w-[260px] items-center gap-1.5 rounded-full border border-ng-forest/25 bg-ng-forest/10 py-1.5 pl-3 pr-1.5 text-[13px] font-medium text-ng-forest-deep"
             >
-              {c}
+              <span className="truncate whitespace-nowrap">{shortCommunity(c)}</span>
               <button
                 type="button"
                 onClick={() => remove(c)}
                 aria-label={`Remove ${c}`}
-                className="grid size-5 place-items-center rounded-full text-ng-forest/70 transition-colors hover:bg-ng-forest/15 hover:text-ng-forest-deep cursor-pointer"
+                className="grid size-5 shrink-0 place-items-center rounded-full text-ng-forest/70 transition-colors hover:bg-ng-forest/15 hover:text-ng-forest-deep cursor-pointer"
               >
                 <Icon name="close-circle-bold" size={14} />
               </button>

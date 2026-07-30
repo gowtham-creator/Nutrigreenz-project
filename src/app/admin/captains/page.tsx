@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { shortCommunity } from "@/lib/community-label";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { CaptainModal, Switch, type CaptainDraft } from "./captain-modal";
@@ -492,21 +493,47 @@ export default function AdminCaptains() {
 
 /* ── Table cell ─────────────────────────────────────────────────────────── */
 
+/**
+ * One assigned community.
+ *
+ * Deliberately NOT the generic <Pill>: Pill is uppercase, 11px and wraps, which
+ * turned a 65-character Places address into a four-line block. This is a single
+ * line that truncates, sentence-case (uppercase makes an address both wider and
+ * harder to read), with the full stored value on hover.
+ */
+function CommunityChip({ name, className }: { name: string; className?: string }) {
+  return (
+    <span
+      title={name}
+      className={cn(
+        "inline-flex max-w-[220px] items-center gap-1.5 truncate whitespace-nowrap rounded-full",
+        "bg-ng-forest/12 px-2.5 py-1 text-[11.5px] font-semibold text-ng-forest",
+        className,
+      )}
+    >
+      <Icon name="map-point-bold" size={12} className="shrink-0 opacity-70" />
+      <span className="truncate">{shortCommunity(name)}</span>
+    </span>
+  );
+}
+
 function CommunityCell({ communities }: { communities: string[] }) {
   if (communities.length === 0) {
     return <span className="text-[12px] font-medium text-ng-ink-muted">—</span>;
   }
-  const shown = communities.slice(0, 2);
-  const extra = communities.length - shown.length;
+  // One chip in the table row — the row has no height to spare, and the drawer
+  // lists them all in full.
+  const [first, ...rest] = communities;
   return (
-    <span className="flex flex-wrap items-center gap-1.5">
-      {shown.map((name) => (
-        <Pill key={name} tone="info">
-          {name}
-        </Pill>
-      ))}
-      {extra > 0 ? (
-        <span className="text-[11.5px] font-semibold text-ng-ink-muted">+{extra}</span>
+    <span className="flex items-center gap-1.5">
+      <CommunityChip name={first} className="max-w-[180px]" />
+      {rest.length > 0 ? (
+        <span
+          title={rest.join("\n")}
+          className="shrink-0 text-[11.5px] font-semibold text-ng-ink-muted"
+        >
+          +{rest.length}
+        </span>
       ) : null}
     </span>
   );
@@ -607,9 +634,7 @@ function CaptainDrawer({
                 {c.communities.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {c.communities.map((name) => (
-                      <Pill key={name} tone="info">
-                        {name}
-                      </Pill>
+                      <CommunityChip key={name} name={name} />
                     ))}
                   </div>
                 ) : (
