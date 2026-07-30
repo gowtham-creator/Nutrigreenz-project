@@ -403,8 +403,33 @@ export default function AccountOrderDetailPage({
               </div>
             ) : null}
 
+            {/* Billing documents. Generated server-side from the order row, so
+                they are identical to the copies attached to the order email.
+                The receipt only exists once payment has been taken — offering a
+                download that 409s would be worse than not offering it. */}
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" fullWidth asChild>
+                <a
+                  href={`/api/orders/${encodeURIComponent(order.orderNumber)}/document?doc=invoice`}
+                >
+                  <Icon name="file-download-bold" size={17} />
+                  Download invoice
+                </a>
+              </Button>
+              {order.paymentStatus === "paid" ? (
+                <Button variant="outline" fullWidth asChild>
+                  <a
+                    href={`/api/orders/${encodeURIComponent(order.orderNumber)}/document?doc=receipt`}
+                  >
+                    <Icon name="bill-check-bold" size={17} />
+                    Download receipt
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+
             <Button variant="ghost" fullWidth asChild>
-              <Link href="mailto:care@nutrigreenz.farm">Report an issue</Link>
+              <Link href="mailto:customersupport@nutrigreenz.farm">Report an issue</Link>
             </Button>
 
             {/* No cancel action — short no-cancellation note instead (§3.9). */}

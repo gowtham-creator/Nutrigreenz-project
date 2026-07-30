@@ -309,6 +309,17 @@ function OrderListRow({ order }: { order: OrderView }) {
         <span className="font-display text-[19px] tabular-nums text-ng-forest-deep">
           {inrFromPaise(order.totalPaise)}
         </span>
+        {/* Straight to the invoice without opening the order — the common
+            reason for revisiting an old order is to file the paperwork. */}
+        <Button variant="ghost" size="sm" asChild>
+          <a
+            href={`/api/orders/${encodeURIComponent(order.orderNumber)}/document?doc=invoice`}
+            title={`Download invoice for ${order.orderNumber}`}
+          >
+            <Icon name="file-download-bold" size={16} />
+            Invoice
+          </a>
+        </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/account/orders/${order.orderNumber}`}>Details →</Link>
         </Button>
