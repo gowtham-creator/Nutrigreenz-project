@@ -119,10 +119,15 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const PAGE = "#FFFFFF";
   const GREEN = "#14331F";
 
-  // Every order email carries the full priced breakdown. Showing the line items
-  // and then jumping straight to the total reads as a broken document, and a tax
-  // ladder that appears only once is no use to someone filing later.
-  const isReceipt = true;
+  /**
+   * Which emails are BILLING documents.
+   *
+   * Placing and confirming an order are money events, so those carry the full
+   * priced ladder and the attached invoice. Packed, shipped and delivered are
+   * logistics: the customer has already been billed and told what they paid, so
+   * repeating the amount there adds nothing and reads like a second charge.
+   */
+  const isReceipt = kind === "placed" || kind === "confirmed";
   const paid = order.paymentStatus === "paid";
   const gst = gstFor(order);
 
@@ -228,12 +233,16 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
 
         <!-- Documents ride with the email as attachments, so a link that
              demands a sign-in first would be the slower path. -->
-        <tr>
+        ${
+          isReceipt
+            ? `<tr>
           <td style="padding:20px 0 0;font-size:12.5px;color:${MUTED}">
             ${paid ? "Your invoice and receipt are attached." : "Your invoice is attached."}
             Also available any time under <a href="${SITE}/account/orders" style="color:${GREEN}">your orders</a>.
           </td>
-        </tr>
+        </tr>`
+            : ""
+        }
 
         <!-- Meta -->
         <tr>
@@ -256,14 +265,13 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
         <tr>
           <td style="padding:4px 0 0;font-size:14px;line-height:1.6;color:${MUTED}">${c.intro}</td>
         </tr>
-        <tr>
+        ${
+          isReceipt
+            ? `<tr>
           <td style="padding:16px 0 0">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
               ${itemRows}
               <tr><td colspan="2" style="height:14px"></td></tr>
-              ${
-                isReceipt
-                  ? `
               ${row("Subtotal", order.subtotalPaise, { always: true })}
               ${row(order.couponCode ? `Discount (${escapeHtml(order.couponCode)})` : "Discount", order.discountPaise, { negative: true })}
               ${row("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
@@ -274,13 +282,13 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
                   ? `${row(`CGST (${gst.halfRatePercent}%)`, gst.cgstPaise, { always: true })}
               ${row(`SGST (${gst.halfRatePercent}%)`, gst.sgstPaise, { always: true })}`
                   : row(`IGST (${gst.ratePercent}%)`, gst.igstPaise, { always: true })
-              }`
-                  : ""
               }
               ${row(paid ? "Amount paid" : "Total", order.totalPaise, { always: true, strong: true })}
             </table>
           </td>
-        </tr>
+        </tr>`
+            : ""
+        }
 
         ${
           isReceipt
@@ -359,11 +367,15 @@ async function send(orderId: string, kind: Kind): Promise<void> {
       // than having to sign in and fetch it.
       // Generating it must never cost them the notification, so a failure here
       // is logged and the email still goes out without the attachment.
+      // Only the billing emails carry documents — a shipping notice does not
+      // need the invoice re-attached.
       let attachments: { name: string; content: string }[] | undefined;
-      try {
-        attachments = await billingAttachments(order);
-      } catch (err) {
-        console.error(`[order-emails] billing PDFs for ${order.orderNumber} failed:`, err);
+      if (kind === "placed" || kind === "confirmed") {
+        try {
+          attachments = await billingAttachments(order);
+        } catch (err) {
+          console.error(`[order-emails] billing PDFs for ${order.orderNumber} failed:`, err);
+        }
       }
 
       await sendEmail({
