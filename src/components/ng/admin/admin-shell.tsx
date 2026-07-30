@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { fetchAdminMe } from "@/lib/admin-me-client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
@@ -72,17 +73,13 @@ function AdminIdentity() {
 
     let alive = true;
     async function load() {
-      try {
-        const res = await fetch("/api/admin/me");
-        if (!res.ok || !alive) return;
-        const data = await res.json();
-        const next = (data.profile?.photoUrl as string | null) ?? null;
-        if (!alive) return;
-        setPhotoUrl(next);
-        writeCachedPhoto(next);
-      } catch {
-        /* ignore — the chip falls back to the initial */
-      }
+      // Shared cache: the nav below mounts at the same moment and needs the
+      // same answer, so the two of them cost one request rather than two.
+      const data = await fetchAdminMe();
+      if (!data || !alive) return;
+      const next = data.profile?.photoUrl ?? null;
+      setPhotoUrl(next);
+      writeCachedPhoto(next);
     }
     void load();
     const onUpdated = () => void load();
@@ -239,6 +236,12 @@ function SidebarContent({
               key={n.href}
               href={n.href}
               onClick={onNavigate}
+              /* Warm the route on hover. Admin pages are cookie-gated and so
+                 dynamic; Next prefetches those only as far as their loading
+                 boundary, which /admin/loading.tsx now provides. Pointing at an
+                 item is a strong signal it is about to be clicked, and by then
+                 the shell and skeleton are already in the router cache. */
+              prefetch
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans font-semibold text-[13.5px] tracking-[0.01em] transition-colors mb-0.5",
@@ -296,15 +299,9 @@ export function AdminShell({
     setRole(getAdminRole());
     let alive = true;
     (async () => {
-      try {
-        const res = await fetch("/api/admin/me");
-        if (!res.ok || !alive) return;
-        const data = await res.json();
-        if (alive && Array.isArray(data.permissions)) {
-          setPerms(new Set<string>(data.permissions));
-        }
-      } catch {
-        /* ignore — the nav falls back to the default admin set */
+      const data = await fetchAdminMe();
+      if (alive && data && Array.isArray(data.permissions)) {
+        setPerms(new Set<string>(data.permissions));
       }
     })();
     return () => {

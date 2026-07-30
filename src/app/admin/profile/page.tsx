@@ -8,6 +8,7 @@ import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
 import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
+import { invalidateAdminMe } from "@/lib/admin-me-client";
 import {
   ENROLL_AUTHENTICATOR_EVENT,
   AUTHENTICATOR_ENROLLED_EVENT,
@@ -370,7 +371,11 @@ export default function AdminProfilePage() {
       setName(trimmedName);
       setSaved({ name: trimmedName, mobile: mobileDigits, photo: nextPhoto });
       writeCachedPhoto(nextPhoto);
-      // Refresh the header avatar + the personal activity feed.
+      // Refresh the header avatar + the personal activity feed. The shared
+      // /api/admin/me cache is dropped first, otherwise the chip would re-read
+      // the pre-save value it cached moments ago and the new photo/name would
+      // not appear until the TTL expired.
+      invalidateAdminMe();
       window.dispatchEvent(new Event("ng:profile-updated"));
       void refreshActivity();
       toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
