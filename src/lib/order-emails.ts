@@ -119,9 +119,10 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const PAGE = "#FFFFFF";
   const GREEN = "#14331F";
 
-  // Only the first email is a receipt: it carries the tax breakdown and the
-  // invoice PDF. Later status emails recap the order without re-billing it.
-  const isReceipt = kind === "placed";
+  // Every order email carries the full priced breakdown. Showing the line items
+  // and then jumping straight to the total reads as a broken document, and a tax
+  // ladder that appears only once is no use to someone filing later.
+  const isReceipt = true;
   const paid = order.paymentStatus === "paid";
   const gst = gstFor(order);
 
@@ -225,11 +226,12 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           </td>
         </tr>
 
-        <!-- Documents -->
+        <!-- Documents ride with the email as attachments, so a link that
+             demands a sign-in first would be the slower path. -->
         <tr>
-          <td style="padding:22px 0 0;font-size:13.5px">
-            <a href="${SITE}/orders/${order.id}/invoice" style="color:${GREEN};text-decoration:none;font-weight:600">&darr; Download invoice</a>
-            ${paid ? `&nbsp;&nbsp;&nbsp;<a href="${SITE}/orders/${order.id}/invoice?doc=receipt" style="color:${GREEN};text-decoration:none;font-weight:600">&darr; Download receipt</a>` : ""}
+          <td style="padding:20px 0 0;font-size:12.5px;color:${MUTED}">
+            ${paid ? "Your invoice and receipt are attached." : "Your invoice is attached."}
+            Also available any time under <a href="${SITE}/account/orders" style="color:${GREEN}">your orders</a>.
           </td>
         </tr>
 
@@ -352,17 +354,16 @@ async function send(orderId: string, kind: Kind): Promise<void> {
     if (!order) return;
 
     if (isEmailConfigured() && order.userEmail) {
-      // The tax invoice rides with the first email, so the customer has it the
-      // moment they order rather than having to open the site to print one.
+      // The tax invoice (and the receipt, once paid) rides with every order
+      // email, so the customer always has the current document to hand rather
+      // than having to sign in and fetch it.
       // Generating it must never cost them the notification, so a failure here
       // is logged and the email still goes out without the attachment.
       let attachments: { name: string; content: string }[] | undefined;
-      if (kind === "placed") {
-        try {
-          attachments = await billingAttachments(order);
-        } catch (err) {
-          console.error(`[order-emails] billing PDFs for ${order.orderNumber} failed:`, err);
-        }
+      try {
+        attachments = await billingAttachments(order);
+      } catch (err) {
+        console.error(`[order-emails] billing PDFs for ${order.orderNumber} failed:`, err);
       }
 
       await sendEmail({
