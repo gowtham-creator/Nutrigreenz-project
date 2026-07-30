@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ADMIN_MFA_COOKIE } from "@/lib/admin-auth";
 import { verifyMfaTicket } from "@/lib/admin-session";
-import { getAdminFactors, createEmailOtp } from "@/lib/admin-security";
+import { getAdminFactors, createEmailOtp, EMAIL_OTP_TTL_MINUTES } from "@/lib/admin-security";
 import { isEmailConfigured, sendEmail, otpEmailHtml } from "@/lib/email";
 
 /**
@@ -30,8 +30,10 @@ export async function POST(): Promise<Response> {
     const code = await createEmailOtp(email);
     await sendEmail({
       to: destination,
+      // The code goes in the preheader (the inbox preview line), not the
+      // subject — a subject is what shows on a locked phone's notification.
       subject: "Your Nutri Greenz admin sign-in code",
-      html: otpEmailHtml(code),
+      html: otpEmailHtml(code, EMAIL_OTP_TTL_MINUTES),
     });
   } catch {
     return Response.json({ ok: false, error: "send-failed" }, { status: 502 });

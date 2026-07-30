@@ -87,6 +87,16 @@ function hashCode(code: string): string {
  * Generate a 6-digit email OTP, store its hash with a 10-minute expiry (after
  * invalidating any prior unconsumed codes), and return the RAW code to send.
  */
+/**
+ * How long an emailed sign-in code stays valid. Exported so the email that
+ * carries the code quotes the real number instead of a hardcoded sentence that
+ * silently goes out of date the moment this changes.
+ */
+export const EMAIL_OTP_TTL_MINUTES = 10;
+
+/** Wrong guesses allowed before the code is burned — see {@link verifyEmailOtp}. */
+export const EMAIL_OTP_MAX_ATTEMPTS = 5;
+
 export async function createEmailOtp(email: string): Promise<string> {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const db = supabaseAdmin();
@@ -95,7 +105,7 @@ export async function createEmailOtp(email: string): Promise<string> {
   await db.from("admin_email_otp").insert({
     email: key,
     code_hash: hashCode(code),
-    expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + EMAIL_OTP_TTL_MINUTES * 60 * 1000).toISOString(),
   });
   return code;
 }
