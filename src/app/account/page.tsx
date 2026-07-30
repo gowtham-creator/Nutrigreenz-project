@@ -6,50 +6,81 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
-import { listReceipts, type OrderReceipt } from "@/components/ng/checkout/order-receipt";
 import { useAuth } from "@/lib/auth";
-
-// One unified pill system — every status is a soft tint + matching dot.
-const STATUS: Record<string, { dot: string; pill: string }> = {
-  "out for delivery": { dot: "bg-ng-amber", pill: "bg-ng-amber/15 text-ng-clay-deep" },
-  delivered: { dot: "bg-ng-green-bright", pill: "bg-ng-leaf/15 text-ng-forest" },
-  processing: { dot: "bg-ng-blue", pill: "bg-ng-blue/12 text-ng-blue" },
-};
-
-interface RecentOrder {
-  id: string;
-  date: string;
-  total: number;
-  items: number;
-  status: string;
-  products: string[];
-}
-
-function receiptToOrder(r: OrderReceipt): RecentOrder {
-  return {
-    id: r.id,
-    date: r.placedAt,
-    total: r.total,
-    items: r.items.reduce((s, i) => s + i.qty, 0),
-    status: "processing",
-    products: r.items.map((i) => i.title),
-  };
-}
+import { fetchRewards } from "@/lib/rewards-client";
+import {
+  fetchMyOrders,
+  formatOrderDate,
+  inrFromPaise,
+  orderItemCount,
+  orderProductTitles,
+  statusLabel,
+  statusTone,
+  type OrderView,
+} from "@/lib/orders-client";
 
 export default function AccountPage() {
-  const { account, isAuthed } = useAuth();
+  const { account, isAuthed, loading: authLoading } = useAuth();
   const firstName = isAuthed ? account?.name?.trim()?.split(" ")[0] || "there" : "there";
 
-  // Real placed orders only — empty for a brand-new account.
-  const [orders, setOrders] = useState<RecentOrder[]>([]);
+  /* The dashboard used to read `listReceipts()` — receipts the checkout wrote to
+     this browser's storage. That made every figure here local and stale: the
+     count was whatever this device happened to have placed, the status was
+     frozen at "processing" forever, and signing in on a phone showed no orders
+     at all. It now reads the same server source as /account/orders, so the
+     numbers on this page and that one can never disagree. */
+  const [orders, setOrders] = useState<OrderView[]>([]);
+  const [creditRupees, setCreditRupees] = useState<number | null>(null);
+
   useEffect(() => {
-    setOrders(listReceipts().map(receiptToOrder));
-  }, []);
+    if (authLoading || !isAuthed) return;
+    const controller = new AbortController();
+    fetchMyOrders(controller.signal)
+      .then(setOrders)
+      .catch(() => {
+        /* The orders card degrades to its empty state — no invented rows. */
+      });
+    return () => controller.abort();
+  }, [authLoading, isAuthed]);
+
+  // Wallet credit was hardcoded "₹0". Read the live points balance and the live
+  // points-per-rupee rate instead, so the tile agrees with /loyalty.
+  useEffect(() => {
+    if (authLoading || !isAuthed) return;
+    let cancelled = false;
+    void (async () => {
+      const [rewards, perRupee] = await Promise.all([
+        fetchRewards(),
+        fetch("/api/loyalty-config", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((j: { config?: { pointsPerRupee?: number } } | null) =>
+            Math.max(1, Math.round(j?.config?.pointsPerRupee ?? 1)),
+          )
+          .catch(() => 1),
+      ]);
+      if (!cancelled) setCreditRupees(Math.floor(rewards.balance / perRupee));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthed]);
 
   const recent = orders.slice(0, 3);
   const stats = [
-    { icon: "wallet-money-bold", number: "₹0", label: "Wallet credit", href: "/loyalty", tint: "leaf" as const },
-    { icon: "box-bold", number: String(orders.length), label: "Orders placed", href: "/orders", tint: "leaf" as const },
+    {
+      icon: "wallet-money-bold",
+      number: creditRupees === null ? "—" : `₹${creditRupees.toLocaleString("en-IN")}`,
+      label: "Wallet credit",
+      href: "/loyalty",
+      tint: "leaf" as const,
+    },
+    {
+      icon: "box-bold",
+      number: String(orders.length),
+      label: "Orders placed",
+      href: "/account/orders",
+      tint: "leaf" as const,
+    },
     { icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const },
   ];
 
@@ -123,7 +154,7 @@ export default function AccountPage() {
               <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Recent orders</h2>
             </div>
             {recent.length > 0 ? (
-              <Link href="/orders" className="inline-flex items-center gap-1 text-[13px] font-medium text-ng-forest hover:underline">
+              <Link href="/account/orders" className="inline-flex items-center gap-1 text-[13px] font-medium text-ng-forest hover:underline">
                 View all <Icon name="alt-arrow-right-linear" size={14} />
               </Link>
             ) : null}
@@ -144,34 +175,46 @@ export default function AccountPage() {
           ) : (
             <div className="space-y-4">
               {recent.map((o) => {
-                const tone = STATUS[o.status] ?? STATUS.processing;
-                const extra = o.items - o.products.length;
+                const tone = statusTone(o.status);
+                const titles = orderProductTitles(o);
+                const count = orderItemCount(o);
                 return (
                   <article
-                    key={o.id}
+                    key={o.orderNumber}
                     className="ng-float flex flex-col gap-4 rounded-2xl border border-ng-line-soft bg-ng-paper p-5 transition-all hover:border-ng-leaf/50 sm:flex-row sm:items-center sm:justify-between sm:gap-5"
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <span className="font-display text-[17px] leading-none text-ng-forest-deep">{o.id}</span>
+                        <span className="font-display text-[17px] leading-none text-ng-forest-deep">
+                          {o.orderNumber}
+                        </span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider ${tone.pill}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                          {o.status}
+                          {statusLabel(o.status)}
                         </span>
                       </div>
                       <div className="mt-1.5 text-[12px] text-ng-ink-soft">
-                        {new Date(o.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })} · {o.items} item{o.items > 1 ? "s" : ""}
+                        {formatOrderDate(o.placedAt)} · {count} item{count === 1 ? "" : "s"}
                       </div>
                       <p className="mt-2 line-clamp-1 text-[13px] text-ng-ink-muted">
-                        {o.products.join(", ")}
-                        {extra > 0 ? ` +${extra} more` : ""}
+                        {titles.join(", ")}
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end sm:gap-5">
-                      <span className="font-display text-[19px] tabular-nums text-ng-forest-deep">₹{o.total.toLocaleString("en-IN")}</span>
+                    {/* The amount is pinned to its natural width with its own
+                        line-height. Without that it was being squeezed by the
+                        row on a narrow screen and the digits collided. */}
+                    <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end sm:gap-5">
+                      <span className="shrink-0 whitespace-nowrap font-display text-[19px] leading-tight tabular-nums text-ng-forest-deep">
+                        {inrFromPaise(o.totalPaise)}
+                      </span>
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/orders/${o.id}`}>Details →</Link>
+                        <Link
+                          href={`/account/orders/${o.orderNumber}`}
+                          className="min-h-[40px] whitespace-nowrap"
+                        >
+                          Details →
+                        </Link>
                       </Button>
                     </div>
                   </article>
@@ -217,7 +260,7 @@ export default function AccountPage() {
               </div>
               <div className="relative flex items-center gap-4">
                 <Button variant="primary" asChild>
-                  <Link href="/orders">Write a review</Link>
+                  <Link href="/account/orders">Write a review</Link>
                 </Button>
               </div>
             </div>
