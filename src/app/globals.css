@@ -401,6 +401,23 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Chart redraw — replayed whenever the analytics filters change.
+   Switching range or bucket previously swapped the plotted points between two
+   frames, so the line appeared to teleport and it was hard to tell whether the
+   chart had actually responded to the click. Growing it up from the baseline
+   makes the redraw legible as a redraw.
+   `transform-box: fill-box` is what makes transform-origin behave on an SVG
+   <g>; without it the group scales about the viewport origin and flies off. */
+@keyframes ngChartIn {
+  from { opacity: 0; transform: scaleY(0.72); }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+.ng-chart-in {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: ngChartIn 460ms var(--ease-out-soft) both;
+}
+
 /* Reveal helpers */
 .reveal-init { opacity: 0; transform: translateY(24px); }
 .reveal-in   { opacity: 1; transform: translateY(0); transition: opacity 0.7s var(--ease-out-soft), transform 0.7s var(--ease-out-soft); }

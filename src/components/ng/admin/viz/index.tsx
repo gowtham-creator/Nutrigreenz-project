@@ -1,13 +1,20 @@
+"use client";
+
 /**
  * Admin data-viz primitives — hand-authored CSS/SVG, NO chart libraries.
  *
- * Everything here is a server-safe, dependency-free chart: sparklines, mini
- * bar/line/area, donut/gauge rings, trend chips, progress meters and pipeline
- * funnels. Colours map to the ng-* token palette so charts read as one designed
- * product alongside Card / Pill / StatTile.
+ * Everything here is a dependency-free chart: sparklines, mini bar/line/area,
+ * donut/gauge rings, trend chips, progress meters and pipeline funnels. Colours
+ * map to the ng-* token palette so charts read as one designed product
+ * alongside Card / Pill / StatTile.
+ *
+ * Marked "use client" because AreaChart tracks pointer position to show a
+ * read-out on hover. Every importer is already a client component, so this
+ * costs nothing — it just makes the boundary explicit instead of relying on
+ * the module being pulled into a client graph by accident.
  */
 
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -209,8 +216,45 @@ export function AreaChart({
     });
   };
 
+  /* Hover read-out.
+   *
+   * The chart plotted its points and nothing else: you could see that Tuesday
+   * was higher than Monday but never what either actually was. The x-axis is
+   * also thinned to ~8 labels, so on a 90-day range most points had no date
+   * against them at all.
+   *
+   * Pointer position maps back to the nearest data index. The SVG is stretched
+   * to the container (`preserveAspectRatio="none"`), so screen x has to be
+   * converted into viewBox units via the measured width rather than assumed. */
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+
+  const pointCount = Math.max(...series.map((s) => s.data.length), 0);
+  const stepX = pointCount > 1 ? (W - padL - padR) / (pointCount - 1) : 0;
+
+  function handlePointer(e: React.PointerEvent<HTMLDivElement>) {
+    const el = wrapRef.current;
+    if (!el || pointCount === 0) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const vbX = ((e.clientX - rect.left) / rect.width) * W;
+    const idx = stepX > 0 ? Math.round((vbX - padL) / stepX) : 0;
+    setHover(Math.min(Math.max(idx, 0), pointCount - 1));
+  }
+
+  const hoverX = hover !== null ? padL + hover * stepX : 0;
+  // Keep the card inside the chart: flip it to the left of the guide once the
+  // guide passes the midpoint, instead of letting it run off the edge.
+  const hoverPct = W > 0 ? (hoverX / W) * 100 : 0;
+  const flip = hoverPct > 55;
+
   return (
-    <div className={cn("w-full", className)}>
+    <div
+      ref={wrapRef}
+      className={cn("relative w-full", className)}
+      onPointerMove={handlePointer}
+      onPointerLeave={() => setHover(null)}
+    >
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
         <defs>
           {series.map((s) => (
@@ -235,13 +279,17 @@ export function AreaChart({
           );
         })}
 
-        {/* series */}
+        {/* series
+            `key` carries a signature of the plotted values, so changing the
+            range or bucket remounts the group and replays .ng-chart-in. Keying
+            on the series name alone would reuse the node and the new shape
+            would simply appear, which is the behaviour being fixed. */}
         {series.map((s) => {
           const pts = toPts(s.data);
           const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
           const area = `${pts[0][0]},${H - padB} ${line} ${pts[pts.length - 1][0]},${H - padB}`;
           return (
-            <g key={s.name}>
+            <g key={`${s.name}-${s.data.length}-${s.data.reduce((a, b) => a + b, 0)}`} className="ng-chart-in">
               <polygon points={area} fill={`url(#area-${s.name.replace(/\s/g, "")})`} />
               <polyline
                 points={line}
@@ -252,12 +300,71 @@ export function AreaChart({
                 strokeLinejoin="round"
               />
               {pts.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="3" fill="var(--ng-paper)" stroke={TONE_STROKE[s.tone]} strokeWidth="2" />
+                <circle
+                  key={i}
+                  cx={x}
+                  cy={y}
+                  /* The hovered point grows and fills, so it is obvious which
+                     column the read-out belongs to. */
+                  r={i === hover ? 5 : 3}
+                  fill={i === hover ? TONE_STROKE[s.tone] : "var(--ng-paper)"}
+                  stroke={TONE_STROKE[s.tone]}
+                  strokeWidth="2"
+                />
               ))}
             </g>
           );
         })}
+
+        {/* Vertical guide under the pointer. Drawn after the series so it
+            reads as an overlay, and non-interactive so it never steals the
+            pointer events that drive it. */}
+        {hover !== null ? (
+          <line
+            x1={hoverX}
+            y1={padT}
+            x2={hoverX}
+            y2={H - padB}
+            stroke="var(--ng-forest)"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+            opacity="0.45"
+            pointerEvents="none"
+          />
+        ) : null}
       </svg>
+
+      {/* The read-out itself.
+          HTML rather than SVG <text>: the SVG is stretched with
+          preserveAspectRatio="none", which would distort any text inside it,
+          and HTML lets the card use the same tokens as the rest of the admin. */}
+      {hover !== null ? (
+        <div
+          className="pointer-events-none absolute top-2 z-10 min-w-[132px] rounded-xl border border-ng-line-soft bg-ng-paper px-3 py-2 shadow-[var(--shadow-ng-card)]"
+          style={{
+            left: `${hoverPct}%`,
+            transform: flip ? "translateX(calc(-100% - 10px))" : "translateX(10px)",
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-soft">
+            {labels[hover] ?? ""}
+          </div>
+          {series.map((s) => (
+            <div key={s.name} className="flex items-center gap-2 whitespace-nowrap py-0.5">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: TONE_STROKE[s.tone] }}
+              />
+              <span className="text-[11.5px] text-ng-ink-muted">{s.name}</span>
+              <span className="ml-auto text-[12.5px] font-semibold tabular-nums text-ng-ink">
+                {formatY ? formatY(s.data[hover] ?? 0) : (s.data[hover] ?? 0).toLocaleString("en-IN")}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {/* x labels — thinned to fit.
           Rendering one label per point collides as soon as a range covers more
