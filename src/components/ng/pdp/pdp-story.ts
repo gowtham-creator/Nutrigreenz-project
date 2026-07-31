@@ -90,12 +90,6 @@ export interface ProductStoryContent {
   description: string[];
   /** Optional real marketing shots that drive the hero gallery (main + thumbs). */
   gallery?: StoryImage[];
-  /**
-   * Category-level detail shots appended AFTER the product's own hero image
-   * when the category has no per-product `gallery` — e.g. the oils range shares
-   * one set of pack/label/lifestyle shots across all six varieties.
-   */
-  sharedGallery?: StoryImage[];
   /** Ordered story blocks rendered below the description + trust bar. */
   sections: ProductStorySection[];
   /**
@@ -293,12 +287,12 @@ const OILS_STORY: ProductStoryContent = {
     "Cold-pressed the traditional way — seeds crushed slowly on a wooden ghani, never heated or refined — so the oil keeps the aroma, colour and nutrients of the seed it came from.",
     "No bleaching, no deodorising, no chemicals at any step. Just small batches of unrefined oil, bottled as it leaves the press.",
   ],
-  sharedGallery: [
-    { src: `${OILS_DIR}/groundnut-side.webp`, alt: "Cold-pressed oil bottle — pack and label detail", label: "Pack & label" },
-    { src: `${OILS_DIR}/oils-infographic.webp`, alt: "Why our cold-pressed oil — first press, cholesterol free, rich in omega 6", label: "Why our oil" },
-    { src: `${OILS_DIR}/oils-lifestyle.webp`, alt: "Cold-pressed oil poured in an Indian kitchen", label: "In the kitchen" },
-    { src: `${OILS_DIR}/oils-tile-sizes.webp`, alt: "Every pack size — bottles, jars and the 15L tin", label: "All pack sizes" },
-  ],
+  /* `sharedGallery` used to live here: a curated set the PDP appended to EVERY
+     oil's gallery. It led with groundnut-side.webp, so a shopper looking at
+     sesame oil was shown the groundnut bottle. Product galleries now come from
+     each product's own `products.gallery`, and the genuinely range-level frames
+     from that set have moved into `tiles` below — which is where content about
+     the range, rather than about one bottle, belongs. */
   sections: [],
   tiles: [
     {
@@ -315,6 +309,21 @@ const OILS_STORY: ProductStoryContent = {
     {
       layout: "full",
       images: [{ src: `${OILS_DIR}/oils-tile-range.webp`, alt: "The Nutri Greenz cold-pressed oil range — six varieties" }],
+    },
+    {
+      layout: "2up",
+      images: [
+        { src: `${OILS_DIR}/oils-infographic.webp`, alt: "Why our cold-pressed oil — first press, cholesterol free, rich in omega 6" },
+        { src: `${OILS_DIR}/oils-lifestyle.webp`, alt: "Cold-pressed oil poured in an Indian kitchen" },
+      ],
+    },
+    {
+      /* Every size and container in one shot. This earns its place because the
+         same size is sold in two containers at the same price — a 1L glass
+         bottle and a 1L plastic bottle read identically in the size picker, so
+         this is currently the only thing on the page that shows the difference. */
+      layout: "full",
+      images: [{ src: `${OILS_DIR}/oils-tile-sizes.webp`, alt: "Every pack size — glass bottles, plastic bottles and the 10L and 15L tins" }],
     },
   ],
 };
