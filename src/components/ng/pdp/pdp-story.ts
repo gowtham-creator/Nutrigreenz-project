@@ -258,7 +258,28 @@ const HONEY_STORY: ProductStoryContent = {
   ],
 };
 
-const RICE_STORY = minimalStory(
+const RICE_DIR = "/images/products/rice";
+
+/**
+ * Rice had `sections` copy but no imagery at all — the only category with an
+ * entirely text PDP. These two are grain-and-paddy shots with no pack in frame,
+ * which is what makes them usable before the bag artwork exists: they show the
+ * grain honestly without claiming to be a specific printed pack.
+ *
+ * Once the 1kg/5kg/10kg/26kg bag artwork lands, add the pack shots here and to
+ * `products.gallery` for each variety.
+ */
+const RICE_TILES: StoryTileRow[] = [
+  {
+    layout: "2up",
+    images: [
+      { src: `${RICE_DIR}/rice-grain-paddy.webp`, alt: "Sona Masoori grain beside the paddy it was milled from" },
+      { src: `${RICE_DIR}/rice-sack-pour.webp`, alt: "Rice poured from a hessian sack" },
+    ],
+  },
+];
+
+const RICE_STORY_BASE = minimalStory(
   "grain",
   [
     "Aged, single-origin rice grown the unhurried way and milled with a light touch — so each grain keeps its aroma, bite and natural goodness.",
@@ -278,6 +299,8 @@ const RICE_STORY = minimalStory(
     b: { heading: "Farm to Grain", sub: "Sourced from named paddy farms and traceable back to the field it grew in." },
   },
 );
+
+const RICE_STORY: ProductStoryContent = { ...RICE_STORY_BASE, tiles: RICE_TILES };
 
 const OILS_DIR = "/images/products/oils";
 
