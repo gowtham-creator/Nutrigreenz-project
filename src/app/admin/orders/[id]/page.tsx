@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { StatusStepper } from "../status-stepper";
@@ -51,6 +52,35 @@ export default function AdminOrderDetail({
     if (data.ok && data.order) setState({ phase: "ready", order: data.order });
     else setState({ phase: "missing" });
   }, [id]);
+
+  /* Cash on delivery is collected by a human, so a human records it. Nothing
+     flips this automatically — "delivered" does not prove the cash actually
+     changed hands, and an order marked paid without the money is worse than one
+     that stays pending a little longer. */
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const markCodCollected = useCallback(async () => {
+    if (state.phase !== "ready") return;
+    setMarkingPaid(true);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(state.order.orderNumber)}/payment`,
+        { method: "POST" },
+      );
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+      if (!res.ok || !data.ok) {
+        toast.error("Not recorded", {
+          description: data.message ?? "Couldn't record the payment — try again.",
+        });
+        return;
+      }
+      toast.success("Payment recorded", { description: "This order now counts as paid." });
+      await load();
+    } catch {
+      toast.error("Not recorded", { description: "Couldn't reach the server — try again." });
+    } finally {
+      setMarkingPaid(false);
+    }
+  }, [state, load]);
 
   useEffect(() => {
     let active = true;
@@ -107,6 +137,7 @@ export default function AdminOrderDetail({
   const addressRows = snapshotRows(order.addressSnapshot);
   const slotRows = snapshotRows(order.slotSnapshot);
   const onAdvanced = (updated: Order) => setState({ phase: "ready", order: updated });
+
 
   return (
     <AdminShell
@@ -253,10 +284,38 @@ export default function AdminOrderDetail({
               </Pill>
             </div>
             <dl className="space-y-2.5 text-[13px]">
+              <Row
+                label="Method"
+                value={order.paymentMethod === "upi" ? "UPI (online)" : "Cash on Delivery"}
+              />
+              <Row
+                label="Amount paid"
+                value={order.paymentStatus === "paid" ? formatPaise(order.totalPaise) : "Not yet collected"}
+              />
+              <Row
+                label="Paid on"
+                value={order.paidAt ? new Date(order.paidAt).toLocaleString("en-IN") : "—"}
+              />
               <Row label="Provider" value={order.paymentProvider} />
               <Row label="Reference" value={order.paymentRef ?? "—"} mono />
               <Row label="Currency" value={order.currency} />
             </dl>
+
+            {/* Cash on delivery is collected by hand, so it needs a human to say
+                so. Marking it here is the only thing that turns a COD order into
+                revenue — nothing flips it automatically, because "delivered"
+                does not prove the cash actually changed hands. */}
+            {order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? (
+              <button
+                type="button"
+                disabled={markingPaid}
+                onClick={() => void markCodCollected()}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ng-forest-deep px-4 py-2.5 text-[12.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="wallet-money-bold" size={15} />
+                {markingPaid ? "Recording…" : `Mark ${formatPaise(order.totalPaise)} collected`}
+              </button>
+            ) : null}
           </Card>
 
           {/* Status timeline */}

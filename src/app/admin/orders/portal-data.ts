@@ -116,6 +116,10 @@ export interface Order {
   userPhone: string | null;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  /** "upi" (online) or "cod" (cash on delivery). */
+  paymentMethod: "upi" | "cod";
+  /** When payment was confirmed; null until then. */
+  paidAt: string | null;
   paymentProvider: string;
   paymentRef: string | null;
   subtotalPaise: number;

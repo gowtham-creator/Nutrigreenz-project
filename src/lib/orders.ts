@@ -62,6 +62,9 @@ export type OrderStatus =
   | "shipped"
   | "delivered";
 
+/** How an order is paid. Mirrors the `orders.payment_method` check constraint. */
+export type PaymentMethod = "upi" | "cod";
+
 export type PaymentStatus = "pending" | "paid" | "failed";
 
 /** Forward-only status pipeline; index in this array is the rank. */
@@ -117,6 +120,10 @@ export interface OrderRecord {
   userPhone: string | null;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  /** How it is being paid — 'upi' (online) or 'cod' (cash on delivery). */
+  paymentMethod: PaymentMethod;
+  /** When payment was actually confirmed; null until then. */
+  paidAt: string | null;
   paymentProvider: string;
   paymentRef: string | null;
   subtotalPaise: number;
@@ -151,6 +158,8 @@ interface OrderRow {
   status: string;
   payment_status: string;
   payment_provider: string;
+  payment_method: string;
+  paid_at: string | null;
   payment_ref: string | null;
   subtotal_paise: number;
   discount_paise: number;
@@ -190,7 +199,7 @@ interface OrderEventRow {
 }
 
 const ORDER_COLS =
-  "id, order_number, customer_id, user_email, user_phone, status, payment_status, payment_provider, payment_ref, subtotal_paise, discount_paise, shipping_paise, tax_paise, total_paise, coupon_code, loyalty_redeemed_paise, currency, address_snapshot, slot_snapshot, placed_at, created_at, updated_at";
+  "id, order_number, customer_id, user_email, user_phone, status, payment_status, payment_provider, payment_method, paid_at, payment_ref, subtotal_paise, discount_paise, shipping_paise, tax_paise, total_paise, coupon_code, loyalty_redeemed_paise, currency, address_snapshot, slot_snapshot, placed_at, created_at, updated_at";
 const ITEM_COLS =
   "id, order_id, product_id, variant_id, variant_sku, title, qty, unit_price_paise, line_total_paise, snapshot";
 const EVENT_COLS = "id, order_id, status, note, at, by";
@@ -213,6 +222,8 @@ function toOrder(r: OrderRow): OrderRecord {
     status: toStatus(r.status),
     paymentStatus: toPaymentStatus(r.payment_status),
     paymentProvider: r.payment_provider,
+    paymentMethod: r.payment_method === "upi" ? "upi" : "cod",
+    paidAt: r.paid_at,
     paymentRef: r.payment_ref,
     subtotalPaise: r.subtotal_paise,
     discountPaise: r.discount_paise,
@@ -343,6 +354,12 @@ export interface CreateOrderInput {
   addressSnapshot?: Record<string, unknown> | null;
   slotSnapshot?: Record<string, unknown> | null;
   paymentProvider?: string;
+  /**
+   * How the customer chose to pay. Defaults to 'cod' because that is the only
+   * method that works without a live gateway — an order must never default to
+   * a method that cannot actually collect money.
+   */
+  paymentMethod?: PaymentMethod;
 }
 
 /**
@@ -601,7 +618,8 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
       user_phone: input.userPhone?.trim() || null,
       status: "placed",
       payment_status: "pending",
-      payment_provider: input.paymentProvider?.trim() || "razorpay",
+      payment_provider: input.paymentProvider?.trim() || "none",
+      payment_method: input.paymentMethod === "upi" ? "upi" : "cod",
       subtotal_paise: subtotalPaise,
       discount_paise: discountPaise,
       shipping_paise: shippingPaise,

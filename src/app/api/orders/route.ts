@@ -126,6 +126,9 @@ export async function POST(request: Request): Promise<Response> {
       items,
       couponCode: str(b.couponCode),
       loyaltyPoints: requestedPoints,
+      // Only "upi" or "cod" are accepted; anything else falls back to cod, so a
+      // tampered body can never select a method that skips collection.
+      paymentMethod: b.paymentMethod === "upi" ? "upi" : "cod",
       addressSnapshot:
         typeof b.addressSnapshot === "object" && b.addressSnapshot !== null
           ? (b.addressSnapshot as Record<string, unknown>)

@@ -288,6 +288,7 @@ export default function CheckoutPage() {
           couponCode: applied?.coupon.code ?? null,
           discountPaise: Math.round(couponDiscount * 100),
           loyaltyRedeemedPaise: Math.round(loyaltyDiscount * 100),
+          paymentMethod: payment?.category === "upi" ? "upi" : "cod",
           addressSnapshot: selectedAddress,
           slotSnapshot: selectedSlot,
           userEmail: account?.email ?? null,
@@ -627,7 +628,7 @@ export default function CheckoutPage() {
                     size={14}
                     className="text-ng-leaf"
                   />
-                  Secure payments via {payment?.categoryLabel ?? "UPI, cards & wallets"}
+                  Secure payments via {payment?.categoryLabel ?? "UPI or Cash on Delivery"}
                 </li>
               </ul>
             </div>
