@@ -141,7 +141,7 @@ export function AuthenticatorEnrollPrompt() {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ng-forest-deep/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-ng-forest-deep/40 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Set up an authenticator app"
@@ -149,6 +149,12 @@ export function AuthenticatorEnrollPrompt() {
         if (e.key === "Escape") void snooze("later");
       }}
     >
+      {/* This panel carries a QR code, the setup steps and a code field, so on a
+          short viewport (a tablet in landscape) it is taller than the screen.
+          Centring on the scroll container itself would put the top of the QR
+          above the scrollable area and out of reach — hence min-h-full on an
+          inner wrapper rather than place-items-center on the parent. */}
+      <div className="flex min-h-full items-center justify-center">
       <div className="w-full max-w-md rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[0_24px_64px_rgba(31,77,46,0.28)]">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
@@ -226,6 +232,7 @@ export function AuthenticatorEnrollPrompt() {
             Skip for now
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

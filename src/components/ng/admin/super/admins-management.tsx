@@ -883,22 +883,28 @@ function AddInviteAdminModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       <button
         type="button"
         aria-label="Close invite dialog"
         onClick={onClose}
-        className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-[1px] cursor-pointer"
+        className="fixed inset-0 bg-ng-forest-deep/30 backdrop-blur-[1px] cursor-pointer"
       />
 
+      {/* Centring wrapper. It sits INSIDE the scroll container and uses
+          min-h-full, so a dialog taller than the viewport scrolls from its
+          very top. Centring directly on a scroll container is the classic
+          trap: the overflow above the centre point becomes unreachable,
+          which is exactly how this modal stranded you with no way back. */}
+      <div className="relative flex min-h-full items-center justify-center p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="relative w-full max-w-[480px] rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[var(--shadow-ng-modal)] overflow-hidden"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-cream shadow-[var(--shadow-ng-modal)]"
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-paper">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-ng-line-soft bg-ng-paper px-6 py-5">
           <div className="min-w-0">
             <h2 id={headingId} className="font-display text-[20px] text-ng-forest-deep leading-tight">
               Add / Invite admin
@@ -916,7 +922,7 @@ function AddInviteAdminModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <Input
             ref={firstFieldRef}
             label="Full name"
@@ -1014,7 +1020,7 @@ function AddInviteAdminModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ng-line-soft bg-ng-paper">
+        <div className="flex shrink-0 items-center justify-end gap-3 border-t border-ng-line-soft bg-ng-paper px-6 py-4">
           <Button variant="ghost" type="button" onClick={onClose}>
             Cancel
           </Button>
@@ -1023,6 +1029,7 @@ function AddInviteAdminModal({
             {submitting ? "Adding…" : "Send invite"}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -1122,22 +1129,28 @@ function EditAdminModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       <button
         type="button"
         aria-label="Close edit dialog"
         onClick={onClose}
-        className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-[1px] cursor-pointer"
+        className="fixed inset-0 bg-ng-forest-deep/30 backdrop-blur-[1px] cursor-pointer"
       />
 
+      {/* Centring wrapper. It sits INSIDE the scroll container and uses
+          min-h-full, so a dialog taller than the viewport scrolls from its
+          very top. Centring directly on a scroll container is the classic
+          trap: the overflow above the centre point becomes unreachable,
+          which is exactly how this modal stranded you with no way back. */}
+      <div className="relative flex min-h-full items-center justify-center p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="relative w-full max-w-[480px] rounded-2xl bg-ng-cream border border-ng-line-soft shadow-[var(--shadow-ng-modal)] overflow-hidden"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-cream shadow-[var(--shadow-ng-modal)]"
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-paper">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-ng-line-soft bg-ng-paper px-6 py-5">
           <div className="min-w-0">
             <h2 id={headingId} className="font-display text-[20px] text-ng-forest-deep leading-tight">
               Edit admin
@@ -1155,7 +1168,7 @@ function EditAdminModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <Input
             ref={firstFieldRef}
             label="Full name"
@@ -1224,7 +1237,7 @@ function EditAdminModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ng-line-soft bg-ng-paper">
+        <div className="flex shrink-0 items-center justify-end gap-3 border-t border-ng-line-soft bg-ng-paper px-6 py-4">
           <Button variant="ghost" type="button" onClick={onClose}>
             Cancel
           </Button>
@@ -1233,6 +1246,7 @@ function EditAdminModal({
             {submitting ? "Saving…" : "Save changes"}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );
