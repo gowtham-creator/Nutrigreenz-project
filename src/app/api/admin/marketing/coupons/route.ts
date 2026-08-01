@@ -110,6 +110,10 @@ export async function POST(request: Request): Promise<Response> {
   if (pincodes !== undefined) input.pincodes = pincodes;
   const communities = nullableList(body.communities);
   if (communities !== undefined) input.communities = communities;
+  // Product targeting — restrict the code to specific products. Blank = every
+  // product, which is the default and what almost every coupon wants.
+  const productIds = nullableList(body.productIds);
+  if (productIds !== undefined) input.productIds = productIds;
 
   try {
     const coupon = await createCoupon(input);
@@ -124,6 +128,7 @@ export async function POST(request: Request): Promise<Response> {
         active: coupon.active,
         requiresVerifiedPhone: coupon.requiresVerifiedPhone,
         pincodes: coupon.pincodes,
+        productIds: coupon.productIds,
         communities: coupon.communities,
       },
     });

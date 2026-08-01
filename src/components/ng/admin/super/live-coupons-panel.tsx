@@ -33,6 +33,8 @@ interface CouponRow {
   pincodes: string[] | null;
   /** Gated communities the code is limited to; null = every community. */
   communities: string[] | null;
+  /** Products the code is limited to; null = every product. */
+  productIds: string[] | null;
   usedCount: number;
 }
 
@@ -277,6 +279,17 @@ export function LiveCouponsPanel() {
                           {c.communities.length === 1
                             ? c.communities[0]
                             : `${c.communities.length} communities`}
+                        </span>
+                      ) : null}
+                      {c.productIds?.length ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-ng-clay/25 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep"
+                          title="Only applies when the cart contains one of the targeted products"
+                        >
+                          <Icon name="bag-4-bold" size={10} />
+                          {c.productIds.length === 1
+                            ? "1 product"
+                            : `${c.productIds.length} products`}
                         </span>
                       ) : null}
                     </span>

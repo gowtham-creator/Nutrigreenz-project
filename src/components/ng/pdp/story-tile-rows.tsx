@@ -8,7 +8,7 @@ interface StoryTileRowsProps {
 
 /**
  * StoryTileRows — stacked editorial story tiles with the headline typeset on
- * the artwork itself (Anveshan-style): full-width 16:9 banners interleaved
+ * the artwork itself (magazine-style): full-width 16:9 banners interleaved
  * with 4:5 two-up rows. Pure imagery — no HTML text overlay, so nothing
  * duplicates the copy baked into each tile.
  */

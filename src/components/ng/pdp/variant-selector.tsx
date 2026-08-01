@@ -84,7 +84,7 @@ function VariantTile({
 }
 
 /**
- * VariantSelector — size × pack picker in the Anveshan style.
+ * VariantSelector — size × pack picker in a two-level size-then-pack style.
  *
  * When a size offers more than one pack (e.g. an oil's 1L glass vs 1L plastic),
  * it renders a two-level UI: a row of SIZE chips, then a grid of PACK tiles for

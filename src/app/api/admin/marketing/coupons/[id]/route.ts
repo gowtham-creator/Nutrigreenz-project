@@ -87,6 +87,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (pincodes !== undefined) patch.pincodes = pincodes;
   const communities = nullableList(body.communities);
   if (communities !== undefined) patch.communities = communities;
+  const productIds = nullableList(body.productIds);
+  if (productIds !== undefined) patch.productIds = productIds;
 
   try {
     const coupon = await updateCoupon(id, patch);

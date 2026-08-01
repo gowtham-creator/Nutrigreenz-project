@@ -13,6 +13,7 @@ import {
   SegToggle,
 } from "@/components/ng/admin/super/controls";
 import { COUPONS } from "@/components/ng/data";
+import { ProductPicker } from "@/components/ng/admin/product-picker";
 
 /**
  * Super Admin · Coupon campaign builder (§3.5.2).
@@ -105,6 +106,8 @@ type CampaignDraft = {
   stackLoyalty: boolean;
   target: TargetMode;
   targetDetail: string;
+  /** Product ids for the "product" targeting mode — real catalogue rows. */
+  productIds: string[];
   schedule: "now" | "schedule";
   scheduleAt: string; // datetime-local or ""
 };
@@ -132,6 +135,7 @@ function emptyDraft(): CampaignDraft {
     stackLoyalty: false,
     target: "global",
     targetDetail: "",
+    productIds: [],
     schedule: "now",
     scheduleAt: "",
   };
@@ -160,6 +164,7 @@ function seedCampaigns(): Campaign[] {
       stackLoyalty: false,
       target: s.target,
       targetDetail: "",
+    productIds: [],
       schedule: "now" as const,
       scheduleAt: "",
       issued: s.issued,
@@ -226,6 +231,7 @@ export function CouponCampaignBuilder() {
       stackLoyalty: c.stackLoyalty,
       target: c.target,
       targetDetail: c.targetDetail,
+      productIds: c.productIds ?? [],
       schedule: c.schedule,
       scheduleAt: c.scheduleAt,
     });
@@ -454,7 +460,18 @@ export function CouponCampaignBuilder() {
               })}
             </div>
             <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2.5">{mode.hint}</p>
-            {!mode.noSelector ? (
+            {draft.target === "product" ? (
+              /* Real catalogue rows, not typed text: the server matches order
+                 lines by product id, so a typed name could never be enforced. */
+              <div className="mt-3 max-w-xl">
+                <ProductPicker
+                  label="Products this code applies to"
+                  hint="Leave empty to apply the coupon to every product."
+                  value={draft.productIds}
+                  onChange={(v) => patch("productIds", v)}
+                />
+              </div>
+            ) : !mode.noSelector ? (
               <TextField
                 label={mode.selectorLabel}
                 value={draft.targetDetail}

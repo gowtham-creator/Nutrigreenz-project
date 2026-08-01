@@ -107,7 +107,7 @@ interface Props {
 }
 
 /**
- * ProductInFocus — Anveshan-style "Product in Focus" block:
+ * ProductInFocus — "Product in Focus" block:
  * eyebrow + serif heading, a row of sub-category ICON tabs, and a
  * horizontal-scrolling carousel of shared <ProductCard>s with full
  * add-to-bag / qty / wishlist wiring, plus a "See All →" pill.

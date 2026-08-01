@@ -19,7 +19,7 @@ interface UsesProps {
 /**
  * Uses — category-specific usage tips beside a lifestyle photo slot. The key
  * phrase of each tip is bolded; the photo placeholder shows where an in-use /
- * recipe shot belongs (Anveshan-style) once real photography lands.
+ * recipe shot belongs (magazine-style) once real photography lands.
  */
 export function Uses({ intro, tips, icon = "leaf", image, theme }: UsesProps) {
   return (

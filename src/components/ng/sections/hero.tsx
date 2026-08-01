@@ -10,13 +10,13 @@ import { FloatIn, MagneticHover } from "../motion";
 import { useDragSwipe } from "@/components/ng/use-drag-swipe";
 
 /**
- * Hero — a wide promotional **banner slideshow** (Anveshan-style format).
+ * Hero — a wide promotional **banner slideshow** (wide banner format).
  *
  * A first-section, full-width carousel of product ad banners. Every slide is
  * the same recipe: a light, airy product-scene photograph (jar/bottle/pack +
  * floating claim badges, generated on-brand) anchored right, with live HTML
  * copy on the left — corner tag → playful Hinglish headline → sub-line →
- * dashed tagline → an Anveshan-orange Shop Now. Auto-advances (~7s), pauses on
+ * dashed tagline → a warm-orange Shop Now. Auto-advances (~7s), pauses on
  * hover / focus-within / reduced-motion, and exposes clickable dots +
  * prev/next arrows. Keyed crossfade via framer-motion.
  */
@@ -294,7 +294,7 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
 
 /* ──────────────────────────────────────────────────────────────────────────
    Promo slide — light ad banner: product scene photo right, HTML copy left
-   (Anveshan format: tag → Hinglish headline → sub → dashed tagline → orange
+   (banner format: tag → Hinglish headline → sub → dashed tagline → orange
    Shop Now).
    ────────────────────────────────────────────────────────────────────────── */
 function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {

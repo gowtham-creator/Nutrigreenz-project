@@ -11,7 +11,7 @@ import { PRODUCE_ICONS } from "../produce-icons";
 const COUPON = "HARVEST20";
 
 /**
- * OfferBanner — the homepage "deal" banner (Anveshan "PRE-SALE Is Live" pattern).
+ * OfferBanner — the homepage "deal" banner (standard promo-banner pattern).
  * Bold headline + sub-line, a big "Get Flat 20% Off", a dashed copy-to-clipboard
  * coupon pill, and a CTA to /shop. Forest/gold treatment decorated with produce
  * icons — no external photos. Mobile-first, no overflow at 390.

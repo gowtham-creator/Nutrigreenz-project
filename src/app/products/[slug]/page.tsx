@@ -248,7 +248,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { categoryId, content } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
   const intro = getIntro(p, categoryId);
-  // Per-category editorial story (Anveshan-style blocks). Null when the category
+  // Per-category editorial story (editorial blocks). Null when the category
   // has no story authored yet — the page then degrades to the generic sections.
   const story = getProductStory(categoryId, cat.slug);
   // Per-category look — tints the page + surfaces so an Oils PDP feels different

@@ -75,7 +75,7 @@ export type ProductStorySection =
   | WideBannerSection;
 
 /**
- * A row of finished art tiles (headline typeset ON the image, Anveshan-style):
+ * A row of finished art tiles (headline typeset ON the image, editorial-style):
  * "full" = one 16:9 banner, "2up" = two 4:5 tiles side by side.
  */
 export interface StoryTileRow {

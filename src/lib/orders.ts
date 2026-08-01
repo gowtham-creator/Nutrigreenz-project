@@ -553,6 +553,9 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
     const deliveryPincode = typeof rawPincode === "string" ? rawPincode.trim() : null;
     const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId, {
       pincode: deliveryPincode,
+      // Product-targeted coupons are matched against the order's own lines,
+      // for the same reason the pincode is: the client cannot assert them.
+      productIds: lineTotals.map((l) => l.line.productId ?? null),
     });
     if (!check.valid) throw new CouponInvalidError(check.reason ?? "not-found");
     couponDiscount = check.discountPaise;

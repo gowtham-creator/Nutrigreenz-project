@@ -212,6 +212,11 @@ export interface CouponRecord {
    * pincode, so the client can never claim a community it doesn't deliver to.
    */
   communities: string[] | null;
+  /**
+   * Products this coupon applies to. `null` (or empty) = every product. When
+   * set, the order must contain at least one line for one of these products.
+   */
+  productIds: string[] | null;
   usedCount: number;
   createdAt: string;
   updatedAt: string;
@@ -241,7 +246,9 @@ export type CouponRejection =
   /** Welcome/first-order code applied without an OTP-verified phone on file. */
   | "phone-verification-required"
   /** Code is restricted to pincodes / communities the delivery address isn't in. */
-  | "area-not-eligible";
+  | "area-not-eligible"
+  /** Code applies only to certain products, none of which are in the cart. */
+  | "product-not-eligible";
 
 export interface CouponValidation {
   valid: boolean;
@@ -287,6 +294,8 @@ interface CouponRow {
   requires_verified_phone: boolean;
   pincodes: string[] | null;
   communities: string[] | null;
+  /** Raw column. Mapped to `Coupon.productIds` by `toCoupon`. */
+  product_ids: string[] | null;
   used_count: number;
   created_at: string;
   updated_at: string;
@@ -302,7 +311,7 @@ interface LedgerRow {
 }
 
 const COUPON_COLS =
-  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, requires_verified_phone, pincodes, communities, used_count, created_at, updated_at";
+  "id, code, kind, value, min_order_paise, cap_paise, active, starts_at, ends_at, usage_limit, per_customer_limit, requires_verified_phone, pincodes, communities, product_ids, used_count, created_at, updated_at";
 const LEDGER_COLS = "id, customer_id, order_id, delta_points, reason, created_at";
 
 function toKind(raw: string | null | undefined): CouponKind {
@@ -346,6 +355,7 @@ function toCoupon(r: CouponRow): CouponRecord {
     requiresVerifiedPhone: Boolean(r.requires_verified_phone),
     pincodes: cleanList(r.pincodes),
     communities: cleanList(r.communities),
+    productIds: cleanList(r.product_ids),
     usedCount: r.used_count,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -404,6 +414,11 @@ export async function validateCouponServer(
   opts: {
     /** Delivery pincode for the order — required for area-targeted coupons. */
     pincode?: string | null;
+    /**
+     * Product ids in the cart. Required for product-targeted coupons; a
+     * targeted code with no cart context is rejected rather than granted.
+     */
+    productIds?: readonly (string | null)[];
     now?: Date;
   } = {},
 ): Promise<CouponValidation> {
@@ -448,6 +463,23 @@ export async function validateCouponServer(
       const matched = communities.some((c) => targeted.includes(c.toLowerCase()));
       if (!matched) return reject("area-not-eligible");
     }
+  }
+
+  /*
+   * Product targeting. A coupon may be scoped to specific products — the
+   * campaign builder has offered this since it was written, but nothing
+   * enforced it, so a "20% off ghee" code discounted an all-honey order just
+   * the same.
+   *
+   * Fail-CLOSED, like the area check: a targeted coupon evaluated without cart
+   * context is refused rather than silently granted. The ids come from the
+   * server's own order lines, never from the client.
+   */
+  if (coupon.productIds && coupon.productIds.length > 0) {
+    const inCart = (opts.productIds ?? []).filter((id): id is string => Boolean(id));
+    if (inCart.length === 0) return reject("product-not-eligible");
+    const targeted = new Set(coupon.productIds);
+    if (!inCart.some((id) => targeted.has(id))) return reject("product-not-eligible");
   }
 
   // Welcome / first-order gate: the code only applies for a canonical customer
@@ -666,6 +698,8 @@ export interface CouponInput {
   pincodes?: string[] | null;
   /** Restrict to these gated communities; null/empty = all communities. */
   communities?: string[] | null;
+  /** Restrict to these products; null/empty = every product. */
+  productIds?: string[] | null;
 }
 
 /** Create a coupon (code stored UPPERCASE) and return the fresh record. */
@@ -699,6 +733,7 @@ export async function createCoupon(input: CouponInput): Promise<CouponRecord> {
       requires_verified_phone: requiresVerifiedPhone,
       pincodes: cleanList(input.pincodes),
       communities: cleanList(input.communities),
+      product_ids: cleanList(input.productIds),
     })
     .select(COUPON_COLS)
     .single();
@@ -719,6 +754,8 @@ export interface CouponPatch {
   requiresVerifiedPhone?: boolean;
   pincodes?: string[] | null;
   communities?: string[] | null;
+  /** Restrict to these products; null/empty = every product. */
+  productIds?: string[] | null;
 }
 
 /**
@@ -755,6 +792,7 @@ export async function updateCoupon(
   }
   if (patch.pincodes !== undefined) row.pincodes = cleanList(patch.pincodes);
   if (patch.communities !== undefined) row.communities = cleanList(patch.communities);
+  if (patch.productIds !== undefined) row.product_ids = cleanList(patch.productIds);
 
   if (Object.keys(row).length === 0) {
     const { data } = await db.from("coupons").select(COUPON_COLS).eq("id", id).maybeSingle();

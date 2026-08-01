@@ -3,7 +3,7 @@ import { Reveal } from "../motion";
 
 /**
  * AssuranceStrip — a slim USP / trust band that sits directly under the hero
- * banner (Anveshan-style). It fills what was an empty stretch of page with four
+ * banner (magazine-style). It fills what was an empty stretch of page with four
  * at-a-glance reasons to buy: freshness, purity, shipping and certification.
  *
  * Hairline-divided cells (a 1px line bg showing through `gap-px`) keep it crisp
