@@ -3,6 +3,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { OrderWithDetail } from "@/lib/orders";
 import { NOTO_SANS_REGULAR_B64, NOTO_SANS_BOLD_B64 } from "@/lib/invoice-fonts";
+import { gstFor } from "@/lib/gst";
 
 /**
  * Server-side INVOICE and RECEIPT PDFs.
@@ -38,6 +39,24 @@ const SELLER = {
     "customersupport@nutrigreenz.farm",
   ],
 };
+
+/**
+ * The registered GSTIN, from the environment.
+ *
+ * Deliberately not a constant in the source, and deliberately absent by
+ * default. Printing a GSTIN the business does not hold is a false statutory
+ * declaration on a tax document, so an unset value means the line is omitted
+ * entirely — never filled with a placeholder.
+ *
+ * Format-checked before use: a typo'd GSTIN on an invoice is as wrong as an
+ * invented one, and a customer's accountant will reject it either way.
+ */
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+function sellerGstin(): string | null {
+  const raw = process.env.SELLER_GSTIN?.trim().toUpperCase();
+  return raw && GSTIN_RE.test(raw) ? raw : null;
+}
 
 const money = (paise: number) =>
   `₹${(Math.round(paise) / 100).toLocaleString("en-IN", {
@@ -252,7 +271,11 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     .filter(Boolean)
     .flatMap((l) => wrap(l, body, 8.5, colRW));
 
-  const sellerLines = SELLER.lines.flatMap((l) => wrap(l, body, 8.5, colLW));
+  // The GSTIN belongs with the seller block, and only when we actually hold one.
+  const gstin = sellerGstin();
+  const sellerLines = [...SELLER.lines, ...(gstin ? [`GSTIN: ${gstin}`] : [])].flatMap((l) =>
+    wrap(l, body, 8.5, colLW),
+  );
   const rows = Math.max(sellerLines.length, buyer.length);
   ensure(rows * 11.5 + 26);
   for (let i = 0; i < rows; i++) {
@@ -333,13 +356,42 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     line("Loyalty credit", `-${money(order.loyaltyRedeemedPaise)}`);
   }
   line("Delivery", order.shippingPaise > 0 ? money(order.shippingPaise) : "Free");
-  if (order.taxPaise > 0) {
-    line("Tax", money(order.taxPaise));
+
+  /*
+   * GST, broken out.
+   *
+   * The PDF used to print a single "Tax / Included" line while the order email
+   * showed a full CGST/SGST breakdown of the same order — two documents for one
+   * purchase, disagreeing about tax. The PDF is the one a customer submits for
+   * a claim, and it was the less complete of the two.
+   *
+   * Both now read from the SAME gstFor(), so they cannot drift apart. Catalogue
+   * prices are GST-inclusive, so the tax is back-computed out of the payable
+   * amount rather than added on top — "Total excluding tax" plus the components
+   * reconstructs the total exactly.
+   */
+  const gst = gstFor(order);
+  line("Total excluding tax", money(gst.taxablePaise));
+  if (gst.intraState) {
+    line(`CGST (${gst.halfRatePercent}%)`, money(gst.cgstPaise));
+    line(`SGST (${gst.halfRatePercent}%)`, money(gst.sgstPaise));
   } else {
-    line("Tax", "Included");
+    // An inter-state supply is IGST by law; printing CGST/SGST would be wrong.
+    line(`IGST (${gst.ratePercent}%)`, money(gst.igstPaise));
   }
   line("Total", money(order.totalPaise));
   line(isReceipt ? "Amount paid" : "Amount due", money(order.totalPaise), true);
+
+  /* Place of supply is a required particular on a GST invoice. */
+  y -= 4;
+  ensure(12);
+  put(
+    `Prices include GST at ${gst.ratePercent}%. Place of supply: ${gst.placeOfSupply}.`,
+    M,
+    y,
+    { size: 7.8, color: MUTED, max: W - 2 * M },
+  );
+  y -= 12;
 
   /* ── footer ─────────────────────────────────────────────────────────── */
   /*
