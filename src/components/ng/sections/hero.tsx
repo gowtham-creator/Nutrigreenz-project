@@ -199,11 +199,26 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
         {...swipe}
         className="relative touch-pan-y select-none overflow-hidden rounded-[28px] shadow-[var(--shadow-ng-float)] md:rounded-[36px]"
       >
-        {/* Equal-height stage — height fixed by the banner clamp so slides never
-            shift layout. ALL slides stay mounted and are cross-faded by opacity,
-            so every image preloads up-front (no lazy pop-in when the carousel
-            advances); a hidden sizer reserves the height. */}
-        <div className="relative min-h-[clamp(440px,60vh,600px)]">
+        {/*
+          Equal-height stage — slides never shift layout. All of them stay
+          mounted and cross-fade by opacity, so every image preloads up-front
+          (no lazy pop-in when the carousel advances); a hidden sizer reserves
+          the height.
+
+          The height was `clamp(440px, 60vh, 600px)`. That 440px FLOOR was
+          taller than a landscape phone: on an 844x390 viewport the stage came
+          out 440px on a 390px screen, so the CTA and the carousel's own dots
+          sat below the fold and the control could not be operated at all.
+
+          `min(…, 74dvh)` caps the floor against the real viewport, so a short
+          screen shrinks the banner instead of overflowing it. Tall viewports
+          are unaffected — the cap only binds when the screen is short.
+
+          dvh, not vh: on mobile browsers vh is the height with the URL bar
+          hidden, which is exactly the measurement that overflows while the bar
+          is still showing.
+        */}
+        <div className="relative min-h-[min(clamp(440px,60dvh,600px),74dvh)]">
           {/* Invisible sizer: keeps the tallest reasonable banner height reserved. */}
           <div aria-hidden className="invisible">
             <PromoSlide slide={SLIDES[0]} priority />
