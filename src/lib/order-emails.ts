@@ -1,4 +1,14 @@
 import "server-only";
+
+/**
+ * The address customers are told to write to.
+ *
+ * customersupport@nutrigreenz.farm has NO MX RECORD, so mail sent there
+ * bounces — printing it was sending people to a dead address. This falls
+ * back to the inbox that does receive until that mailbox exists.
+ */
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "nutrigreenzfarm@gmail.com";
+
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { getOrder, type OrderWithDetail } from "@/lib/orders";
 import { render, type NotifyType } from "@/lib/notification-templates";
@@ -334,7 +344,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           <td style="padding:36px 0 0;border-top:1px solid ${LINE}">
             <p style="margin:22px 0 10px;font-size:12.5px;line-height:1.7;color:${MUTED}">
               Questions about this order? Just reply to this email, or write to
-              <a href="mailto:customersupport@nutrigreenz.farm" style="color:${GREEN}">customersupport@nutrigreenz.farm</a>.
+              <a href="mailto:${SUPPORT_EMAIL}" style="color:${GREEN}">${SUPPORT_EMAIL}</a>.
             </p>
             <p style="margin:0 0 10px;font-size:12px;line-height:1.7;color:${MUTED}">
               <strong style="color:${INK}">Nutri Greenz Farm Technologies Pvt. Ltd.</strong><br />

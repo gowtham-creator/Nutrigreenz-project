@@ -7,6 +7,16 @@
  */
 import "server-only";
 
+/**
+ * The address customers are told to write to.
+ *
+ * customersupport@nutrigreenz.farm has NO MX RECORD, so mail sent there
+ * bounces — printing it was sending people to a dead address. This falls
+ * back to the inbox that does receive until that mailbox exists.
+ */
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "nutrigreenzfarm@gmail.com";
+
+
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
 /** True when Brevo credentials + a sender address are configured. */
@@ -28,16 +38,32 @@ interface SendEmailArgs {
   html: string;
   /** Optional attachments — used to send the tax invoice with the order email. */
   attachments?: EmailAttachment[];
+  /** Where customer replies should land. Defaults to REPLY_TO_EMAIL, then the sender. */
+  replyTo?: string;
 }
 
 /** Send a single transactional email. Throws on misconfiguration or API error. */
-export async function sendEmail({ to, subject, html, attachments }: SendEmailArgs): Promise<void> {
+export async function sendEmail({ to, subject, html, attachments, replyTo }: SendEmailArgs): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "Nutri Greenz";
   if (!apiKey || !senderEmail) {
     throw new Error("Email is not configured (set BREVO_API_KEY + BREVO_SENDER_EMAIL).");
   }
+
+  /*
+   * Reply-to.
+   *
+   * Every order email invites the customer to "just reply to this email", but
+   * without this header a reply goes to the Brevo sender address — which is a
+   * sending identity, not a monitored inbox. Customers have been replying into
+   * a void.
+   *
+   * The address is configurable because the one printed in the emails
+   * (customersupport@nutrigreenz.farm) has NO MX RECORD, so mail to it bounces.
+   * Until that mailbox exists, point REPLY_TO_EMAIL at one that does.
+   */
+  const replyAddress = replyTo || process.env.REPLY_TO_EMAIL || senderEmail;
 
   const res = await fetch(BREVO_ENDPOINT, {
     method: "POST",
@@ -49,6 +75,7 @@ export async function sendEmail({ to, subject, html, attachments }: SendEmailArg
     body: JSON.stringify({
       sender: { email: senderEmail, name: senderName },
       to: [{ email: to }],
+      replyTo: { email: replyAddress, name: senderName },
       subject,
       htmlContent: html,
       ...(attachments && attachments.length
@@ -166,7 +193,7 @@ export function otpEmailHtml(code: string, expiryMinutes = 10): string {
             <p style="margin:22px 0 0;font-size:13px;line-height:1.7;color:${MUTED}">
               <strong style="color:${INK}">Didn't try to sign in?</strong> Someone has your password.
               Ignore this code — it's useless on its own — then change the password and tell
-              <a href="mailto:customersupport@nutrigreenz.farm" style="color:${GREEN}">customersupport@nutrigreenz.farm</a>.
+              <a href="mailto:${SUPPORT_EMAIL}" style="color:${GREEN}">${SUPPORT_EMAIL}</a>.
             </p>
             <p style="margin:12px 0 0;font-size:13px;line-height:1.7;color:${MUTED}">
               Nobody at Nutri Greenz will ever ask you for this code — not by phone, not by email,
