@@ -83,11 +83,22 @@ export function Stagger({
 export function StaggerItem({
   children,
   className,
+  id,
   ...rest
-}: { children: ReactNode; className?: string } & MotionProps) {
+}: {
+  children: ReactNode;
+  className?: string;
+  /** Scroll anchor — MotionProps alone doesn't carry the DOM id through. */
+  id?: string;
+} & MotionProps) {
   const reduce = useReducedMotion();
   return (
-    <motion.div variants={reduce ? staggerItemReduced : staggerItem} className={className} {...rest}>
+    <motion.div
+      id={id}
+      variants={reduce ? staggerItemReduced : staggerItem}
+      className={className}
+      {...rest}
+    >
       {children}
     </motion.div>
   );

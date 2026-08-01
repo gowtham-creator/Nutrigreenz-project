@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
@@ -49,8 +49,28 @@ const CHECKOUT_STEPS = [
   { label: "Review", icon: "shield-check-bold" },
 ] as const;
 
-/** Horizontal step indicator giving the checkout a guided, premium feel. */
-function CheckoutStepper({ current }: { current: number }) {
+/**
+ * Horizontal step indicator — and the navigation itself.
+ *
+ * The chips used to be decorative `<span>`s, so a shopper who wanted to change
+ * an address entered three steps ago had to press Back repeatedly. They are now
+ * buttons, but only as far as the form allows: a step is reachable when every
+ * step before it is satisfied. Jumping to Review with no address would produce
+ * an order that cannot be placed, and the shopper would only find out at the
+ * final button.
+ *
+ * On desktop the whole form is visible at once, so the chips scroll to the
+ * matching section rather than switching a wizard pane.
+ */
+function CheckoutStepper({
+  current,
+  onJump,
+  canJumpTo,
+}: {
+  current: number;
+  onJump: (index: number) => void;
+  canJumpTo: (index: number) => boolean;
+}) {
   return (
     <Reveal>
       <ol className="mb-8 flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-ng-line-soft bg-ng-paper/70 p-2.5 backdrop-blur sm:gap-2 sm:p-3">
@@ -60,12 +80,29 @@ function CheckoutStepper({ current }: { current: number }) {
           // whole form is shown at once.
           const on = i <= current;
           const done = i < current;
+          const reachable = canJumpTo(i);
+          const isCurrent = i === current;
           return (
             <li key={step.label} className="flex flex-1 items-center gap-1.5 last:flex-none sm:flex-none sm:shrink-0 sm:gap-2">
-              <span
+              <button
+                type="button"
+                onClick={() => onJump(i)}
+                disabled={!reachable}
+                aria-current={isCurrent ? "step" : undefined}
+                // Says WHY it is locked. A disabled chip with no explanation
+                // reads as broken rather than as "finish the step before it".
+                title={
+                  reachable
+                    ? `Go to ${step.label}`
+                    : `Finish the earlier steps to reach ${step.label}`
+                }
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors sm:px-3.5",
                   on ? "bg-ng-sage/50 text-ng-forest" : "bg-ng-sage/20 text-ng-ink-muted lg:bg-ng-sage/40 lg:text-ng-forest",
+                  reachable
+                    ? "cursor-pointer hover:bg-ng-sage/70"
+                    : "cursor-not-allowed opacity-60",
+                  isCurrent && "ring-1 ring-ng-forest/40",
                 )}
               >
                 <span
@@ -74,11 +111,11 @@ function CheckoutStepper({ current }: { current: number }) {
                     on ? "bg-ng-forest text-ng-cream" : "bg-ng-line text-ng-ink-soft lg:bg-ng-forest lg:text-ng-cream",
                   )}
                 >
-                  {i + 1}
+                  {done ? <Icon name="check-circle-bold" size={11} /> : i + 1}
                 </span>
                 <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
                 <span className="hidden sm:inline">{step.label}</span>
-              </span>
+              </button>
               {i < CHECKOUT_STEPS.length - 1 ? (
                 <span aria-hidden className={cn("h-px flex-1 sm:w-5 sm:flex-none", done ? "bg-ng-forest lg:bg-ng-line" : "bg-ng-line")} />
               ) : null}
@@ -194,15 +231,67 @@ export default function CheckoutPage() {
   }, [selectedPincode]);
   const notServiceable = serviceable === false;
 
+  /*
+   * What each step needs before the shopper may move PAST it.
+   *
+   * Written per-step rather than only for the current one, so the stepper chips
+   * can tell which steps are reachable. Jumping straight to Review without an
+   * address would produce an order that cannot be placed, and the failure would
+   * only surface at the very last button.
+   */
+  const stepSatisfied = useMemo(
+    () => [
+      Boolean(resolvedAddressId) && !notServiceable,
+      Boolean(resolvedSlotId),
+      true, // Rewards are optional.
+      Boolean(payment),
+      true, // Review has nothing after it.
+    ],
+    [resolvedAddressId, notServiceable, resolvedSlotId, payment],
+  );
+
   // Mobile/tablet wizard gate: may the shopper advance from the current step?
-  const stepReady =
-    step === 0
-      ? Boolean(resolvedAddressId) && !notServiceable
-      : step === 1
-        ? Boolean(resolvedSlotId)
-        : step === 3
-          ? Boolean(payment)
-          : true;
+  const stepReady = stepSatisfied[step] ?? true;
+
+  /**
+   * A step is reachable when every step before it is satisfied.
+   *
+   * Going back is always allowed — that is the whole point of a clickable
+   * stepper, and revisiting a completed step cannot invalidate anything.
+   */
+  const canJumpTo = useCallback(
+    (target: number) =>
+      target <= step || stepSatisfied.slice(0, target).every(Boolean),
+    [step, stepSatisfied],
+  );
+
+  /**
+   * Move to a step from the stepper.
+   *
+   * Both layouts are handled because they are genuinely different: on
+   * mobile/tablet the steps are wizard panes and only one is mounted visibly,
+   * so this switches panes; on desktop every section is on screen at once, so
+   * switching would do nothing visible and the chip has to scroll instead.
+   *
+   * `step` is still set on desktop — it drives the Review/summary column, so
+   * leaving it behind would desync the two.
+   */
+  const jumpToStep = useCallback(
+    (target: number) => {
+      if (!canJumpTo(target)) return;
+      setStep(target);
+      if (typeof window === "undefined") return;
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      if (!isDesktop) return;
+      // Let the pane state settle before measuring the scroll target.
+      requestAnimationFrame(() => {
+        document
+          .getElementById(`ng-step-${target}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [canJumpTo],
+  );
 
   const couponDiscount = applied?.discount ?? 0;
   // Loyalty redemption uses the Super-Admin-configured ratio + limits.
@@ -420,7 +509,7 @@ export default function CheckoutPage() {
         heading="Complete your order"
         description="Review your delivery details, apply rewards and pay securely. Everything is freshly packed from farm lots once you confirm."
       >
-        <CheckoutStepper current={step} />
+        <CheckoutStepper current={step} onJump={jumpToStep} canJumpTo={canJumpTo} />
 
         <div className="relative grid gap-8 lg:grid-cols-[1fr_400px]">
           {/* Soft background blooms behind the columns */}
@@ -462,7 +551,7 @@ export default function CheckoutPage() {
               </StaggerItem>
             ) : null}
 
-            <StaggerItem className={cn(step !== 0 && "hidden", "lg:block")}>
+            <StaggerItem id="ng-step-0" className={cn(step !== 0 && "hidden", "lg:block", "scroll-mt-28")}>
               <AddressPicker
                 addresses={addresses}
                 selectedId={resolvedAddressId}
@@ -470,7 +559,7 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem className={cn(step !== 1 && "hidden", "lg:block")}>
+            <StaggerItem id="ng-step-1" className={cn(step !== 1 && "hidden", "lg:block", "scroll-mt-28")}>
               <SlotPicker
                 slots={rules.deliverySlots}
                 selectedId={resolvedSlotId}
@@ -478,7 +567,7 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem className={cn(step !== 2 && "hidden", "lg:block")}>
+            <StaggerItem id="ng-step-2" className={cn(step !== 2 && "hidden", "lg:block", "scroll-mt-28")}>
               <RewardsPanel
                 subtotal={subtotal}
                 deliveryPincode={selectedPincode}
@@ -497,11 +586,11 @@ export default function CheckoutPage() {
               />
             </StaggerItem>
 
-            <StaggerItem className={cn(step !== 3 && "hidden", "lg:block")}>
+            <StaggerItem id="ng-step-3" className={cn(step !== 3 && "hidden", "lg:block", "scroll-mt-28")}>
               <PaymentPicker selected={payment} onSelect={setPayment} />
             </StaggerItem>
 
-            <StaggerItem className={cn(step !== 4 && "hidden", "lg:block")}>
+            <StaggerItem id="ng-step-4" className={cn(step !== 4 && "hidden", "lg:block", "scroll-mt-28")}>
               <NoCancellationAck
                 checked={acknowledged}
                 onChange={setAcknowledged}
