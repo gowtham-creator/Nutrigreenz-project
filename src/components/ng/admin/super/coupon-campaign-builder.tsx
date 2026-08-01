@@ -12,22 +12,26 @@ import {
   Toggle,
   SegToggle,
 } from "@/components/ng/admin/super/controls";
-import { COUPONS } from "@/components/ng/data";
 import { ProductPicker } from "@/components/ng/admin/product-picker";
 
 /**
  * Super Admin · Coupon campaign builder (§3.5.2).
  *
- * A front-end builder that mirrors the scope's coupon lifecycle: create/edit a
- * campaign (code, type, value, min cart, max cap, expiry, first-order-only,
- * loyalty-stacking), choose one of the five targeting modes, stage an SMS
- * delivery (send now / schedule + live message preview), and review redemption
- * tracking (issued / redeemed / revenue / ROI — mocked). Existing seed coupons
- * from `COUPONS` are listed alongside campaigns built in-session.
+ * Create/edit a campaign (code, type, value, min cart, max cap, expiry,
+ * first-order-only, loyalty-stacking), choose one of the five targeting modes,
+ * and review how each code has actually performed.
  *
- * SMS dispatch and live redemption tracking are not yet connected.
- * No store wiring here; all state is local so the headline commerce/loyalty
- * controls keep full ownership of persisted config.
+ * The performance figures were previously invented. Four codes carried
+ * hardcoded stats — FRESH50 read "1,840 issued · 612 redeemed · ₹2,48,900
+ * revenue · 8.1× ROI" — on the same page as the real coupon manager, so an
+ * operator comparing the two saw precise, confident, fictional numbers for codes
+ * that in most cases had never been redeemed. They now come from `coupon_uses`
+ * joined to the orders they discounted.
+ *
+ * There is no "issued" figure any more, and so no redemption RATE. These are
+ * public codes typed at checkout, not vouchers sent to named customers: nothing
+ * issues them, so the rate has no denominator and every value shown for it was
+ * necessarily made up. Reach is now distinct customers, which is real.
  */
 
 const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -112,14 +116,28 @@ type CampaignDraft = {
   scheduleAt: string; // datetime-local or ""
 };
 
+/** Measured performance for one code. Absent until it has been redeemed once. */
+interface Perf {
+  couponId: string;
+  code: string;
+  redemptions: number;
+  customers: number;
+  revenuePaise: number;
+  discountPaise: number;
+  unpaidRedemptions: number;
+  lastRedeemedAt: string | null;
+}
+
 type Campaign = CampaignDraft & {
   id: string;
-  /** Mock redemption tracking — populated for seed campaigns, zero for new. */
-  issued: number;
-  redeemed: number;
-  revenue: number; // ₹ attributable revenue
-  cost: number; // ₹ discount given (for ROI)
-  source: "seed" | "built";
+  /**
+   * Measured performance, or null when this code has never been redeemed.
+   *
+   * Null is rendered as "Not yet redeemed", not as zeros: a row of zeros reads
+   * like a measurement that came back empty, when the truth is that there is
+   * nothing to measure yet.
+   */
+  perf: Perf | null;
 };
 
 function emptyDraft(): CampaignDraft {
@@ -141,39 +159,57 @@ function emptyDraft(): CampaignDraft {
   };
 }
 
-/** Seed the list from the shared COUPONS catalogue with plausible mock stats. */
-function seedCampaigns(): Campaign[] {
-  const stats: Record<string, { issued: number; redeemed: number; revenue: number; cost: number; target: TargetMode }> = {
-    FRESH50: { issued: 1840, redeemed: 612, revenue: 248_900, cost: 30_600, target: "individual" },
-    HARVEST10: { issued: 5200, redeemed: 1486, revenue: 712_300, cost: 64_180, target: "global" },
-    GHEELOVE: { issued: 920, redeemed: 214, revenue: 196_400, cost: 16_050, target: "product" },
-    MONSOON25: { issued: 3100, redeemed: 705, revenue: 281_200, cost: 70_300, target: "zip" },
+/** Live coupon as returned by /api/admin/marketing/coupons. */
+interface LiveCoupon {
+  id: string;
+  code: string;
+  kind: "percent" | "flat";
+  value: number; // percent: whole %, flat: paise
+  minOrderPaise: number;
+  capPaise: number | null;
+  active: boolean;
+  endsAt?: string | null;
+  requiresVerifiedPhone: boolean;
+  pincodes: string[] | null;
+  communities: string[] | null;
+  productIds: string[] | null;
+}
+
+/**
+ * Infer a targeting mode from what the coupon is actually restricted to.
+ *
+ * The mode used to be decorative — a label chosen in the form and thrown away.
+ * Reading it back from the stored restrictions means the badge describes what
+ * the server will really enforce.
+ */
+function targetOf(c: LiveCoupon): TargetMode {
+  if (c.productIds?.length) return "product";
+  if (c.communities?.length) return "community";
+  if (c.pincodes?.length) return "zip";
+  if (c.requiresVerifiedPhone) return "individual";
+  return "global";
+}
+
+function toCampaign(c: LiveCoupon, perf: Perf | null): Campaign {
+  return {
+    id: c.id,
+    code: c.code,
+    description: "",
+    type: c.kind,
+    // Flat coupons are stored in paise; the form works in whole rupees.
+    value: c.kind === "flat" ? Math.round(c.value / 100) : c.value,
+    minOrderValue: Math.round(c.minOrderPaise / 100),
+    maxDiscount: c.capPaise ? Math.round(c.capPaise / 100) : 0,
+    expiresAt: c.endsAt ? c.endsAt.slice(0, 10) : "",
+    firstOrderOnly: c.requiresVerifiedPhone,
+    stackLoyalty: false,
+    target: targetOf(c),
+    targetDetail: (c.pincodes ?? c.communities ?? []).join(", "),
+    productIds: c.productIds ?? [],
+    schedule: "now",
+    scheduleAt: "",
+    perf,
   };
-  return COUPONS.map((c) => {
-    const s = stats[c.code] ?? { issued: 0, redeemed: 0, revenue: 0, cost: 0, target: "global" as TargetMode };
-    return {
-      id: `seed-${c.code}`,
-      code: c.code,
-      description: c.description,
-      type: c.type,
-      value: c.value,
-      minOrderValue: c.minOrderValue ?? 0,
-      maxDiscount: c.maxDiscount ?? 0,
-      expiresAt: c.expiresAt ?? "",
-      firstOrderOnly: Boolean(c.firstOrderOnly),
-      stackLoyalty: false,
-      target: s.target,
-      targetDetail: "",
-    productIds: [],
-      schedule: "now" as const,
-      scheduleAt: "",
-      issued: s.issued,
-      redeemed: s.redeemed,
-      revenue: s.revenue,
-      cost: s.cost,
-      source: "seed" as const,
-    };
-  });
 }
 
 function valueLabel(c: { type: "percent" | "flat"; value: number; maxDiscount?: number }): string {
@@ -182,31 +218,76 @@ function valueLabel(c: { type: "percent" | "flat"; value: number; maxDiscount?: 
   return `${base}${cap}`;
 }
 
-function roi(c: { revenue: number; cost: number }): string {
-  if (c.cost <= 0) return "—";
-  return `${(c.revenue / c.cost).toFixed(1)}×`;
+/**
+ * Return on the discount given.
+ *
+ * An em dash when nothing has been discounted yet: a coupon with no cost has no
+ * ratio, and both "0×" and "∞×" would be read as findings.
+ */
+function roi(p: Perf | null): string {
+  if (!p || p.discountPaise <= 0) return "—";
+  return `${(p.revenuePaise / p.discountPaise).toFixed(1)}×`;
 }
 
-function redemptionRate(c: { issued: number; redeemed: number }): string {
-  if (c.issued <= 0) return "—";
-  return `${Math.round((c.redeemed / c.issued) * 100)}%`;
-}
+const rupees = (paise: number) => INR(paise / 100);
 
 /* ----------------------------------------------------------------------- */
 /* Main section.                                                            */
 /* ----------------------------------------------------------------------- */
 export function CouponCampaignBuilder() {
-  const [campaigns, setCampaigns] = React.useState<Campaign[]>(seedCampaigns);
+  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
   const [draft, setDraft] = React.useState<CampaignDraft>(emptyDraft);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  // The redemption tracking panel mirrors whichever campaign is selected.
-  const [trackingId, setTrackingId] = React.useState<string | null>(
-    () => seedCampaigns()[0]?.id ?? null,
-  );
+  // The performance panel mirrors whichever campaign is selected.
+  const [trackingId, setTrackingId] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [loadFailed, setLoadFailed] = React.useState(false);
+
+  /*
+   * Load the real coupons and their measured performance together.
+   *
+   * On failure the panel says so rather than rendering an empty list: "no
+   * campaigns" and "couldn't reach the database" look identical otherwise, and
+   * only one of them is a reason to go and create a coupon.
+   */
+  React.useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const [couponsRes, perfRes] = await Promise.all([
+          fetch("/api/admin/marketing/coupons", { cache: "no-store" }),
+          fetch("/api/admin/marketing/coupons/performance", { cache: "no-store" }),
+        ]);
+        if (!couponsRes.ok) throw new Error("coupons");
+        const { coupons = [] } = (await couponsRes.json()) as { coupons?: LiveCoupon[] };
+
+        // Performance is best-effort: the coupon list is still worth showing
+        // without it, and every figure it feeds degrades to "not yet redeemed".
+        const perfById = new Map<string, Perf>();
+        if (perfRes.ok) {
+          const { items = [] } = (await perfRes.json()) as { items?: Perf[] };
+          for (const p of items) perfById.set(p.couponId, p);
+        }
+
+        if (!alive) return;
+        const rows = coupons.map((c) => toCampaign(c, perfById.get(c.id) ?? null));
+        setCampaigns(rows);
+        setTrackingId((id) => id ?? rows[0]?.id ?? null);
+      } catch {
+        if (alive) setLoadFailed(true);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const tracked = campaigns.find((c) => c.id === trackingId) ?? campaigns[0] ?? null;
   const mode = TARGET_MODES.find((m) => m.value === draft.target)!;
   const isEditing = editingId !== null;
+  const [saving, setSaving] = React.useState(false);
 
   function patch<K extends keyof CampaignDraft>(key: K, val: CampaignDraft[K]) {
     setDraft((d) => ({ ...d, [key]: val }));
@@ -240,7 +321,7 @@ export function CouponCampaignBuilder() {
     }
   }
 
-  function save() {
+  async function save() {
     const code = draft.code.trim().toUpperCase();
     if (!code) {
       toast.error("Enter a campaign code");
@@ -256,42 +337,79 @@ export function CouponCampaignBuilder() {
       return;
     }
 
-    if (isEditing) {
-      setCampaigns((cs) =>
-        cs.map((c) =>
-          c.id === editingId ? { ...c, ...draft, code } : c,
-        ),
+    /*
+     * Persist through the same endpoints the live coupon manager uses.
+     *
+     * This form previously wrote to local React state only: a code an operator
+     * "created" here was accepted, listed, toasted as queued to send — and gone
+     * on reload, having never once been valid at checkout.
+     */
+    const areaList = draft.targetDetail
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      code,
+      kind: draft.type,
+      // Flat coupons are stored in paise; percent coupons in whole percent.
+      value: draft.type === "flat" ? Math.round(draft.value * 100) : draft.value,
+      minOrderPaise: Math.round(draft.minOrderValue * 100),
+      capPaise: draft.maxDiscount > 0 ? Math.round(draft.maxDiscount * 100) : null,
+      endsAt: draft.expiresAt || null,
+      // "First order only" is enforced server-side as verified-phone +
+      // once-per-customer, which is what that checkbox has always meant.
+      requiresVerifiedPhone: draft.firstOrderOnly,
+      // Each targeting mode writes only its own restriction and clears the rest,
+      // so switching mode cannot leave a stale filter silently narrowing the code.
+      pincodes: draft.target === "zip" ? areaList : null,
+      communities: draft.target === "community" ? areaList : null,
+      productIds: draft.target === "product" ? draft.productIds : null,
+    };
+
+    setSaving(true);
+    try {
+      const res = await fetch(
+        isEditing
+          ? `/api/admin/marketing/coupons/${editingId}`
+          : "/api/admin/marketing/coupons",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        },
       );
-      toast.success(`Campaign ${code} updated`, {
-        description: "Saved. SMS dispatch is not yet connected.",
+      if (!res.ok) {
+        const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(error || "save-failed");
+      }
+      const { coupon } = (await res.json()) as { coupon: LiveCoupon };
+
+      setCampaigns((cs) => {
+        // Performance belongs to the code, not to this edit — carry it across.
+        const existing = cs.find((c) => c.id === coupon.id);
+        const row = toCampaign(coupon, existing?.perf ?? null);
+        return existing ? cs.map((c) => (c.id === coupon.id ? row : c)) : [row, ...cs];
       });
-    } else {
-      const created: Campaign = {
-        ...draft,
-        code,
-        id: `built-${Date.now()}`,
-        issued: 0,
-        redeemed: 0,
-        revenue: 0,
-        cost: 0,
-        source: "built",
-      };
-      setCampaigns((cs) => [created, ...cs]);
-      setTrackingId(created.id);
-      const when =
-        draft.schedule === "now"
-          ? "queued to send now"
-          : draft.scheduleAt
-            ? `scheduled for ${new Date(draft.scheduleAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
-            : "saved (no schedule set)";
-      toast.success(`Campaign ${code} created`, {
-        description: `${mode.label} · ${when}. `,
+      setTrackingId(coupon.id);
+      toast.success(isEditing ? `${code} updated` : `${code} is live`, {
+        description: `${mode.label} · valid at checkout now.`,
       });
+      resetForm();
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "";
+      toast.error("Not saved", {
+        description:
+          reason === "duplicate" || reason === "code-taken"
+            ? `${code} already exists.`
+            : "Couldn't save the coupon — it is not live. Try again.",
+      });
+    } finally {
+      setSaving(false);
     }
-    resetForm();
   }
 
-  const builtCount = campaigns.filter((c) => c.source === "built").length;
+  const redeemedCount = campaigns.filter((c) => c.perf).length;
 
   return (
     <section id="coupons" className="mb-6 scroll-mt-32">
@@ -300,7 +418,7 @@ export function CouponCampaignBuilder() {
           icon="ticket-sale-bold"
           tone="clay"
           title="Coupon campaign builder"
-          caption="Create a targeted coupon, stage SMS delivery and review redemption & ROI — per §3.5.2."
+          caption="Create a targeted coupon and review how each code has actually performed."
           badge={
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-mono font-semibold">
               {campaigns.length} total
@@ -339,6 +457,11 @@ export function CouponCampaignBuilder() {
               value={draft.code}
               onChange={(v) => patch("code", v.toUpperCase())}
               placeholder="FRESH50"
+              // A code can't be renamed once live — customers may already hold
+              // it, and the server ignores a code change on update. Locking the
+              // field is honest; letting it be typed and dropped is not.
+              readOnly={isEditing}
+              hint={isEditing ? "A live code can't be renamed. Create a new one instead." : undefined}
             />
             <SegToggle
               label="Discount type"
@@ -499,7 +622,13 @@ export function CouponCampaignBuilder() {
                     { value: "now", label: "Send now" },
                     { value: "schedule", label: "Schedule" },
                   ]}
-                  hint={draft.schedule === "now" ? "Dispatches on save" : "Pick a date & time"}
+                  // Not "Dispatches on save": nothing sends yet, and saying so
+                  // meant an operator could believe a campaign had gone out.
+                  hint={
+                    draft.schedule === "now"
+                      ? "Sending is not connected yet"
+                      : "Pick a date & time"
+                  }
                 />
                 {draft.schedule === "schedule" ? (
                   <div className="flex flex-col gap-1.5">
@@ -536,7 +665,8 @@ export function CouponCampaignBuilder() {
                   . Shop fresh → nutrigreenz.farm
                 </p>
                 <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2 font-mono">
-                  ~{160} char SMS · sent to {mode.label.toLowerCase()}
+                  {/* "would be sent" — this is a draft of an unsent message. */}
+                  ~{160} char SMS · would go to {mode.label.toLowerCase()}
                 </p>
               </div>
             </div>
@@ -546,7 +676,10 @@ export function CouponCampaignBuilder() {
           <div className="mt-5 pt-4 border-t border-ng-clay/20 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5 min-w-0">
               <Icon name="info-circle-bold" size={13} className="text-ng-clay-deep shrink-0" />
-              <span>Campaign send and live redemption tracking are not yet connected.</span>
+              <span>
+                Saving makes the code live at checkout. Sending the campaign by SMS
+                or email is not connected yet.
+              </span>
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
@@ -558,34 +691,77 @@ export function CouponCampaignBuilder() {
               </button>
               <button
                 type="button"
-                onClick={save}
-                className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer shadow-[0_4px_14px_rgba(31,77,46,0.22)]"
+                disabled={saving}
+                onClick={() => void save()}
+                className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer shadow-[0_4px_14px_rgba(31,77,46,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Icon name={isEditing ? "diskette-bold" : "rocket-2-bold"} size={14} />
-                {isEditing ? "Save changes" : "Create campaign"}
+                {saving ? "Saving…" : isEditing ? "Save changes" : "Create campaign"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ---- Redemption tracking panel ---------------------------------- */}
+        {/* ---- Redemption performance ------------------------------------- */}
         {tracked ? (
           <div className="mt-6">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2">
                 <Icon name="graph-up-bold" size={16} className="text-ng-forest" />
-                <span className="text-[13px] font-semibold text-ng-ink-muted">Redemption &amp; ROI</span>
-                <span className="font-mono text-[12px] text-ng-forest-deep font-semibold">{tracked.code}</span>
+                <span className="text-[13px] font-semibold text-ng-ink-muted">
+                  Redemption &amp; ROI
+                </span>
+                <span className="font-mono text-[12px] text-ng-forest-deep font-semibold">
+                  {tracked.code}
+                </span>
               </div>
-              <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft font-mono font-medium">Preview</span>
+              {tracked.perf?.lastRedeemedAt ? (
+                <span className="text-[11px] text-ng-ink-soft font-medium">
+                  last used{" "}
+                  {new Date(tracked.perf.lastRedeemedAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
+              ) : null}
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
-              <TrackTile icon="letter-bold" label="Issued" value={tracked.issued.toLocaleString("en-IN")} />
-              <TrackTile icon="ticket-bold" label="Redeemed" value={tracked.redeemed.toLocaleString("en-IN")} />
-              <TrackTile icon="check-circle-bold" label="Redeem rate" value={redemptionRate(tracked)} />
-              <TrackTile icon="wad-of-money-bold" label="Revenue" value={INR(tracked.revenue)} />
-              <TrackTile icon="graph-new-up-bold" label="ROI" value={roi(tracked)} accent />
-            </div>
+            {tracked.perf ? (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <TrackTile
+                    icon="ticket-bold"
+                    label="Redeemed"
+                    value={tracked.perf.redemptions.toLocaleString("en-IN")}
+                  />
+                  <TrackTile
+                    icon="users-group-rounded-bold"
+                    label="Customers"
+                    value={tracked.perf.customers.toLocaleString("en-IN")}
+                  />
+                  <TrackTile
+                    icon="wad-of-money-bold"
+                    label="Revenue"
+                    value={rupees(tracked.perf.revenuePaise)}
+                  />
+                  <TrackTile icon="graph-new-up-bold" label="ROI" value={roi(tracked.perf)} accent />
+                </div>
+                <p className="mt-2 text-[11.5px] text-ng-ink-soft">
+                  {rupees(tracked.perf.discountPaise)} discounted on paid orders
+                  {tracked.perf.unpaidRedemptions > 0
+                    ? ` · ${tracked.perf.unpaidRedemptions} redemption${tracked.perf.unpaidRedemptions === 1 ? "" : "s"} on unpaid orders, excluded from revenue`
+                    : ""}
+                  .
+                </p>
+              </>
+            ) : (
+              /*
+               * No zeros here. A row of four zeros looks like a measurement that
+               * came back empty; the truth is that there is nothing to measure.
+               */
+              <p className="rounded-xl border border-ng-line-soft bg-ng-paper px-3.5 py-3 text-[12.5px] text-ng-ink-muted">
+                Not yet redeemed — no performance to report.
+              </p>
+            )}
           </div>
         ) : null}
 
@@ -597,7 +773,7 @@ export function CouponCampaignBuilder() {
               Campaigns
             </span>
             <span className="text-[11px] font-medium text-ng-ink-soft font-mono">
-              {builtCount} built · {campaigns.length - builtCount} seed
+              {campaigns.length} live · {redeemedCount} redeemed
             </span>
           </div>
           <div className="grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
@@ -608,6 +784,18 @@ export function CouponCampaignBuilder() {
             <span className="text-right">ROI</span>
             <span className="text-right">Edit</span>
           </div>
+          {loadFailed ? (
+            <p className="rounded-xl border border-ng-danger/40 bg-ng-danger/5 px-3.5 py-3 text-[12.5px] text-ng-danger">
+              Couldn&rsquo;t load coupons. This is a connection failure, not an empty
+              list — reload before creating a code, or you may duplicate one.
+            </p>
+          ) : loading ? (
+            <p className="px-1 py-3 text-[12.5px] text-ng-ink-muted">Loading campaigns…</p>
+          ) : campaigns.length === 0 ? (
+            <p className="px-1 py-3 text-[12.5px] text-ng-ink-muted">
+              No coupons yet. Create one above and it goes live at checkout immediately.
+            </p>
+          ) : null}
           <ul>
             {campaigns.map((c) => {
               const m = TARGET_MODES.find((x) => x.value === c.target)!;
@@ -627,7 +815,6 @@ export function CouponCampaignBuilder() {
                     className="flex items-center gap-1.5 text-left cursor-pointer min-w-0"
                   >
                     <span className="font-mono text-[13px] text-ng-forest-deep font-semibold truncate">{c.code}</span>
-                    {c.source === "built" ? <Pill tone="info">New</Pill> : null}
                   </button>
                   <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-ng-ink-muted min-w-0">
                     <Icon name={m.icon} size={14} className="text-ng-forest shrink-0" />
@@ -635,9 +822,11 @@ export function CouponCampaignBuilder() {
                   </span>
                   <span className="font-semibold tabular-nums text-ng-ink text-right">{valueLabel(c)}</span>
                   <span className="tabular-nums font-medium text-ng-ink-muted text-right">
-                    {c.issued > 0 ? `${c.redeemed.toLocaleString("en-IN")} / ${c.issued.toLocaleString("en-IN")}` : "—"}
+                    {c.perf ? c.perf.redemptions.toLocaleString("en-IN") : "—"}
                   </span>
-                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink text-right">{roi(c)}</span>
+                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink text-right">
+                    {roi(c.perf)}
+                  </span>
                   <span className="flex justify-end">
                     <button
                       type="button"

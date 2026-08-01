@@ -164,6 +164,8 @@ export function TextField({
   placeholder,
   id,
   className,
+  readOnly,
+  hint,
 }: {
   label?: string;
   value: string;
@@ -171,6 +173,9 @@ export function TextField({
   placeholder?: string;
   id?: string;
   className?: string;
+  /** Locks the field. Use where a change would be silently ignored on save. */
+  readOnly?: boolean;
+  hint?: string;
 }) {
   const fieldId = React.useId();
   const inputId = id ?? fieldId;
@@ -186,9 +191,15 @@ export function TextField({
         type="text"
         value={value}
         placeholder={placeholder}
+        readOnly={readOnly}
+        aria-readonly={readOnly || undefined}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] font-medium text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200"
+        className={cn(
+          "h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] font-medium text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200",
+          readOnly && "cursor-not-allowed bg-ng-cream/60 text-ng-ink-muted focus:border-ng-line focus:shadow-none",
+        )}
       />
+      {hint ? <p className="text-[11.5px] text-ng-ink-soft">{hint}</p> : null}
     </div>
   );
 }
