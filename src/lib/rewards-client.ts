@@ -105,6 +105,11 @@ export async function validateCouponApi(
   subtotalPaise: number,
   /** Delivery pincode — required for coupons targeted at specific areas. */
   pincode?: string | null,
+  /**
+   * Product ids in the cart — required for product-targeted coupons, which
+   * reject rather than fall through when the cart context is missing.
+   */
+  productIds?: readonly (string | null | undefined)[],
 ): Promise<CouponQuote> {
   const trimmed = code.trim();
   if (!trimmed) return { valid: false, discountPaise: 0, reason: "not-found", code: null };
@@ -116,6 +121,7 @@ export async function validateCouponApi(
         code: trimmed,
         subtotalPaise: Math.max(0, Math.round(subtotalPaise)),
         pincode: pincode?.trim() || null,
+        productIds: (productIds ?? []).filter(Boolean),
       }),
     });
     if (res.status === 401) {

@@ -483,6 +483,9 @@ export default function CheckoutPage() {
                 subtotal={subtotal}
                 deliveryPincode={selectedPincode}
                 appliedCoupon={applied}
+                // Product-targeted coupons reject when the cart context is
+                // missing, so the quote needs the cart's product ids.
+                cartProductIds={items.map((i) => i.productId)}
                 onApplyCoupon={(coupon, discount) =>
                   setApplied({ coupon, discount })
                 }

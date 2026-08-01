@@ -48,8 +48,27 @@ export async function POST(request: Request): Promise<Response> {
   // client-supplied pincode is accepted for the preview only — the create-order
   // path re-checks against the order's real address snapshot before charging.
   const pincode = typeof body.pincode === "string" ? body.pincode.trim() : null;
+  /*
+   * Product ids in the cart, for product-targeted coupons.
+   *
+   * These were missing, and product targeting fails CLOSED on an empty cart
+   * context — so a product-targeted code was rejected here every time, even
+   * when the cart held exactly the product it targets. The code was
+   * unusable at checkout while looking perfectly valid in the admin.
+   *
+   * Client-supplied, like the pincode, and for the same reason: this is the
+   * read-only quote. The create-order path re-derives both from the persisted
+   * order before any money is charged, so a forged list buys a wrong preview
+   * and nothing more.
+   */
+  const productIds = Array.isArray(body.productIds)
+    ? body.productIds.filter((id): id is string => typeof id === "string" && Boolean(id))
+    : [];
 
-  const result = await validateCouponServer(code, subtotalPaise, session.customerId, { pincode });
+  const result = await validateCouponServer(code, subtotalPaise, session.customerId, {
+    pincode,
+    productIds,
+  });
   return Response.json({
     ok: true,
     valid: result.valid,
