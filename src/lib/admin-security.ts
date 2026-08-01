@@ -68,12 +68,35 @@ interface FactorPatch {
   otpPhone?: string | null;
 }
 
-/** Create or update an admin's factor settings. */
+/**
+ * Create or update an admin's factor settings.
+ *
+ * Turning TOTP ON requires an enrolled secret. Two accounts reached production
+ * with `totp_enabled = true` and no secret, which is not a weaker login but a
+ * LOCKOUT: sign-in demands an authenticator code the account can never
+ * generate. Enrolment (`beginTotpEnrolment` → confirm) is what sets the flag;
+ * this refuses to set it from anywhere else.
+ *
+ * Turning it OFF is always allowed — someone locked out must be able to recover.
+ */
 export async function setAdminFactors(email: string, patch: FactorPatch): Promise<void> {
   const row: Record<string, unknown> = { email: norm(email) };
   if (patch.emailOtp !== undefined) row.email_otp_enabled = patch.emailOtp;
   if (patch.phoneOtp !== undefined) row.phone_otp_enabled = patch.phoneOtp;
-  if (patch.totp !== undefined) row.totp_enabled = patch.totp;
+  if (patch.totp === true) {
+    const { data } = await supabaseAdmin()
+      .from("admin_security")
+      .select("totp_secret")
+      .eq("email", norm(email))
+      .maybeSingle();
+    const enrolled = Boolean(data?.totp_secret) || (isEnvTotpAdmin(email) && isTotpConfigured());
+    if (!enrolled) {
+      throw new Error("totp-not-enrolled");
+    }
+    row.totp_enabled = true;
+  } else if (patch.totp === false) {
+    row.totp_enabled = false;
+  }
   if (patch.otpEmail !== undefined) row.otp_email = patch.otpEmail;
   if (patch.otpPhone !== undefined) row.otp_phone = patch.otpPhone;
   await supabaseAdmin().from("admin_security").upsert(row, { onConflict: "email" });

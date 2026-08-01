@@ -141,6 +141,23 @@ export async function PUT(request: Request): Promise<Response> {
     patch.otpPhone = body.otpPhone;
   }
 
-  await setAdminFactors(email, patch);
+  try {
+    await setAdminFactors(email, patch);
+  } catch (err) {
+    // Enabling TOTP without an enrolled secret would lock the account out, so
+    // it is refused. Say why, rather than returning a bare 500 that reads as
+    // "couldn't update - try again" and invites a retry that cannot succeed.
+    if (err instanceof Error && err.message === "totp-not-enrolled") {
+      return Response.json(
+        {
+          ok: false,
+          error: "totp-not-enrolled",
+          message: "Scan the QR and confirm a code first — turning this on without enrolling would lock the account out.",
+        },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
   return Response.json({ ok: true, factors: await getAdminFactors(email) });
 }
