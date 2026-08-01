@@ -112,8 +112,6 @@ type CampaignDraft = {
   targetDetail: string;
   /** Product ids for the "product" targeting mode — real catalogue rows. */
   productIds: string[];
-  schedule: "now" | "schedule";
-  scheduleAt: string; // datetime-local or ""
 };
 
 /** Measured performance for one code. Absent until it has been redeemed once. */
@@ -154,8 +152,6 @@ function emptyDraft(): CampaignDraft {
     target: "global",
     targetDetail: "",
     productIds: [],
-    schedule: "now",
-    scheduleAt: "",
   };
 }
 
@@ -206,8 +202,6 @@ function toCampaign(c: LiveCoupon, perf: Perf | null): Campaign {
     target: targetOf(c),
     targetDetail: (c.pincodes ?? c.communities ?? []).join(", "),
     productIds: c.productIds ?? [],
-    schedule: "now",
-    scheduleAt: "",
     perf,
   };
 }
@@ -288,6 +282,105 @@ export function CouponCampaignBuilder() {
   const mode = TARGET_MODES.find((m) => m.value === draft.target)!;
   const isEditing = editingId !== null;
   const [saving, setSaving] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
+  const [channels, setChannels] = React.useState({ email: true, sms: false });
+
+  /**
+   * Send the campaign for the code currently loaded in the form.
+   *
+   * Deliberately a separate action from Save. Saving makes a code valid at
+   * checkout; sending messages the customer base. Bundling them would mean
+   * every edit to a live coupon re-messaged everyone, and there would be no way
+   * to fix a typo without spamming.
+   */
+  async function sendCampaign() {
+    const code = draft.code.trim().toUpperCase();
+    if (!code) return;
+
+    const picked = (["email", "sms"] as const).filter((c) => channels[c]);
+    if (picked.length === 0) return;
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/marketing/broadcast", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "offer",
+          channels: picked,
+          campaignKey: code,
+          vars: {
+            offerCode: code,
+            offerTitle: draft.description || `${code} — Nutri Greenz`,
+            discount: draft.type === "percent" ? `${draft.value}%` : INR(draft.value),
+            // Every template ends on {ctaUrl}; without it the message trails off
+            // into nothing and the SMS spends characters on a dangling arrow.
+            ctaUrl: `${window.location.origin}/shop`,
+            validTill: draft.expiresAt
+              ? new Date(draft.expiresAt).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "",
+          },
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        result?: {
+          audience: number;
+          email: { sent: number; skipped: number; failed: number; blocked?: string };
+          sms: { sent: number; skipped: number; failed: number; blocked?: string };
+        };
+      };
+
+      if (!res.ok || !data.ok || !data.result) {
+        toast.error("Campaign not sent", {
+          description:
+            data.error === "consent-not-configured"
+              ? "Marketing consent isn't set up yet — the consent migration hasn't been applied. Nothing was sent."
+              : "The send failed. Nothing was delivered.",
+        });
+        return;
+      }
+
+      const r = data.result;
+      const sentTotal = r.email.sent + r.sms.sent;
+      const blocked = [r.email.blocked, r.sms.blocked].filter(Boolean);
+      const parts = [
+        channels.email ? `${r.email.sent} email` : null,
+        channels.sms ? `${r.sms.sent} SMS` : null,
+      ].filter(Boolean);
+
+      if (sentTotal === 0) {
+        // Never report a send of zero as a success — that is how an operator
+        // ends up believing a campaign went out when nothing left the building.
+        toast.error("Nothing was sent", {
+          description: blocked.includes("no-promotional-dlt-template")
+            ? "Promotional SMS needs a DLT-registered template. Set MSG91_PROMO_TEMPLATE_ID first."
+            : blocked.length > 0
+              ? `Channel unavailable: ${blocked.join(", ")}.`
+              : `${r.audience} customers in the audience, but none were reachable or all had already received this code.`,
+        });
+        return;
+      }
+
+      toast.success(`${code} sent`, {
+        description:
+          `${parts.join(" · ")} across ${r.audience} customers.` +
+          (r.email.failed + r.sms.failed > 0
+            ? ` ${r.email.failed + r.sms.failed} failed.`
+            : "") +
+          (blocked.length > 0 ? ` Skipped: ${blocked.join(", ")}.` : ""),
+      });
+    } catch {
+      toast.error("Campaign not sent", { description: "Couldn't reach the server." });
+    } finally {
+      setSending(false);
+    }
+  }
 
   function patch<K extends keyof CampaignDraft>(key: K, val: CampaignDraft[K]) {
     setDraft((d) => ({ ...d, [key]: val }));
@@ -313,8 +406,6 @@ export function CouponCampaignBuilder() {
       target: c.target,
       targetDetail: c.targetDetail,
       productIds: c.productIds ?? [],
-      schedule: c.schedule,
-      scheduleAt: c.scheduleAt,
     });
     if (typeof document !== "undefined") {
       document.getElementById("coupons")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -605,45 +696,61 @@ export function CouponCampaignBuilder() {
             ) : null}
           </div>
 
-          {/* ---- SMS delivery schedule ------------------------------------ */}
+          {/* ---- Send the campaign ---------------------------------------- */}
           <div className="mt-5 pt-5 border-t border-ng-clay/20">
             <div className="flex items-center gap-2 mb-3">
               <Icon name="chat-round-line-bold" size={15} className="text-ng-clay-deep" />
-              <span className="text-[12.5px] font-semibold text-ng-ink-muted">SMS delivery</span>
-              <Pill tone="neutral">M2</Pill>
+              <span className="text-[12.5px] font-semibold text-ng-ink-muted">Send campaign</span>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 items-start">
               <div className="flex flex-col gap-3">
-                <SegToggle
-                  label="Send"
-                  value={draft.schedule}
-                  onChange={(v) => patch("schedule", v)}
-                  options={[
-                    { value: "now", label: "Send now" },
-                    { value: "schedule", label: "Schedule" },
-                  ]}
-                  // Not "Dispatches on save": nothing sends yet, and saying so
-                  // meant an operator could believe a campaign had gone out.
-                  hint={
-                    draft.schedule === "now"
-                      ? "Sending is not connected yet"
-                      : "Pick a date & time"
-                  }
-                />
-                {draft.schedule === "schedule" ? (
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="ng-sms-when" className="text-[12.5px] font-medium text-ng-ink-muted">
-                      Scheduled at
+                {/*
+                 * Channels are a per-customer decision, not a global one: each
+                 * recipient is messaged on the channels they have an address for
+                 * and have not opted out of. Ticking both does not double-message
+                 * anyone who only has one.
+                 */}
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="text-[12.5px] font-semibold text-ng-ink-muted mb-1">
+                    Channels
+                  </legend>
+                  {(
+                    [
+                      { key: "email" as const, label: "Email", icon: "letter-bold" },
+                      { key: "sms" as const, label: "SMS", icon: "smartphone-bold" },
+                    ]
+                  ).map((ch) => (
+                    <label
+                      key={ch.key}
+                      className="flex items-center gap-2 text-[13px] text-ng-ink cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={channels[ch.key]}
+                        onChange={(e) =>
+                          setChannels((c) => ({ ...c, [ch.key]: e.target.checked }))
+                        }
+                        className="size-4 accent-ng-forest cursor-pointer"
+                      />
+                      <Icon name={ch.icon} size={14} className="text-ng-forest" />
+                      {ch.label}
                     </label>
-                    <input
-                      id="ng-sms-when"
-                      type="datetime-local"
-                      value={draft.scheduleAt}
-                      onChange={(e) => patch("scheduleAt", e.target.value)}
-                      className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] text-ng-ink focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200 cursor-pointer tabular-nums"
-                    />
-                  </div>
-                ) : null}
+                  ))}
+                </fieldset>
+                <button
+                  type="button"
+                  disabled={sending || !isEditing || (!channels.email && !channels.sms)}
+                  onClick={() => void sendCampaign()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ng-forest text-ng-forest-deep font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-sage/30 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <Icon name="plain-bold" size={14} />
+                  {sending ? "Sending…" : "Send now"}
+                </button>
+                <p className="text-[11px] text-ng-ink-soft leading-relaxed max-w-[190px]">
+                  {isEditing
+                    ? "Goes to customers who haven't opted out. Already-sent recipients are skipped."
+                    : "Save the coupon first — a campaign sends an existing code."}
+                </p>
               </div>
 
               {/* Live message preview */}
@@ -665,8 +772,7 @@ export function CouponCampaignBuilder() {
                   . Shop fresh → nutrigreenz.farm
                 </p>
                 <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2 font-mono">
-                  {/* "would be sent" — this is a draft of an unsent message. */}
-                  ~{160} char SMS · would go to {mode.label.toLowerCase()}
+                  ~{160} char SMS · email adds an unsubscribe footer
                 </p>
               </div>
             </div>
