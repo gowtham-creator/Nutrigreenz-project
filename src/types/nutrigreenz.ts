@@ -365,6 +365,13 @@ export interface CaptainCaptureItem {
   unit: string;
   pricePaise: number;
   qty: number;
+  /**
+   * Catalogue variant this line was sold from. Optional because historic
+   * captures predate it — those were recorded against a hardcoded list whose
+   * SKUs matched no real product, so they cannot be back-filled.
+   */
+  variantId?: string | null;
+  productId?: string | null;
 }
 
 /** A single walk-up sale captured by a captain at a stall. Money is paise. */

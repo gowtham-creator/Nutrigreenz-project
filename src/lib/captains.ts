@@ -426,6 +426,11 @@ export async function addCapture(
     unit: it.unit,
     price_paise: Math.round(it.pricePaise) || 0,
     qty: Math.round(it.qty) || 0,
+    // Carried through so the sale can be joined to the catalogue. The jsonb
+    // itself stays a SNAPSHOT of what was charged — a later price change must
+    // not rewrite what a customer actually paid.
+    variant_id: it.variantId ?? null,
+    product_id: it.productId ?? null,
   }));
   const totalPaise = items.reduce((sum, it) => sum + it.price_paise * it.qty, 0);
 
@@ -457,7 +462,40 @@ export async function addCapture(
     .select(CAPTURE_COLS)
     .single();
   if (error || !data) throw new Error(error?.message || "Failed to record capture.");
-  return toCapture(data as CaptureRow);
+
+  /*
+   * Mirror the lines into captain_capture_lines so captain sales can be counted
+   * per SKU and reconciled against stock. The jsonb above remains the
+   * point-of-sale snapshot; these rows are the queryable version.
+   *
+   * Best-effort: the cash has already been taken and the capture is recorded,
+   * so a reporting-table failure must never fail the sale. It is logged instead.
+   */
+  const captureRow = data as CaptureRow;
+  try {
+    const lines = items
+      .filter((it) => it.qty > 0)
+      .map((it) => ({
+        capture_id: captureRow.id,
+        captain_id: captainId,
+        variant_id: it.variant_id,
+        product_id: it.product_id,
+        sku: it.sku || null,
+        title: it.title,
+        unit: it.unit,
+        qty: it.qty,
+        unit_price_paise: it.price_paise,
+        line_total_paise: it.price_paise * it.qty,
+        captured_at: captureRow.captured_at,
+      }));
+    if (lines.length > 0) {
+      await supabaseAdmin().from("captain_capture_lines").insert(lines);
+    }
+  } catch (err) {
+    console.error("[captains] capture line mirror failed:", err);
+  }
+
+  return toCapture(captureRow);
 }
 
 /** A captain's captures, newest first. `todayOnly` limits to the IST day. */

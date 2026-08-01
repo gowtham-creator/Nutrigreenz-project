@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { shortCommunity } from "@/lib/community-label";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { CaptainAllocationModal } from "@/components/ng/admin/captain-allocation-modal";
 import { CaptainModal, Switch, type CaptainDraft } from "./captain-modal";
 import type {
   Captain,
@@ -122,6 +123,8 @@ export default function AdminCaptains() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Captain | null>(null);
+  /* Which captain we are allocating stall products to, if any. */
+  const [allocating, setAllocating] = useState<Captain | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -481,10 +484,18 @@ export default function AdminCaptains() {
           loading={detailLoading}
           detail={detail}
           onClose={closeDetail}
+          onAllocate={(c) => setAllocating(c)}
           onEdit={(c) => {
             closeDetail();
             openEdit(c);
           }}
+        />
+      ) : null}
+      {allocating ? (
+        <CaptainAllocationModal
+          captainId={allocating.id}
+          captainName={allocating.name}
+          onClose={() => setAllocating(null)}
         />
       ) : null}
     </AdminShell>
@@ -546,11 +557,13 @@ function CaptainDrawer({
   detail,
   onClose,
   onEdit,
+  onAllocate,
 }: {
   loading: boolean;
   detail: CaptainDetailResponse | null;
   onClose: () => void;
   onEdit: (captain: Captain) => void;
+  onAllocate: (captain: Captain) => void;
 }) {
   const c = detail?.captain ?? null;
   const today = detail?.todayStats ?? null;
@@ -565,6 +578,15 @@ function CaptainDrawer({
         <header className="sticky top-0 z-10 bg-ng-cream/90 backdrop-blur border-b border-ng-line-soft px-6 py-4 flex items-center justify-between gap-3">
           <h2 className="font-display text-[18px] text-ng-forest-deep">Captain detail</h2>
           <div className="flex items-center gap-1.5">
+            {c ? (
+              <button
+                onClick={() => onAllocate(c)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12px] hover:bg-ng-paper transition-colors cursor-pointer"
+              >
+                <Icon name="bag-4-bold" size={13} className="text-ng-forest" />
+                Products
+              </button>
+            ) : null}
             {c ? (
               <button
                 onClick={() => onEdit(c)}

@@ -1,5 +1,15 @@
 "use client";
 
+interface StallItem {
+  variantId: string;
+  sku: string;
+  title: string;
+  unit: string;
+  pack: string | null;
+  price: number;
+  available: number;
+}
+
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -11,7 +21,6 @@ import {
 import { Icon } from "@/components/ui/icon";
 import {
   useCaptain,
-  STALL_CATALOG,
   type PayMode,
   type CapturedLineItem,
 } from "@/components/ng/captain/captain-store";
@@ -29,6 +38,26 @@ export default function CaptainIntake() {
     if (!communities.includes(community)) setCommunity(communities[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communities]);
+  /* The tray comes from this captain's allocation, not a hardcoded list. The
+     old STALL_CATALOG had SKUs that matched no real product, so cash was being
+     taken against lines the business could not reconcile. */
+  const [catalogue, setCatalogue] = useState<StallItem[] | null>(null);
+  const [catalogueFailed, setCatalogueFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/captain/catalogue", { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as { items?: StallItem[] };
+        if (alive) setCatalogue(data.items ?? []);
+      } catch {
+        if (alive) setCatalogueFailed(true);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
   const [cart, setCart] = useState<Cart>({});
   const [payMode, setPayMode] = useState<PayMode>("Cash");
   const [notes, setNotes] = useState("");
@@ -36,11 +65,19 @@ export default function CaptainIntake() {
 
   const lineItems = useMemo<CapturedLineItem[]>(
     () =>
-      STALL_CATALOG.filter((p) => (cart[p.sku] ?? 0) > 0).map((p) => ({
-        ...p,
-        qty: cart[p.sku],
-      })),
-    [cart],
+      (catalogue ?? [])
+        .filter((p) => (cart[p.sku] ?? 0) > 0)
+        .map((p) => ({
+          sku: p.sku,
+          title: p.title,
+          unit: p.pack ? `${p.unit} · ${p.pack}` : p.unit,
+          price: p.price,
+          qty: cart[p.sku],
+          // Sent so the sale joins to the real catalogue rather than sitting in
+          // a jsonb blob that can never be counted per SKU.
+          variantId: p.variantId,
+        })),
+    [cart, catalogue],
   );
   const total = useMemo(() => lineItems.reduce((s, i) => s + i.price * i.qty, 0), [lineItems]);
   const cartCount = useMemo(() => lineItems.reduce((s, i) => s + i.qty, 0), [lineItems]);
@@ -198,7 +235,28 @@ export default function CaptainIntake() {
         What
       </CaptainSectionHead>
       <div className="space-y-2">
-        {STALL_CATALOG.map((p) => {
+        {catalogueFailed ? (
+          <CaptainCard className="!py-4 text-center">
+            <p className="text-[13px] font-semibold text-ng-danger">Couldn&rsquo;t load your products</p>
+            <p className="mt-1 text-[12px] text-ng-ink-muted">
+              Check your connection and pull to refresh. Don&rsquo;t take payment until the list loads.
+            </p>
+          </CaptainCard>
+        ) : catalogue === null ? (
+          <CaptainCard className="!py-4 text-center">
+            <p className="text-[12.5px] text-ng-ink-muted">Loading your products…</p>
+          </CaptainCard>
+        ) : catalogue.length === 0 ? (
+          /* Fail-closed. A captain with no allocation sells nothing until an
+             operator assigns products — better than an invented tray. */
+          <CaptainCard className="!py-4 text-center">
+            <p className="text-[13px] font-semibold text-ng-forest-deep">No products assigned yet</p>
+            <p className="mt-1 text-[12px] text-ng-ink-muted">
+              Ask the office to allocate your stall products. You can still record pickups.
+            </p>
+          </CaptainCard>
+        ) : null}
+        {(catalogue ?? []).map((p) => {
           const qty = cart[p.sku] ?? 0;
           const active = qty > 0;
           return (
@@ -219,7 +277,13 @@ export default function CaptainIntake() {
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-[13.5px] text-ng-forest-deep leading-tight">{p.title}</div>
                 <div className="text-[12px] text-ng-ink-muted mt-0.5">
-                  {p.unit} · <span className="font-semibold text-ng-forest">₹{p.price}</span>
+                  {p.pack ? `${p.unit} · ${p.pack}` : p.unit} ·{" "}
+                  <span className="font-semibold text-ng-forest">₹{p.price}</span>
+                  {p.available <= 5 ? (
+                    <span className="ml-1.5 text-[11px] font-semibold text-ng-clay-deep">
+                      {p.available === 0 ? "· out of stock" : `· ${p.available} left`}
+                    </span>
+                  ) : null}
                 </div>
               </div>
               {qty === 0 ? (

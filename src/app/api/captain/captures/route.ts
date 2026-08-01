@@ -42,6 +42,9 @@ interface RawItem {
   unit?: unknown;
   price?: unknown;
   qty?: unknown;
+  /** Catalogue variant the line was sold from — lets the sale join to a SKU. */
+  variantId?: unknown;
+  productId?: unknown;
 }
 
 /** Coerce a client cart line (rupee price) into a paise line item, or null. */
@@ -54,7 +57,13 @@ function toPaiseItem(raw: RawItem): CaptainCaptureItem | null {
   if (!sku || !title) return null;
   if (!Number.isFinite(priceRupees) || priceRupees < 0 || priceRupees > 1_000_000) return null;
   if (!Number.isFinite(qty) || qty < 1 || qty > 999) return null;
-  return { sku, title, unit, pricePaise: Math.round(priceRupees * 100), qty };
+  // Carried through so the sale joins to the catalogue. Not trusted for
+  // pricing — the price is validated separately above.
+  const variantId = typeof raw.variantId === "string" && raw.variantId ? raw.variantId : null;
+  const productId = typeof raw.productId === "string" && raw.productId ? raw.productId : null;
+  return {
+    variantId,
+    productId, sku, title, unit, pricePaise: Math.round(priceRupees * 100), qty };
 }
 
 export async function POST(request: Request): Promise<Response> {

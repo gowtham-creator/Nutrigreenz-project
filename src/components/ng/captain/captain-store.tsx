@@ -572,14 +572,17 @@ export async function advanceCaptainPickup(
 /* ── shared statics + formatters ──────────────────────────────────────────── */
 
 /** Catalog the captain can add to a stall cart. Prices are whole RUPEES. */
-export const STALL_CATALOG: Omit<CapturedLineItem, "qty">[] = [
-  { sku: "GO-500", title: "Cold-pressed groundnut oil", unit: "500 ml", price: 240 },
-  { sku: "GO-1000", title: "Cold-pressed groundnut oil", unit: "1 L", price: 460 },
-  { sku: "FM-1000", title: "Foxtail millet", unit: "1 kg", price: 180 },
-  { sku: "GH-500", title: "A2 cow ghee", unit: "500 ml", price: 720 },
-  { sku: "HN-250", title: "Forest honey", unit: "250 g", price: 320 },
-  { sku: "SF-200", title: "Mixed superfood seeds", unit: "200 g", price: 260 },
-];
+/*
+ * STALL_CATALOG lived here: a hardcoded six-item list the captain app sold
+ * from. Not one of its SKUs existed in the catalogue — "Foxtail millet" and
+ * "Mixed superfood seeds" were not products at all, and every price was
+ * invented (1L groundnut oil was listed at 460 against a real 500).
+ *
+ * A captain taking cash against those lines recorded revenue that could not be
+ * tied to a real SKU or reconciled against stock. It is deleted rather than
+ * deprecated so it cannot be imported back by accident: the tray now comes from
+ * captain_allocations via /api/captain/catalogue.
+ */
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
