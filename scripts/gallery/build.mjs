@@ -43,13 +43,19 @@ function panelsFor(p) {
     return existsSync(f) ? `${dir}/${name}` : fallback;
   };
 
+  /*
+   * Real photography, generated for Nutri Greenz rather than borrowed.
+   *
+   * The bowl slot previously fell back to oils-infographic.webp — an
+   * infographic with its own captions, nested inside another infographic.
+   */
   const storyPhoto =
     p.category === "oils"
-      ? photo("oils-lifestyle.webp", p.bottle)
+      ? photo("oils-farm.webp", photo("oils-lifestyle.webp", p.bottle))
       : photo("ghee-farm.webp", p.bottle);
   const bowlPhoto =
     p.category === "oils"
-      ? photo("oils-infographic.webp", p.bottle)
+      ? photo("oils-bowl.webp", p.bottle)
       : photo("ghee-benefit-bowl.webp", p.bottle);
 
   /*
@@ -68,7 +74,9 @@ function panelsFor(p) {
     ["sourcing", sourcingPanel(p, storyPhoto)],
     ["benefits", benefitsPanel(p, bowlPhoto)],
     ["comparison", comparisonPanel(p)],
-    ["usage", usagePanel(p)],
+    // Photo tiles only when EVERY mode has a real file — a half-photo,
+    // half-icon row looks like a build error rather than a design.
+    ["usage", usagePanel(p, p.usage.modes.every((m) => existsSync(path.join(PUBLIC, m.img.slice(1)))))],
     ...sizes.map((s) => [`nutrition-${s.toLowerCase()}`, nutritionPanel(p, s)]),
   ];
 }

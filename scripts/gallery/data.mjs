@@ -71,7 +71,9 @@ export const PRODUCTS = {
     title: "GROUNDNUT OIL",
     shortTitle: "Groundnut Oil",
     method: "COLD-PRESSED",
-    bottle: "/images/products/oils/groundnut.webp",
+    // Wordmark-only render (no N monogram) — client instruction is that gallery
+    // artwork carries the NUTRI GREENZ wordmark, never the single-letter mark.
+    bottle: "/images/products/oils/groundnut-wordmark.webp",
     accent: "#B5862F",
 
     ingredientPanel: {
@@ -99,9 +101,9 @@ export const PRODUCTS = {
 
     usage: {
       modes: [
-        { label: "Drizzle", img: "/images/products/oils/oils-lifestyle.webp" },
-        { label: "Stir-Fry", img: "/images/products/oils/oils-tile-woodpress.webp" },
-        { label: "Deep-Fry", img: "/images/products/oils/oils-infographic.webp" },
+        { label: "Drizzle", img: "/images/products/oils/use-drizzle.webp" },
+        { label: "Stir-Fry", img: "/images/products/oils/use-stirfry.webp" },
+        { label: "Deep-Fry", img: "/images/products/oils/use-deepfry.webp" },
       ],
       notes: [
         "High smoke point — holds up to Indian deep-frying",

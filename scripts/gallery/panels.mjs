@@ -153,15 +153,13 @@ export function sourcingPanel(p, heroImg) {
 /* ── 4 · How to use ──────────────────────────────────────────────────── */
 
 /*
- * Built from type and drawn marks, not photos.
+ * Photo tiles when the product has kitchen photography, drawn marks when it
+ * does not.
  *
- * The reference uses three action shots — drizzling, stir-frying, deep-frying.
- * Nutri Greenz has no such photography, and the only images to hand are
- * existing infographics: dropping one of those into a tile would nest an
- * infographic inside an infographic, complete with its own competing captions.
- *
- * So each mode gets a drawn mark instead. When real kitchen photography exists,
- * `usage.modes[].img` is already in the data — swap this back to tiles.
+ * Ghee has no action shots yet, and the only ghee images to hand are existing
+ * infographics — dropping one into a tile would nest an infographic inside an
+ * infographic, with its own competing captions. So the icon path stays as the
+ * honest fallback rather than being deleted.
  */
 const USE_ICONS = {
   Drizzle: `<path d="M20 6c0 0-7 3-7 8"/><path d="M13 14v3"/><path d="M6 20h12"/><path d="M6 20a6 6 0 0 1 12 0"/>`,
@@ -172,8 +170,14 @@ const USE_ICONS = {
   Sweets: `<path d="M12 4l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4L7.5 17.8l.9-5L4.8 9.3l5-.7Z"/>`,
 };
 
-export function usagePanel(p) {
-  const tile = (m) => `
+export function usagePanel(p, hasPhotos = false) {
+  const photoTile = (m) => `
+    <div class="use-tile photo">
+      <div class="use-img" style="background-image:url('${m.img}')"></div>
+      <div class="use-label">${m.label}</div>
+    </div>`;
+
+  const iconTile = (m) => `
     <div class="use-tile">
       <div class="use-mark">
         <svg viewBox="0 0 24 24" fill="none" stroke="${COLOR.forestSoft}" stroke-width="1.4"
@@ -183,6 +187,8 @@ export function usagePanel(p) {
       </div>
       <div class="use-label">${m.label}</div>
     </div>`;
+
+  const tile = hasPhotos ? photoTile : iconTile;
   const inner = `
     <div class="use">
       <h2 class="use-h">How to use it</h2>
@@ -304,6 +310,8 @@ export const CSS = `
   .use-h{font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:66px;font-weight:800;color:#14331F;letter-spacing:-1.2px;text-align:center}
   .use-row{display:flex;gap:26px;justify-content:center}
   .use-tile{flex:1;border:3px dashed #1F4D2E;border-radius:24px;padding:44px 16px 36px;text-align:center}
+  .use-tile.photo{padding:16px 16px 22px}
+  .use-img{height:250px;border-radius:16px;background-size:cover;background-position:center;margin-bottom:14px}
   .use-mark{width:120px;height:120px;margin:0 auto 16px;border-radius:50%;background:#FAFAF5;
     display:flex;align-items:center;justify-content:center}
   .use-mark svg{width:64px;height:64px}
