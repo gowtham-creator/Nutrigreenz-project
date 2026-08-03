@@ -1,107 +1,82 @@
 /**
- * Composite the REAL label artwork onto a bare bottle photograph.
+ * Put the approved Nutri Greenz label on a bottle.
  *
  * Run:  node scripts/gallery/build-bottle-shots.mjs
  *
- * Produces a front view (display panel) and a back view (golden statutory
- * panel) carrying the exact text that goes to print, because it crops that text
- * out of the label generator's own output.
- *
- * The alternative — asking an image model for a back label — was tried twice
- * and produced "NET QUANTITY 100 ml" on a one-litre bottle and an invented
- * calorie figure. Statutory copy is not something to generate.
+ * The label is the APPROVED storefront artwork — recovered flat off the
+ * existing product render by unwrap-label.mjs, then wrapped back onto a
+ * different bottle. Recovering it rather than redrawing it matters: a redraw
+ * would be a near-match that is subtly not the approved design, and the
+ * difference would show the moment the two sat together on a product page.
  */
 import sharp from "sharp";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyLabel, panelOf } from "./bottle-mockup.mjs";
+import { unwrapFace, evenLighting } from "./unwrap-label.mjs";
+import { applyFace } from "./wrap-face.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
 const PUBLIC = path.join(ROOT, "public");
+const OUT = path.join(PUBLIC, "images/products/oils");
+const REVIEW = path.join(process.env.HOME ?? ROOT, "Downloads", "nutrigreenz-gallery");
 
-/*
- * Two bases. The filled bottle is what a shopper sees on the page; the empty
- * one is a separate deliverable and the cleaner base for a pure pack shot.
- */
+const SOURCE_RENDER = path.join(OUT, "groundnut-wordmark.webp");
 const BOTTLE_FILLED = path.join(ROOT, "assets-src/bottle-filled-1l.png");
 const BOTTLE_EMPTY = path.join(ROOT, "assets-src/bottle-empty-1l.png");
-const LABEL = path.join(
-  ROOT,
-  "nutrigreenz-packaging/50_exports/print/NG-GHEE-GROUNDNUT-OIL-1L-CLEAN.png",
-);
+
+/* The label band on the source render, measured by hue rather than guessed. */
+const SOURCE_BAND = { left: 0.3286, right: 0.6714, top: 0.3920, bottom: 0.8682 };
+
+/* Half-arc the label face spans. Same value in both directions. */
+const ARC = 76;
 
 /*
- * Where the label sits on the glass, as fractions of the bottle image.
- * Measured off the photograph — the body spans x 0.353–0.649 and the glass runs
- * y 0.294–0.943 — not guessed. A label that floats off the silhouette is the
- * tell that gives a mockup away.
+ * Where the label sits on each bottle, measured off the photographs by colour
+ * saturation — the filled bottle is shot on warm grey, so a white threshold
+ * reads the whole frame as subject.
  */
-/*
- * Measured off the filled bottle by colour saturation rather than luminance —
- * the grey studio background defeats a white threshold. Body spans x
- * 0.344–0.656, glass runs y 0.073–0.930. The label sits on the straight wall,
- * leaving oil visible above the shoulder and below the base, as on the
- * reference pack.
- */
-const BAND_FILLED = { left: 0.344, right: 0.656, top: 0.40, bottom: 0.855 };
-const BAND_EMPTY = { left: 0.353, right: 0.649, top: 0.44, bottom: 0.86 };
-
-/*
- * Panel shares of the flat artwork, including the 3mm bleed on each end.
- * build.mjs splits the printable wrap 0.27 / 0.27 / 0.46 as story · display ·
- * golden, so those fractions are recomputed here across the full bled sheet.
- */
-const WRAP_MM = Math.round(Math.PI * 85) + 5; // groundnut 1L jar ⌀85mm
-const BLEED_MM = 3;
-const SHEET = WRAP_MM + BLEED_MM * 2;
-const at = (mm) => (BLEED_MM + mm) / SHEET;
-
-const PANELS = {
-  display: { left: at(WRAP_MM * 0.27), right: at(WRAP_MM * 0.54), top: 0.06, bottom: 0.94 },
-  golden: { left: at(WRAP_MM * 0.54), right: at(WRAP_MM), top: 0.06, bottom: 0.94 },
-};
+const BAND_FILLED = { left: 0.344, right: 0.656, top: 0.395, bottom: 0.845 };
+const BAND_EMPTY  = { left: 0.353, right: 0.649, top: 0.430, bottom: 0.865 };
 
 async function main() {
-  const outDir = path.join(PUBLIC, "images/products/oils");
-  await mkdir(outDir, { recursive: true });
+  await mkdir(OUT, { recursive: true });
+  await mkdir(REVIEW, { recursive: true });
+
+  // Recover the approved artwork, then flatten the studio lighting the render
+  // baked in — left in, it would be re-shaded on the new bottle and read as a
+  // dirty label.
+  const raw = await unwrapFace(SOURCE_RENDER, SOURCE_BAND, {
+    usableArc: ARC,
+    out: { w: 1400, h: 1000 },
+  });
+  const face = await evenLighting(raw, 0.85);
+  await writeFile(path.join(REVIEW, "groundnut-label-flat.png"), face);
+  console.log("  ✓ groundnut-label-flat  (the label, flat)");
 
   const shots = [
-    // Front: the display face — wordmark, product name, 100% Pure.
-    { name: "groundnut-front", panel: PANELS.display, base: BOTTLE_FILLED, band: BAND_FILLED },
-    // Back: the golden statutory face — the panel a shopper turns the bottle for.
-    { name: "groundnut-back", panel: PANELS.golden, base: BOTTLE_FILLED, band: BAND_FILLED },
-    // Empty-glass pack shots, requested separately.
-    { name: "groundnut-front-empty", panel: PANELS.display, base: BOTTLE_EMPTY, band: BAND_EMPTY },
-    { name: "groundnut-back-empty", panel: PANELS.golden, base: BOTTLE_EMPTY, band: BAND_EMPTY },
+    { name: "groundnut-filled-labelled", base: BOTTLE_FILLED, band: BAND_FILLED },
+    { name: "groundnut-empty-labelled",  base: BOTTLE_EMPTY,  band: BAND_EMPTY  },
   ];
 
   for (const s of shots) {
-    const flat = await panelOf(LABEL, s.panel);
-    const composed = await applyLabel(s.base, flat, s.band, { wrap: 150 });
-    const out = path.join(outDir, `${s.name}.webp`);
-    await sharp(composed).resize({ width: 1400 }).webp({ quality: 92 }).toFile(out);
-    console.log(`  ✓ ${path.relative(ROOT, out)}`);
-
-    // Review copy alongside the rest of the gallery proofs.
-    const review = path.join(process.env.HOME ?? ROOT, "Downloads", "nutrigreenz-gallery");
-    await mkdir(review, { recursive: true });
-    await writeFile(path.join(review, `${s.name}.png`), composed);
+    const composed = await applyFace(s.base, face, s.band, { arc: ARC });
+    await sharp(composed).resize({ width: 1400 }).webp({ quality: 92 })
+      .toFile(path.join(OUT, `${s.name}.webp`));
+    await writeFile(path.join(REVIEW, `${s.name}.png`), composed);
+    console.log(`  ✓ ${s.name}`);
   }
 
-  // The bare bottle is a deliverable in its own right.
+  // The bare bottles are deliverables in their own right.
   for (const [name, src] of [
     ["groundnut-bottle-empty", BOTTLE_EMPTY],
     ["groundnut-bottle-filled", BOTTLE_FILLED],
   ]) {
-    const out = path.join(outDir, `${name}.webp`);
-    await sharp(src).resize({ width: 1400 }).webp({ quality: 92 }).toFile(out);
-    console.log(`  ✓ ${path.relative(ROOT, out)}`);
+    await sharp(src).resize({ width: 1400 }).webp({ quality: 92 })
+      .toFile(path.join(OUT, `${name}.webp`));
+    console.log(`  ✓ ${name}`);
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch((e) => { console.error(e); process.exit(1); });

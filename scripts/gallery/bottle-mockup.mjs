@@ -1,127 +1,126 @@
 import sharp from "sharp";
 
 /**
- * Wrap a flat label panel onto a bottle photograph.
+ * Wrap the full label around a bottle and render the visible arc.
  *
- * Why this exists rather than another generated render: an image model cannot
- * be trusted with regulated copy. Asked twice for a back label it produced
- * "NET QUANTITY 100 ml" on a one-litre bottle and a calorie figure of 130 —
- * both invented, both statutory declarations, on artwork bound for a live
- * product page. The label generator in nutrigreenz-packaging already produces
- * the real panel; this puts that exact artwork on the bottle so the text on the
- * image and the text going to print are the same text.
+ * The first version mapped ONE flat panel across the bottle face, so the label
+ * stopped dead at the silhouette and no neighbouring panel curved away. A wrap
+ * label does not work like that: it is one continuous strip around the whole
+ * circumference, and what you see is an arc of it, with panels compressing hard
+ * toward each edge.
  *
- * The warp is a per-column vertical scale plus a horizontal compression toward
- * the edges — the standard approximation of a flat sheet wrapped on a cylinder.
- * A column at angle θ from the bottle's centre line is foreshortened by cos θ
- * horizontally, and its visible height shrinks slightly toward the silhouette.
- * Shading multiplies a soft cylindrical falloff over the top so the panel sits
- * in the bottle's own light rather than looking pasted on.
+ * So this samples the WHOLE label by angle. A point at angle θ around the jar
+ * sits at horizontal position sin θ, and its place on the strip is θ/2π along
+ * the circumference. Rotating the bottle is then just moving `centre`.
+ *
+ * The label text is the artwork going to print — cropped out of the label
+ * generator's own export — because an image model cannot be trusted with
+ * statutory copy. Asked for a back label it produced "NET QUANTITY 100 ml" on a
+ * one-litre bottle and an invented calorie figure.
  */
 
 /**
- * @param labelBuf   PNG/WebP buffer of the flat panel (already cropped)
- * @param out        { w, h } target size of the warped panel in px
- * @param opts.wrap  how far around the cylinder the panel spans, in degrees.
- *                   ~150° reads as a label seen face-on with both edges curving
- *                   away; lower values look flatter.
+ * @param labelBuf  the full flat label strip (one wrap = 360°)
+ * @param out       { w, h } size of the rendered arc in px
+ * @param opts.centre   which point of the strip faces the camera, 0…1.
+ *                      Increasing it turns the bottle to the RIGHT.
+ * @param opts.maxAngle half the visible arc, in degrees. 72° shows the face
+ *                      plus a believable amount curving away at each edge.
  */
-export async function cylindricalWarp(labelBuf, out, opts = {}) {
-  const wrapDeg = opts.wrap ?? 150;
-  const curveDepth = opts.curveDepth ?? 0.06; // vertical bow at the edges
-  const shade = opts.shade ?? 0.55; // 0 = flat lighting, 1 = heavy falloff
+export async function wrapLabel(labelBuf, out, opts = {}) {
+  const centre = opts.centre ?? 0.5;
+  const maxAngle = ((opts.maxAngle ?? 72) * Math.PI) / 180;
+  const shade = opts.shade ?? 0.5;
 
   const src = sharp(labelBuf).ensureAlpha();
-  const meta = await src.metadata();
-  const { data, info } = await src
-    .resize(out.w, out.h, { fit: "fill" })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+  const { data, info } = await src.raw().toBuffer({ resolveWithObject: true });
+  const SW = info.width;
+  const SH = info.height;
+  const C = info.channels;
 
-  const W = info.width;
-  const H = info.height;
-  const ch = info.channels;
+  const W = out.w;
+  const H = out.h;
   const dst = Buffer.alloc(W * H * 4, 0);
 
-  const half = ((wrapDeg / 2) * Math.PI) / 180;
+  const sinMax = Math.sin(maxAngle);
 
   for (let x = 0; x < W; x++) {
-    // Destination column → angle across the cylinder face.
-    const t = (x / (W - 1)) * 2 - 1; // -1 … 1
-    const theta = t * half;
     /*
-     * Source column. sin θ / sin(half) maps the destination's linear span back
-     * onto the label's own coordinates: the middle of the panel is barely
-     * stretched, the edges compress hard, which is what makes it read as
-     * curvature rather than a squeeze.
+     * Destination x is a position across the bottle's flat silhouette, which is
+     * sin θ. Invert it to recover the angle — that is what makes the middle of
+     * the face nearly untouched while the edges compress, instead of the whole
+     * panel simply squashing.
      */
-    const u = Math.sin(theta) / Math.sin(half);
-    const sx = Math.round(((u + 1) / 2) * (W - 1));
-    if (sx < 0 || sx >= W) continue;
+    const t = (x / (W - 1)) * 2 - 1; // -1 … 1 across the bottle
+    const theta = Math.asin(Math.max(-1, Math.min(1, t * sinMax)));
 
-    // Edges of a cylinder are further from the camera → slightly shorter.
-    const scaleY = 1 - curveDepth * (1 - Math.cos(theta));
+    // Position along the strip: the wrap is 360°, so θ/2π of its width.
+    let u = centre + theta / (2 * Math.PI);
+    u -= Math.floor(u); // the strip is a loop
+    const sx = Math.min(SW - 1, Math.max(0, Math.round(u * SW)));
+
+    // Edges sit further from the camera, so they read very slightly shorter.
+    const scaleY = 1 - 0.05 * (1 - Math.cos(theta));
     const bow = ((1 - scaleY) * H) / 2;
 
-    // Lambert-ish falloff, brightest just off centre like a real specular roll.
-    const light = Math.cos(theta - 0.18);
+    // Light rolls off toward the edges; brightest just left of centre.
+    const light = Math.cos(theta - 0.2);
     const shadeF = 1 - shade * (1 - Math.max(0, light));
 
     for (let y = 0; y < H; y++) {
-      const sy = Math.round((y - bow) / scaleY);
-      if (sy < 0 || sy >= H) continue;
-      const si = (sy * W + sx) * ch;
+      const sy = Math.round(((y - bow) / scaleY) * (SH / H));
+      if (sy < 0 || sy >= SH) continue;
+      const si = (sy * SW + sx) * C;
       const di = (y * W + x) * 4;
       dst[di] = Math.round(data[si] * shadeF);
       dst[di + 1] = Math.round(data[si + 1] * shadeF);
       dst[di + 2] = Math.round(data[si + 2] * shadeF);
-      dst[di + 3] = ch === 4 ? data[si + 3] : 255;
+      dst[di + 3] = C === 4 ? data[si + 3] : 255;
     }
   }
 
-  void meta;
   return sharp(dst, { raw: { width: W, height: H, channels: 4 } }).png().toBuffer();
 }
 
 /**
- * Composite a warped panel onto a bare bottle shot.
- *
- * `band` is where the label sits on the bottle, as fractions of the bottle
- * image — measured off the actual photograph rather than guessed, because a
- * label floating off the glass is the tell that gives a mockup away.
+ * Trim the printer's bleed off the strip so the wrap is exactly one
+ * circumference. Leaving it on makes the label 4% too long and every panel
+ * drifts out of position as it goes round.
  */
-export async function applyLabel(bottlePath, labelBuf, band, opts = {}) {
+export async function trimBleed(labelPath, bleedFrac) {
+  const img = sharp(labelPath);
+  const { width, height } = await img.metadata();
+  const dx = Math.round(width * bleedFrac);
+  const dy = Math.round(height * bleedFrac * (width / height));
+  return img
+    .extract({
+      left: dx,
+      top: dy,
+      width: width - dx * 2,
+      height: height - dy * 2,
+    })
+    .png()
+    .toBuffer();
+}
+
+/** Composite the rendered arc onto the bottle photograph. */
+export async function applyWrap(bottlePath, labelStrip, band, opts = {}) {
   const bottle = sharp(bottlePath).ensureAlpha();
   const { width, height } = await bottle.metadata();
 
   const w = Math.round(width * (band.right - band.left));
   const h = Math.round(height * (band.bottom - band.top));
-  const warped = await cylindricalWarp(labelBuf, { w, h }, opts);
+  const arc = await wrapLabel(labelStrip, { w, h }, opts);
 
   return bottle
     .composite([
       {
-        input: warped,
+        input: arc,
         left: Math.round(width * band.left),
         top: Math.round(height * band.top),
         blend: "over",
       },
     ])
-    .png()
-    .toBuffer();
-}
-
-/** Crop one panel out of the flat three-panel label artwork. */
-export async function panelOf(labelPath, share) {
-  const img = sharp(labelPath);
-  const { width, height } = await img.metadata();
-  return img
-    .extract({
-      left: Math.round(width * share.left),
-      top: Math.round(height * share.top),
-      width: Math.round(width * (share.right - share.left)),
-      height: Math.round(height * (share.bottom - share.top)),
-    })
     .png()
     .toBuffer();
 }
