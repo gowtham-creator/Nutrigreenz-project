@@ -28,18 +28,30 @@ const nextConfig: NextConfig = {
    * ~7.7 MB of assets that is how a 10 GB origin-transfer allowance disappears
    * without any single file being large.
    *
-   * These paths are safe to pin because their contents are replaced by
-   * uploading a NEW file (the admin image picker writes to Supabase Storage
-   * with a fresh name), not by overwriting an existing one. If a file at a
-   * fixed path ever does need replacing in place, change its filename too —
-   * that is the tradeoff `immutable` asks for.
+   * It was originally `max-age=31536000, immutable`, on the assumption that
+   * files at these paths are never overwritten. That assumption broke the first
+   * time a product photo was replaced in place: the bytes changed on the server
+   * and every returning visitor kept seeing the old picture, because
+   * `immutable` tells a browser not to revalidate for a year. There is no way
+   * to fix that from the server — the request is never made.
+   *
+   * The split below keeps the whole bandwidth win and drops the trap. The
+   * problem being solved is Fast Origin Transfer, which is origin → CDN
+   * traffic; `s-maxage` pins the CDN copy for a year and Vercel purges it on
+   * deploy, so the origin is still hit once per file per deploy. The browser's
+   * short `max-age` costs nothing extra at the origin — a revalidation is
+   * answered by the CDN, and a 304 carries no body.
    */
   async headers() {
     return [
       {
         source: "/:path((?:images|brand|videos|seo)/.*)",
         headers: [
-          { key: "cache-control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "cache-control",
+            value:
+              "public, max-age=3600, s-maxage=31536000, stale-while-revalidate=604800",
+          },
         ],
       },
     ];
