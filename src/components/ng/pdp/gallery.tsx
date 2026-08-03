@@ -11,6 +11,7 @@ import type { ProduceIconName } from "@/components/ng/produce-icons";
 import type { CategoryTheme } from "@/lib/category-theme";
 import { usePdpVariant } from "./variant-context";
 import { useDragSwipe } from "@/components/ng/use-drag-swipe";
+import { NUTRITION_LABEL } from "./product-gallery";
 
 interface GalleryImage {
   src: string;
@@ -28,6 +29,15 @@ interface GalleryProps {
   produceIcon?: ProduceIconName;
   /** Per-category theme — tints the stage glow + empty placeholders. */
   theme?: CategoryTheme;
+  /**
+   * Nutrition panels keyed by lower-cased pack size ("1l", "500ml").
+   *
+   * The size selector changes variant IN PLACE without navigating, so a
+   * nutrition panel fixed to the page's slug would keep claiming "65 servings
+   * per container" after the shopper switched to the 500 ml. Wrong nutrition
+   * information on a food product, so the panel follows the selection instead.
+   */
+  nutritionBySize?: Record<string, string>;
 }
 
 const PLACEHOLDER = "/images/placeholder.svg";
@@ -43,7 +53,7 @@ const PLACEHOLDER = "/images/placeholder.svg";
  * product's own image(s). Until real photography exists, each empty slot renders
  * an attractive, category-aware <PhotoPlaceholder> instead of a flat logo.
  */
-export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf", theme }: GalleryProps) {
+export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf", theme, nutritionBySize }: GalleryProps) {
   const reduce = useReducedMotion();
   const shared = usePdpVariant();
   const selected = shared?.selected;
@@ -58,10 +68,29 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
   const baseAlt = baseImages[0]?.alt ?? "Product image";
 
   const displayImages = useMemo<GalleryImage[]>(() => {
-    if (!variantSrc) return baseImages;
-    return [{ src: variantSrc, alt: `${baseAlt} — ${selected?.size ?? "selected size"}`, label: selected?.size }, ...baseImages];
+    /*
+     * Re-point the nutrition panel at the SELECTED size.
+     *
+     * Servings-per-container is the one figure that changes with the bottle, so
+     * a stale panel would state a wrong number for the size in the cart. When
+     * the chosen size has no panel yet, the slide is dropped rather than left
+     * showing another size's figures.
+     */
+    let list = baseImages;
+    if (nutritionBySize) {
+      const key = (selected?.size ?? "").toLowerCase().replace(/\s+/g, "");
+      const forSize = key ? nutritionBySize[key] : undefined;
+      list = baseImages.flatMap((img) => {
+        if (img.label !== NUTRITION_LABEL) return [img];
+        if (!key) return [img];
+        return forSize ? [{ ...img, src: forSize }] : [];
+      });
+    }
+
+    if (!variantSrc) return list;
+    return [{ src: variantSrc, alt: `${baseAlt} — ${selected?.size ?? "selected size"}`, label: selected?.size }, ...list];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, variantSrc, selected?.size]);
+  }, [images, variantSrc, selected?.size, nutritionBySize]);
 
   const count = displayImages.length;
   const [active, setActive] = useState(0);

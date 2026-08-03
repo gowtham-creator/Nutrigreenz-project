@@ -28,6 +28,7 @@ import type { Review } from "@/components/ng/pdp/reviews";
 import type { PdpVariant } from "@/components/ng/pdp/variant-selector";
 import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 import { getProductStory } from "@/components/ng/pdp/pdp-story";
+import { galleryPanelsFor, nutritionBySizeFor } from "@/components/ng/pdp/product-gallery";
 import { getCategoryTheme } from "@/lib/category-theme";
 
 const SITE = "https://nutrigreenz.farm";
@@ -291,6 +292,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .filter((src) => src && src !== PLACEHOLDER && src !== p.image)
     .map((src, i) => ({ src, alt: `${p.title} — photo ${i + 2}`, label: undefined }));
 
+  /*
+   * Generated panels for THIS product — nutrition, sourcing, comparison and so
+   * on, built by scripts/gallery/build.mjs and listed in its manifest.
+   *
+   * Matched on the SKU slug, and the nutrition panel is picked by pack size,
+   * because "servings per container" differs between a litre and a 500 ml.
+   * A product with no authored set gets none of these rather than another
+   * product's — the borrowing this gallery was already fixed for once.
+   */
+  const generatedPanels = galleryPanelsFor(p.slug, p.title);
+  const nutritionBySize = nutritionBySizeFor(p.slug);
+
   // Only a set curated FOR THIS PRODUCT counts; the category-wide range set is
   // deliberately not consulted.
   const curatedShots =
@@ -298,9 +311,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ? story.gallery.map((g) => ({ src: g.src, alt: g.alt, label: g.label }))
       : [];
 
+  /*
+   * The operator's own photography leads, because a real shot of the actual
+   * pack beats a generated panel. The generated set follows, and its own
+   * front-of-pack panel is dropped when a real lead image already exists — two
+   * bottle shots in the first two slots is a worse gallery, not a fuller one.
+   */
+  const generated = hasRealImage
+    ? generatedPanels.filter((g) => g.label !== "Front of pack")
+    : generatedPanels;
+
   const real = [
     ...(hasRealImage ? [{ src: p.image, alt: p.title, label: "Front of pack" }] : []),
     ...ownShots,
+    ...generated,
     ...curatedShots,
   ];
 
@@ -393,7 +417,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
           <div className="md:sticky md:top-24 md:self-start">
             <Reveal>
-              <Gallery images={images} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} theme={theme} />
+              <Gallery images={images} nutritionBySize={nutritionBySize} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} theme={theme} />
             </Reveal>
           </div>
 
