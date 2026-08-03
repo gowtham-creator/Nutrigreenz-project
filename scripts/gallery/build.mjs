@@ -137,6 +137,12 @@ async function main() {
      */
     const cut = await cutout(path.join(PUBLIC, p.bottle.slice(1)), cacheDir);
     p.bottle = `file://${cut}`;
+    // The refined-oil bottle needs the same treatment — it was shipped with its
+    // white studio box intact, which painted over the right column's copy.
+    if (p.refinedBottle?.startsWith("/")) {
+      const cutR = await cutout(path.join(PUBLIC, p.refinedBottle.slice(1)), cacheDir);
+      p.refinedBottle = `file://${cutR}`;
+    }
     const outDir = path.join(PUBLIC, "images", "products", p.category, "gallery");
     await mkdir(outDir, { recursive: true });
 

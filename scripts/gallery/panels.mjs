@@ -286,13 +286,16 @@ export function heroPanel(p) {
 export function comparisonPanel(p) {
   const c = p.comparison;
   /*
-   * The bottle is split down the middle, not simply centred.
+   * The bottle is split down the middle: OUR bottle on the branded left, a
+   * plain unlabelled bottle of pale refined oil on the right.
    *
-   * The same bottle appears twice, clipped to each half: the left keeps its
-   * true golden colour, the right is desaturated and paled to stand for refined
-   * oil. That single image carries the whole argument — "vibrant colour" versus
-   * "uniform pale colour" — which a centred bottle cannot.
+   * Two different bottles, not one recoloured. Clipping a desaturated copy of
+   * our own bottle left the Nutri Greenz label sitting on the "Refined Oil"
+   * side — attaching the brand to the column the panel exists to argue
+   * against. The split also carries the colour claim the copy makes: vibrant
+   * golden against uniform pale.
    */
+  const refined = p.refinedBottle ?? p.bottle;
   const inner = `
     <div class="cmp">
       <div class="cmp-half left">
@@ -307,7 +310,7 @@ export function comparisonPanel(p) {
       </div>
       <div class="cmp-bottle">
         <div class="cmp-b-half l"><img src="${p.bottle}" alt=""></div>
-        <div class="cmp-b-half r"><img src="${p.bottle}" alt=""></div>
+        <div class="cmp-b-half r"><img src="${refined}" alt=""></div>
       </div>
     </div>`;
   return shell(inner, { bg: COLOR.cream });
@@ -428,7 +431,8 @@ export const CSS = `
     height:76%;aspect-ratio:1400/2087;z-index:2}
   .cmp-b-half{position:absolute;inset:0;overflow:hidden}
   .cmp-b-half.l{clip-path:inset(0 50% 0 0)}
-  .cmp-b-half.r{clip-path:inset(0 0 0 50%);filter:saturate(0.34) brightness(1.22)}
+    /* No filter: the right bottle is genuinely pale, not a washed-out copy. */
+  .cmp-b-half.r{clip-path:inset(0 0 0 50%)}
   .cmp-b-half img{width:100%;height:100%;object-fit:contain}
 
   /* 7 · benefits */

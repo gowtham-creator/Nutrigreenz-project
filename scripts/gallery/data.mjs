@@ -74,6 +74,13 @@ export const PRODUCTS = {
     // Wordmark-only render (no N monogram) — client instruction is that gallery
     // artwork carries the NUTRI GREENZ wordmark, never the single-letter mark.
     bottle: "/images/products/oils/groundnut-wordmark.webp",
+    /*
+     * The refined half of the comparison is a genuinely DIFFERENT bottle —
+     * plain unlabelled glass, pale oil, black cap. Desaturating our own bottle
+     * put the Nutri Greenz label on the "Refined Oil" side, tying the brand to
+     * the column the panel argues against.
+     */
+    refinedBottle: "/images/products/oils/refined-plain-bottle.webp",
     accent: "#B5862F",
 
     ingredientPanel: {
