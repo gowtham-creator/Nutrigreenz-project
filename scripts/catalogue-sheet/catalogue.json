@@ -1,0 +1,123 @@
+{
+  "_comment": "Live catalogue captured from nutrigreenz-project.vercel.app on 3 Aug 2026. Prices are per-SKU and GST-INCLUSIVE, matching how the storefront and src/lib/gst.ts treat them. Descriptions are the CATEGORY fallback text the PDP renders — no product in the catalogue carries its own description, which is the single biggest gap this sheet exists to close.",
+  "capturedOn": "2026-08-03",
+  "source": "https://nutrigreenz-project.vercel.app",
+  "categories": {
+    "oils": {
+      "name": "Cold-pressed oils",
+      "gstPercent": 5,
+      "hsn": "1508 / 1513",
+      "gstBasis": "Edible vegetable oils are taxed at 5% (groundnut oil HSN 1508, coconut oil HSN 1513)."
+    },
+    "ghee": {
+      "name": "A2 Ghee",
+      "gstPercent": 12,
+      "hsn": "0405",
+      "gstBasis": "Ghee and butter fats fall under HSN 0405, taxed at 12%."
+    },
+    "honey": {
+      "name": "Raw Honey",
+      "gstPercent": 5,
+      "hsn": "0409",
+      "gstBasis": "Natural honey HSN 0409. Nil when unbranded and not in a unit container; 5% once branded and packaged, which is the case here."
+    }
+  },
+  "products": [
+    {
+      "category": "oils",
+      "name": "Groundnut Cold-Pressed Oil",
+      "slug": "groundnut-cold-pressed-oil",
+      "descriptionOnSite": "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "1L", "mrpInclGst": 250 },
+        { "size": "3L", "mrpInclGst": null },
+        { "size": "5L", "mrpInclGst": null },
+        { "size": "10L", "mrpInclGst": null },
+        { "size": "15L", "mrpInclGst": null }
+      ]
+    },
+    {
+      "category": "oils",
+      "name": "Coconut Cold-Pressed Oil",
+      "slug": "coconut-cold-pressed-oil",
+      "descriptionOnSite": "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "1L", "mrpInclGst": 250 },
+        { "size": "3L", "mrpInclGst": null },
+        { "size": "5L", "mrpInclGst": null },
+        { "size": "10L", "mrpInclGst": null },
+        { "size": "15L", "mrpInclGst": null }
+      ]
+    },
+    {
+      "category": "ghee",
+      "name": "A2 Gir Cow Ghee",
+      "slug": "a2-gir-cow-ghee",
+      "descriptionOnSite": "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "250ml", "mrpInclGst": 360 },
+        { "size": "500ml", "mrpInclGst": 680 },
+        { "size": "1L", "mrpInclGst": 1300 }
+      ]
+    },
+    {
+      "category": "ghee",
+      "name": "Vedic Bilona Ghee",
+      "slug": "vedic-bilona-ghee",
+      "descriptionOnSite": "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "250ml", "mrpInclGst": 420 },
+        { "size": "500ml", "mrpInclGst": 790 }
+      ]
+    },
+    {
+      "category": "ghee",
+      "name": "Cultured Buffalo Ghee",
+      "slug": "cultured-buffalo-ghee",
+      "descriptionOnSite": "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "250ml", "mrpInclGst": 260 },
+        { "size": "500ml", "mrpInclGst": 490 }
+      ]
+    },
+    {
+      "category": "honey",
+      "name": "Kashmiri Acacia Honey",
+      "slug": "kashmiri-acacia-honey",
+      "descriptionOnSite": "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs — in the jar.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "350g", "mrpInclGst": 650 },
+        { "size": "500g", "mrpInclGst": 920 }
+      ]
+    },
+    {
+      "category": "honey",
+      "name": "Multifloral Raw Honey",
+      "slug": "multifloral-raw-honey",
+      "descriptionOnSite": "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs — in the jar.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "500g", "mrpInclGst": 340 },
+        { "size": "1kg", "mrpInclGst": 640 }
+      ]
+    },
+    {
+      "category": "honey",
+      "name": "Wild Forest Honey",
+      "slug": "wild-forest-honey",
+      "descriptionOnSite": "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs — in the jar.",
+      "descriptionIsCategoryFallback": true,
+      "variants": [
+        { "size": "350g", "mrpInclGst": 380 },
+        { "size": "500g", "mrpInclGst": 520 },
+        { "size": "1kg", "mrpInclGst": 980 }
+      ]
+    }
+  ]
+}
