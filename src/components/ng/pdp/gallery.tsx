@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,15 @@ interface GalleryProps {
 }
 
 const PLACEHOLDER = "/images/placeholder.svg";
+
+/**
+ * A generated infographic panel rather than a product photograph.
+ *
+ * These are square, full-bleed, and carry dense type — a nutrition table, a
+ * comparison chart. They need to fill the frame and to be openable full-screen;
+ * a bottle shot needs neither.
+ */
+const isPanel = (src: string) => src.includes("/gallery/");
 
 /**
  * Interactive product gallery — main viewer + clickable thumbnail rail, with
@@ -94,13 +104,35 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
 
   const count = displayImages.length;
   const [active, setActive] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+  // createPortal needs document; guard for the server render.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const clampedActive = Math.min(active, count - 1);
+
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomed(false);
+      if (e.key === "ArrowRight") setActive((i) => Math.min(i + 1, count - 1));
+      if (e.key === "ArrowLeft") setActive((i) => Math.max(i - 1, 0));
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [zoomed, count]);
 
   // Snap back to the lead image whenever the shopper changes size/SKU, so the
   // (possibly variant-specific) hero shot is what they see for the new pick.
   useEffect(() => {
     setActive(0);
   }, [selectedId, variantSrc]);
+
+  const activeIsPanel = isPanel(displayImages[clampedActive]?.src ?? "");
 
   const go = (i: number) => setActive(Math.min(Math.max(0, i), count - 1));
 
@@ -126,8 +158,81 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
     }
   };
 
+  const zoomImage = displayImages[clampedActive];
+
   return (
     <div className="flex flex-col-reverse gap-4 md:flex-row">
+      {/*
+        Full-screen viewer. Rendered at the panel's own scale so the nutrition
+        table and the comparison chart are finally readable at the size they
+        were designed for.
+      */}
+      {/*
+        Portalled to <body>. Left in place it sat inside the page's stacking
+        context and the sticky site header painted straight over it, despite a
+        higher z-index — the header wins from an ancestor context, which no
+        z-index on this element can beat.
+      */}
+      {mounted && zoomed && zoomImage && !isPlaceholderSrc(zoomImage.src)
+        ? createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col bg-ng-forest-deep/95 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomImage.alt}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-4 px-5 py-4">
+            <span className="text-[13px] font-medium text-ng-cream/85">
+              {zoomImage.label ?? zoomImage.alt} · {clampedActive + 1} of {count}
+            </span>
+            <button
+              type="button"
+              onClick={() => setZoomed(false)}
+              aria-label="Close"
+              className="grid size-10 cursor-pointer place-items-center rounded-full bg-ng-cream/15 text-ng-cream transition-colors hover:bg-ng-cream/25"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Scrollable so a tall panel can be read on a phone. */}
+          <div className="min-h-0 flex-1 overflow-auto px-4 pb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zoomImage.src}
+              alt={zoomImage.alt}
+              className="mx-auto h-auto w-full max-w-[1100px] rounded-2xl"
+            />
+          </div>
+
+          {count > 1 ? (
+            <div className="flex shrink-0 items-center justify-center gap-3 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => go(clampedActive - 1)}
+                disabled={clampedActive === 0}
+                className="cursor-pointer rounded-full bg-ng-cream/15 px-4 py-2 text-[13px] font-semibold text-ng-cream transition-colors hover:bg-ng-cream/25 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => go(clampedActive + 1)}
+                disabled={clampedActive === count - 1}
+                className="cursor-pointer rounded-full bg-ng-cream/15 px-4 py-2 text-[13px] font-semibold text-ng-cream transition-colors hover:bg-ng-cream/25 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
+
       {/* Thumbnails */}
       <div className="flex flex-row gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-col md:overflow-visible md:pb-0">
         {displayImages.map((img, i) => (
@@ -200,9 +305,14 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
                     draggable={false}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className={cn(
-                      // Fit fully INSIDE the frame — never scale past 100% at rest
-                      // (that overflowed the stage and looked oversized/cropped).
-                      "object-contain p-4",
+                      /*
+                       * Generated panels are square, full-bleed artwork that
+                       * already carries its own background and margins. Padding
+                       * them inside the frame shrank type that is small to begin
+                       * with; they fill the stage instead. Product photography
+                       * keeps the inset so a bottle never touches the edge.
+                       */
+                      isPanel(img.src) ? "object-cover" : "object-contain p-4",
                       reduce
                         ? ""
                         : "transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]",
@@ -213,17 +323,47 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             ))}
           </div>
 
-          {/* Badges (static overlay, above the track) */}
-          <div className="pointer-events-none absolute left-5 top-5 z-10 flex flex-col gap-2">
-            {badge ? <Badge tone={badgeTone ?? "leaf"}>{badge}</Badge> : null}
-            {discount && discount > 0 && !badge ? <Badge tone="terracotta">{discount}% OFF</Badge> : null}
-          </div>
+          {/*
+            Store chrome is hidden over a generated panel.
 
-          {/* Corner provenance tag */}
-          <div className="pointer-events-none absolute bottom-5 right-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ng-paper/80 px-3 py-1.5 text-[11px] font-medium text-ng-forest backdrop-blur-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-ng-leaf" />
-            Single-origin
-          </div>
+            The badge and the provenance tag are positioned for a product photo,
+            which has empty corners. A panel does not — "BEST SELLER" landed
+            directly on top of the comparison panel's own "Cold-Pressed" pill,
+            each making the other unreadable.
+          */}
+          {!activeIsPanel ? (
+            <>
+              <div className="pointer-events-none absolute left-5 top-5 z-10 flex flex-col gap-2">
+                {badge ? <Badge tone={badgeTone ?? "leaf"}>{badge}</Badge> : null}
+                {discount && discount > 0 && !badge ? <Badge tone="terracotta">{discount}% OFF</Badge> : null}
+              </div>
+
+              <div className="pointer-events-none absolute bottom-5 right-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ng-paper/80 px-3 py-1.5 text-[11px] font-medium text-ng-forest backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-ng-leaf" />
+                Single-origin
+              </div>
+            </>
+          ) : null}
+
+          {/*
+            Open full-screen.
+
+            These panels carry a nutrition table and a comparison chart at a size
+            chosen for a 1200px canvas; the PDP stage is ~440px, so at rest the
+            body copy lands near 9px. Enlarging is not a nicety here — it is the
+            only way to actually read them.
+          */}
+          <button
+            type="button"
+            onClick={() => setZoomed(true)}
+            aria-label="View larger"
+            className="absolute left-4 top-4 z-20 grid size-10 cursor-pointer place-items-center rounded-full bg-ng-paper/90 text-ng-forest shadow-[0_2px_10px_rgba(20,51,31,0.18)] backdrop-blur transition-transform hover:scale-105"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2M11 8v6M8 11h6" />
+            </svg>
+          </button>
 
           {/* Dots — swipe position indicator (mobile; desktop uses the thumb rail) */}
           {count > 1 ? (

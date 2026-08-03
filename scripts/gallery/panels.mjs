@@ -21,31 +21,101 @@ const S = 1200;
  * any export size and carries no third-party asset.
  */
 function botanical(opacity = 0.5, stroke = "#D9CFA8") {
-  const leaf = `
-    <g stroke="${stroke}" stroke-width="1.6" fill="none" opacity="${opacity}">
-      <path d="M60 8 C 84 30, 84 66, 60 96 C 36 66, 36 30, 60 8 Z"/>
-      <path d="M60 14 L60 92"/>
-      <path d="M60 34 C 70 40, 76 46, 78 54"/>
-      <path d="M60 34 C 50 40, 44 46, 42 54"/>
-      <path d="M60 56 C 70 62, 74 68, 76 74"/>
-      <path d="M60 56 C 50 62, 46 68, 44 74"/>
-      <path d="M155 30 C 172 48, 172 78, 155 104 C 138 78, 138 48, 155 30 Z"/>
-      <path d="M155 36 L155 100"/>
-      <path d="M20 130 q 22 -18 44 0 q -22 18 -44 0 Z"/>
-      <path d="M120 140 q 26 -20 52 0 q -26 20 -52 0 Z"/>
-      <circle cx="196" cy="88" r="5"/>
-      <circle cx="12" cy="66" r="4"/>
+  /*
+   * A single large FARM SCENE, not a small repeating tile.
+   *
+   * The first version tiled a ~200px leaf motif across the canvas. Repeated at
+   * that scale it reads as wallpaper — busy up close, invisible in a thumbnail,
+   * and flat either way. The reference works because its backdrop is drawn once
+   * at canvas scale: a sun in one corner, a few big trees, wheat along the
+   * bottom, a grazing animal. Elements are placed away from the centre so they
+   * sit behind the content instead of fighting it.
+   */
+  const o = opacity;
+  const tree = (x, y, s) => `
+    <g transform="translate(${x},${y}) scale(${s})" opacity="${o * 0.85}">
+      <path d="M0 200 L0 120" stroke="${stroke}" stroke-width="5" fill="none"/>
+      <path d="M0 150 L-30 120 M0 150 L30 120 M0 176 L-22 152 M0 176 L22 152"
+            stroke="${stroke}" stroke-width="3.5" fill="none"/>
+      <path d="M0 130 C -78 130, -96 46, -40 22 C -30 -22, 30 -22, 40 22
+               C 96 46, 78 130, 0 130 Z"
+            stroke="${stroke}" stroke-width="4" fill="none"/>
+      <path d="M-46 62 q 22 -16 44 0 M-30 96 q 20 -14 40 0 M-16 34 q 16 -12 32 0"
+            stroke="${stroke}" stroke-width="2.6" fill="none"/>
     </g>`;
+
+  const wheat = (x, y, s) => `
+    <g transform="translate(${x},${y}) scale(${s})" opacity="${o * 0.8}"
+       stroke="${stroke}" stroke-width="3" fill="none">
+      <path d="M0 130 L0 30"/>
+      <path d="M0 44 q 18 -10 22 -28 q -20 2 -22 28 Z"/>
+      <path d="M0 44 q -18 -10 -22 -28 q 20 2 22 28 Z"/>
+      <path d="M0 72 q 18 -10 22 -28 q -20 2 -22 28 Z"/>
+      <path d="M0 72 q -18 -10 -22 -28 q 20 2 22 28 Z"/>
+      <path d="M0 100 q 18 -10 22 -28 q -20 2 -22 28 Z"/>
+      <path d="M0 100 q -18 -10 -22 -28 q 20 2 22 28 Z"/>
+    </g>`;
+
+  const sun = (x, y, s) => {
+    const rays = Array.from({ length: 14 }, (_, i) => {
+      const a = (Math.PI * 2 * i) / 14;
+      const x1 = Math.cos(a) * 92, y1 = Math.sin(a) * 92;
+      const x2 = Math.cos(a) * 128, y2 = Math.sin(a) * 128;
+      return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}"/>`;
+    }).join("");
+    return `
+      <g transform="translate(${x},${y}) scale(${s})" opacity="${o * 0.9}"
+         stroke="${stroke}" stroke-width="5" fill="none" stroke-linecap="round">
+        <circle cx="0" cy="0" r="72"/>${rays}
+      </g>`;
+  };
+
+  /* A grazing cow, low and small — a farm cue, never a focal point. */
+  const cow = (x, y, s) => `
+    <g transform="translate(${x},${y}) scale(${s})" opacity="${o * 0.55}"
+       stroke="${stroke}" stroke-width="3.4" fill="none" stroke-linejoin="round">
+      <path d="M-60 0 q 6 -34 40 -34 h44 q 30 0 34 30 l4 24"/>
+      <path d="M-60 0 l-4 26 M-24 -4 l-2 30 M22 -4 l2 30 M58 0 l4 26"/>
+      <path d="M-60 -6 q -18 -4 -24 -20 q 14 -4 24 6"/>
+      <path d="M62 -30 q 12 -12 22 -6"/>
+    </g>`;
+
+  const leaflet = (x, y, s, rot = 0) => `
+    <g transform="translate(${x},${y}) rotate(${rot}) scale(${s})" opacity="${o * 0.6}"
+       stroke="${stroke}" stroke-width="3" fill="none">
+      <path d="M0 0 C 30 26, 30 74, 0 100 C -30 74, -30 26, 0 0 Z"/>
+      <path d="M0 8 L0 92"/>
+      <path d="M0 34 q 18 8 24 20 M0 34 q -18 8 -24 20 M0 62 q 16 8 20 18 M0 62 q -16 8 -20 18"/>
+    </g>`;
+
   return `
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+    <svg viewBox="0 0 ${S} ${S}" width="100%" height="100%"
+         xmlns="http://www.w3.org/2000/svg"
+         preserveAspectRatio="xMidYMid slice"
          style="position:absolute;inset:0;z-index:0">
-      <defs>
-        <pattern id="bot" width="210" height="180" patternUnits="userSpaceOnUse">
-          ${leaf}
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#bot)"/>
+      ${sun(148, 132, 1.05)}
+      ${tree(1052, 236, 1.5)}
+      ${tree(96, 812, 1.25)}
+      ${tree(1108, 900, 1.1)}
+      ${wheat(322, 1010, 1.15)}
+      ${wheat(408, 1042, 0.9)}
+      ${wheat(884, 1024, 1.05)}
+      ${cow(700, 1112, 1.0)}
+      ${leaflet(980, 560, 0.95, 24)}
+      ${leaflet(178, 470, 0.8, -18)}
+      ${leaflet(560, 122, 0.7, 8)}
     </svg>`;
+}
+
+/**
+ * The farm scene as a drop-in layer.
+ *
+ * Panels whose own content paints a solid background — the comparison halves —
+ * cover the shell's backdrop entirely. They re-inject it inside each half, in a
+ * stroke colour that reads against that half.
+ */
+export function backdrop(opacity, stroke) {
+  return botanical(opacity, stroke);
 }
 
 /** Shared page chrome. `bg` and the pattern tint switch for dark panels. */
@@ -215,17 +285,30 @@ export function heroPanel(p) {
 
 export function comparisonPanel(p) {
   const c = p.comparison;
+  /*
+   * The bottle is split down the middle, not simply centred.
+   *
+   * The same bottle appears twice, clipped to each half: the left keeps its
+   * true golden colour, the right is desaturated and paled to stand for refined
+   * oil. That single image carries the whole argument — "vibrant colour" versus
+   * "uniform pale colour" — which a centred bottle cannot.
+   */
   const inner = `
     <div class="cmp">
       <div class="cmp-half left">
+        ${botanical(0.3, "#7FA789")}
         <div class="cmp-pill light">${c.left.title}</div>
-        <ul>${c.left.points.map((x) => `<li>${x} <span class="arw">←</span></li>`).join("")}</ul>
+        <ul>${c.left.points.map((x) => `<li>${x}</li>`).join("")}</ul>
       </div>
       <div class="cmp-half right">
+        ${botanical(0.42, "#D9CFA8")}
         <div class="cmp-pill dark">${c.right.title}</div>
-        <ul>${c.right.points.map((x) => `<li><span class="arw">→</span> ${x}</li>`).join("")}</ul>
+        <ul>${c.right.points.map((x) => `<li>${x}</li>`).join("")}</ul>
       </div>
-      <div class="cmp-bottle"><img src="${p.bottle}" alt=""></div>
+      <div class="cmp-bottle">
+        <div class="cmp-b-half l"><img src="${p.bottle}" alt=""></div>
+        <div class="cmp-b-half r"><img src="${p.bottle}" alt=""></div>
+      </div>
     </div>`;
   return shell(inner, { bg: COLOR.cream });
 }
@@ -327,23 +410,26 @@ export const CSS = `
 
   /* 6 · comparison */
   .cmp{position:relative;height:100%;display:flex}
-  /* The inner padding keeps the copy clear of the bottle that straddles the
-     centre line — without it, long lines ran underneath the glass. */
-  .cmp-half{width:50%;padding:44px 40px;display:flex;flex-direction:column;gap:26px}
-  .cmp-half.left{padding-right:190px}
-  .cmp-half.right{padding-left:190px}
-  .cmp-half.left{background:${COLOR.forest}}
-  .cmp-half.right{background:${COLOR.cream}}
-  .cmp-pill{align-self:center;border-radius:999px;padding:13px 30px;font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:32px;font-weight:800;white-space:nowrap}
-  .cmp-pill.light{background:${COLOR.paper};color:${COLOR.forest}}
-  .cmp-pill.dark{background:${COLOR.forest};color:${COLOR.paper}}
-  .cmp-half ul{list-style:none;display:flex;flex-direction:column;gap:36px;margin-top:14px}
-  .cmp-half li{font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:24px;font-weight:700;line-height:1.3}
-  .cmp-half.left li{color:${COLOR.paper};text-align:right;padding-right:8px}
-  .cmp-half.right li{color:${COLOR.forest};text-align:left;padding-left:8px}
-  .arw{opacity:.9;font-weight:400}
-  .cmp-bottle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:74%;z-index:2}
-  .cmp-bottle img{height:100%;width:auto;object-fit:contain}
+  .cmp-half{position:relative;overflow:hidden;width:50%;padding:42px 40px;display:flex;flex-direction:column;gap:22px}
+  .cmp-half > svg{pointer-events:none}
+  .cmp-half > *:not(svg){position:relative;z-index:1}
+  .cmp-half.left{background:#14331F;padding-right:210px}
+  .cmp-half.right{background:#F5F2E0;padding-left:210px}
+  .cmp-pill{align-self:center;border-radius:22px;padding:16px 30px;font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:40px;font-weight:800;white-space:nowrap;letter-spacing:-0.5px}
+  .cmp-pill.light{background:#FAFAF5;color:#14331F}
+  .cmp-pill.dark{background:#14331F;color:#FAFAF5}
+  .cmp-half ul{list-style:none;display:flex;flex-direction:column;justify-content:space-around;flex:1;padding:14px 0 30px}
+  .cmp-half li{font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:27px;font-weight:600;line-height:1.28}
+  .cmp-half.left li{color:#FAFAF5;text-align:right}
+  .cmp-half.right li{color:#14331F;text-align:left}
+  /* Split bottle: one image, clipped and colour-graded per side. */
+  .cmp-bottle{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+    height:76%;aspect-ratio:1400/2087;z-index:2}
+  .cmp-b-half{position:absolute;inset:0;overflow:hidden}
+  .cmp-b-half.l{clip-path:inset(0 50% 0 0)}
+  .cmp-b-half.r{clip-path:inset(0 0 0 50%);filter:saturate(0.34) brightness(1.22)}
+  .cmp-b-half img{width:100%;height:100%;object-fit:contain}
 
   /* 7 · benefits */
   .ben{height:100%;display:flex;flex-direction:column}
