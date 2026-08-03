@@ -1,0 +1,255 @@
+/*
+ * Nutri Greenz wrap-label stylesheet.
+ *
+ * Everything is in millimetres because the output is a printed object, not a
+ * screen. `mm` in CSS maps 1:1 to the PDF page, so what is written here is what
+ * the printer's die will cut.
+ *
+ * Type sizes are in POINTS and deliberately generous. The Illustrator versions
+ * failed on exactly this: statutory copy set at 2.5-3pt is about 1mm tall and
+ * reads as grey texture. FSSAI's Labelling & Display Regulations set a 1mm
+ * minimum for general declarations and prescribe larger heights for net
+ * quantity, so nothing here goes below 6pt.
+ */
+
+/* ── fonts ─────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "NG Serif";
+  src: url("../20_assets/fonts/RobotoSlab[wght].ttf") format("truetype");
+  font-weight: 100 900;
+}
+@font-face {
+  font-family: "NG Sans";
+  src: url("../20_assets/fonts/HankenGrotesk[wght].ttf") format("truetype");
+  font-weight: 100 900;
+}
+/* Neither brand face carries U+20B9. MRP in rupees is a mandatory declaration,
+   so a fallback that actually has the glyph sits behind them. */
+@font-face {
+  font-family: "NG Rupee";
+  src: url("../20_assets/fonts/NotoSans[wdth,wght].ttf") format("truetype");
+  font-weight: 100 900;
+}
+
+/* ── tokens ────────────────────────────────────────────────────────────── */
+:root {
+  --cream:     #F6EFDD;
+  --cream-alt: #F1E7CE;
+  --golden:    #EEC24A;
+  --green:     #12351F;
+  --green-dk:  #0C2616;
+  --brass:     #B0872F;
+  --brass-lt:  #C9A55C;
+  --ink:       #4A4A42;
+  --veg:       #2E9B37;
+  --flag:      #E5007D;   /* placeholders — must never survive to press */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "NG Sans", "NG Rupee", sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── the strip ─────────────────────────────────────────────────────────── */
+.label {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  display: grid;
+  /* Three panels; build.mjs sets the exact mm inline. A stale four-column
+     rule lived here after the nutrition panel was folded into the golden face. */
+  grid-template-columns: var(--col-story) var(--col-pdp) var(--col-legal);
+  background: var(--cream);
+  overflow: hidden;
+}
+
+/* Decorative motif scene, printed on the label. Sits behind everything. */
+.motif { position: absolute; inset: 0; pointer-events: none; }
+
+.zone { position: relative; z-index: 2; padding: 4mm 3.5mm; overflow: hidden; }
+
+/* ── 1 · story + statutory ─────────────────────────────────────────────── */
+.zone--story  { background: var(--cream-alt); }
+.story        { position: relative; padding: 0 4mm; margin-bottom: 1mm; }
+.story__mark  { position: absolute; font-family: "NG Serif"; font-size: 22pt;
+                color: var(--brass); line-height: .8; }
+.story__mark--open  { left: 0; top: -3.5mm; }
+.story__mark--close { right: 0; bottom: -3mm; }
+.story__text  { font-family: "NG Serif"; font-weight: 300; font-size: 7.2pt;
+                line-height: 1.4; color: var(--green-dk); }
+.rule         { height: .35mm; background: var(--brass); margin: 2.2mm 0; }
+
+/* ── brand face ────────────────────────────────────────────────────────
+   Fixed running order: story, byline, fssai, feedback, social, certs,
+   barcode, url. Sizes are set so the block holds at 250ml without the
+   auto-fit having to intervene. */
+.zone--story { align-items: center; text-align: center;
+               justify-content: flex-start; padding-top: 5mm; }
+.byline       { font-size: 6.4pt; margin-top: 2.2mm; color: var(--ink); }
+.byline__co   { font-size: 8pt; font-weight: 700; color: var(--green-dk);
+                margin-top: .6mm; }
+.byline__addr { font-size: 6pt; line-height: 1.35; margin-top: .8mm; }
+
+.fssai--stack { flex-direction: column; align-items: center; gap: .3mm;
+                margin-top: 1.8mm; }
+.fssai--stack .fssai__mark { font-size: 11pt; border-bottom: .3mm solid var(--green-dk);
+                             padding-bottom: .3mm; }
+.fssai--stack span:last-child { font-size: 6.6pt; font-weight: 700; }
+
+.feedback  { font-size: 5.8pt; line-height: 1.35; margin-top: 1.8mm;
+             max-width: 46mm; }
+
+.social    { display: flex; align-items: center; justify-content: center;
+             gap: 1.4mm; margin-top: 2mm; color: var(--green-dk); }
+.social__ic { width: 3.6mm; height: 3.6mm; display: block; }
+.social__ic svg { width: 100%; height: 100%; display: block; }
+.social__handle { font-size: 6.4pt; font-weight: 600; margin-left: .6mm; }
+
+/* Certification marks. These are PLACEHOLDER CHIPS — ZED, ISO and Swachh
+   Bharat are registered marks with their own usage rules, supplied by the
+   client. Redrawing one by hand would be a false claim. */
+.certs      { display: flex; align-items: center; justify-content: center;
+              gap: 1.4mm; margin-top: 2mm; flex-wrap: wrap; }
+.cert       { border: .25mm dashed var(--flag); color: var(--flag);
+              font-size: 4.2pt; font-weight: 700; line-height: 1.15;
+              padding: 1mm .8mm; min-width: 8mm; text-align: center; }
+.cert--recycle { border: none; color: var(--green-dk); padding: 0;
+                 width: 5mm; height: 5mm; }
+.cert--recycle svg { width: 100%; height: 100%; }
+.certs__origin { font-size: 5.4pt; font-weight: 700; color: var(--green-dk);
+                 letter-spacing: .04em; }
+
+.barcode--brand { margin: 2.2mm auto 0; }
+.weburl { font-size: 6pt; font-weight: 700; letter-spacing: .1em;
+          color: var(--brass); margin: 1.6mm 0 1mm; }
+.allergen { font-weight: 700; }
+
+.stat        { font-size: 6.2pt; line-height: 1.34; }
+.stat dt     { font-weight: 700; color: var(--green-dk); font-size: 6.6pt;
+               letter-spacing: .01em; margin-top: 1.7mm; }
+.stat dd     { color: var(--ink); }
+.stat .inline { display: flex; gap: 1.3mm; margin-top: 1.7mm; }
+.stat .inline span { min-width: 0; }
+.stat .inline b { color: var(--green-dk); white-space: nowrap; font-size: 6.6pt; }
+
+.fssai       { display: flex; align-items: baseline; gap: 1.6mm; margin-top: 1.1mm;
+               font-size: 6.2pt; }
+.fssai__mark { font-family: "NG Serif"; font-weight: 300; font-size: 8pt;
+               color: var(--green-dk); letter-spacing: .04em; }
+.flag        { color: var(--flag); font-weight: 700; }
+
+/* ── 2 · principal display panel ───────────────────────────────────────── */
+.zone--pdp { display: flex; flex-direction: column; align-items: center;
+             justify-content: center; text-align: center; padding: 6mm 5mm; }
+.logo      { width: 78%; max-width: 62mm; margin-bottom: 7mm; }
+.pdp__rule { width: 62%; height: .45mm; background: var(--brass); }
+.pdp__name { font-family: "NG Serif"; font-weight: 700; font-size: 21pt;
+             color: var(--brass); letter-spacing: -.01em; margin: 4mm 0; }
+.pdp__pure { font-family: "NG Serif"; font-weight: 300; font-size: 12pt;
+             color: var(--green-dk); margin-top: 5mm; }
+
+/* ── 3 · nutrition ─────────────────────────────────────────────────────── */
+
+/* Nutrition table, now inside the golden face directly under net quantity. */
+.nutri { background: var(--green); border-radius: 2.5mm;
+         padding: 3mm 2.8mm; color: #fff; margin: 2.4mm 0; }
+.nutri h2 { font-size: 10pt; font-weight: 700; letter-spacing: -.01em; }
+.nutri__serv { font-size: 6pt; color: var(--brass-lt); margin: 1mm 0 1.4mm; }
+.nutri table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bottom: 1.2mm; }
+.nutri__body { flex: 1; min-height: 0; }
+.nutri td { font-size: 6pt; padding: .45mm 0; overflow-wrap: anywhere;
+            border-bottom: .06mm solid rgba(255,255,255,.28); }
+/* nowrap here set the table's min-content width and blew the column. */
+.nutri td:last-child { text-align: right; width: 11mm; }
+.nutri .hd td { font-size: 6pt; color: var(--brass-lt);
+                border-bottom: .25mm solid rgba(255,255,255,.7); }
+.nutri .major td { font-weight: 700; }
+.nutri .sub td:first-child  { padding-left: 3mm; }
+.nutri .sub2 td:first-child { padding-left: 5.5mm; }
+.nutri__note { font-size: 4.4pt; line-height: 1.3; color: var(--flag);
+               padding-top: 1.4mm;
+               border-top: .2mm solid rgba(255,255,255,.45); }
+
+/* ── 4 · legal repeat, on golden ───────────────────────────────────────── */
+/*
+ * The golden face carries ingredients, net quantity, the nutrition table,
+ * allergen, storage, best-before, country, the veg mark and the MRP overprint.
+ * Stacked in one column that overflowed every jar below a litre — 75mm past the
+ * edge on the 250ml. It flows in TWO columns instead, which spends width the
+ * panel has rather than height it does not. Blocks are kept whole so a table
+ * never splits mid-row across the gap.
+ */
+.zone--legal { background: var(--golden); color: var(--green-dk);
+               column-count: 2; column-gap: 3mm; column-fill: auto; }
+.zone--legal > *      { break-inside: avoid; }
+.zone--legal .stat    { margin: 0 0 1.5mm; }
+/* keep the first rows out from under the seal */
+/* No longer clearing a seal that no longer exists. */
+.zone--legal .stat:first-of-type > * { padding-right: 0; }
+.zone--legal .stat dd { color: var(--green-dk); }
+.zone--legal .stat dt,
+.zone--legal .stat .inline b { color: var(--green-dk); }
+
+/*
+ * REMOVED from the golden face. It was absolutely positioned top-right and the
+ * two-column flow ran the allergen declaration underneath it — clipping a
+ * mandatory statement, which is the one thing on this panel that must never be
+ * obscured. It also duplicated the "100% Pure" line already on the display
+ * face. Rule kept for reference only; nothing renders it.
+ */
+.seal--retired { position: absolute; top: 3.5mm; right: 3.5mm; width: 13mm; height: 13mm;
+        border-radius: 50%; background: var(--green);
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; color: #fff; z-index: 3;
+        box-shadow: inset 0 0 0 .5mm var(--brass-lt); }
+.seal b   { font-size: 6.5pt; line-height: 1.1; }
+.seal span{ font-size: 5.5pt; letter-spacing: .06em; }
+
+/* margin-top:auto was a flex trick; in a column flow it does nothing. */
+.varblock { padding-top: 1.5mm; break-inside: avoid; }
+.barcode  { background: #fff; padding: 1.2mm; width: 34mm; }
+.barcode svg { display: block; width: 100%; height: 9mm; }
+.barcode__num { font-size: 6pt; text-align: center; color: #000;
+                letter-spacing: .08em; margin-top: .8mm; }
+
+.overprint { background: #fff; color: #000; padding: 1.8mm; margin-top: 1.2mm;
+             width: 100%; }
+.overprint__mrp { font-size: 9pt; font-weight: 700;
+                  font-family: "NG Rupee", "NG Sans", sans-serif; }
+.overprint__tax { font-size: 5.5pt; }
+.overprint__row { display: flex; align-items: baseline; gap: 1.5mm;
+                  font-size: 6pt; font-weight: 700; margin-top: 1.3mm; }
+.overprint__row i { flex: 1; border-bottom: .15mm solid #000; font-style: normal; }
+.note { font-size: 5.5pt; color: var(--flag); font-weight: 700; margin-top: 1.5mm; }
+
+.veg { width: 6mm; height: 6mm; border: .55mm solid var(--veg);
+       display: flex; align-items: center; justify-content: center;
+       margin-top: 2.5mm; }
+.veg i { width: 3mm; height: 3mm; border-radius: 50%; background: var(--veg); }
+
+/* ── print guides — non-printing, stripped for the press PDF ───────────── */
+.guides { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+.guides .bleed { position: absolute; inset: 0; outline: .2mm dashed #00A0FF; }
+.guides .safe  { position: absolute; inset: var(--safe);
+                 outline: .2mm dashed #00A0FF; }
+.guides .fold  { position: absolute; top: 0; bottom: 0; width: 0;
+                 border-left: .15mm dashed var(--flag); }
+
+/* Small packs: the golden repeat is dropped, so the variable-data block sits
+   under the statutory column instead. */
+/* Small-pack footer: one band across the base carrying veg mark, barcode and
+   the packer's overprint fields, since no single column can hold them. */
+.footer { position: absolute; left: 0; right: 0; bottom: 0; height: 14mm;
+          z-index: 3; display: flex; align-items: center; gap: 3mm;
+          padding: 0 4mm; background: var(--golden); }
+.footer .veg { margin-top: 0; flex: none; }
+.footer .barcode { width: 34mm; padding: 1mm; flex: none; }
+.footer .barcode svg { height: 6.5mm; }
+.footer .note { color: var(--flag); font-size: 5pt; font-weight: 700; }
+.overprint--row { display: flex; align-items: center; gap: 3mm; flex: 1;
+                  margin-top: 0; padding: 1.5mm 2.5mm; }
+.overprint--row .overprint__row { margin-top: 0; flex: 1; }
+.zone--story { display: flex; flex-direction: column; }
