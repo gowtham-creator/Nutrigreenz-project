@@ -1,0 +1,162 @@
+{
+  "$comment": "Ground DECIDED (warm cream with crop-motif background, per the client's OpenArt renders). Remaining NEEDS_DECISION items are still open. No competitor names, logos or copy are referenced anywhere in this system.",
+  "version": "0.2-ground-locked",
+  "ground": {
+    "decision": "warm_cream",
+    "$comment": "Client picked the cream ground from their OpenArt renders, with the crop/paddy line-art running as a background motif rather than a footer ornament.",
+    "base": "#F2EADA",
+    "base_warm": "#EFE3C9",
+    "panel_dark": "#1B4332",
+    "background_motif": {
+      "style": "crop / paddy line art, single-weight gold, low opacity, bled across the light panels as a ground texture",
+      "opacity": 0.14,
+      "note": "Behind type, never competing with it. This is the 'crops like background' the client asked for."
+    }
+  },
+  "colour": {
+    "forest": {
+      "hex": "#123024",
+      "role": "dark nutrition block, reversed type, panel fields",
+      "print": "NEEDS_DECISION — CMYK build or spot"
+    },
+    "forest_mid": {
+      "hex": "#1B4332",
+      "role": "nutrition block, panel fields"
+    },
+    "gold": {
+      "hex": "#B8912F",
+      "role": "ALL linework, rules, ornament, botanical illustration",
+      "print": "NEEDS_DECISION — Pantone 871 C metallic with CMYK fallback, so foil stays an option. Confirm with the printer whether foil is in budget."
+    },
+    "gold_light": {
+      "hex": "#D6B865",
+      "role": "secondary rules, script tagline"
+    },
+    "cream": {
+      "hex": "#F2EADA",
+      "role": "reversed blocks / paper. Never pure white."
+    },
+    "veg_green": {
+      "hex": "#2E9B37",
+      "role": "veg mark ONLY",
+      "warning": "Prescribed by regulation, not a brand colour. Do not adjust to match the palette. NEEDS_DECISION — get the exact specified value."
+    },
+    "black": {
+      "hex": "#000000",
+      "role": "barcode only. 100% K, never rich black."
+    },
+    "product_accents": {
+      "$comment": "One per oil so the range reads as a family on shelf. Used only as a thin band or the botanical tint — never as a ground.",
+      "groundnut": "#C1873F",
+      "sesame": "#A8894C",
+      "mustard": "#C9A227",
+      "coconut": "#8FA98A",
+      "olive": "#7A8B4A",
+      "safflower": "#D08A3E"
+    }
+  },
+  "type": {
+    "$comment": "Four families maximum, per the brief. Three named here; the script is the open one.",
+    "display_serif": {
+      "family": "Roboto Slab",
+      "licence": "Apache 2.0 — embeddable, redistributable, free",
+      "use": "Product name. The largest type on the label.",
+      "note": "NEEDS_DECISION — Roboto Slab is honest and legible but it is a slab, not the 'high-contrast serif' your brief asks for. A true high-contrast display serif would look richer against the gold. Alternatives worth licensing: Fraunces (OFL, has an optical-size axis), Playfair Display (OFL), or a paid face from Indian Type Foundry. Say the word and I will set the specimen in whichever you prefer."
+    },
+    "text_sans": {
+      "family": "Hanken Grotesk",
+      "licence": "SIL OFL",
+      "use": "Nutrition table, compliance block, all legal copy. Already the storefront's sans, so pack and site match."
+    },
+    "fallback": {
+      "family": "Noto Sans",
+      "licence": "SIL OFL",
+      "use": "Glyph fallback only. Neither brand face carries the rupee sign U+20B9, and MRP in rupees is a mandatory declaration."
+    },
+    "script": {
+      "family": "NEEDS_DECISION",
+      "use": "ONE line only — the tagline. FarmSe uses a script for 'Traditionally Wood-Pressed. Truly Farm Fresh'. Suggest a restrained calligraphic face, not a casual brush.",
+      "candidates": [
+        "Cormorant Infant Italic (OFL)",
+        "Petit Formal Script (OFL)",
+        "Licensed: Sloop, Bickham"
+      ]
+    },
+    "indic": {
+      "family": "NEEDS_DECISION",
+      "question": "Is the pack English-only (D2C) or English + Telugu/Hindi (retail)? This changes the back-panel architecture completely and is far cheaper to decide now than after 64 SKUs exist. You are Hyderabad-based; if these go into Telangana/AP general trade, Telugu on pack is a commercial advantage."
+    },
+    "hierarchy": {
+      "product_name_to_descriptor_cap_height": 3.0,
+      "$comment": "Brief's rule. Enforced by the build script, not by eye."
+    }
+  },
+  "ornament": {
+    "rule_weight_mm": 0.35,
+    "rule_terminal": "flourish",
+    "front_frame": "bordered, inset 6mm from trim",
+    "quote_device": "large gold opening/closing quote marks around the story block, per the FarmSe reference",
+    "botanical_style": "single-weight gold line drawing, engraving feel. No gradients, no photorealism, no fills.",
+    "wave_motif": "paddy/grain line-art along the base of light panels, per the OpenArt renders"
+  },
+  "panel_content": {
+    "$comment": "From the brief's PANEL CONTENT MAP, cross-checked against the FarmSe photo which is the closest physical reference we have.",
+    "front": [
+      "brandmark",
+      "line descriptor",
+      "product name",
+      "variety subline",
+      "botanical hero",
+      "trust badges",
+      "net quantity bottom-right"
+    ],
+    "side_A_story": [
+      "gold botanical top",
+      "opening quote mark",
+      "script headline",
+      "story 40-60 words",
+      "closing quote mark",
+      "traceability QR"
+    ],
+    "back": [
+      "nutrition table",
+      "ingredients",
+      "allergen",
+      "storage",
+      "usage",
+      "FSSAI logo + licence",
+      "manufacturer + address",
+      "consumer care",
+      "country of origin",
+      "barcode",
+      "recycling marks"
+    ],
+    "side_B_variable": [
+      "Lot/Batch",
+      "Mfg date",
+      "Best before",
+      "MRP incl. all taxes",
+      "Net wt",
+      "sized as a clean rectangle for the packer's overprint"
+    ]
+  },
+  "blocked_on_client": [
+    "1L glass bottle dimensions — circumference, label height, shoulder clearance. NOTHING can be built to size without this.",
+    "FSSAI licence number, and whether it is the manufacturer's or the marketer's",
+    "Nutrition values per product from lab COA",
+    "Vector logo master (.ai) — the leaf-N mark is currently redrawn per file",
+    "GS1 prefix for real barcodes (placeholder EAN in the meantime, as you asked)",
+    "Swachh Bharat / ZED / ISO logos — you said these are coming",
+    "Whether foil stamping is in budget, which decides how gold is specified"
+  ],
+  "references": {
+    "$comment": "Physical panel logic only — structure, not styling, and no competitor marks, names or copy are reproduced.",
+    "allowed": [
+      "The client's own OpenArt renders (flat wrap strip layout, cream ground, dark nutrition block)",
+      "FarmSe bottle photo supplied by the client (story-panel device: botanical, quote marks, script headline, story, compliance)"
+    ],
+    "excluded": [
+      "Do NOT reference, reproduce or draw from Anveshan — no logo, no assets, no copy, no naming. Client instruction."
+    ]
+  }
+}

@@ -341,10 +341,10 @@ function html(sku) {
     </div>
   </section>
 
-  <div class="guides">
+  ${process.env.NG_CLEAN ? "" : `<div class="guides">
     <div class="bleed"></div><div class="safe"></div>
     ${[story, story + pdp].map(x => `<div class="fold" style="left:${BLEED + x}mm"></div>`).join("")}
-  </div>
+  </div>`}
 </div></body></html>`;
 }
 
@@ -418,7 +418,15 @@ for (const sku of targets) {
     console.warn(`  ⚠ ${sku.id}: ${r.zone} overflows ${r.axis} by ${Math.round(r.over / 3.78)}mm at the type floor`);
   }
 
-  const base = join(OUT, `NG-GHEE-${sku.id.toUpperCase()}`);
+  /*
+   * NG_CLEAN=1 drops the bleed/safe/fold guides and the magenta placeholder
+   * flags, and writes a *-CLEAN file. That output is for bottle mockups: the
+   * guides are instructions to a printer, and cropping a panel with a dashed
+   * magenta fold line down its edge puts that line on the product photo.
+   * The print files keep their guides, which is the whole point of them.
+   */
+  const suffix = process.env.NG_CLEAN ? "-CLEAN" : "";
+  const base = join(OUT, `NG-GHEE-${sku.id.toUpperCase()}${suffix}`);
   await page.pdf({ path: `${base}.pdf`, width: `${W}mm`, height: `${H}mm`,
                    printBackground: true, pageRanges: "1" });
   await page.locator(".label").screenshot({ path: `${base}.png` });

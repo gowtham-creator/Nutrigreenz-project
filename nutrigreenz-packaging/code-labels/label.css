@@ -253,3 +253,11 @@ body {
                   margin-top: 0; padding: 1.5mm 2.5mm; }
 .overprint--row .overprint__row { margin-top: 0; flex: 1; }
 .zone--story { display: flex; flex-direction: column; }
+
+/*
+ * Clean (mockup) build: the magenta placeholder flags are a working aid for
+ * whoever fills in the real numbers. On a product photograph they read as a
+ * printing fault, so they take the surrounding text colour instead.
+ */
+.label--clean .flag,
+.label--clean [class*="flag"] { color: inherit !important; }
