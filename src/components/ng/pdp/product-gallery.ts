@@ -16,22 +16,41 @@ import { GALLERY, type GalleryPanel } from "./gallery-manifest";
  * gallery was already fixed for once.
  */
 
-/** Product-key → the SKU slug prefixes it covers. */
-const SLUG_PREFIXES: Record<string, string[]> = {
-  "groundnut-oil": ["cold-pressed-groundnut-oil", "wood-pressed-groundnut-oil", "groundnut-oil"],
-  "a2-cow-ghee": ["a2-gir-cow-ghee", "a2-desi-cow-ghee", "a2-cow-ghee"],
+/**
+ * Product-key → the slug TOKENS that identify it.
+ *
+ * Token sets, not prefixes. The first version matched on prefixes and silently
+ * failed in production: the live slug is `groundnut-cold-pressed-oil` while the
+ * prefix list expected `cold-pressed-groundnut-oil` — the same words in a
+ * different order — so no panel ever rendered. Matching on the words present
+ * survives naming that reorders or drops a qualifier.
+ *
+ * `not` is what keeps this honest. Buffalo ghee must never inherit the A2 cow
+ * ghee panels: those bullets say "A2 desi cow milk", which would be a false
+ * claim on a different animal's product.
+ */
+const SLUG_MATCH: Record<string, { all: string[]; any?: string[]; not?: string[] }> = {
+  "groundnut-oil": { all: ["groundnut"], not: ["blend"] },
+  "a2-cow-ghee": {
+    all: ["ghee"],
+    any: ["a2", "gir", "desi"],
+    not: ["buffalo"],
+  },
 };
 
-/** Pack size parsed off the end of a SKU slug: `…-1l` → `1l`. */
+/** Pack size parsed off a slug: `…-1l` → `1l`. Live slugs often carry none. */
 function sizeOf(slug: string): string | null {
   const m = slug.toLowerCase().match(/-(\d+(?:\.\d+)?(?:l|ml|g|kg))$/);
   return m ? m[1] : null;
 }
 
 function productKeyFor(slug: string): string | null {
-  const s = slug.toLowerCase();
-  for (const [key, prefixes] of Object.entries(SLUG_PREFIXES)) {
-    if (prefixes.some((p) => s.startsWith(p))) return key;
+  const tokens = new Set(slug.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  for (const [key, rule] of Object.entries(SLUG_MATCH)) {
+    if (!rule.all.every((t) => tokens.has(t))) continue;
+    if (rule.any && !rule.any.some((t) => tokens.has(t))) continue;
+    if (rule.not?.some((t) => tokens.has(t))) continue;
+    return key;
   }
   return null;
 }
@@ -74,9 +93,21 @@ export function galleryPanelsFor(slug: string, title: string): ResolvedPanel[] {
     label: LABELS[p.name] ?? p.name,
   }));
 
-  // Nutrition only when a panel exists for THIS pack size.
+  /*
+   * Nutrition.
+   *
+   * When the slug names a size, use that one. Live slugs usually do not —
+   * `groundnut-cold-pressed-oil` carries no size, and requiring one meant the
+   * nutrition slide was dropped from every real product page. So fall back to
+   * the first authored size; the gallery then re-points it to whichever size
+   * the shopper actually selects, which is the authoritative step anyway.
+   */
+  const sizes = Object.keys(entry.nutritionBySize);
   const size = sizeOf(slug);
-  const nutrition = size ? entry.nutritionBySize[size] : undefined;
+  const nutrition =
+    (size ? entry.nutritionBySize[size] : undefined) ??
+    (sizes.length > 0 ? entry.nutritionBySize[sizes[0]] : undefined);
+
   if (nutrition) {
     out.push({
       src: nutrition,
