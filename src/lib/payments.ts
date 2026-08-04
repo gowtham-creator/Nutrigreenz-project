@@ -51,13 +51,38 @@ export function currentProvider(): PaymentProvider {
  * does not say which of the two was at fault, so they are named apart here.
  *
  * The endpoint is NOT configured as a free-text URL — see SBIEPAY_ENV below.
+ *
+ * ── Two credential sets, not one ──────────────────────────────────────────
+ *
+ * SBI issues a SEPARATE key, secret and encryption key for Test mode and for
+ * Live mode; their dashboard generates each set independently. So the variables
+ * are namespaced by environment rather than sharing one slot:
+ *
+ *   SBIEPAY_TEST_API_KEY_ID / _SECRET / _ENCRYPTION_KEY
+ *   SBIEPAY_LIVE_API_KEY_ID / _SECRET / _ENCRYPTION_KEY
+ *
+ * A single shared slot would mean overwriting all three to switch environment,
+ * and the failure that invites is the worst kind: SBIEPAY_ENV says `live` while
+ * the credentials are still the test set. Every call is then rejected by a real
+ * bank endpoint for reasons that read like an integration bug, and the obvious
+ * next move — checking the code — is looking in the wrong place entirely.
+ *
+ * Holding both sets means switching environment is one variable, and the wrong
+ * pairing is not expressible.
  */
-const SBIEPAY_VARS = [
-  "SBIEPAY_API_KEY_ID",
-  "SBIEPAY_API_KEY_SECRET",
-  "SBIEPAY_ENCRYPTION_KEY",
-  "SBIEPAY_ENV",
-] as const;
+function cred(name: "API_KEY_ID" | "API_KEY_SECRET" | "ENCRYPTION_KEY"): string | null {
+  const env = sbiepayEnv();
+  if (!env) return null;
+  const prefix = env === "live" ? "SBIEPAY_LIVE" : "SBIEPAY_TEST";
+  return process.env[`${prefix}_${name}`]?.trim() || null;
+}
+
+/** The API key id for the selected environment. */
+export const sbiepayKeyId = () => cred("API_KEY_ID");
+/** The API key secret for the selected environment — authenticates the caller. */
+export const sbiepayKeySecret = () => cred("API_KEY_SECRET");
+/** The AES key for the selected environment — encrypts the request payload. */
+export const sbiepayEncryptionKey = () => cred("ENCRYPTION_KEY");
 
 /**
  * The two gateway environments, from SBI's integration document.
@@ -113,15 +138,27 @@ export function isLiveGateway(): boolean {
  * that means nothing — and that reads identically to "configured" from outside.
  */
 export function missingSbiepayConfig(): string[] {
-  const problems = SBIEPAY_VARS.filter((name) => !process.env[name]?.trim()).map(
-    (name) => `${name} is not set`,
-  );
+  const problems: string[] = [];
+  const raw = process.env.SBIEPAY_ENV?.trim();
+  const env = sbiepayEnv();
 
-  // Set but unrecognised is worse than unset: it looks configured and is not.
-  if (process.env.SBIEPAY_ENV?.trim() && !sbiepayEnv()) {
-    problems.push(
-      `SBIEPAY_ENV must be "live" or "integration" (got "${process.env.SBIEPAY_ENV.trim()}")`,
-    );
+  if (!raw) {
+    problems.push('SBIEPAY_ENV is not set (use "integration" or "live")');
+  } else if (!env) {
+    // Set but unrecognised is worse than unset: it looks configured and is not.
+    problems.push(`SBIEPAY_ENV must be "live" or "integration" (got "${raw}")`);
+  }
+  if (!env) return problems;
+
+  // Name the variables for the SELECTED environment, so the message points at
+  // the ones that actually need filling in rather than all six.
+  const prefix = env === "live" ? "SBIEPAY_LIVE" : "SBIEPAY_TEST";
+  for (const [name, value] of [
+    ["API_KEY_ID", sbiepayKeyId()],
+    ["API_KEY_SECRET", sbiepayKeySecret()],
+    ["ENCRYPTION_KEY", sbiepayEncryptionKey()],
+  ] as const) {
+    if (!value) problems.push(`${prefix}_${name} is not set`);
   }
   return problems;
 }
