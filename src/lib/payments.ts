@@ -31,6 +31,38 @@ export function currentProvider(): PaymentProvider {
 }
 
 /**
+ * The credentials SBIePay issues, and what each one is for.
+ *
+ * These are three DIFFERENT things doing three different jobs, and conflating
+ * them is the classic way an integration fails with an unhelpful error:
+ *
+ *   MERCHANT_ID     — who the money settles to. Identity, not a secret.
+ *   API_KEY_ID      — which API client is calling. Identity, not a secret.
+ *   API_KEY_SECRET  — proves the caller is that client. Signs/authenticates.
+ *   ENCRYPTION_KEY  — the AES working key that encrypts the request PAYLOAD.
+ *
+ * The last two are the ones most often mixed up. The secret authenticates the
+ * request; the encryption key encrypts what is inside it. Swapping them
+ * produces a request the bank cannot decrypt, and the error it returns does not
+ * say which of the two was wrong.
+ *
+ * BASE_URL is not a credential — it is the endpoint, and it DIFFERS between UAT
+ * and production. It comes from the integration doc, not the credentials email.
+ */
+const SBIEPAY_VARS = [
+  "SBIEPAY_MERCHANT_ID",
+  "SBIEPAY_API_KEY_ID",
+  "SBIEPAY_API_KEY_SECRET",
+  "SBIEPAY_ENCRYPTION_KEY",
+  "SBIEPAY_BASE_URL",
+] as const;
+
+/** Which required variables are absent. Empty means fully configured. */
+export function missingSbiepayConfig(): string[] {
+  return SBIEPAY_VARS.filter((name) => !process.env[name]?.trim());
+}
+
+/**
  * True when a real gateway is configured AND holds every credential it needs.
  *
  * Checked as a set rather than one flag: a half-configured gateway would let
@@ -39,12 +71,7 @@ export function currentProvider(): PaymentProvider {
  */
 export function isOnlinePaymentAvailable(): boolean {
   if (currentProvider() !== "sbiepay") return false;
-  return Boolean(
-    process.env.SBIEPAY_MERCHANT_ID &&
-      process.env.SBIEPAY_API_KEY &&
-      process.env.SBIEPAY_API_SECRET &&
-      process.env.SBIEPAY_BASE_URL,
-  );
+  return missingSbiepayConfig().length === 0;
 }
 
 /** The methods the checkout should show, in display order. */
