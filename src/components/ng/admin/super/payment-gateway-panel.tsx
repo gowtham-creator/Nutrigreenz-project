@@ -25,7 +25,14 @@ interface CredentialShape {
   length: number;
 }
 
+interface ProxyState {
+  configured: boolean;
+  expectedIp: string | null;
+  probe?: { ok: boolean; ip?: string; matchesWhitelist?: boolean; error?: string };
+}
+
 interface GatewayStatus {
+  proxy: ProxyState;
   provider: string;
   environment: string | null;
   baseUrl: string | null;
@@ -39,6 +46,23 @@ interface GatewayStatus {
 export function PaymentGatewayPanel() {
   const [status, setStatus] = useState<GatewayStatus | null>(null);
   const [failed, setFailed] = useState(false);
+  const [probing, setProbing] = useState(false);
+
+  /*
+   * Ask the server to call out through the proxy and report the address it
+   * arrives from. Separated from the page load because it is a real network
+   * round trip — and because it answers a different question: not "is the
+   * variable set" but "does traffic actually leave from the IP SBI whitelisted".
+   */
+  async function probeProxy() {
+    setProbing(true);
+    try {
+      const res = await fetch("/api/admin/payments/status?probe=1", { cache: "no-store" });
+      if (res.ok) setStatus((await res.json()) as GatewayStatus);
+    } finally {
+      setProbing(false);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -111,6 +135,57 @@ export function PaymentGatewayPanel() {
               />
               <Row label="Endpoint" value={status.baseUrl ?? "—"} mono span />
             </dl>
+
+            {/*
+              Outbound IP. SBI refuses calls from any address but the one they
+              whitelisted, and Vercel functions have no stable outbound IP — so
+              this is a hard requirement, not a hardening step.
+            */}
+            <div className="mt-4 rounded-xl border border-ng-line-soft bg-ng-paper px-3.5 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    name={status.proxy.configured ? "check-circle-bold" : "close-circle-bold"}
+                    size={15}
+                    className={status.proxy.configured ? "text-ng-green-bright" : "text-ng-danger"}
+                  />
+                  <span className="text-[12.5px] font-semibold text-ng-forest-deep">
+                    Static IP proxy
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void probeProxy()}
+                  disabled={!status.proxy.configured || probing}
+                  className="cursor-pointer rounded-full border border-ng-line px-3 py-1 text-[11.5px] font-semibold text-ng-forest transition-colors hover:bg-ng-sage/30 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {probing ? "Checking…" : "Test outbound IP"}
+                </button>
+              </div>
+
+              <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
+                {status.proxy.configured
+                  ? `SBI calls leave through the proxy${status.proxy.expectedIp ? ` — expecting ${status.proxy.expectedIp}` : ""}.`
+                  : "SBIEPAY_PROXY_URL is not set. Calls would leave from a Vercel address SBI has not whitelisted, so they are refused before they are attempted."}
+              </p>
+
+              {status.proxy.probe ? (
+                <p
+                  className={cn(
+                    "mt-2 font-mono text-[11.5px]",
+                    status.proxy.probe.ok && status.proxy.probe.matchesWhitelist !== false
+                      ? "text-ng-green-bright"
+                      : "text-ng-danger",
+                  )}
+                >
+                  {status.proxy.probe.ok
+                    ? status.proxy.probe.matchesWhitelist === false
+                      ? `arrives from ${status.proxy.probe.ip} — NOT the whitelisted address`
+                      : `arrives from ${status.proxy.probe.ip} ✓`
+                    : `proxy unreachable: ${status.proxy.probe.error}`}
+                </p>
+              ) : null}
+            </div>
 
             {status.credentials.length > 0 ? (
               <div className="mt-4">

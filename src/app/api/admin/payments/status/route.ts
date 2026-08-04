@@ -11,6 +11,7 @@ import {
   sbiepayKeySecret,
   sbiepayEncryptionKey,
 } from "@/lib/payments";
+import { isProxyConfigured, checkProxy } from "@/lib/sbiepay-fetch";
 
 export const runtime = "nodejs";
 // Configuration changes on redeploy; a cached answer would describe the past.
@@ -38,7 +39,7 @@ function shape(name: string, value: string | null): { name: string; present: boo
   return { name, present: Boolean(value), length: value?.length ?? 0 };
 }
 
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   const denied = await requireApiPermission("orders");
   if (denied) return denied;
 
@@ -51,8 +52,22 @@ export async function GET(): Promise<Response> {
    * "configured" for a value the adapter treats as absent — a placeholder, say
    * — which would make this diagnostic actively misleading.
    */
+  /*
+   * Live-check the proxy only when explicitly asked (?probe=1). It is a real
+   * network round trip, and the page that shows this loads on every visit to
+   * the config screen — a probe on every load would add latency to a page that
+   * mostly just needs to say which variables are set.
+   */
+  const probe = new URL(request.url).searchParams.get("probe") === "1";
+  const expectedIp = process.env.SBIEPAY_WHITELISTED_IP?.trim() || undefined;
+
   return Response.json({
     ok: true,
+    proxy: {
+      configured: isProxyConfigured(),
+      expectedIp: expectedIp ?? null,
+      ...(probe ? { probe: await checkProxy(expectedIp) } : {}),
+    },
     provider: currentProvider(),
     environment: env,
     baseUrl: sbiepayBaseUrl(),

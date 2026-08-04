@@ -6,8 +6,9 @@
  * `customer_id` via {@link getCustomerSession}. Totals are RECOMPUTED server-side
  * from the persisted variant/product prices + the live commerce rules — the
  * client-supplied amounts are never trusted. The order is persisted as
- * `status = 'placed'`, `payment_status = 'pending'`; the payment seam
- * (src/lib/payments-razorpay.ts) is a no-op today and leaves it pending.
+ * `status = 'placed'`, `payment_status = 'pending'`. Payment is opened through
+ * the seam in src/lib/payments.ts, which returns null when no gateway is
+ * configured — the order then stays pending and is settled as cash on delivery.
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
@@ -23,7 +24,7 @@ import {
   getLoyaltyConfig,
   redeemPaisePerPoint,
 } from "@/lib/rewards";
-import { createPaymentIntent } from "@/lib/payments-razorpay";
+import { beginPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
 
@@ -151,14 +152,28 @@ export async function POST(request: Request): Promise<Response> {
       sendOrderPlacedEmail(order.id),
     );
 
-    // Payment seam: open an intent when the gateway is configured. Today this is
-    // a no-op (returns null) and the order stays `pending` — we never fake paid.
-    const payment = await createPaymentIntent({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      totalPaise: order.totalPaise,
-      currency: order.currency,
-    });
+    /*
+     * Hand the order to the gateway when one is configured AND the customer
+     * chose to pay online. A COD order must not open a payment session: it
+     * would leave an abandoned transaction at the bank for money that is
+     * collected in cash at the door.
+     *
+     * Null means no gateway, which callers treat as "cannot be paid online" —
+     * never as success. The order stays `pending` either way; nothing here
+     * marks it paid, because only a verified server-side callback may do that.
+     */
+    const wantsOnline = order.paymentMethod === "upi";
+    const payment =
+      wantsOnline && isOnlinePaymentAvailable()
+        ? await beginPayment({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            totalPaise: order.totalPaise,
+            currency: order.currency,
+            customerEmail: order.userEmail,
+            customerPhone: order.userPhone,
+          })
+        : null;
 
     return Response.json(
       {
