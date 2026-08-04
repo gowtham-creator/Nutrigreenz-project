@@ -70,11 +70,24 @@ export function currentProvider(): PaymentProvider {
  * Holding both sets means switching environment is one variable, and the wrong
  * pairing is not expressible.
  */
+/**
+ * Placeholder values that mean "not filled in yet".
+ *
+ * Vercel refuses to store an empty environment variable, so a slot created
+ * ahead of the real credential has to hold *something*. Without this the marker
+ * would count as a configured credential, the checkout would offer UPI, and the
+ * request would fail at the bank with an authentication error — the exact
+ * half-configured state the availability check exists to prevent.
+ */
+const PLACEHOLDERS = new Set(["replace_me", "changeme", "todo", "tbd", "xxx"]);
+
 function cred(name: "API_KEY_ID" | "API_KEY_SECRET" | "ENCRYPTION_KEY"): string | null {
   const env = sbiepayEnv();
   if (!env) return null;
   const prefix = env === "live" ? "SBIEPAY_LIVE" : "SBIEPAY_TEST";
-  return process.env[`${prefix}_${name}`]?.trim() || null;
+  const value = process.env[`${prefix}_${name}`]?.trim();
+  if (!value || PLACEHOLDERS.has(value.toLowerCase())) return null;
+  return value;
 }
 
 /** The API key id for the selected environment. */
@@ -158,7 +171,7 @@ export function missingSbiepayConfig(): string[] {
     ["API_KEY_SECRET", sbiepayKeySecret()],
     ["ENCRYPTION_KEY", sbiepayEncryptionKey()],
   ] as const) {
-    if (!value) problems.push(`${prefix}_${name} is not set`);
+    if (!value) problems.push(`${prefix}_${name} is not set (or still a placeholder)`);
   }
   return problems;
 }
