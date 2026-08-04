@@ -50,19 +50,80 @@ export function currentProvider(): PaymentProvider {
  * encrypts the payload inside the request. The bank's error for a wrong key
  * does not say which of the two was at fault, so they are named apart here.
  *
- * BASE_URL is not a credential — it is the endpoint, and it DIFFERS between UAT
- * and production. It comes from the integration doc, not the credentials email.
+ * The endpoint is NOT configured as a free-text URL — see SBIEPAY_ENV below.
  */
 const SBIEPAY_VARS = [
   "SBIEPAY_API_KEY_ID",
   "SBIEPAY_API_KEY_SECRET",
   "SBIEPAY_ENCRYPTION_KEY",
-  "SBIEPAY_BASE_URL",
+  "SBIEPAY_ENV",
 ] as const;
 
-/** Which required variables are absent. Empty means fully configured. */
+/**
+ * The two gateway environments, from SBI's integration document.
+ *
+ * Held here rather than pasted into an env var. `SBIEPAY_ENV` selects one by
+ * name — `live` or `integration` — and the URL is looked up.
+ *
+ * The reason is the failure it prevents. A free-text base URL is one typo away
+ * from pointing production traffic at UAT, or worse, pointing UAT testing at
+ * LIVE and taking real money off a real card during a test run. The two hosts
+ * are similar enough to misread:
+ *
+ *   live         https://sbiepay.sbi.bank.in/
+ *   integration  https://integration.sbiepay.sbiuat.bank.in/
+ *
+ * A name cannot be fat-fingered into a working-but-wrong endpoint: an
+ * unrecognised value resolves to nothing and online payment simply stays off.
+ */
+const SBIEPAY_HOSTS = {
+  live: "https://sbiepay.sbi.bank.in",
+  integration: "https://integration.sbiepay.sbiuat.bank.in",
+} as const;
+
+export type SbiepayEnv = keyof typeof SBIEPAY_HOSTS;
+
+/** The selected environment, or null when unset or unrecognised. */
+export function sbiepayEnv(): SbiepayEnv | null {
+  const raw = process.env.SBIEPAY_ENV?.trim().toLowerCase();
+  return raw === "live" || raw === "integration" ? raw : null;
+}
+
+/**
+ * Base URL for the selected environment, without a trailing slash.
+ *
+ * Trailing slash is stripped so callers can join paths as `${base}/v1/...`
+ * without producing a double slash — some gateways 404 on those.
+ */
+export function sbiepayBaseUrl(): string | null {
+  const env = sbiepayEnv();
+  return env ? SBIEPAY_HOSTS[env] : null;
+}
+
+/** True when pointed at the bank's real, money-moving environment. */
+export function isLiveGateway(): boolean {
+  return sbiepayEnv() === "live";
+}
+
+/**
+ * What is still missing before online payment can be switched on.
+ *
+ * Returns human-readable problems rather than a bare list of names, because the
+ * common failure is not an absent variable but a PRESENT one holding a value
+ * that means nothing — and that reads identically to "configured" from outside.
+ */
 export function missingSbiepayConfig(): string[] {
-  return SBIEPAY_VARS.filter((name) => !process.env[name]?.trim());
+  const problems = SBIEPAY_VARS.filter((name) => !process.env[name]?.trim()).map(
+    (name) => `${name} is not set`,
+  );
+
+  // Set but unrecognised is worse than unset: it looks configured and is not.
+  if (process.env.SBIEPAY_ENV?.trim() && !sbiepayEnv()) {
+    problems.push(
+      `SBIEPAY_ENV must be "live" or "integration" (got "${process.env.SBIEPAY_ENV.trim()}")`,
+    );
+  }
+  return problems;
 }
 
 /**
