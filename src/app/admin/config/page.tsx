@@ -16,6 +16,7 @@ import {
   type Kpi,
 } from "@/components/ng/admin/super/command-center";
 import { CouponCampaignBuilder } from "@/components/ng/admin/super/coupon-campaign-builder";
+import { PaymentGatewayPanel } from "@/components/ng/admin/super/payment-gateway-panel";
 import { CommerceConfigPanel } from "@/components/ng/admin/super/commerce-config";
 import { ReferralConfigSection } from "@/components/ng/admin/super/referral-config";
 import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
@@ -248,6 +249,8 @@ function ConfigContent() {
         <span className="ng-eyebrow text-ng-ink-muted">Programmes &amp; platform</span>
         <span className="h-px flex-1 bg-ng-line-soft" />
       </div>
+
+      <PaymentGatewayPanel />
 
       <CouponCampaignBuilder />
       <FeatureTogglesSection />
