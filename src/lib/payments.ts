@@ -31,26 +31,29 @@ export function currentProvider(): PaymentProvider {
 }
 
 /**
- * The credentials SBIePay issues, and what each one is for.
+ * The credentials SBIePay issues, mapped one-to-one onto what they send.
  *
- * These are three DIFFERENT things doing three different jobs, and conflating
- * them is the classic way an integration fails with an unhelpful error:
+ * SBI issues exactly THREE values, labelled in their credentials email as:
  *
- *   MERCHANT_ID     — who the money settles to. Identity, not a secret.
- *   API_KEY_ID      — which API client is calling. Identity, not a secret.
- *   API_KEY_SECRET  — proves the caller is that client. Signs/authenticates.
- *   ENCRYPTION_KEY  — the AES working key that encrypts the request PAYLOAD.
+ *   Merchant-API-key-id      → SBIEPAY_API_KEY_ID
+ *   Merchant-API-key-secret  → SBIEPAY_API_KEY_SECRET
+ *   Encryption-Key           → SBIEPAY_ENCRYPTION_KEY
  *
- * The last two are the ones most often mixed up. The secret authenticates the
- * request; the encryption key encrypts what is inside it. Swapping them
- * produces a request the bank cannot decrypt, and the error it returns does not
- * say which of the two was wrong.
+ * There is deliberately no SBIEPAY_MERCHANT_ID. An earlier version required
+ * one, and it would have disabled online payment permanently: the merchant
+ * identity IS the API key id, so no such value is ever issued, the required set
+ * could never be satisfied, and the checkout would have quietly offered Cash on
+ * Delivery forever with nothing in the logs to explain it.
+ *
+ * The secret and the encryption key do different jobs and are the pair most
+ * often swapped. The SECRET authenticates the caller; the ENCRYPTION KEY
+ * encrypts the payload inside the request. The bank's error for a wrong key
+ * does not say which of the two was at fault, so they are named apart here.
  *
  * BASE_URL is not a credential — it is the endpoint, and it DIFFERS between UAT
  * and production. It comes from the integration doc, not the credentials email.
  */
 const SBIEPAY_VARS = [
-  "SBIEPAY_MERCHANT_ID",
   "SBIEPAY_API_KEY_ID",
   "SBIEPAY_API_KEY_SECRET",
   "SBIEPAY_ENCRYPTION_KEY",
