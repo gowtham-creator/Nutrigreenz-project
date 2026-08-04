@@ -563,3 +563,54 @@
 .lofi { filter: grayscale(1) contrast(0.92); }
 .lofi .ng-img-fallback { background: repeating-linear-gradient(45deg, #efefef 0 8px, #e3e3e3 8px 16px); color: #888; }
 .lofi .glass, .lofi .glass-strong { background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); }
+
+/* ── Page transition ──────────────────────────────────────────────────────
+   Replayed on every route change; <PageTransition> keys on the pathname so
+   the subtree remounts and the animation runs again.
+
+   Small and quick on purpose — 6px over 260ms. In a portal you navigate
+   dozens of times an hour anything longer reads as lag, and the job here is
+   to acknowledge the navigation, not to perform.
+
+   `will-change` is deliberately absent: it would promote a layer on every
+   page for an animation that lasts a quarter of a second, which costs more
+   than it saves. */
+@keyframes ngPageIn {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.ng-page-in {
+  animation: ngPageIn 260ms var(--ease-out-soft) both;
+}
+
+/* Reduced motion: keep the fade so a navigation is still acknowledged, drop
+   the movement, and shorten it. Removing the animation entirely would make
+   the portal feel broken to someone who simply dislikes motion. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes ngPageIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .ng-page-in { animation-duration: 120ms; }
+}
+
+/* ── Bar growth ───────────────────────────────────────────────────────────
+   Horizontal bars previously appeared at full width in a single frame, so a
+   filter change gave no sign the numbers had moved. Growing from zero makes
+   the redraw legible, and staggering them lets the eye follow the ranking
+   rather than seeing one block appear.
+
+   Animated on `transform` rather than `width` so it runs on the compositor —
+   width would relayout every row on every frame. */
+@keyframes ngBarGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.ng-bar-grow {
+  transform-origin: left center;
+  animation: ngBarGrow 620ms var(--ease-out-soft) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-bar-grow { animation: none; }
+}

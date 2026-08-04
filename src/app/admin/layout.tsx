@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { IdleTimeout } from "@/components/ng/admin/idle-timeout";
 import { AuthenticatorEnrollPrompt } from "@/components/ng/admin/authenticator-enroll-prompt";
+import { PageTransition } from "@/components/ng/page-transition";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   // `.ng-admin` scopes the darker secondary/tertiary ink tokens (see
@@ -13,7 +14,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="ng-admin">
       <IdleTimeout />
       <AuthenticatorEnrollPrompt />
-      {children}
+      {/* Fades each route in. Wraps only the page content, so the idle timer
+          and the enrol prompt are not torn down and remounted on every
+          navigation — remounting the timer would reset the idle countdown. */}
+      <PageTransition>{children}</PageTransition>
     </div>
   );
 }

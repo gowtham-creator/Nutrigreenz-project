@@ -4,13 +4,20 @@ import { PromoBar } from "./promo-bar";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { cn } from "@/lib/utils";
+import { PageTransition } from "@/components/ng/page-transition";
 
 export function PageShell({ children, className, hideFooter, hidePromo }: { children: ReactNode; className?: string; hideFooter?: boolean; hidePromo?: boolean }) {
   return (
     <div className={cn("bg-ng-paper text-ng-ink min-h-screen flex flex-col", className)}>
       {!hidePromo ? <PromoBar /> : null}
       <Header />
-      <main className="flex-1">{children}</main>
+      {/* Only <main> fades. The promo bar, header and footer are chrome that
+          persists across navigation — fading them too would make the whole
+          page blink on every click, which reads as a reload rather than a
+          transition. */}
+      <main className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
       {!hideFooter ? <Footer /> : null}
     </div>
   );

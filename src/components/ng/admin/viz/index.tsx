@@ -489,12 +489,21 @@ export function HBars({
   className?: string;
 }) {
   const max = Math.max(...rows.map((r) => r.value), 1);
+  /*
+   * Keyed on the data so a filter change REMOUNTS the list and replays the
+   * growth. Without this the bars would animate once on first paint and then
+   * silently jump to new widths, which is the behaviour being fixed.
+   */
+  const dataKey = rows.map((r) => `${r.label}:${r.value}`).join("|");
+
   return (
-    <ul className={cn("space-y-3.5", className)}>
-      {rows.map((r) => (
-        <li key={r.label}>
+    <ul key={dataKey} className={cn("space-y-3.5", className)}>
+      {rows.map((r, i) => (
+        <li key={r.label} className="group">
           <div className="flex items-baseline justify-between gap-3 mb-1.5">
-            <span className="text-[12.5px] font-semibold text-ng-ink truncate">{r.label}</span>
+            <span className="text-[12.5px] font-semibold text-ng-ink truncate transition-colors group-hover:text-ng-forest-deep">
+              {r.label}
+            </span>
             <span className="font-mono text-[12px] tabular-nums text-ng-forest-deep font-semibold shrink-0">
               {formatValue ? formatValue(r.value) : r.value}
               {r.hint ? <span className="text-ng-ink-soft font-sans font-medium ml-1.5">{r.hint}</span> : null}
@@ -502,8 +511,15 @@ export function HBars({
           </div>
           <div className="h-2 rounded-full bg-ng-line-soft overflow-hidden">
             <div
-              className="h-full rounded-full"
-              style={{ width: `${Math.max(4, (r.value / max) * 100)}%`, background: TONE_STROKE[r.tone ?? tone] }}
+              className="ng-bar-grow h-full rounded-full transition-[filter,height] duration-200 group-hover:brightness-110"
+              style={{
+                width: `${Math.max(4, (r.value / max) * 100)}%`,
+                background: TONE_STROKE[r.tone ?? tone],
+                /* Staggered so the eye reads the ranking in order. Capped at
+                   eight rows — beyond that the last bar would arrive late
+                   enough to look like it had stalled. */
+                animationDelay: `${Math.min(i, 8) * 55}ms`,
+              }}
             />
           </div>
         </li>
