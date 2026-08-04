@@ -21,6 +21,14 @@ create table if not exists public.captain_allocations (
   unique (captain_id, variant_id)
 );
 
+-- Reached only through the service-role client, which bypasses RLS. Enabling
+-- RLS with NO policy is therefore the correct lock: the app is unaffected and
+-- anonymous access is refused. This was missing when the table was first
+-- created, which left it readable and DELETABLE by anyone holding the anon key
+-- — and that key ships in the browser.
+alter table public.captain_allocations enable row level security;
+revoke all on public.captain_allocations from anon, authenticated;
+
 create index if not exists captain_allocations_captain_idx
   on public.captain_allocations (captain_id) where active;
 
