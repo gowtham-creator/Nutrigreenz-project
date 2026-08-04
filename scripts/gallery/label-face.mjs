@@ -15,6 +15,15 @@
  * below is shared, so the two are directly comparable.
  */
 
+import { fieldScene } from "./label-scene.mjs";
+
+/**
+ * One wrap face on the 1L bottle is about 92mm across by 132mm tall, so the
+ * artboard is PORTRAIT. Exported so the renderer sizes its viewport from the
+ * same numbers rather than keeping its own copy.
+ */
+export const FACE = { W: 1100, H: 1560 };
+
 export const THEMES = {
   green: {
     field: "#1F4D2E",
@@ -28,6 +37,7 @@ export const THEMES = {
     goldSoft: "#E3C96B",
     botanical: "#E8DFA8",
     botanicalAlpha: 0.30,
+    sceneAlpha: 0.30,
   },
   blush: {
     field: "#C9A492",
@@ -41,6 +51,7 @@ export const THEMES = {
     goldSoft: "#D9BFA8",
     botanical: "#F0E2D6",
     botanicalAlpha: 0.55,
+    sceneAlpha: 0.52,
   },
 };
 
@@ -106,8 +117,7 @@ function badges(t) {
 
 export function labelFaceHtml(sku, themeName = "green") {
   const t = THEMES[themeName];
-  const W = 1400;
-  const H = 880;
+  const { W, H } = FACE;
 
   return `<!doctype html><html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
@@ -120,10 +130,10 @@ export function labelFaceHtml(sku, themeName = "green") {
         background:linear-gradient(180deg,${t.field} 0%,${t.fieldDeep} 100%)}
   .inner{position:relative;z-index:1;height:100%;
          display:flex;flex-direction:column;align-items:center;
-         padding:30px 70px 22px}
+         padding:44px 46px 30px}
 
   /* Wordmark band. */
-  .band{width:min(660px,72%);background:${t.band};border-radius:4px;
+  .band{width:min(760px,86%);background:${t.band};border-radius:0;
         padding:16px 24px 13px;text-align:center;
         box-shadow:0 2px 0 rgba(0,0,0,.06)}
   .band h1{font-family:Lora,Georgia,serif;font-size:60px;font-weight:700;
@@ -136,9 +146,9 @@ export function labelFaceHtml(sku, themeName = "green") {
    * and the bowl deliberately fall out of its lower edge onto open field —
    * that overlap is what the flat version lost.
    */
-  .block{position:relative;margin-top:22px;width:min(600px,66%);
+  .block{position:relative;margin-top:34px;width:min(760px,86%);
          background:linear-gradient(180deg,${t.block} 0%,${t.blockDeep} 100%);
-         border-radius:14px;padding:30px 34px 34px;text-align:center;z-index:2}
+         border-radius:0;padding:34px 34px 40px;text-align:center;z-index:2}
   .pill{display:inline-block;border:1.6px solid ${t.goldSoft};border-radius:999px;
         padding:8px 28px;font-size:23px;font-weight:700;letter-spacing:.14em;
         color:${t.goldSoft}}
@@ -160,8 +170,8 @@ export function labelFaceHtml(sku, themeName = "green") {
   /* Droplet + bowl sit BELOW the block, on the open field. */
   .fall{position:relative;z-index:3;margin-top:-26px;padding-top:4px;
         display:flex;flex-direction:column;align-items:center}
-  .drop{width:56px;height:72px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
-  .bowl{width:370px;margin-top:-14px}
+  .drop{width:66px;height:84px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+  .bowl{width:520px;margin-top:-18px}
 
   .foot{margin-top:auto;width:100%;display:flex;align-items:center;
         justify-content:space-between;padding-top:10px}
@@ -173,7 +183,7 @@ export function labelFaceHtml(sku, themeName = "green") {
   .qty span{font-size:30px;font-weight:700;letter-spacing:.02em}
 </style></head><body>
   <div class="face">
-    ${botanical(t, W, H)}
+    ${fieldScene(t, W, H)}
     <div class="inner">
       <div class="band">
         <h1>NUTRI GREENZ</h1>

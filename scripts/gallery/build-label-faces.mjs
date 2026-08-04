@@ -11,7 +11,7 @@ import sharp from "sharp";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { labelFaceHtml, THEMES } from "./label-face.mjs";
+import { labelFaceHtml, THEMES, FACE } from "./label-face.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
@@ -34,8 +34,10 @@ async function main() {
   const browser = await chromium.launch();
   // 4x, then downsample — the botanical hairlines and small caps have to
   // survive being wrapped onto a curve.
+  // Viewport follows the face's own dimensions — hardcoding them here meant a
+  // portrait label kept rendering into a landscape frame, cropping the scene.
   const page = await browser.newPage({
-    viewport: { width: 1400, height: 1000 },
+    viewport: { width: FACE.W, height: FACE.H },
     deviceScaleFactor: 4,
   });
   const tmp = path.join(ROOT, "public/__label-render.html");
@@ -56,7 +58,7 @@ async function main() {
 
     const png = await page.screenshot({ type: "png" });
     const file = path.join(OUT, `groundnut-1l-${theme}.png`);
-    await sharp(png).resize(1400, 1000).png().toFile(file);
+    await sharp(png).resize(FACE.W, FACE.H).png().toFile(file);
     await writeFile(path.join(REVIEW, `label-face-${theme}.png`), await sharp(png).png().toBuffer());
     console.log(`  ✓ ${theme}`);
   }
