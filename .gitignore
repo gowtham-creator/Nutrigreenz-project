@@ -76,7 +76,13 @@ scripts/sync-agent-rules.sh
 scripts/sync-skills.mjs
 
 # Internal docs & references (local only)
-docs/
+docs/*
+# ...except the payment runbooks. These describe how to build and operate the
+# infrastructure a live payment gateway depends on, contain no secrets, and are
+# needed by whoever is on call — which is not necessarily whoever has this
+# laptop. Losing them to an untracked directory is a real operational risk.
+!docs/sbiepay-*.md
+!docs/sbiepay-*.sh
 shot-list.png
 
 # Working design mockups (local only)
