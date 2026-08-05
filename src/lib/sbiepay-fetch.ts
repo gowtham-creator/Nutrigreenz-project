@@ -149,7 +149,31 @@ export async function checkProxy(expectedIp?: string): Promise<{
       matchesWhitelist: expectedIp ? ip === expectedIp : undefined,
     };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "unreachable" };
+    /*
+     * Translate the transport error into what it actually means.
+     *
+     * The raw messages are useless to whoever is reading this at 2am:
+     * "This operation was aborted" is what an abort signal says, and it reads
+     * like a crash rather than a timeout. Each of these has a different fix, so
+     * the message names the fix.
+     */
+    const raw = err instanceof Error ? err.message : "";
+    const code = (err as { cause?: { code?: string } })?.cause?.code ?? "";
+    const host = proxyUrl()?.replace(/\/\/[^@]*@/, "//") ?? "the proxy";
+
+    let error: string;
+    if (/abort/i.test(raw) || code === "UND_ERR_CONNECT_TIMEOUT") {
+      error = `no response from ${host} within 8s — the proxy is not running, or the security group is not allowing inbound on its port`;
+    } else if (code === "ECONNREFUSED") {
+      error = `${host} refused the connection — the instance is up but nothing is listening on that port`;
+    } else if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
+      error = `${host} does not resolve — check the host in SBIEPAY_PROXY_URL`;
+    } else if (/407|authentication|credentials/i.test(raw)) {
+      error = "the proxy rejected the credentials in SBIEPAY_PROXY_URL";
+    } else {
+      error = raw || "unreachable";
+    }
+    return { ok: false, error };
   } finally {
     clearTimeout(timer);
   }
