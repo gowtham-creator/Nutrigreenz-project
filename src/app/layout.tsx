@@ -74,11 +74,13 @@ export default function RootLayout({
             </LoyaltyConfigProvider>
           </CommerceProvider>
         </AuthProvider>
+        {/* richColors and closeButton are off: notifications render through
+            <ngToast>, which draws its own branded surface, glyph and dismiss
+            control. Leaving sonner's chrome on would paint a second frame
+            around ours. */}
         <Toaster
           position="top-center"
-          richColors
-          closeButton
-          duration={3500}
+          duration={4200}
           offset={{ top: "84px" }}
           mobileOffset={{ top: "84px" }}
         />

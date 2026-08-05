@@ -614,3 +614,16 @@
 @media (prefers-reduced-motion: reduce) {
   .ng-bar-grow { animation: none; }
 }
+
+/* Toast progress rail — time remaining before auto-dismiss.
+   Scaled on transform so it runs on the compositor; animating width would
+   relayout the toast every frame while it sits over live content. */
+@keyframes ngToastProgress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.ng-toast-progress { animation: ngToastProgress linear both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-toast-progress { animation: none; opacity: 0; }
+}
