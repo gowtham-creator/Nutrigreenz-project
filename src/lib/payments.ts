@@ -207,16 +207,21 @@ export interface PayableOrder {
 /**
  * Where to send the customer to pay.
  *
- * SBIePay uses a browser form-POST redirect, so this returns the target plus the
- * fields to post rather than a URL to follow. That model is deliberate: the card
- * details are entered on the bank's page, never ours, which keeps this
- * application out of PCI scope entirely.
+ * SBIePay's REST API returns a `transactionUrl` to redirect to — the older
+ * form-POST handoff this interface was first written for is not how the API
+ * works. `fields` is kept so a future gateway that does POST can use the same
+ * shape; for SBIePay it is empty.
+ *
+ * Card details are entered on the bank's page and never touch this
+ * application, which keeps it out of PCI scope.
  */
 export interface GatewayHandoff {
-  /** Absolute URL of the gateway's payment page. */
+  /** Absolute URL to send the customer to. */
   action: string;
-  /** Hidden form fields to POST, already encrypted per the gateway's spec. */
+  /** Form fields to POST, for gateways that work that way. Empty for SBIePay. */
   fields: Record<string, string>;
+  /** The gateway's own reference, stored so the order can be reconciled. */
+  reference?: string;
 }
 
 /** Outcome of verifying a gateway response, server-side. */
@@ -237,36 +242,113 @@ export interface PaymentConfirmation {
 export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff | null> {
   if (!isOnlinePaymentAvailable()) return null;
 
-  /*
-   * SBIePay adapter goes here once their integration kit arrives.
-   *
-   * It cannot be written from the credentials alone: the request body is AES
-   * encrypted, and the kit specifies the key length, the mode (CBC vs ECB), IV
-   * handling and padding. Guessing any of those produces a request the bank
-   * rejects with a generic error, so this deliberately stays unimplemented
-   * rather than shipping a plausible-looking encryption that cannot work.
-   *
-   * Everything around it — the routes, the order transitions, the admin
-   * surfacing — is already built and exercised by the COD path, so only these
-   * two functions need filling in.
-   */
-  throw new Error("sbiepay-adapter-not-implemented");
+  const { createSbiepayOrder } = await import("@/lib/sbiepay-client");
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
+
+  const created = await createSbiepayOrder({
+    /*
+     * SBI takes RUPEES as a decimal; everything internal is integer paise.
+     * The conversion happens here, at the boundary, so paise stays the only
+     * representation anywhere else — a float rupee amount in the codebase is
+     * how rounding errors reach a customer's card.
+     */
+    orderAmount: order.totalPaise / 100,
+    currencyCode: order.currency || "INR",
+    orderRefNumber: order.orderNumber,
+    returnUrl: `${site}/api/payments/sbiepay/callback`,
+    /*
+     * Expire the link after 30 minutes. Without an expiry a payment URL stays
+     * live indefinitely, so an abandoned checkout could be paid days later
+     * against stock that has since been sold.
+     */
+    expiry: Date.now() + 30 * 60_000,
+  });
+
+  if (!created.transactionUrl) {
+    throw new Error("sbiepay-no-transaction-url");
+  }
+
+  return {
+    action: created.transactionUrl,
+    fields: {},
+    reference: created.sbiOrderRefNumber,
+  };
 }
 
 /**
  * Verify a gateway response and report what was actually captured.
  *
- * Called from the server-side callback with the gateway's own payload. It must
- * re-derive the amount and order reference from the *signed* response — the
- * query string the browser arrives with is attacker-controlled and is only ever
- * used to look up which order to verify, never to decide that it is paid.
+ * The callback payload is NOT trusted to decide this. It tells us a payment
+ * finished; SBI's order/status API tells us whether the bank agrees, and that
+ * is what an order is marked paid on.
+ *
+ * The reason is not paranoia about the encrypted payload — GCM's auth tag makes
+ * that tamper-evident. It is that the callback is only one of the ways a
+ * payment ends. A customer who pays and closes the tab never triggers one at
+ * all, so the status API has to be the authority in every case; using the
+ * payload here and the API elsewhere would give two answers to one question.
  */
 export async function confirmGatewayPayment(
-  _order: PayableOrder,
+  order: PayableOrder,
   _payload: Record<string, string>,
 ): Promise<PaymentConfirmation> {
   if (!isOnlinePaymentAvailable()) {
     return { ok: false, reference: null, capturedPaise: null, reason: "no-provider" };
   }
-  throw new Error("sbiepay-adapter-not-implemented");
+
+  try {
+    const { searchSbiepayOrder } = await import("@/lib/sbiepay-client");
+    const found = await searchSbiepayOrder(order.orderNumber);
+    const remote = Array.isArray(found) ? found[0] : found;
+
+    if (!remote) {
+      return { ok: false, reference: null, capturedPaise: null, reason: "not-found" };
+    }
+
+    /*
+     * Guard against a mismatched reference. `order/status` is queried by our
+     * own order number, so this should be impossible — but marking the wrong
+     * order paid is bad enough to be worth one comparison.
+     */
+    if (remote.orderRefNumber !== order.orderNumber) {
+      return {
+        ok: false,
+        reference: remote.sbiOrderRefNumber ?? null,
+        capturedPaise: null,
+        reason: "reference-mismatch",
+      };
+    }
+
+    // Rupees back to paise. Rounded because a float round-trip can land a hair
+    // under, and a truncation would then quietly under-record what was paid.
+    const capturedPaise = Math.round((remote.orderAmount ?? 0) * 100);
+    const reference = remote.sbiOrderRefNumber ?? null;
+
+    if (remote.status !== "PAID") {
+      return {
+        ok: false,
+        reference,
+        capturedPaise,
+        // The bank's own status word, so a log says CANCEL or EXPIRED rather
+        // than a generic failure.
+        reason: remote.status?.toLowerCase() ?? "not-paid",
+      };
+    }
+
+    return { ok: true, reference, capturedPaise };
+  } catch (err) {
+    /*
+     * An unreachable gateway is NOT a failed payment. Returning ok:false marks
+     * the order failed, which is the safe direction: money that was taken shows
+     * up in reconciliation and can be corrected, whereas an order marked paid
+     * on a network error ships goods for nothing.
+     */
+    return {
+      ok: false,
+      reference: null,
+      capturedPaise: null,
+      reason: err instanceof Error ? err.message.slice(0, 120) : "verify-failed",
+    };
+  }
 }

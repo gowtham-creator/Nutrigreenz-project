@@ -47,6 +47,27 @@ export function PaymentGatewayPanel() {
   const [status, setStatus] = useState<GatewayStatus | null>(null);
   const [failed, setFailed] = useState(false);
   const [probing, setProbing] = useState(false);
+  const [selftest, setSelftest] = useState<
+    { ok: boolean; checks: { step: string; ok: boolean; detail: string }[] } | null
+  >(null);
+  const [testing, setTesting] = useState(false);
+
+  /*
+   * Run the end-to-end check. It authenticates against SBI's own endpoint but
+   * creates nothing, so it is safe to run as often as needed — and it refuses
+   * outright when pointed at the live gateway.
+   */
+  async function runSelftest() {
+    setTesting(true);
+    try {
+      const res = await fetch("/api/admin/payments/selftest", { cache: "no-store" });
+      setSelftest(await res.json());
+    } catch {
+      setSelftest({ ok: false, checks: [{ step: "request", ok: false, detail: "could not reach the server" }] });
+    } finally {
+      setTesting(false);
+    }
+  }
 
   /*
    * Ask the server to call out through the proxy and report the address it
@@ -214,6 +235,49 @@ export function PaymentGatewayPanel() {
                 </ul>
               </div>
             ) : null}
+
+            {/*
+              The end-to-end check. Configuration, crypto, egress IP and
+              authentication, in the order a real payment depends on them, so
+              the first failure names the thing to fix.
+            */}
+            <div className="mt-4 rounded-xl border border-ng-line-soft bg-ng-paper px-3.5 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[12.5px] font-semibold text-ng-forest-deep">
+                  Integration self-test
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void runSelftest()}
+                  disabled={testing}
+                  className="cursor-pointer rounded-full bg-ng-forest-deep px-3.5 py-1 text-[11.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {testing ? "Running…" : "Run self-test"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
+                Authenticates against SBI without creating an order or moving money.
+                Refuses to run against the live gateway.
+              </p>
+
+              {selftest ? (
+                <ul className="mt-2.5 space-y-1.5">
+                  {selftest.checks.map((c) => (
+                    <li key={c.step} className="flex items-start gap-2">
+                      <Icon
+                        name={c.ok ? "check-circle-bold" : "close-circle-bold"}
+                        size={14}
+                        className={cn("mt-px shrink-0", c.ok ? "text-ng-green-bright" : "text-ng-danger")}
+                      />
+                      <span className="min-w-0 text-[11.5px]">
+                        <span className="font-semibold text-ng-forest-deep">{c.step}</span>
+                        <span className="text-ng-ink-muted"> — {c.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
 
             {status.problems.length > 0 ? (
               <div className="mt-4 rounded-xl border border-ng-clay/40 bg-ng-clay/[0.06] px-3.5 py-3">
