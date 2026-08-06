@@ -59,9 +59,9 @@ export async function GET(): Promise<Response> {
       currencyCode: "INR",
       orderRefNumber,
       returnUrl: `${site}/api/payments/sbiepay/callback`,
-      // 25, not 30: SBI caps expiry at 30 minutes and rejects anything over it,
-      // and the request is evaluated at the bank rather than here.
-      expiry: Date.now() + 25 * 60_000,
+      // `expiry` omitted on purpose — see the note in beginPayment(). SBI
+      // rejects our timestamps with error 2104 whatever value we send, and the
+      // field is optional, so the gateway applies its own limit.
     });
 
     return Response.json({

@@ -258,16 +258,22 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
     orderRefNumber: order.orderNumber,
     returnUrl: `${site}/api/payments/sbiepay/callback`,
     /*
-     * Expire the link after 25 minutes. Without an expiry a payment URL stays
-     * live indefinitely, so an abandoned checkout could be paid days later
-     * against stock that has since been sold.
+     * `expiry` is deliberately omitted.
      *
-     * SBI caps this at 30 minutes and rejects the order outright — "Order
-     * expiry cannot exceed 30 minutes" — so asking for exactly 30 fails: the
-     * timestamp is computed here but evaluated at the bank, and the network hop
-     * plus clock skew put it over the line. The five-minute margin absorbs both.
+     * The field is optional, and SBI rejects our absolute timestamps with error
+     * 2104 ("expiry cannot exceed 30 minutes") regardless of the value sent —
+     * 30 minutes and 25 minutes both failed, so the disagreement is over how
+     * the number is interpreted, not how large it is. Their sample value is an
+     * IST midnight expressed as epoch milliseconds, which is itself far more
+     * than 30 minutes ahead, so the documented example could not pass its own
+     * validator either.
+     *
+     * Omitting it lets the gateway apply its own limit, which is the behaviour
+     * we wanted anyway: a payment link that does not stay live indefinitely, so
+     * an abandoned checkout cannot be paid days later against stock that has
+     * since been sold. Guessing at an encoding the bank has not documented is
+     * not worth a failed order at checkout.
      */
-    expiry: Date.now() + 25 * 60_000,
   });
 
   if (!created.transactionUrl) {
