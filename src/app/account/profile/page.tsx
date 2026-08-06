@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { ngToast } from "@/components/ng/toast";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Input } from "@/components/ng/input";
 import { Button } from "@/components/ng/button";
@@ -12,6 +12,25 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"] as const;
+
+/*
+ * The label shown and the value stored are not the same string.
+ *
+ * `customers_gender_chk` accepts only female / male / other /
+ * prefer_not_to_say, so posting the display label would fail the constraint and
+ * the whole save would 422 — including the unrelated fields in the same
+ * request. Mapped in both directions here so the wording stays an editorial
+ * choice rather than a schema change.
+ */
+const GENDER_VALUE: Record<string, string> = {
+  Female: "female",
+  Male: "male",
+  "Non-binary": "other",
+  "Prefer not to say": "prefer_not_to_say",
+};
+const GENDER_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(GENDER_VALUE).map(([label, value]) => [value, label]),
+);
 const DIETS = ["Vegetarian", "Vegan", "Jain", "Eggetarian", "No preference"] as const;
 
 type PrefKey = "whatsapp" | "sms" | "email" | "orders";
@@ -35,6 +54,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const [gender, setGender] = useState<string>("");
 
   // Reflect the signed-in account (or empty when signed out / a brand-new
@@ -66,6 +86,10 @@ export default function ProfilePage() {
           name: string | null;
           email: string | null;
           phone: string | null;
+          dob?: string | null;
+          gender?: string | null;
+          dietPrefs?: string[];
+          notify?: Record<PrefKey, boolean>;
         } | null;
         setCanonical(c);
         // Fill name/email from the canonical record when the Firebase user has
@@ -73,9 +97,29 @@ export default function ProfilePage() {
         if (c) {
           setFullName((cur) => cur || c.name || "");
           setEmail((cur) => cur || c.email || "");
+          /*
+           * The saved fields are assigned rather than defaulted-if-empty.
+           *
+           * An unticked toggle and an unloaded one are both `false`, so the
+           * `cur || …` idiom used for the text fields would silently discard a
+           * stored preference of "off" and show the default of "on". These are
+           * consent flags; showing the wrong state is not a cosmetic bug.
+           */
+          setDob(c.dob ?? "");
+          setGender(c.gender ? (GENDER_LABEL[c.gender] ?? "") : "");
+          if (c.dietPrefs?.length) setDiets(c.dietPrefs);
+          if (c.notify) setPrefs(c.notify);
         }
+        // Set regardless of whether a row came back. A brand-new account has no
+        // customers row yet, and leaving this false would disable Save forever
+        // for exactly the people most likely to be filling the form in.
+        setLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        // A failed read must not lock the form. Saving still works; it would
+        // just be writing over defaults, which is what an empty form does anyway.
+        setLoaded(true);
+      });
     return () => {
       active = false;
     };
@@ -109,12 +153,67 @@ export default function ProfilePage() {
           : [...prev.filter((x) => x !== "No preference"), d],
     );
 
-  const onSave = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  /*
+   * Save to the server, and only claim success once it has actually saved.
+   *
+   * This previously called a React state setter and then announced "Your
+   * details and preferences have been updated". Nothing was written: every
+   * value was gone on the next refresh, while the customer had been told
+   * otherwise. A toast that lies is worse than no toast, because it stops
+   * anyone reporting the bug.
+   */
+  const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({ name: fullName, email });
-    toast.success("Profile saved", {
-      description: "Your details and preferences have been updated.",
-    });
+    if (saving) return;
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/account/me", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: fullName,
+          email,
+          dob,
+          gender: gender ? (GENDER_VALUE[gender] ?? "") : "",
+          dietPrefs: diets,
+          notify: prefs,
+        }),
+      });
+
+      const data = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+
+      if (!res.ok || !data?.ok) {
+        ngToast.error("Could not save", {
+          // 422 carries a message naming the offending field; anything else
+          // gets a generic line rather than leaking a server error.
+          description:
+            res.status === 422 && data?.error
+              ? data.error
+              : res.status === 401
+                ? "Your session has expired. Please sign in again."
+                : "Something went wrong. Please try again.",
+        });
+        return;
+      }
+
+      // Keep the header/avatar in step with what was just saved.
+      updateProfile({ name: fullName, email });
+      ngToast.success("Profile saved", {
+        description: "Your details and preferences have been updated.",
+      });
+    } catch {
+      ngToast.error("Could not save", {
+        description: "Check your connection and try again.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -350,10 +449,24 @@ export default function ProfilePage() {
 
         {/* Save bar */}
         <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <p className="text-[12px] text-ng-ink-soft sm:mr-auto">Changes are saved to this device for now.</p>
-          <Button type="submit" variant="primary" size="lg">
-            <Icon name="diskette-bold" size={18} />
-            Save changes
+          <p className="text-[12px] text-ng-ink-soft sm:mr-auto">
+            {isAuthed
+              ? "Saved to your account, on every device."
+              : "Sign in to save your details."}
+          </p>
+          {/*
+            Disabled until the stored profile has loaded. Saving before then
+            would post the component's defaults over whatever is on the record —
+            silently switching a customer's notification choices back on.
+          */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            disabled={saving || !isAuthed || !loaded}
+          >
+            <Icon name={saving ? "refresh-bold" : "diskette-bold"} size={18} className={saving ? "animate-spin" : undefined} />
+            {saving ? "Saving\u2026" : "Save changes"}
           </Button>
         </div>
       </form>
