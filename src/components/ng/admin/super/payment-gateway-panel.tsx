@@ -60,6 +60,8 @@ export function PaymentGatewayPanel() {
       ok: boolean;
       orderRefNumber?: string;
       transactionUrl?: string;
+      sameHostUrl?: string;
+      orderHash?: string;
       error?: string;
     }[];
   } | null>(null);
@@ -359,16 +361,37 @@ export function PaymentGatewayPanel() {
                               {a.mode}
                             </span>
                             <span className="text-[11.5px] text-ng-ink-muted"> — {a.explain}</span>
-                            {a.ok && a.transactionUrl ? (
-                              <a
-                                href={a.transactionUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="ml-2 inline-flex items-center gap-1 rounded-full bg-ng-green-bright px-2.5 py-0.5 text-[11px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
-                              >
-                                Open
-                                <Icon name="arrow-right-up-linear" size={11} />
-                              </a>
+                            {a.ok ? (
+                              <div className="mt-1 space-y-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {a.sameHostUrl ? (
+                                    <a
+                                      href={a.sameHostUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 rounded-full bg-ng-green-bright px-2.5 py-0.5 text-[11px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
+                                    >
+                                      Open (gateway host)
+                                      <Icon name="arrow-right-up-linear" size={11} />
+                                    </a>
+                                  ) : null}
+                                  {a.transactionUrl ? (
+                                    <a
+                                      href={a.transactionUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 rounded-full border border-ng-line px-2.5 py-0.5 text-[11px] font-semibold text-ng-ink-muted transition-colors hover:text-ng-forest-deep"
+                                    >
+                                      Open (SBI&rsquo;s own URL)
+                                      <Icon name="arrow-right-up-linear" size={11} />
+                                    </a>
+                                  ) : null}
+                                </div>
+                                {/* The raw string, so a wrong host is visible rather than inferred. */}
+                                <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
+                                  {a.transactionUrl}
+                                </p>
+                              </div>
                             ) : (
                               <p className="text-[11px] text-ng-danger">{a.error}</p>
                             )}

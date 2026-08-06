@@ -1,5 +1,10 @@
 import { requireApiPermission } from "@/lib/admin-api-guard";
-import { isLiveGateway, sbiepayEnv, missingSbiepayConfig } from "@/lib/payments";
+import {
+  isLiveGateway,
+  sbiepayEnv,
+  missingSbiepayConfig,
+  sbiepayBaseUrl,
+} from "@/lib/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +71,11 @@ export async function GET(): Promise<Response> {
     explain: string;
     ok: boolean;
     orderRefNumber?: string;
+    /** Exactly what SBI returned, unmodified. */
     transactionUrl?: string;
+    /** The same order's page on the gateway host, which is the one that serves /ui/. */
+    sameHostUrl?: string;
+    orderHash?: string;
     error?: string;
   }[] = [];
 
@@ -89,12 +98,31 @@ export async function GET(): Promise<Response> {
         returnUrl: `${site}/api/payments/sbiepay/callback`,
         ...(encoding.value === undefined ? {} : { expiry: encoding.value }),
       });
+      /*
+       * Offer the payment page on our own gateway host as well as the one SBI
+       * named.
+       *
+       * Their `transactionUrl` points at integration.epay.sbi, which does not
+       * serve this environment — its TLS certificate does not even cover that
+       * name. Probing found the UI at `/ui/` on the same host as the API, and
+       * that host's ROOT returns the branded 404 page we were landing on.
+       *
+       * Both are returned rather than silently rewriting the bank's response:
+       * which one works is a fact about SBI's deployment, and quietly
+       * overriding it would hide a change if they ever fix their side.
+       */
+      const base = sbiepayBaseUrl();
+      const sameHostUrl =
+        base && created.orderHash ? `${base}/ui/#${created.orderHash}` : undefined;
+
       attempts.push({
         mode: encoding.mode,
         explain: encoding.explain,
         ok: true,
         orderRefNumber,
         transactionUrl: created.transactionUrl,
+        sameHostUrl,
+        orderHash: created.orderHash,
       });
     } catch (err) {
       attempts.push({
