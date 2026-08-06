@@ -87,11 +87,20 @@ export async function GET(): Promise<Response> {
   }
   const expectedIp = process.env.SBIEPAY_WHITELISTED_IP?.trim() || undefined;
   const probe = await checkProxy(expectedIp);
-  if (!probe.ok) return fail("proxy", `unreachable: ${probe.error}`);
+  // The messages are already written to name their own fix — do not wrap them
+  // in "unreachable:", which was wrong for half of them.
+  if (!probe.ok) return fail("proxy", probe.error ?? "unreachable");
   if (probe.matchesWhitelist === false) {
-    return fail("proxy", `traffic leaves from ${probe.ip}, not the whitelisted ${expectedIp}`);
+    return fail(
+      "proxy",
+      `SBIEPAY_PROXY_URL points at ${probe.ip}, not the whitelisted ${expectedIp}`,
+    );
   }
-  checks.push({ step: "proxy", ok: true, detail: `egress ${probe.ip}` });
+  checks.push({
+    step: "proxy",
+    ok: true,
+    detail: `reached SBI via ${probe.ip}${probe.matchesWhitelist ? " (whitelisted)" : ""}`,
+  });
 
   // 4 · authentication against SBI
   try {

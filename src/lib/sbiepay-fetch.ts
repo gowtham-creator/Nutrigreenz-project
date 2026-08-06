@@ -117,12 +117,44 @@ export async function sbiepayFetch(req: SbiepayRequest): Promise<SbiepayResponse
   }
 }
 
+/** Undici nests the real failure several `cause` levels down. Walk to it. */
+function rootCause(err: unknown): { message: string; code: string } {
+  let node: unknown = err;
+  let message = "";
+  let code = "";
+  for (let depth = 0; node instanceof Error && depth < 5; depth += 1) {
+    // Keep the deepest non-empty values: the outer layers say "fetch failed",
+    // which is true and useless.
+    if (node.message) message = node.message;
+    const c = (node as { code?: string }).code;
+    if (c) code = c;
+    node = (node as { cause?: unknown }).cause;
+  }
+  return { message, code };
+}
+
 /**
- * Confirm the proxy is reachable and reporting the address SBI expects.
+ * Confirm SBI is reachable through the proxy.
  *
  * Worth having as its own check: the difference between "the proxy is down" and
  * "the credentials are wrong" is invisible from a failed payment, and this
  * separates them before anyone starts debugging the wrong half.
+ *
+ * ── Why this probes SBI rather than an IP-echo service ────────────────────
+ *
+ * It used to fetch api.ipify.org to read the egress address back. That could
+ * never have worked: the proxy's ACL allows SBI domains and denies everything
+ * else, so squid correctly refused the echo service and the check reported the
+ * proxy as broken while it was in fact working exactly as configured.
+ *
+ * Probing the gateway itself is the better test regardless. It exercises the
+ * whole path a payment uses — proxy auth, the domain ACL, DNS, TLS to the bank
+ * — so it cannot pass while real traffic fails. Any HTTP response at all is a
+ * pass; a 404 from SBI still proves every hop in between is sound.
+ *
+ * The egress address is verified separately, and more reliably: the install
+ * script prints it from the box itself, and `expectedIp` here confirms the
+ * configured proxy is the machine holding that whitelisted address.
  */
 export async function checkProxy(expectedIp?: string): Promise<{
   ok: boolean;
@@ -132,21 +164,30 @@ export async function checkProxy(expectedIp?: string): Promise<{
 }> {
   if (!isProxyConfigured()) return { ok: false, error: "not-configured" };
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const base = sbiepayBaseUrl();
+  if (!base) return { ok: false, error: "sbiepay-environment-not-set" };
+
+  // The proxy IS the egress point, so its host is the address SBI sees.
+  let proxyHost: string | undefined;
   try {
-    // A third-party echo service, used ONLY for this diagnostic — never in the
-    // payment path, so it is not a dependency of taking money.
-    const res = await undiciFetch("https://api.ipify.org?format=json", {
+    proxyHost = new URL(proxyUrl() as string).hostname;
+  } catch {
+    return { ok: false, error: "SBIEPAY_PROXY_URL is not a valid URL" };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    await undiciFetch(base, {
+      method: "GET",
       dispatcher: agent(),
       signal: controller.signal,
     } as UndiciInit);
-    const { ip } = (await res.json()) as { ip?: string };
-    if (!ip) return { ok: false, error: "no-ip-returned" };
+
     return {
       ok: true,
-      ip,
-      matchesWhitelist: expectedIp ? ip === expectedIp : undefined,
+      ip: proxyHost,
+      matchesWhitelist: expectedIp ? proxyHost === expectedIp : undefined,
     };
   } catch (err) {
     /*
@@ -157,21 +198,28 @@ export async function checkProxy(expectedIp?: string): Promise<{
      * like a crash rather than a timeout. Each of these has a different fix, so
      * the message names the fix.
      */
-    const raw = err instanceof Error ? err.message : "";
-    const code = (err as { cause?: { code?: string } })?.cause?.code ?? "";
+    const { message: raw, code } = rootCause(err);
+    // Never let the proxy password reach a screen or a log line.
     const host = proxyUrl()?.replace(/\/\/[^@]*@/, "//") ?? "the proxy";
 
     let error: string;
     if (/abort/i.test(raw) || code === "UND_ERR_CONNECT_TIMEOUT") {
-      error = `no response from ${host} within 8s — the proxy is not running, or the security group is not allowing inbound on its port`;
+      error = `no response from ${host} within 12s — squid is not running, or the Lightsail firewall is not allowing inbound on its port`;
     } else if (code === "ECONNREFUSED") {
       error = `${host} refused the connection — the instance is up but nothing is listening on that port`;
     } else if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
       error = `${host} does not resolve — check the host in SBIEPAY_PROXY_URL`;
-    } else if (/407|authentication|credentials/i.test(raw)) {
-      error = "the proxy rejected the credentials in SBIEPAY_PROXY_URL";
+    } else if (/\b407\b|authentication required|credentials/i.test(raw)) {
+      error = `the proxy rejected the credentials in SBIEPAY_PROXY_URL — re-run the install script to reissue the password`;
+    } else if (/\b403\b|forbidden|denied/i.test(raw)) {
+      /*
+       * squid answered, and said no. Its ACL allows only SBI domains, so this
+       * means the request was for something else — which is the proxy doing its
+       * job, not a fault.
+       */
+      error = `the proxy is running but refused this destination — its ACL allows only SBI hosts`;
     } else {
-      error = raw || "unreachable";
+      error = raw ? `${raw}${code ? ` (${code})` : ""}` : "unreachable";
     }
     return { ok: false, error };
   } finally {
