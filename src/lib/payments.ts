@@ -258,11 +258,16 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
     orderRefNumber: order.orderNumber,
     returnUrl: `${site}/api/payments/sbiepay/callback`,
     /*
-     * Expire the link after 30 minutes. Without an expiry a payment URL stays
+     * Expire the link after 25 minutes. Without an expiry a payment URL stays
      * live indefinitely, so an abandoned checkout could be paid days later
      * against stock that has since been sold.
+     *
+     * SBI caps this at 30 minutes and rejects the order outright — "Order
+     * expiry cannot exceed 30 minutes" — so asking for exactly 30 fails: the
+     * timestamp is computed here but evaluated at the bank, and the network hop
+     * plus clock skew put it over the line. The five-minute margin absorbs both.
      */
-    expiry: Date.now() + 30 * 60_000,
+    expiry: Date.now() + 25 * 60_000,
   });
 
   if (!created.transactionUrl) {

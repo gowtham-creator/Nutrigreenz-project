@@ -59,7 +59,9 @@ export async function GET(): Promise<Response> {
       currencyCode: "INR",
       orderRefNumber,
       returnUrl: `${site}/api/payments/sbiepay/callback`,
-      expiry: Date.now() + 30 * 60_000,
+      // 25, not 30: SBI caps expiry at 30 minutes and rejects anything over it,
+      // and the request is evaluated at the bank rather than here.
+      expiry: Date.now() + 25 * 60_000,
     });
 
     return Response.json({
