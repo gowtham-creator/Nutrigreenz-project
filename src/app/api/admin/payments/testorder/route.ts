@@ -45,25 +45,43 @@ const EXPIRY_ENCODINGS: { mode: string; explain: string; value?: number }[] = [
 ];
 
 /**
- * Return URLs to try, because ours has never been registered with SBI.
+ * The four combinations worth trying, given what the field table actually says.
  *
- * The order is created and their status API confirms it, yet their payment page
- * refuses to render it. One thing we send that they have never been told about
- * is the return URL: keys were issued and the server IP whitelisted, but no
- * merchant-site domain was ever exchanged.
+ * Only `currencyCode`, `orderAmount`, `orderRefNumber` and `returnUrl` are
+ * mandatory, and we send all four — so nothing required is missing. That leaves
+ * the optional fields, of which two could plausibly stop the hosted page from
+ * rendering an order the status API confirms exists:
  *
- * Every sample in both guides points `returnUrl` at an SBI domain of their own
- * — `https://sit.epay.sbi`. If the hosted page only renders orders whose return
- * URL is a registered domain, an unregistered one would fail exactly like this.
+ *   returnUrl — never registered with SBI, and every sample in both guides
+ *               points it at a domain of their own
+ *   payMode   — optional, but if the merchant profile carries no default
+ *               channels the page has nothing to offer and may bail to /404
  *
- * Creating one order per candidate settles it without waiting on support: if
- * the order using SBI's own domain renders a payment page and ours does not,
- * the cause is domain registration and the ask to SBI becomes specific.
+ * Naming each one so the result reads as a finding rather than a guess.
  */
-const RETURN_URLS: { label: string; url: (site: string) => string }[] = [
-  { label: "our callback", url: (site) => `${site}/api/payments/sbiepay/callback` },
-  { label: "SBI's own sample domain", url: () => "https://sit.epay.sbi" },
-  { label: "the integration gateway domain", url: () => "https://integration.epay.sbi" },
+const VARIANTS: {
+  label: string;
+  returnUrl: (site: string) => string;
+  payMode?: string;
+}[] = [
+  {
+    label: "baseline — our callback, no payMode",
+    returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
+  },
+  {
+    label: "our callback + payMode NB",
+    returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
+    payMode: "NB",
+  },
+  {
+    label: "our callback + payMode UPI",
+    returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
+    payMode: "UPI",
+  },
+  {
+    label: "SBI's own sample return domain",
+    returnUrl: () => "https://sit.epay.sbi",
+  },
 ];
 
 export async function GET(): Promise<Response> {
@@ -104,7 +122,12 @@ export async function GET(): Promise<Response> {
   }[] = [];
 
   for (const encoding of EXPIRY_ENCODINGS.flatMap((e) =>
-    RETURN_URLS.map((r) => ({ ...e, mode: `returnUrl: ${r.label}`, returnUrl: r.url(site) })),
+    VARIANTS.map((v) => ({
+      ...e,
+      mode: v.label,
+      returnUrl: v.returnUrl(site),
+      payMode: v.payMode,
+    })),
   )) {
     /*
      * A fresh reference per attempt. Reusing one would draw error 2209 ("the
@@ -122,6 +145,7 @@ export async function GET(): Promise<Response> {
         currencyCode: "INR",
         orderRefNumber,
         returnUrl: encoding.returnUrl,
+        ...(encoding.payMode ? { payMode: encoding.payMode } : {}),
         ...(encoding.value === undefined ? {} : { expiry: encoding.value }),
       });
       /*

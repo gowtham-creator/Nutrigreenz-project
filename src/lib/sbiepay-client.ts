@@ -194,6 +194,13 @@ export interface CreateOrderInput {
    */
   expiry?: number;
   customerId?: string;
+  /**
+   * Restrict the order to one channel: UPI, NB, CC, DC, PC or WALLET.
+   *
+   * Optional. Left unset, the hosted page offers whatever the merchant profile
+   * has enabled — which only helps if the profile has any enabled at all.
+   */
+  payMode?: string;
 }
 
 export interface SbiepayOrder {
