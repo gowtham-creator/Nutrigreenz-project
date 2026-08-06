@@ -184,7 +184,14 @@ export interface CreateOrderInput {
   /** Our order number. Comes back on the callback, so it is how we re-identify. */
   orderRefNumber: string;
   returnUrl: string;
-  /** Epoch milliseconds after which the payment link stops working. */
+  /**
+   * How long the payment link stays valid, in MINUTES. Maximum 30.
+   *
+   * SBI's documentation types this as a timestamp; it is not one. Sending an
+   * epoch value in any unit is rejected with error 2104 ("expiry cannot exceed
+   * 30 minutes") because the number, read as minutes, is enormous. Verified by
+   * probing the sandbox with each encoding — see the note in beginPayment().
+   */
   expiry?: number;
   customerId?: string;
 }

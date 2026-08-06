@@ -258,22 +258,29 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
     orderRefNumber: order.orderNumber,
     returnUrl: `${site}/api/payments/sbiepay/callback`,
     /*
-     * `expiry` is deliberately omitted.
+     * Minutes. Not a timestamp, whatever the documentation says.
      *
-     * The field is optional, and SBI rejects our absolute timestamps with error
-     * 2104 ("expiry cannot exceed 30 minutes") regardless of the value sent —
-     * 30 minutes and 25 minutes both failed, so the disagreement is over how
-     * the number is interpreted, not how large it is. Their sample value is an
-     * IST midnight expressed as epoch milliseconds, which is itself far more
-     * than 30 minutes ahead, so the documented example could not pass its own
-     * validator either.
+     * Both SBI PDFs type this field as "Number (Timestamp)" / "Long — Order
+     * expiry timestamp", and both are wrong. Establishing that took creating
+     * one sandbox order per candidate encoding and reading which the bank
+     * accepted:
      *
-     * Omitting it lets the gateway apply its own limit, which is the behaviour
-     * we wanted anyway: a payment link that does not stay live indefinitely, so
-     * an abandoned checkout cannot be paid days later against stock that has
-     * since been sold. Guessing at an encoding the bank has not documented is
-     * not worth a failed order at checkout.
+     *   epoch seconds  (1786…)    → rejected, "cannot exceed 30 minutes"
+     *   duration ms    (1500000)  → rejected, same error
+     *   epoch ms       (1786…000) → rejected, same error
+     *   the number 25             → ACCEPTED
+     *
+     * Every rejection is a value that exceeds 30 when read as a count of
+     * minutes, and the only accepted value is the one that does not. Nothing in
+     * either document states the unit — the sole occurrence of the word
+     * "minutes" across both is inside the error message itself.
+     *
+     * 25 rather than the full 30, so there is headroom if the bank ever
+     * measures the window from a moment slightly later than we do. An expiry
+     * matters: without it a payment URL stays live indefinitely, and an
+     * abandoned checkout could be paid days later against stock since sold.
      */
+    expiry: 25,
   });
 
   if (!created.transactionUrl) {

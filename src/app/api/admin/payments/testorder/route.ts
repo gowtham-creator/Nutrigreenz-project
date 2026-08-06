@@ -24,36 +24,19 @@ export const dynamic = "force-dynamic";
  * by accident. The guard is not a formality.
  */
 /**
- * Every plausible reading of the `expiry` field, to be tried in turn.
+ * The `expiry` encoding, kept as a list because it was found by probing.
  *
- * Both PDFs call it a timestamp, yet SBI rejects a timestamp 25 minutes ahead
- * with error 2104 — "expiry cannot exceed 30 minutes". The value we send is
- * ~1.78e12 whether the window is 25 or 30 minutes, which is what you would see
- * if the far side read our milliseconds as seconds. Their own documented sample
- * (1767551400000, an IST midnight) could not pass that validator either, so the
- * documentation cannot be trusted on this field.
+ * Both PDFs type this field as a timestamp. It is a count of MINUTES, capped at
+ * 30. That was established by creating one sandbox order per candidate and
+ * reading which the bank accepted: epoch-seconds, duration-in-milliseconds and
+ * epoch-milliseconds were each rejected with error 2104, and the bare number 25
+ * was accepted. Every rejected value exceeds 30 when read as minutes.
  *
- * Rather than redeploy per guess, send them all and let the bank pick. Whichever
- * returns a working payment page is the encoding that goes into checkout.
+ * The list survives so the same probe can be re-run against the live gateway,
+ * or if SBI changes the contract, without rebuilding the harness.
  */
 const EXPIRY_ENCODINGS: { mode: string; explain: string; value?: number }[] = [
-  { mode: "omitted", explain: "no expiry sent; gateway applies its own" },
-  {
-    mode: "epoch-seconds",
-    explain: "25 min ahead, in seconds",
-    value: Math.floor((Date.now() + 25 * 60_000) / 1000),
-  },
-  {
-    mode: "duration-ms",
-    explain: "25 min expressed as milliseconds",
-    value: 25 * 60_000,
-  },
-  { mode: "duration-minutes", explain: "the number 25", value: 25 },
-  {
-    mode: "epoch-ms",
-    explain: "25 min ahead, in milliseconds (already known to fail)",
-    value: Date.now() + 25 * 60_000,
-  },
+  { mode: "expiry = 25", explain: "minutes — the encoding the bank accepts", value: 25 },
 ];
 
 export async function GET(): Promise<Response> {
