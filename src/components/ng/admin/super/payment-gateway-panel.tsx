@@ -53,9 +53,15 @@ export function PaymentGatewayPanel() {
   const [testing, setTesting] = useState(false);
   const [testOrder, setTestOrder] = useState<{
     ok: boolean;
-    transactionUrl?: string;
-    orderRefNumber?: string;
     error?: string;
+    attempts?: {
+      mode: string;
+      explain: string;
+      ok: boolean;
+      orderRefNumber?: string;
+      transactionUrl?: string;
+      error?: string;
+    }[];
   } | null>(null);
   const [ordering, setOrdering] = useState(false);
 
@@ -329,31 +335,51 @@ export function PaymentGatewayPanel() {
                     </button>
                   </div>
                   <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
-                    Creates an order in SBI&rsquo;s sandbox only — nothing is written here,
-                    and no money moves. Opens the real hosted payment page.
+                    Creates orders in SBI&rsquo;s sandbox only — nothing is written here,
+                    and no money moves. One per way the bank might read the expiry
+                    field, since the documentation contradicts its own validator.
+                    Open each link: the one that loads a real payment page rather
+                    than a 404 is the encoding checkout will use.
                   </p>
 
-                  {testOrder ? (
-                    testOrder.ok && testOrder.transactionUrl ? (
-                      <div className="mt-2.5">
-                        <a
-                          href={testOrder.transactionUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full bg-ng-green-bright px-3.5 py-1 text-[11.5px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
-                        >
-                          Open payment page
-                          <Icon name="arrow-right-up-linear" size={12} />
-                        </a>
-                        <p className="mt-1.5 font-mono text-[10.5px] text-ng-ink-muted">
-                          {testOrder.orderRefNumber}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="mt-2.5 text-[11.5px] text-ng-danger">
-                        {testOrder.error ?? "could not create the order"}
-                      </p>
-                    )
+                  {testOrder?.attempts ? (
+                    <ul className="mt-2.5 space-y-2">
+                      {testOrder.attempts.map((a) => (
+                        <li key={a.mode} className="flex items-start gap-2">
+                          <Icon
+                            name={a.ok ? "check-circle-bold" : "close-circle-bold"}
+                            size={14}
+                            className={cn(
+                              "mt-0.5 shrink-0",
+                              a.ok ? "text-ng-green-bright" : "text-ng-danger",
+                            )}
+                          />
+                          <div className="min-w-0">
+                            <span className="text-[11.5px] font-semibold text-ng-forest-deep">
+                              {a.mode}
+                            </span>
+                            <span className="text-[11.5px] text-ng-ink-muted"> — {a.explain}</span>
+                            {a.ok && a.transactionUrl ? (
+                              <a
+                                href={a.transactionUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="ml-2 inline-flex items-center gap-1 rounded-full bg-ng-green-bright px-2.5 py-0.5 text-[11px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
+                              >
+                                Open
+                                <Icon name="arrow-right-up-linear" size={11} />
+                              </a>
+                            ) : (
+                              <p className="text-[11px] text-ng-danger">{a.error}</p>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : testOrder ? (
+                    <p className="mt-2.5 text-[11.5px] text-ng-danger">
+                      {testOrder.error ?? "could not create the order"}
+                    </p>
                   ) : null}
                 </div>
               ) : null}

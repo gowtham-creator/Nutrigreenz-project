@@ -23,6 +23,39 @@ export const dynamic = "force-dynamic";
  * account, and a diagnostic that can move money is one somebody eventually runs
  * by accident. The guard is not a formality.
  */
+/**
+ * Every plausible reading of the `expiry` field, to be tried in turn.
+ *
+ * Both PDFs call it a timestamp, yet SBI rejects a timestamp 25 minutes ahead
+ * with error 2104 — "expiry cannot exceed 30 minutes". The value we send is
+ * ~1.78e12 whether the window is 25 or 30 minutes, which is what you would see
+ * if the far side read our milliseconds as seconds. Their own documented sample
+ * (1767551400000, an IST midnight) could not pass that validator either, so the
+ * documentation cannot be trusted on this field.
+ *
+ * Rather than redeploy per guess, send them all and let the bank pick. Whichever
+ * returns a working payment page is the encoding that goes into checkout.
+ */
+const EXPIRY_ENCODINGS: { mode: string; explain: string; value?: number }[] = [
+  { mode: "omitted", explain: "no expiry sent; gateway applies its own" },
+  {
+    mode: "epoch-seconds",
+    explain: "25 min ahead, in seconds",
+    value: Math.floor((Date.now() + 25 * 60_000) / 1000),
+  },
+  {
+    mode: "duration-ms",
+    explain: "25 min expressed as milliseconds",
+    value: 25 * 60_000,
+  },
+  { mode: "duration-minutes", explain: "the number 25", value: 25 },
+  {
+    mode: "epoch-ms",
+    explain: "25 min ahead, in milliseconds (already known to fail)",
+    value: Date.now() + 25 * 60_000,
+  },
+];
+
 export async function GET(): Promise<Response> {
   const denied = await requireApiPermission("orders");
   if (denied) return denied;
@@ -42,41 +75,58 @@ export async function GET(): Promise<Response> {
     return Response.json({ ok: false, error: missing.join("; ") }, { status: 400 });
   }
 
-  try {
-    const { createSbiepayOrder } = await import("@/lib/sbiepay-client");
+  const { createSbiepayOrder } = await import("@/lib/sbiepay-client");
+  const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://nutrigreenz.farm";
 
+  const attempts: {
+    mode: string;
+    explain: string;
+    ok: boolean;
+    orderRefNumber?: string;
+    transactionUrl?: string;
+    error?: string;
+  }[] = [];
+
+  for (const encoding of EXPIRY_ENCODINGS) {
     /*
-     * A reference that is obviously a test and cannot collide with a real order
-     * number, so if one ever appears in a reconciliation report it identifies
-     * itself without anyone having to look it up.
+     * A fresh reference per attempt. Reusing one would draw error 2209 ("the
+     * previous transaction was already completed") on the second try and hide
+     * whichever encoding actually works.
+     *
+     * The prefix makes these obviously tests, so one appearing in a
+     * reconciliation report identifies itself without anyone looking it up.
      */
-    const orderRefNumber = `NGTEST${Date.now().toString(36).toUpperCase()}`;
+    const orderRefNumber = `NGT${encoding.mode.slice(0, 3).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
 
-    const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://nutrigreenz.farm";
-
-    const created = await createSbiepayOrder({
-      orderAmount: 1,
-      currencyCode: "INR",
-      orderRefNumber,
-      returnUrl: `${site}/api/payments/sbiepay/callback`,
-      // `expiry` omitted on purpose — see the note in beginPayment(). SBI
-      // rejects our timestamps with error 2104 whatever value we send, and the
-      // field is optional, so the gateway applies its own limit.
-    });
-
-    return Response.json({
-      ok: true,
-      environment: sbiepayEnv(),
-      orderRefNumber,
-      sbiOrderRefNumber: created.sbiOrderRefNumber,
-      status: created.status,
-      /** Open this in a browser — it is the hosted payment page. */
-      transactionUrl: created.transactionUrl,
-      next: "Open transactionUrl in a browser to see which pay modes this merchant profile offers.",
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown";
-    const code = (err as { code?: string })?.code ?? "";
-    return Response.json({ ok: false, error: message, code }, { status: 502 });
+    try {
+      const created = await createSbiepayOrder({
+        orderAmount: 1,
+        currencyCode: "INR",
+        orderRefNumber,
+        returnUrl: `${site}/api/payments/sbiepay/callback`,
+        ...(encoding.value === undefined ? {} : { expiry: encoding.value }),
+      });
+      attempts.push({
+        mode: encoding.mode,
+        explain: encoding.explain,
+        ok: true,
+        orderRefNumber,
+        transactionUrl: created.transactionUrl,
+      });
+    } catch (err) {
+      attempts.push({
+        mode: encoding.mode,
+        explain: encoding.explain,
+        ok: false,
+        error: err instanceof Error ? err.message : "unknown",
+      });
+    }
   }
+
+  return Response.json({
+    ok: attempts.some((a) => a.ok),
+    environment: sbiepayEnv(),
+    attempts,
+    next: "Open each working link. The one that loads a real payment page — not a 404 — is the encoding to use.",
+  });
 }
