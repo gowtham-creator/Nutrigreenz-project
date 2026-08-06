@@ -44,6 +44,28 @@ const EXPIRY_ENCODINGS: { mode: string; explain: string; value?: number }[] = [
   { mode: "expiry = 25", explain: "minutes — the encoding the bank accepts", value: 25 },
 ];
 
+/**
+ * Return URLs to try, because ours has never been registered with SBI.
+ *
+ * The order is created and their status API confirms it, yet their payment page
+ * refuses to render it. One thing we send that they have never been told about
+ * is the return URL: keys were issued and the server IP whitelisted, but no
+ * merchant-site domain was ever exchanged.
+ *
+ * Every sample in both guides points `returnUrl` at an SBI domain of their own
+ * — `https://sit.epay.sbi`. If the hosted page only renders orders whose return
+ * URL is a registered domain, an unregistered one would fail exactly like this.
+ *
+ * Creating one order per candidate settles it without waiting on support: if
+ * the order using SBI's own domain renders a payment page and ours does not,
+ * the cause is domain registration and the ask to SBI becomes specific.
+ */
+const RETURN_URLS: { label: string; url: (site: string) => string }[] = [
+  { label: "our callback", url: (site) => `${site}/api/payments/sbiepay/callback` },
+  { label: "SBI's own sample domain", url: () => "https://sit.epay.sbi" },
+  { label: "the integration gateway domain", url: () => "https://integration.epay.sbi" },
+];
+
 export async function GET(): Promise<Response> {
   const denied = await requireApiPermission("orders");
   if (denied) return denied;
@@ -81,7 +103,9 @@ export async function GET(): Promise<Response> {
     error?: string;
   }[] = [];
 
-  for (const encoding of EXPIRY_ENCODINGS) {
+  for (const encoding of EXPIRY_ENCODINGS.flatMap((e) =>
+    RETURN_URLS.map((r) => ({ ...e, mode: `returnUrl: ${r.label}`, returnUrl: r.url(site) })),
+  )) {
     /*
      * A fresh reference per attempt. Reusing one would draw error 2209 ("the
      * previous transaction was already completed") on the second try and hide
@@ -90,14 +114,14 @@ export async function GET(): Promise<Response> {
      * The prefix makes these obviously tests, so one appearing in a
      * reconciliation report identifies itself without anyone looking it up.
      */
-    const orderRefNumber = `NGT${encoding.mode.slice(0, 3).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
+    const orderRefNumber = `NGT${encoding.mode.replace(/[^a-zA-Z]/g, "").slice(3, 6).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
 
     try {
       const created = await createSbiepayOrder({
         orderAmount: 1,
         currencyCode: "INR",
         orderRefNumber,
-        returnUrl: `${site}/api/payments/sbiepay/callback`,
+        returnUrl: encoding.returnUrl,
         ...(encoding.value === undefined ? {} : { expiry: encoding.value }),
       });
       /*
