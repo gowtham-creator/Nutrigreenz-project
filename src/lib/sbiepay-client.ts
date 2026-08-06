@@ -206,6 +206,66 @@ export interface SbiepayOrder {
 export const createSbiepayOrder = (input: CreateOrderInput) =>
   sbiepayCall<SbiepayOrder>("order/create", input);
 
+/* ── Order status ─────────────────────────────────────────────────────── */
+
+/**
+ * `order/status` does NOT return the flat shape `order/create` does.
+ *
+ * Create answers with the order object itself (`status: "CREATED"`). Status
+ * answers with an ARRAY of `{ orderInfo, paymentInfo }`, where the state lives
+ * at `orderInfo.orderStatus` — a different field, one level down.
+ *
+ * Reading `status` off this response yields `undefined`, which is never "PAID",
+ * so a paid order would have been confirmed as failed. Typing the two responses
+ * separately is what stops them being confused again.
+ */
+export interface SbiepayOrderSearchResult {
+  orderInfo: {
+    sbiOrderRefNumber: string;
+    orderRefNumber: string;
+    orderStatus: "CREATED" | "ATTEMPTED" | "FAILED" | "CANCEL" | "EXPIRED" | "PAID" | "ATTEMPT_FAIL";
+    currencyCode: string;
+    otherDetails: unknown;
+  };
+  paymentInfo:
+    | {
+        atrnNumber: string;
+        /** Rupees, as a decimal — the order value without gateway charges. */
+        orderAmount: number;
+        /** Rupees, including any convenience fee. Not what we booked. */
+        totalAmount: number;
+        transactionStatus: "SUCCESS" | "FAILED" | "PENDING" | string;
+        payMode: string;
+        bankName: string | null;
+        bankTxnNumber: string | null;
+        currencyCode: string;
+        transactionTime: number;
+        CIN: string | null;
+      }[]
+    | null;
+}
+
+/**
+ * Criteria SBI accepts for a status lookup.
+ *
+ * Note what is absent: our own `orderRefNumber` is not on the bank's list of
+ * mandatory keys. At least one of `sbiOrderRefNumber`, `atrnNumber`, `arrnNumber`
+ * or a `fromDate`/`toDate` pair must be present, and a request carrying only
+ * `orderRefNumber` is rejected — which is exactly the "Order Amount is
+ * required" error the self-test surfaced.
+ */
+export interface OrderSearchCriteria {
+  sbiOrderRefNumber?: string;
+  atrnNumber?: string;
+  arrnNumber?: string;
+  /** Epoch ms. If one date is given the other is mandatory. */
+  fromDate?: number;
+  toDate?: number;
+  /** Narrowing only — never sufficient on its own. */
+  orderRefNumber?: string;
+  orderAmount?: number;
+}
+
 /**
  * Ask SBI what actually happened to an order.
  *
@@ -214,5 +274,24 @@ export const createSbiepayOrder = (input: CreateOrderInput) =>
  * on. A customer closing the tab after paying never triggers a callback at all,
  * and only this can find those.
  */
-export const searchSbiepayOrder = (orderRefNumber: string) =>
-  sbiepayCall<SbiepayOrder | SbiepayOrder[]>("order/status", { orderRefNumber });
+export async function searchSbiepayOrder(
+  criteria: OrderSearchCriteria,
+): Promise<SbiepayOrderSearchResult[]> {
+  if (
+    !criteria.sbiOrderRefNumber &&
+    !criteria.atrnNumber &&
+    !criteria.arrnNumber &&
+    !(criteria.fromDate && criteria.toDate)
+  ) {
+    throw new SbiepayError(
+      "order/status needs sbiOrderRefNumber, atrnNumber, arrnNumber, or a fromDate+toDate pair",
+      "insufficient-criteria",
+    );
+  }
+  const found = await sbiepayCall<SbiepayOrderSearchResult | SbiepayOrderSearchResult[]>(
+    "order/status",
+    criteria,
+  );
+  // A single match may come back unwrapped; callers should not have to care.
+  return Array.isArray(found) ? found : [found];
+}

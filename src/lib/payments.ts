@@ -291,7 +291,7 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
  */
 export async function confirmGatewayPayment(
   order: PayableOrder,
-  _payload: Record<string, string>,
+  payload: Record<string, string>,
 ): Promise<PaymentConfirmation> {
   if (!isOnlinePaymentAvailable()) {
     return { ok: false, reference: null, capturedPaise: null, reason: "no-provider" };
@@ -299,40 +299,79 @@ export async function confirmGatewayPayment(
 
   try {
     const { searchSbiepayOrder } = await import("@/lib/sbiepay-client");
-    const found = await searchSbiepayOrder(order.orderNumber);
-    const remote = Array.isArray(found) ? found[0] : found;
-
-    if (!remote) {
-      return { ok: false, reference: null, capturedPaise: null, reason: "not-found" };
-    }
 
     /*
-     * Guard against a mismatched reference. `order/status` is queried by our
-     * own order number, so this should be impossible — but marking the wrong
-     * order paid is bad enough to be worth one comparison.
+     * Look up by the bank's own reference where we have it.
+     *
+     * SBI does not accept our `orderRefNumber` as a lookup key on its own — the
+     * accepted keys are sbiOrderRefNumber, atrnNumber, arrnNumber, or a date
+     * range. The callback carries the bank reference, so use it; when it is
+     * absent (a customer who paid and closed the tab, swept up later) fall back
+     * to a date window wide enough to contain the 30-minute payment link, then
+     * match on our own reference.
      */
-    if (remote.orderRefNumber !== order.orderNumber) {
+    const sbiRef = payload.sbiOrderRefNumber?.trim() || payload.sbiorderrefnumber?.trim();
+    const atrn = payload.atrnNumber?.trim() || payload.atrn?.trim();
+
+    const results = await searchSbiepayOrder(
+      sbiRef
+        ? { sbiOrderRefNumber: sbiRef }
+        : atrn
+          ? { atrnNumber: atrn }
+          : {
+              // 24 hours back covers the link's 30-minute life plus any delay
+              // before a sweep runs, without pulling the whole ledger.
+              fromDate: Date.now() - 24 * 60 * 60_000,
+              toDate: Date.now(),
+              orderRefNumber: order.orderNumber,
+            },
+    );
+
+    /*
+     * Always match on OUR order number rather than trusting position.
+     *
+     * A date-range query returns every order in the window, so results[0] would
+     * be an arbitrary other customer's order — and marking that one paid is the
+     * worst failure this function has. Even a single-reference lookup is
+     * verified, because the cost of the check is nothing.
+     */
+    const remote = results.find((r) => r.orderInfo?.orderRefNumber === order.orderNumber);
+
+    if (!remote) {
+      const wrongOrder = results.length > 0;
       return {
         ok: false,
-        reference: remote.sbiOrderRefNumber ?? null,
+        reference: null,
         capturedPaise: null,
-        reason: "reference-mismatch",
+        reason: wrongOrder ? "reference-mismatch" : "not-found",
       };
     }
 
-    // Rupees back to paise. Rounded because a float round-trip can land a hair
-    // under, and a truncation would then quietly under-record what was paid.
-    const capturedPaise = Math.round((remote.orderAmount ?? 0) * 100);
-    const reference = remote.sbiOrderRefNumber ?? null;
+    const reference = remote.orderInfo.sbiOrderRefNumber ?? null;
 
-    if (remote.status !== "PAID") {
+    /*
+     * Take the amount from paymentInfo, not orderInfo — orderInfo carries no
+     * amount at all. Use `orderAmount` rather than `totalAmount`: the latter
+     * includes the gateway's convenience fee, which the customer pays to SBI
+     * and we never receive, so booking it would overstate every payment.
+     *
+     * Rounded because a float round-trip can land a hair under, and truncation
+     * would then quietly under-record what was paid.
+     */
+    const paid = remote.paymentInfo?.find((p) => p.transactionStatus === "SUCCESS");
+    const amountRupees = paid?.orderAmount ?? remote.paymentInfo?.[0]?.orderAmount ?? 0;
+    const capturedPaise = Math.round(amountRupees * 100);
+
+    // The state lives at orderInfo.orderStatus — NOT a top-level `status`.
+    // order/create returns the flat shape; order/status does not.
+    if (remote.orderInfo.orderStatus !== "PAID") {
       return {
         ok: false,
         reference,
         capturedPaise,
         // The bank's own status word, so a log says CANCEL or EXPIRED rather
         // than a generic failure.
-        reason: remote.status?.toLowerCase() ?? "not-paid",
+        reason: remote.orderInfo.orderStatus?.toLowerCase() ?? "not-paid",
       };
     }
 
