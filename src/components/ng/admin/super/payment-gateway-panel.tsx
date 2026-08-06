@@ -51,6 +51,13 @@ export function PaymentGatewayPanel() {
     { ok: boolean; checks: { step: string; ok: boolean; detail: string }[] } | null
   >(null);
   const [testing, setTesting] = useState(false);
+  const [testOrder, setTestOrder] = useState<{
+    ok: boolean;
+    transactionUrl?: string;
+    orderRefNumber?: string;
+    error?: string;
+  } | null>(null);
+  const [ordering, setOrdering] = useState(false);
 
   /*
    * Run the end-to-end check. It authenticates against SBI's own endpoint but
@@ -66,6 +73,28 @@ export function PaymentGatewayPanel() {
       setSelftest({ ok: false, checks: [{ step: "request", ok: false, detail: "could not reach the server" }] });
     } finally {
       setTesting(false);
+    }
+  }
+
+  /*
+   * Create a ₹1 order on the sandbox and hand back its payment URL.
+   *
+   * Lives behind a button rather than being a URL you visit, because the admin
+   * session travels on this app's own fetch — typing the endpoint into the
+   * address bar arrives without it and is simply rejected.
+   *
+   * Records nothing on our side: the order exists only in SBI's sandbox, so it
+   * cannot reach revenue figures, stock or the invoice sequence.
+   */
+  async function runTestOrder() {
+    setOrdering(true);
+    try {
+      const res = await fetch("/api/admin/payments/testorder", { cache: "no-store" });
+      setTestOrder(await res.json());
+    } catch {
+      setTestOrder({ ok: false, error: "could not reach the server" });
+    } finally {
+      setOrdering(false);
     }
   }
 
@@ -276,6 +305,57 @@ export function PaymentGatewayPanel() {
                     </li>
                   ))}
                 </ul>
+              ) : null}
+
+              {/*
+                Offered only once the self-test has gone green end to end.
+                Creating a sandbox order before authentication works produces a
+                failure that says nothing the self-test has not already said
+                more precisely.
+              */}
+              {selftest?.ok ? (
+                <div className="mt-3 border-t border-ng-line-soft pt-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[12px] font-semibold text-ng-forest-deep">
+                      ₹1 sandbox order
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void runTestOrder()}
+                      disabled={ordering}
+                      className="cursor-pointer rounded-full border border-ng-forest-deep px-3.5 py-1 text-[11.5px] font-semibold text-ng-forest-deep transition-colors hover:bg-ng-forest-deep hover:text-ng-cream disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {ordering ? "Creating…" : "Create test order"}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
+                    Creates an order in SBI&rsquo;s sandbox only — nothing is written here,
+                    and no money moves. Opens the real hosted payment page.
+                  </p>
+
+                  {testOrder ? (
+                    testOrder.ok && testOrder.transactionUrl ? (
+                      <div className="mt-2.5">
+                        <a
+                          href={testOrder.transactionUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-ng-green-bright px-3.5 py-1 text-[11.5px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
+                        >
+                          Open payment page
+                          <Icon name="arrow-right-up-linear" size={12} />
+                        </a>
+                        <p className="mt-1.5 font-mono text-[10.5px] text-ng-ink-muted">
+                          {testOrder.orderRefNumber}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="mt-2.5 text-[11.5px] text-ng-danger">
+                        {testOrder.error ?? "could not create the order"}
+                      </p>
+                    )
+                  ) : null}
+                </div>
               ) : null}
             </div>
 
