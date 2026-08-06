@@ -80,6 +80,14 @@ http_access deny CONNECT !ssl_ports
 http_access allow authenticated sbi_domains
 http_access deny all
 
+# Force IPv4 for outbound connections.
+#
+# This instance is dual-stack, and Linux prefers IPv6 when a destination
+# publishes both A and AAAA records. SBI whitelisted the IPv4 static address,
+# so an IPv6 egress would arrive from an address they have never seen and be
+# refused — while everything on this box looked correctly configured.
+dns_v4_first on
+
 # No caching. Payment traffic must never be served from a cache, and a cache on
 # this box would be storing fragments of financial requests on disk.
 cache deny all
