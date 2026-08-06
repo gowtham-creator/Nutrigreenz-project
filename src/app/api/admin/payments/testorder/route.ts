@@ -131,6 +131,8 @@ export async function GET(): Promise<Response> {
         const { searchSbiepayOrder } = await import("@/lib/sbiepay-client");
         const found = await searchSbiepayOrder({
           sbiOrderRefNumber: created.sbiOrderRefNumber,
+          // Required despite the field table — see OrderSearchCriteria.
+          orderAmount: 1,
         });
         const info = found[0]?.orderInfo;
         readBack = info

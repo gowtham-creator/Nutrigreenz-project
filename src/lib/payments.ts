@@ -331,17 +331,25 @@ export async function confirmGatewayPayment(
     const sbiRef = payload.sbiOrderRefNumber?.trim() || payload.sbiorderrefnumber?.trim();
     const atrn = payload.atrnNumber?.trim() || payload.atrn?.trim();
 
+    /*
+     * Rupees, and not optional. SBI rejects a status request without it —
+     * "Order Amount is required" — despite the field table listing only the
+     * reference keys as mandatory.
+     */
+    const orderAmount = order.totalPaise / 100;
+
     const results = await searchSbiepayOrder(
       sbiRef
-        ? { sbiOrderRefNumber: sbiRef }
+        ? { sbiOrderRefNumber: sbiRef, orderAmount }
         : atrn
-          ? { atrnNumber: atrn }
+          ? { atrnNumber: atrn, orderAmount }
           : {
               // 24 hours back covers the link's 30-minute life plus any delay
               // before a sweep runs, without pulling the whole ledger.
               fromDate: Date.now() - 24 * 60 * 60_000,
               toDate: Date.now(),
               orderRefNumber: order.orderNumber,
+              orderAmount,
             },
     );
 

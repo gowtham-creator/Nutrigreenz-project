@@ -270,7 +270,16 @@ export interface OrderSearchCriteria {
   toDate?: number;
   /** Narrowing only — never sufficient on its own. */
   orderRefNumber?: string;
-  orderAmount?: number;
+  /**
+   * Rupees. Required in practice, whatever the field table says.
+   *
+   * The documentation's mandatory list is {fromDate, toDate, atrn, arrn,
+   * sbiOrderRefNumber} and does not mention this — but every request omitting
+   * it is rejected with "Order Amount is required", and SBI's own sample search
+   * request carries `"orderAmount": 1`. The sample is right and the table is
+   * wrong, the same way the table was wrong about `expiry` being a timestamp.
+   */
+  orderAmount: number;
 }
 
 /**
