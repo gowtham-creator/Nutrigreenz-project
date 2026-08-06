@@ -76,6 +76,8 @@ export async function GET(): Promise<Response> {
     /** The same order's page on the gateway host, which is the one that serves /ui/. */
     sameHostUrl?: string;
     orderHash?: string;
+    /** What SBI says when asked to read the order back. */
+    readBack?: string;
     error?: string;
   }[] = [];
 
@@ -115,6 +117,29 @@ export async function GET(): Promise<Response> {
       const sameHostUrl =
         base && created.orderHash ? `${base}/ui/#${created.orderHash}` : undefined;
 
+      /*
+       * Ask SBI to read back the order it just gave us.
+       *
+       * This separates two very different failures that look identical from a
+       * 404 page: an order the bank never really registered, versus an order
+       * that exists but whose hosted page is not provisioned for this merchant.
+       * The first is ours to fix; the second is only fixable by SBI, and
+       * knowing which avoids days spent on the wrong one.
+       */
+      let readBack: string;
+      try {
+        const { searchSbiepayOrder } = await import("@/lib/sbiepay-client");
+        const found = await searchSbiepayOrder({
+          sbiOrderRefNumber: created.sbiOrderRefNumber,
+        });
+        const info = found[0]?.orderInfo;
+        readBack = info
+          ? `SBI confirms the order exists, status ${info.orderStatus}`
+          : "SBI returned no order for this reference";
+      } catch (err) {
+        readBack = `status lookup failed: ${err instanceof Error ? err.message : "unknown"}`;
+      }
+
       attempts.push({
         mode: encoding.mode,
         explain: encoding.explain,
@@ -123,6 +148,7 @@ export async function GET(): Promise<Response> {
         transactionUrl: created.transactionUrl,
         sameHostUrl,
         orderHash: created.orderHash,
+        readBack,
       });
     } catch (err) {
       attempts.push({

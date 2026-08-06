@@ -62,6 +62,7 @@ export function PaymentGatewayPanel() {
       transactionUrl?: string;
       sameHostUrl?: string;
       orderHash?: string;
+      readBack?: string;
       error?: string;
     }[];
   } | null>(null);
@@ -388,6 +389,9 @@ export function PaymentGatewayPanel() {
                                   ) : null}
                                 </div>
                                 {/* The raw string, so a wrong host is visible rather than inferred. */}
+                                {a.readBack ? (
+                                  <p className="text-[11px] text-ng-ink-muted">{a.readBack}</p>
+                                ) : null}
                                 <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
                                   {a.transactionUrl}
                                 </p>
