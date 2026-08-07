@@ -62,6 +62,7 @@ export function PaymentGatewayPanel() {
       transactionUrl?: string;
       sameHostUrl?: string;
       sentReturnUrl?: string;
+      sbiOrderRefNumber?: string;
       orderHash?: string;
       readBack?: string;
       error?: string;
@@ -402,9 +403,17 @@ export function PaymentGatewayPanel() {
                                 {a.readBack ? (
                                   <p className="text-[11px] text-ng-ink-muted">{a.readBack}</p>
                                 ) : null}
-                                <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
-                                  returnUrl sent: {a.sentReturnUrl}
-                                </p>
+                                {/*
+                                  The two references SBI support ask for by name.
+                                  Grouped and selectable so they can be pasted
+                                  into a ticket without hunting through a URL.
+                                */}
+                                <div className="mt-1 select-all rounded-lg bg-ng-sage/25 px-2.5 py-2 font-mono text-[10.5px] leading-relaxed text-ng-forest-deep">
+                                  <div>Order Ref Number: {a.orderRefNumber}</div>
+                                  <div>SBI Order Ref Number: {a.sbiOrderRefNumber}</div>
+                                  <div>Source URL: {a.sentReturnUrl?.replace(/\/api\/.*$/, "")}</div>
+                                  <div className="break-all">Return URL: {a.sentReturnUrl}</div>
+                                </div>
                                 <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
                                   {a.transactionUrl}
                                 </p>

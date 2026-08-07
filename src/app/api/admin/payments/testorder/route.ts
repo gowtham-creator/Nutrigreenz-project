@@ -109,6 +109,8 @@ export async function GET(): Promise<Response> {
      * invisible from our side and would look exactly like this.
      */
     sentReturnUrl?: string;
+    /** SBI's own reference for the order — what their support team traces on. */
+    sbiOrderRefNumber?: string;
     /** The same order's page on the gateway host, which is the one that serves /ui/. */
     sameHostUrl?: string;
     orderHash?: string;
@@ -193,6 +195,7 @@ export async function GET(): Promise<Response> {
         orderRefNumber,
         transactionUrl: created.transactionUrl,
         sentReturnUrl: encoding.returnUrl,
+        sbiOrderRefNumber: created.sbiOrderRefNumber,
         sameHostUrl,
         orderHash: created.orderHash,
         readBack,
