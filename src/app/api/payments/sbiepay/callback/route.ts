@@ -72,9 +72,43 @@ async function readPayload(request: Request): Promise<Record<string, string>> {
  * on spelling, and failing to find the order would strand a real payment.
  */
 function orderNumberFrom(payload: Record<string, string>): string | null {
-  for (const key of ["orderNumber", "order_number", "merchantOrderNo", "orderId", "udf1"]) {
+  /*
+   * `orderRefNumber` first — it is SBI's own name for our order reference, the
+   * field we set in order/create and the one their status API echoes back.
+   *
+   * It was missing from this list, so every real payment would have failed to
+   * find its order and landed on /checkout/failed?reason=no-reference, with the
+   * money taken. The rest are kept as fallbacks: the browser return leg and the
+   * server notification do not always agree on spelling, and a payment we
+   * cannot match to an order is the worst outcome this route has.
+   */
+  for (const key of [
+    "orderRefNumber",
+    "orderRefNo",
+    "merchantOrderNo",
+    "orderNumber",
+    "order_number",
+    "orderId",
+    "udf1",
+  ]) {
     const value = payload[key]?.trim();
     if (value) return value;
+  }
+
+  // Case-insensitive sweep, because a gateway that changes `orderRefNumber` to
+  // `OrderRefNumber` should not cost a customer their payment.
+  const wanted = new Set([
+    "orderrefnumber",
+    "orderrefno",
+    "merchantorderno",
+    "ordernumber",
+    "order_number",
+    "orderid",
+  ]);
+  for (const [key, value] of Object.entries(payload)) {
+    if (wanted.has(key.toLowerCase().replace(/[\s-]/g, "")) && value?.trim()) {
+      return value.trim();
+    }
   }
   return null;
 }
@@ -85,8 +119,20 @@ async function handle(request: Request): Promise<Response> {
   }
 
   const payload = await readPayload(request);
+
+  /*
+   * Log the field NAMES the gateway sent, never the values.
+   *
+   * The names are the thing that has bitten us: `orderRefNumber` was missing
+   * from the lookup list above and nothing recorded what actually arrived, so
+   * the mismatch was invisible. Values are deliberately excluded — this payload
+   * describes somebody's payment, and it does not belong in a log.
+   */
+  console.info("[sbiepay-callback] fields:", Object.keys(payload).sort().join(","));
+
   const orderNumber = orderNumberFrom(payload);
   if (!orderNumber) {
+    console.warn("[sbiepay-callback] no order reference in callback");
     return redirectTo("/checkout/failed", { reason: "no-reference" });
   }
 

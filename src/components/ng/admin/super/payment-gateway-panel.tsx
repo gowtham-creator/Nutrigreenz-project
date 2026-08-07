@@ -377,17 +377,12 @@ export function PaymentGatewayPanel() {
                               */
                               <div className="mt-1 space-y-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                  {a.sameHostUrl ? (
-                                    <a
-                                      href={a.sameHostUrl}
-                                      target="_blank"
-                                      rel="noopener"
-                                      className="inline-flex items-center gap-1 rounded-full bg-ng-green-bright px-2.5 py-0.5 text-[11px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
-                                    >
-                                      Open (gateway host)
-                                      <Icon name="arrow-right-up-linear" size={11} />
-                                    </a>
-                                  ) : null}
+                                  {/*
+                                    Only SBI's own transactionUrl is offered.
+                                    The constructed variant used a "#" fragment,
+                                    which is wrong for their BrowserRouter, and a
+                                    link that never works is worse than no link.
+                                  */}
                                   {a.transactionUrl ? (
                                     <a
                                       href={a.transactionUrl}
@@ -395,7 +390,7 @@ export function PaymentGatewayPanel() {
                                       rel="noopener"
                                       className="inline-flex items-center gap-1 rounded-full border border-ng-line px-2.5 py-0.5 text-[11px] font-semibold text-ng-ink-muted transition-colors hover:text-ng-forest-deep"
                                     >
-                                      Open (SBI&rsquo;s own URL)
+                                      Open payment page
                                       <Icon name="arrow-right-up-linear" size={11} />
                                     </a>
                                   ) : null}
