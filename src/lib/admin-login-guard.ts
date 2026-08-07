@@ -51,8 +51,17 @@ interface AttemptRow {
   locked_until: string | null;
 }
 
+/*
+ * The three primitives below are generic — they only ever see an opaque
+ * `attempt_key` — so they are exported and reused by the storefront OTP guard
+ * (`@/lib/otp-verify-guard`), which throttles customer sign-in against the same
+ * table under its own `otp:` / `otp-ip:` prefixes. Sharing them rather than
+ * copying sixty lines means a fix to the counting or lock arithmetic lands on
+ * every surface at once, which is the only way this stays correct.
+ */
+
 /** Max remaining lock (seconds) across the given keys; 0 when none are locked. */
-async function maxRetryAfter(keys: string[]): Promise<number> {
+export async function maxRetryAfter(keys: string[]): Promise<number> {
   if (!isSupabaseConfigured || keys.length === 0) return 0;
   const { data } = await supabaseAdmin()
     .from("admin_login_attempts")
@@ -77,7 +86,7 @@ async function maxRetryAfter(keys: string[]): Promise<number> {
  *   locked account would mail the super admins on every single request, which
  *   is its own denial of service.
  */
-async function bumpFailure(
+export async function bumpFailure(
   key: string,
   maxFailures: number,
   lockMs: number,
@@ -122,7 +131,7 @@ async function bumpFailure(
 }
 
 /** Clear counters for the given keys (called on a successful factor). */
-async function clearKeys(keys: string[]): Promise<void> {
+export async function clearKeys(keys: string[]): Promise<void> {
   if (!isSupabaseConfigured || keys.length === 0) return;
   await supabaseAdmin().from("admin_login_attempts").delete().in("attempt_key", keys);
 }

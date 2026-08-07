@@ -7,6 +7,11 @@ import {
   normalizePhoneE164,
 } from "@/lib/customer-identity";
 import { verifyOtp, isMsg91OtpConfigured, normalizeMsg91Mobile } from "@/lib/msg91-otp";
+import {
+  checkOtpVerifyAllowed,
+  recordOtpVerifyFailure,
+  clearOtpVerifyFailures,
+} from "@/lib/otp-verify-guard";
 
 // resolveCustomer + supabaseAdmin need the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -53,17 +58,45 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "invalid_phone" }, { status: 400 });
   }
 
-  // 1. Verify the code with MSG91 (fail closed). We never see the code beyond here.
+  /*
+   * 1. Throttle BEFORE spending a verification.
+   *
+   * This endpoint trades six digits for a thirty-day session, so without a
+   * counter it is simply a guessing game with unlimited turns. The number and
+   * the source address are counted separately: the first stops one account
+   * being hammered, the second stops one attacker spreading single guesses
+   * across many numbers and tripping neither. See `@/lib/otp-verify-guard`.
+   */
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    null;
+
+  const throttle = await checkOtpVerifyAllowed(mobile, ip);
+  if (!throttle.allowed) {
+    return Response.json(
+      { ok: false, error: "rate_limited" },
+      { status: 429, headers: { "retry-after": String(throttle.retryAfterSec) } },
+    );
+  }
+
+  // 2. Verify the code with MSG91 (fail closed). We never see the code beyond here.
   const verified = await verifyOtp(phone, code);
   if (!verified.ok) {
+    // Count the miss, then answer exactly as before — the 401 must not reveal
+    // how close the caller is to a lock, or a prober learns the limit for free.
+    await recordOtpVerifyFailure(mobile, ip);
     return Response.json({ ok: false }, { status: 401 });
   }
+
+  // Correct code — release this number's counter (the IP's is left standing).
+  await clearOtpVerifyFailures(mobile);
 
   // Canonical E.164 for storage/dedup; stable synthetic UID keyed by the number.
   const e164 = normalizePhoneE164(phone) ?? `+${mobile}`;
   const uid = `msg91:${e164}`;
 
-  // 2. Best-effort user upsert + canonical customer dedup — mirrors
+  // 3. Best-effort user upsert + canonical customer dedup — mirrors
   //    /api/auth/session. Any failure here is swallowed; the session still mints.
   if (isSupabaseConfigured) {
     try {
@@ -95,7 +128,7 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  // 3. Mint the signed, httpOnly session cookie bound to the UID (same as Firebase).
+  // 4. Mint the signed, httpOnly session cookie bound to the UID (same as Firebase).
   const token = await createSessionToken(uid);
   const c = await cookies();
   c.set({
