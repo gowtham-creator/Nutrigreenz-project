@@ -44,6 +44,63 @@ const nextConfig: NextConfig = {
    */
   async headers() {
     return [
+      /*
+       * Security headers, on every route.
+       *
+       * There were none. For a storefront that is careless; for an admin portal
+       * that moves money and holds customer records it is worse — without
+       * frame protection, any page anywhere could load the portal in an
+       * invisible iframe over its own UI and harvest an authenticated
+       * operator's clicks.
+       */
+      {
+        source: "/:path*",
+        headers: [
+          // Clickjacking. `frame-ancestors` is the modern control and covers
+          // browsers that ignore X-Frame-Options; both are sent because the
+          // older header is still honoured where CSP is not.
+          { key: "content-security-policy", value: "frame-ancestors 'none'" },
+          { key: "x-frame-options", value: "DENY" },
+
+          // Stop the browser second-guessing declared content types — the
+          // vector behind "uploaded .txt executes as script".
+          { key: "x-content-type-options", value: "nosniff" },
+
+          /*
+           * Referrer-Policy: strict-origin-when-cross-origin, NOT no-referrer.
+           *
+           * This one is load-bearing. SBIePay whitelists our source domain and
+           * their hosted payment page checks it — sending no referrer is
+           * exactly what made that page 404 for days. This value sends the
+           * origin (https://nutrigreenz.farm) cross-origin, which is what they
+           * whitelisted, while still withholding the full path.
+           */
+          { key: "referrer-policy", value: "strict-origin-when-cross-origin" },
+
+          // Two years, subdomains included. Vercel serves HTTPS only, so there
+          // is nothing to break, and it removes the first-request downgrade.
+          {
+            key: "strict-transport-security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+
+          /*
+           * Drop capabilities the site never asks for.
+           *
+           * Two deliberate omissions. Geolocation stays allowed — delivery-area
+           * checks may want it, and silently disabling a permission is a bug
+           * that surfaces months later as "the location button does nothing".
+           * `payment` stays allowed too: blocking an API we never call buys no
+           * security, and it is the one switch that could quietly break a
+           * future Google Pay or Apple Pay path in the area of the codebase
+           * that has already cost the most to debug.
+           */
+          {
+            key: "permissions-policy",
+            value: "camera=(), microphone=(), usb=(), magnetometer=()",
+          },
+        ],
+      },
       {
         source: "/:path((?:images|brand|videos|seo)/.*)",
         headers: [
