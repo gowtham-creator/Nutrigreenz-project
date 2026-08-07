@@ -63,6 +63,7 @@ export function PaymentGatewayPanel() {
       sameHostUrl?: string;
       sentReturnUrl?: string;
       sbiOrderRefNumber?: string;
+      raw?: { sent: unknown; received: unknown };
       orderHash?: string;
       readBack?: string;
       error?: string;
@@ -417,6 +418,17 @@ export function PaymentGatewayPanel() {
                                 <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
                                   {a.transactionUrl}
                                 </p>
+                                {/* Everything, so nothing has to be inferred. */}
+                                {a.raw ? (
+                                  <details className="mt-1">
+                                    <summary className="cursor-pointer text-[11px] font-semibold text-ng-forest-deep">
+                                      Full request &amp; response from SBI
+                                    </summary>
+                                    <pre className="mt-1 max-h-72 select-all overflow-auto rounded-lg bg-ng-forest-deep/[0.04] p-2.5 font-mono text-[10px] leading-relaxed text-ng-ink">
+{JSON.stringify(a.raw, null, 2)}
+                                    </pre>
+                                  </details>
+                                ) : null}
                               </div>
                             ) : (
                               <p className="text-[11px] text-ng-danger">{a.error}</p>

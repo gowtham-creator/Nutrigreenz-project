@@ -111,6 +111,16 @@ export async function GET(): Promise<Response> {
     sentReturnUrl?: string;
     /** SBI's own reference for the order — what their support team traces on. */
     sbiOrderRefNumber?: string;
+    /**
+     * Everything order/create returned, and everything we sent.
+     *
+     * We have been reading three fields of a fifteen-field response and
+     * inferring the rest, which is how four separate theories each survived
+     * longer than they should have. mId, payMode, orderRetryCount and
+     * multiAccounts are all in that response and none of them have ever been
+     * looked at.
+     */
+    raw?: { sent: unknown; received: unknown };
     /** The same order's page on the gateway host, which is the one that serves /ui/. */
     sameHostUrl?: string;
     orderHash?: string;
@@ -138,14 +148,15 @@ export async function GET(): Promise<Response> {
     const orderRefNumber = `NGT${encoding.mode.replace(/[^a-zA-Z]/g, "").slice(3, 6).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
 
     try {
-      const created = await createSbiepayOrder({
+      const payload = {
         orderAmount: 1,
         currencyCode: "INR",
         orderRefNumber,
         returnUrl: encoding.returnUrl,
         ...(encoding.payMode ? { payMode: encoding.payMode } : {}),
         ...(encoding.value === undefined ? {} : { expiry: encoding.value }),
-      });
+      };
+      const created = await createSbiepayOrder(payload);
       /*
        * Offer the payment page on our own gateway host as well as the one SBI
        * named.
@@ -196,6 +207,7 @@ export async function GET(): Promise<Response> {
         transactionUrl: created.transactionUrl,
         sentReturnUrl: encoding.returnUrl,
         sbiOrderRefNumber: created.sbiOrderRefNumber,
+        raw: { sent: payload, received: created },
         sameHostUrl,
         orderHash: created.orderHash,
         readBack,
