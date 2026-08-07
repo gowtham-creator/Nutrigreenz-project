@@ -100,6 +100,15 @@ export async function GET(): Promise<Response> {
     orderRefNumber?: string;
     /** Exactly what SBI returned, unmodified. */
     transactionUrl?: string;
+    /**
+     * The returnUrl we actually sent.
+     *
+     * Surfaced because SBI whitelist the merchant's source domain, and this is
+     * built from NEXT_PUBLIC_SITE_URL — which on a preview deployment is a
+     * vercel.app address, not the domain they were given. That mismatch is
+     * invisible from our side and would look exactly like this.
+     */
+    sentReturnUrl?: string;
     /** The same order's page on the gateway host, which is the one that serves /ui/. */
     sameHostUrl?: string;
     orderHash?: string;
@@ -183,6 +192,7 @@ export async function GET(): Promise<Response> {
         ok: true,
         orderRefNumber,
         transactionUrl: created.transactionUrl,
+        sentReturnUrl: encoding.returnUrl,
         sameHostUrl,
         orderHash: created.orderHash,
         readBack,

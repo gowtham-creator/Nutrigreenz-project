@@ -61,6 +61,7 @@ export function PaymentGatewayPanel() {
       orderRefNumber?: string;
       transactionUrl?: string;
       sameHostUrl?: string;
+      sentReturnUrl?: string;
       orderHash?: string;
       readBack?: string;
       error?: string;
@@ -401,6 +402,9 @@ export function PaymentGatewayPanel() {
                                 {a.readBack ? (
                                   <p className="text-[11px] text-ng-ink-muted">{a.readBack}</p>
                                 ) : null}
+                                <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
+                                  returnUrl sent: {a.sentReturnUrl}
+                                </p>
                                 <p className="break-all font-mono text-[10px] leading-snug text-ng-ink-muted">
                                   {a.transactionUrl}
                                 </p>
