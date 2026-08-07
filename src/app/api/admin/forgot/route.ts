@@ -11,6 +11,7 @@
 import { getAdminByEmail } from "@/lib/admins";
 import { createAdminResetToken } from "@/lib/admin-password-reset";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { checkResetAllowed, recordResetRequest } from "@/lib/admin-login-guard";
 
 // supabase-admin + PBKDF2/HMAC via Web Crypto need the Node runtime.
 export const runtime = "nodejs";
@@ -50,7 +51,36 @@ export async function POST(request: Request): Promise<Response> {
       : undefined;
   const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
-  if (EMAIL_RE.test(email)) {
+  /*
+   * Throttle before doing any work.
+   *
+   * Unlimited, this endpoint is a free email cannon: anyone who knows an
+   * operator's address can flood their inbox by replaying this request. Three
+   * an hour is more than anyone legitimately needs.
+   *
+   * The two limits are enforced differently on purpose. A per-IP refusal can be
+   * answered with 429 — it reveals nothing about which accounts exist. A
+   * per-address one must be silent, because refusing loudly for a throttled
+   * address while accepting an unknown one would turn the throttle into exactly
+   * the account-enumeration oracle the generic response below exists to
+   * prevent.
+   */
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    null;
+  const limit = await checkResetAllowed(email, ip);
+  if (!limit.ipAllowed) {
+    return Response.json(
+      { ok: false, error: "too-many-requests" },
+      { status: 429, headers: { "retry-after": String(limit.retryAfterSec) } },
+    );
+  }
+
+  if (EMAIL_RE.test(email) && limit.emailAllowed) {
+    // Counted before the send, so a slow or failing mail provider cannot be
+    // used to slip extra requests through while one is in flight.
+    await recordResetRequest(email, ip);
     try {
       const admin = await getAdminByEmail(email);
       if (admin && admin.status !== "disabled") {

@@ -197,6 +197,56 @@ export async function recordLoginSuccess(email: string, ip: string | null): Prom
   await clearKeys(loginKeys(email, ip));
 }
 
+/* ── password-reset requests ──────────────────────────────────────────── */
+
+/**
+ * Reset requests are throttled far harder than sign-ins: three an hour.
+ *
+ * Nobody legitimately needs a fourth reset link within the hour, and each
+ * request sends mail to a real operator's inbox. Without a cap, the endpoint is
+ * a free email cannon pointed at whichever admin address an attacker knows.
+ */
+const RESET_MAX = 3;
+const RESET_LOCK_MS = 60 * 60 * 1000;
+const RESET_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * Whether a reset request is allowed, split by scope.
+ *
+ * The two answers are deliberately used differently, and mixing them would
+ * reintroduce the user-enumeration this endpoint is careful to avoid:
+ *
+ *   `ipAllowed`    — safe to answer 429 with. It says nothing about whether any
+ *                    given account exists.
+ *   `emailAllowed` — must be handled SILENTLY. Refusing loudly for a
+ *                    rate-limited address and accepting for an unknown one
+ *                    turns the throttle itself into an oracle for which
+ *                    addresses are real.
+ */
+export async function checkResetAllowed(
+  email: string,
+  ip: string | null,
+): Promise<{ ipAllowed: boolean; emailAllowed: boolean; retryAfterSec: number }> {
+  const [ipWait, emailWait] = await Promise.all([
+    ip ? maxRetryAfter([`reset-ip:${ip}`]) : Promise.resolve(0),
+    maxRetryAfter([`reset:${norm(email)}`]),
+  ]);
+  return {
+    ipAllowed: ipWait === 0,
+    emailAllowed: emailWait === 0,
+    retryAfterSec: Math.max(ipWait, emailWait),
+  };
+}
+
+/** Count a reset request against both the address and the source IP. */
+export async function recordResetRequest(email: string, ip: string | null): Promise<void> {
+  const keys = [`reset:${norm(email)}`];
+  if (ip) keys.push(`reset-ip:${ip}`);
+  for (const key of keys) {
+    await bumpFailure(key, RESET_MAX, RESET_LOCK_MS, RESET_WINDOW_MS);
+  }
+}
+
 /** Whether TOTP verification for this admin is currently allowed. */
 export async function checkTotpAllowed(email: string): Promise<LoginThrottle> {
   const retryAfterSec = await maxRetryAfter([`totp:${norm(email)}`]);
