@@ -65,22 +65,9 @@ const VARIANTS: {
   payMode?: string;
 }[] = [
   {
-    label: "baseline — our callback, no payMode",
+    // Exactly what checkout sends, now that SBI has whitelisted the domain.
+    label: "our callback",
     returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
-  },
-  {
-    label: "our callback + payMode NB",
-    returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
-    payMode: "NB",
-  },
-  {
-    label: "our callback + payMode UPI",
-    returnUrl: (site) => `${site}/api/payments/sbiepay/callback`,
-    payMode: "UPI",
-  },
-  {
-    label: "SBI's own sample return domain",
-    returnUrl: () => "https://sit.epay.sbi",
   },
 ];
 
