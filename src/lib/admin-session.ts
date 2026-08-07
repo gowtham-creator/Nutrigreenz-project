@@ -32,6 +32,38 @@ export type AdminRole = "admin" | "superadmin";
  */
 export const ADMIN_SESSION_TTL_SECONDS = 35 * 60;
 
+/**
+ * Cookie attributes for the admin session cookies.
+ *
+ * ── Why there is no `maxAge` here ─────────────────────────────────────────
+ *
+ * Omitting it makes these SESSION cookies: the browser drops them when it
+ * closes. With a maxAge the cookie is written to disk, so closing the browser,
+ * walking away, and reopening it later lands you straight back inside the admin
+ * portal — on a shared or stolen machine that is the whole authentication step
+ * skipped. For a portal that moves money and holds customer records, closing
+ * the browser should mean signing out.
+ *
+ * The 35-minute idle window is NOT lost by this. It never depended on the
+ * cookie's lifetime: `expiresAt` is inside the signed token and is checked on
+ * every verify, so an idle session is rejected server-side whether or not the
+ * cookie is still present. Removing maxAge takes away a way to stay signed in,
+ * never a check.
+ *
+ * Caveat worth knowing: a browser configured to restore the previous session on
+ * launch will restore session cookies too. The signed expiry is what actually
+ * enforces the window in that case, which is the right way round — the server
+ * decides, not the client.
+ */
+export function adminCookieOptions(secure: boolean): {
+  httpOnly?: boolean;
+  secure: boolean;
+  sameSite: "lax";
+  path: string;
+} {
+  return { secure, sameSite: "lax", path: "/" };
+}
+
 /** Decoded, verified session payload. */
 export interface AdminSession {
   email: string;

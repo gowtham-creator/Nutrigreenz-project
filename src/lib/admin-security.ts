@@ -118,7 +118,7 @@ function hashCode(code: string): string {
 export const EMAIL_OTP_TTL_MINUTES = 10;
 
 /** Wrong guesses allowed before the code is burned — see {@link verifyEmailOtp}. */
-export const EMAIL_OTP_MAX_ATTEMPTS = 5;
+export const EMAIL_OTP_MAX_ATTEMPTS = 10;
 
 export async function createEmailOtp(email: string): Promise<string> {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -135,7 +135,13 @@ export async function createEmailOtp(email: string): Promise<string> {
 
 /**
  * Verify a submitted email OTP against the latest unconsumed, unexpired code.
- * Consumes it on success; counts attempts (max 5) otherwise.
+ * Consumes it on success; counts attempts otherwise, up to
+ * {@link EMAIL_OTP_MAX_ATTEMPTS}.
+ *
+ * The cap is read from the constant rather than written inline. It used to be a
+ * literal `5` here while the exported constant said 5 as well — so raising the
+ * constant would have changed the message shown to the operator and nothing
+ * else, leaving the real limit silently where it was.
  */
 export async function verifyEmailOtp(email: string, code: string): Promise<boolean> {
   if (!/^\d{6}$/.test(code)) return false;
@@ -149,7 +155,7 @@ export async function verifyEmailOtp(email: string, code: string): Promise<boole
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!data || data.attempts >= 5) return false;
+  if (!data || data.attempts >= EMAIL_OTP_MAX_ATTEMPTS) return false;
 
   if (hashCode(code) === data.code_hash) {
     await db

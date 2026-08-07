@@ -3,8 +3,12 @@
  * with lockout windows (Supabase `public.admin_login_attempts`).
  *
  * Two surfaces share the same table via distinct key prefixes:
- *   - passcode login: `email:<addr>` and `ip:<addr>` (5 fails → 15-min lock),
- *   - TOTP second factor: `totp:<addr>` (5 fails → 5-min lock).
+ *   - passcode login: `email:<addr>` and `ip:<addr>`,
+ *   - TOTP second factor: `totp:<addr>`.
+ *
+ * Both allow 10 failures inside an hour, then lock for 3 hours and email the
+ * super admins. A lock nobody is told about only buys time; the notification is
+ * what turns it into something anyone can act on.
  *
  * Fail-OPEN when Supabase is unconfigured (there is no store to persist counters,
  * and we must not lock every operator out of the demo). Service-role only —
@@ -12,14 +16,31 @@
  */
 import "server-only";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
+import { alertAccountLocked, type LockScope } from "@/lib/admin-security-alerts";
 
-const LOGIN_MAX_FAILURES = 5;
-const LOGIN_LOCK_MS = 15 * 60 * 1000;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILURES = 10;
+const LOCK_MS = 3 * 60 * 60 * 1000;
+/*
+ * The counting window is an hour while the lock is three.
+ *
+ * Deliberately shorter than the lock: an operator who mistypes twice on Monday
+ * and three times on Friday should not accumulate toward a lockout, so the
+ * counter forgets old failures. It must not be so short that an attacker can
+ * pace attempts underneath it — ten tries an hour against a passcode is far too
+ * slow to be worth anyone's time.
+ */
+const WINDOW_MS = 60 * 60 * 1000;
 
-const TOTP_MAX_FAILURES = 5;
-const TOTP_LOCK_MS = 5 * 60 * 1000;
-const TOTP_WINDOW_MS = 5 * 60 * 1000;
+const LOGIN_MAX_FAILURES = MAX_FAILURES;
+const LOGIN_LOCK_MS = LOCK_MS;
+const LOGIN_WINDOW_MS = WINDOW_MS;
+
+const TOTP_MAX_FAILURES = MAX_FAILURES;
+const TOTP_LOCK_MS = LOCK_MS;
+const TOTP_WINDOW_MS = WINDOW_MS;
+
+/** Minutes, for the alert email. */
+const LOCK_MINUTES = Math.round(LOCK_MS / 60_000);
 
 const norm = (v: string) => v.trim().toLowerCase();
 
@@ -47,14 +68,22 @@ async function maxRetryAfter(keys: string[]): Promise<number> {
   return retryAfter;
 }
 
-/** Increment the failure counter for a key, arming a lock once the cap is hit. */
+/**
+ * Increment the failure counter for a key, arming a lock once the cap is hit.
+ *
+ * @returns `justLocked` true ONLY on the attempt that armed the lock, so a
+ *   caller can notify exactly once. Every further attempt against an
+ *   already-locked account returns false — otherwise a script hammering a
+ *   locked account would mail the super admins on every single request, which
+ *   is its own denial of service.
+ */
 async function bumpFailure(
   key: string,
   maxFailures: number,
   lockMs: number,
   windowMs: number,
-): Promise<void> {
-  if (!isSupabaseConfigured) return;
+): Promise<{ justLocked: boolean; failures: number }> {
+  if (!isSupabaseConfigured) return { justLocked: false, failures: 0 };
   const db = supabaseAdmin();
   const now = Date.now();
   const { data } = await db
@@ -70,8 +99,12 @@ async function bumpFailure(
       fail_count: 1,
       last_failed_at: new Date(now).toISOString(),
     });
-    return;
+    return { justLocked: false, failures: 1 };
   }
+
+  const alreadyLocked = row.locked_until
+    ? new Date(row.locked_until).getTime() > now
+    : false;
 
   // Reset a stale counter (last failure older than the window) back to 1.
   const last = row.last_failed_at ? new Date(row.last_failed_at).getTime() : 0;
@@ -80,8 +113,12 @@ async function bumpFailure(
     fail_count: nextCount,
     last_failed_at: new Date(now).toISOString(),
   };
-  if (nextCount >= maxFailures) patch.locked_until = new Date(now + lockMs).toISOString();
+
+  const hitCap = nextCount >= maxFailures;
+  if (hitCap) patch.locked_until = new Date(now + lockMs).toISOString();
   await db.from("admin_login_attempts").update(patch).eq("id", row.id);
+
+  return { justLocked: hitCap && !alreadyLocked, failures: nextCount };
 }
 
 /** Clear counters for the given keys (called on a successful factor). */
@@ -107,11 +144,52 @@ export async function checkLoginAllowed(email: string, ip: string | null): Promi
   return { allowed: retryAfterSec === 0, retryAfterSec };
 }
 
-/** Record a failed passcode attempt against both the email and the IP. */
-export async function recordLoginFailure(email: string, ip: string | null): Promise<void> {
+/**
+ * Record a failed passcode attempt against both the email and the IP.
+ *
+ * Counting the IP separately matters: an attacker spraying one password across
+ * many admin addresses never trips any single account's counter, but does trip
+ * the address they are coming from.
+ */
+export async function recordLoginFailure(
+  email: string,
+  ip: string | null,
+  userAgent?: string | null,
+): Promise<void> {
+  let locked = false;
+  let failures = 0;
+
   for (const key of loginKeys(email, ip)) {
-    await bumpFailure(key, LOGIN_MAX_FAILURES, LOGIN_LOCK_MS, LOGIN_WINDOW_MS);
+    const outcome = await bumpFailure(key, LOGIN_MAX_FAILURES, LOGIN_LOCK_MS, LOGIN_WINDOW_MS);
+    // Either key arming a lock is worth telling somebody about.
+    if (outcome.justLocked) locked = true;
+    failures = Math.max(failures, outcome.failures);
   }
+
+  if (locked) {
+    await notifyLock({ email, scope: "password", failures, ip, userAgent });
+  }
+}
+
+/** Send the lockout alert. Isolated so a mail failure cannot fail a login. */
+async function notifyLock(input: {
+  email: string;
+  scope: LockScope;
+  failures: number;
+  ip: string | null;
+  userAgent?: string | null;
+}): Promise<void> {
+  console.warn(
+    `[admin-login-guard] locked ${input.scope} for ${LOCK_MINUTES}m after ${input.failures} failures`,
+  );
+  await alertAccountLocked({
+    email: input.email,
+    scope: input.scope,
+    failures: input.failures,
+    lockedForMinutes: LOCK_MINUTES,
+    ip: input.ip,
+    userAgent: input.userAgent ?? null,
+  });
 }
 
 /** Clear passcode counters after a valid credential (even if MFA is still pending). */
@@ -125,9 +203,32 @@ export async function checkTotpAllowed(email: string): Promise<LoginThrottle> {
   return { allowed: retryAfterSec === 0, retryAfterSec };
 }
 
-/** Record a failed TOTP attempt (fails closed after the cap for a cooldown). */
-export async function recordTotpFailure(email: string): Promise<void> {
-  await bumpFailure(`totp:${norm(email)}`, TOTP_MAX_FAILURES, TOTP_LOCK_MS, TOTP_WINDOW_MS);
+/**
+ * Record a failed TOTP attempt (fails closed after the cap for a cooldown).
+ *
+ * Worth alerting on more than a passcode failure, not less: reaching the second
+ * factor at all means the attacker already has a working passcode.
+ */
+export async function recordTotpFailure(
+  email: string,
+  ip: string | null = null,
+  userAgent?: string | null,
+): Promise<void> {
+  const outcome = await bumpFailure(
+    `totp:${norm(email)}`,
+    TOTP_MAX_FAILURES,
+    TOTP_LOCK_MS,
+    TOTP_WINDOW_MS,
+  );
+  if (outcome.justLocked) {
+    await notifyLock({
+      email,
+      scope: "authenticator",
+      failures: outcome.failures,
+      ip,
+      userAgent,
+    });
+  }
 }
 
 /** Clear the TOTP failure counter after a successful verification. */

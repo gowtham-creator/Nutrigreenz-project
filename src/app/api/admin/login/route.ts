@@ -6,7 +6,6 @@ import {
   ADMIN_MFA_COOKIE,
 } from "@/lib/admin-auth";
 import {
-  ADMIN_SESSION_TTL_SECONDS,
   createMfaTicket,
   createToken,
   type AdminRole,
@@ -30,7 +29,6 @@ import {
 
 /** Session lifetime: 12 hours (seconds). */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
-const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /** Default operator email if `ADMIN_EMAIL` is not configured. */
 const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.farm";
@@ -267,7 +265,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
 
   c.set({
@@ -277,7 +274,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
 
   // Readable role cookie — UI gating only, NO auth power. The proxy enforces
@@ -289,7 +285,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
 
   // Best-effort audit (never blocks the sign-in). MFA-gated sign-ins are logged

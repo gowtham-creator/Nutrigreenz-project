@@ -5,7 +5,7 @@ import {
   ADMIN_ROLE_COOKIE,
   ADMIN_MFA_COOKIE,
 } from "@/lib/admin-auth";
-import { ADMIN_SESSION_TTL_SECONDS, createToken, verifyMfaTicket } from "@/lib/admin-session";
+import { createToken, verifyMfaTicket } from "@/lib/admin-session";
 import { verifyTotp } from "@/lib/totp";
 import { verifyEmailOtp, getAdminFactors, resolveTotpSecret } from "@/lib/admin-security";
 import { verifyIdToken } from "@/lib/firebase-admin";
@@ -21,7 +21,6 @@ import { verifyOtp as verifyMsg91Otp } from "@/lib/msg91-otp";
 
 /** Session lifetime: 12 hours (seconds) — matches /api/admin/login. */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
-const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /**
  * POST /api/admin/login-2fa
@@ -144,7 +143,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
   c.set({
     name: ADMIN_EMAIL_COOKIE,
@@ -153,7 +151,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
   c.set({
     name: ADMIN_ROLE_COOKIE,
@@ -162,7 +159,6 @@ export async function POST(request: Request): Promise<Response> {
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
   });
   // Consume the one-time MFA ticket so it can't be reused.
   c.set({

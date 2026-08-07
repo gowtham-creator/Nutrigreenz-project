@@ -4,7 +4,7 @@ import {
   ADMIN_EMAIL_COOKIE,
   ADMIN_ROLE_COOKIE,
 } from "@/lib/admin-auth";
-import { ADMIN_SESSION_TTL_SECONDS, createToken } from "@/lib/admin-session";
+import { createToken } from "@/lib/admin-session";
 import { adminByPhone, touchAdminLastLogin, getAdminTokenVersion } from "@/lib/admins";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
@@ -17,7 +17,6 @@ export const runtime = "nodejs";
 
 /** Session lifetime: 12 hours (seconds) — mirrors the passcode login. */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
-const MAX_AGE = ADMIN_SESSION_TTL_SECONDS;
 
 /**
  * POST /api/admin/login-phone  { idToken: string }
@@ -117,7 +116,7 @@ export async function POST(request: Request): Promise<Response> {
   const tokenVersion = await getAdminTokenVersion(op.email);
   const token = await createToken(op.email, op.role, tokenVersion);
   const secure = process.env.NODE_ENV === "production";
-  const base = { secure, sameSite: "lax" as const, path: "/", maxAge: MAX_AGE };
+  const base = { secure, sameSite: "lax" as const, path: "/" };
   const c = await cookies();
 
   c.set({ name: ADMIN_COOKIE, value: token, httpOnly: true, ...base });
