@@ -121,3 +121,66 @@ has been tested and ask what specifically they expect to be different.
 
 Do not let the call end with "we will check and revert" and nothing else. Ask
 for the log line for the order reference created during the call.
+
+---
+
+## If they ask: "Have you gone through the integration docs and keys?"
+
+**Answer: yes — and here is the evidence.** Say it plainly, then give two or
+three of these. They are all verifiable and they end the question quickly.
+
+### On the keys
+
+Three keys were issued and all three are configured and working:
+
+- `Merchant-API-Key-Id` and `Merchant-API-Key-Secret` — sent as headers to
+  `/api/transaction/v1/token/access`. **They return a valid JWT**, which is
+  proof the pair is correct.
+- `Encryption-Key` — used for the AES-GCM envelope. **They decrypt our payloads
+  successfully**, which is proof the key is correct. We know this because their
+  replies are field-level validation errors, not decryption failures.
+
+> "If any key were wrong we would be getting error 1003 or a decryption failure.
+> We get neither — we get a token and we get business responses."
+
+### On the documentation
+
+Implemented exactly as specified:
+
+- `POST /api/transaction/v1/token/access` with the two key headers
+- Request body `{ "encryptedRequest": "…" }`
+- Response `{ "status": 1, "data": ["…"] }`, and `status: 0` on HTTP 200 treated
+  as a failure — per your error-response sample
+- AES-GCM, 16-byte IV prepended to the ciphertext, 128-bit auth tag, base64 —
+  per your `Crypto.ts`
+- `order/create` and `order/status` under `/api/transaction/v1`
+
+### The strongest proof: two defects we found in the docs
+
+Bring these out if the question feels like a challenge. Nobody finds these
+without implementing the whole thing carefully.
+
+1. **`expiry` is documented as "Number (Timestamp)" and "Long — Order expiry
+   timestamp". It is neither — it is a count of minutes, capped at 30.** Epoch
+   values in seconds and milliseconds are both rejected with error 2104. The
+   sample value in your guide, `1767551400000`, cannot pass your own validator.
+2. **`order/status` requires `orderAmount`, but your mandatory-field list omits
+   it** — it gives only `{fromDate, toDate, atrn, arrn, sbiOrderRefNumber}`.
+   Your own sample request includes `orderAmount`, so the sample is right and
+   the table is wrong.
+
+### If they ask why we did not use the Node SDK
+
+Answer honestly and without apology:
+
+> "We reviewed `epay_nodejs_sdk@1.0.1` and implemented against it, but we could
+> not depend on it directly. The SDK issues its HTTP calls through axios, and
+> our outbound traffic has to leave through the fixed IP you whitelisted, which
+> requires a different HTTP dispatcher. So we ported the SDK's request signing
+> and AES-GCM envelope exactly, and kept our own transport. The encryption is
+> byte-identical to yours — your gateway decrypts everything we send, which is
+> the proof."
+
+Do not let the SDK become the explanation for the 404. The failing step is
+their hosted page rendering an order their own API confirms exists — no client
+library is involved in that at all.
