@@ -363,13 +363,22 @@ export function PaymentGatewayPanel() {
                             </span>
                             <span className="text-[11.5px] text-ng-ink-muted"> — {a.explain}</span>
                             {a.ok ? (
+                              /*
+                                `rel="noopener"`, deliberately NOT "noreferrer".
+                                SBI whitelists the merchant's source domain and
+                                their payment page checks it, so stripping the
+                                Referer makes the page fail the very check they
+                                configured. noopener still denies the opened tab
+                                access to window.opener, which is the part that
+                                matters for safety.
+                              */
                               <div className="mt-1 space-y-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   {a.sameHostUrl ? (
                                     <a
                                       href={a.sameHostUrl}
                                       target="_blank"
-                                      rel="noreferrer"
+                                      rel="noopener"
                                       className="inline-flex items-center gap-1 rounded-full bg-ng-green-bright px-2.5 py-0.5 text-[11px] font-semibold text-ng-forest-deep transition-opacity hover:opacity-90"
                                     >
                                       Open (gateway host)
@@ -380,7 +389,7 @@ export function PaymentGatewayPanel() {
                                     <a
                                       href={a.transactionUrl}
                                       target="_blank"
-                                      rel="noreferrer"
+                                      rel="noopener"
                                       className="inline-flex items-center gap-1 rounded-full border border-ng-line px-2.5 py-0.5 text-[11px] font-semibold text-ng-ink-muted transition-colors hover:text-ng-forest-deep"
                                     >
                                       Open (SBI&rsquo;s own URL)
