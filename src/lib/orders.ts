@@ -869,23 +869,106 @@ export async function advanceOrderStatus(
 
 /* ── payment status (set by the payment seam, never the client) ───────── */
 
-/**
- * Set an order's payment status + reference. Used by the (currently stubbed)
- * payment seam after a verified gateway result — never from a client-trusted
- * value. Returns the fresh order, or null when the order is unknown.
+/*
+ * There is deliberately no unconditional `setOrderPayment` here.
+ *
+ * It existed, read-then-wrote, and had exactly one caller: the gateway
+ * callback — the one place where concurrent arrivals are guaranteed rather than
+ * hypothetical. Keeping an unguarded setter next to a guarded one only invites
+ * the next person to reach for the shorter name. Use the transition below.
  */
-export async function setOrderPayment(
+
+/**
+ * Move an order's payment status only if it is still what we think it is.
+ *
+ * ── Why this exists ───────────────────────────────────────────────────────
+ *
+ * A single payment arrives here more than once. SBIePay sends the customer's
+ * browser to the callback AND posts a server-to-server notification to the same
+ * URL, the customer may refresh it, and a reconciliation sweep may reach the
+ * same order from a third direction. All of those can be in flight together.
+ *
+ * `setOrderPayment` reads, then writes. Two callers that both read "pending"
+ * will both write "paid", and both will believe they were the one who did it —
+ * so anything conditional on that transition (a receipt email, an invoice
+ * number, a stock decrement) happens twice. At one order a minute nobody
+ * notices; at a thousand concurrent checkouts it is routine.
+ *
+ * The `.eq("payment_status", expected)` turns the whole thing into a single
+ * atomic compare-and-set in Postgres. Exactly one caller gets a row back and
+ * exactly one may act on the transition; the losers get `null` and stop. This
+ * is the guarantee the callback needs, and it costs one extra clause.
+ *
+ * @returns the updated order for the caller that won, `null` for everyone else
+ *          (and for an order that was already in the target state).
+ */
+export async function transitionOrderPayment(
   idOrNumber: string,
-  paymentStatus: PaymentStatus,
+  expected: PaymentStatus,
+  next: PaymentStatus,
   paymentRef?: string | null,
 ): Promise<OrderWithDetail | null> {
   const order = await getOrder(idOrNumber);
   if (!order) return null;
-  const patch: Record<string, string | null> = { payment_status: paymentStatus };
+
+  const patch: Record<string, string | null> = { payment_status: next };
   if (paymentRef !== undefined) patch.payment_ref = paymentRef;
-  const { error } = await supabaseAdmin().from("orders").update(patch).eq("id", order.id);
+
+  const { data, error } = await supabaseAdmin()
+    .from("orders")
+    .update(patch)
+    .eq("id", order.id)
+    // The guard. No row matches if another request already moved it.
+    .eq("payment_status", expected)
+    .select("id");
+
   if (error) return null;
+  if (!data || data.length === 0) return null;
+
   return getOrder(order.id);
+}
+
+/**
+ * Orders that were sent to the gateway and never came back.
+ *
+ * A customer who pays and then closes the tab produces no browser callback at
+ * all. If the server-to-server notification is also missed — a deploy, a cold
+ * start, a network blip — the order sits at "pending" forever: money taken,
+ * nothing dispatched, and nobody aware. Nothing in the system looks for these,
+ * which is why the sweep exists.
+ *
+ * Deliberately bounded: only orders old enough that the payment window has
+ * closed (so an in-progress checkout is never disturbed) and recent enough to
+ * be worth chasing.
+ */
+export async function listStalePendingPayments(options?: {
+  olderThanMinutes?: number;
+  withinHours?: number;
+  limit?: number;
+}): Promise<{ id: string; orderNumber: string; totalPaise: number; createdAt: string }[]> {
+  const olderThan = options?.olderThanMinutes ?? 30;
+  const within = options?.withinHours ?? 48;
+  const limit = options?.limit ?? 100;
+
+  const now = Date.now();
+  const { data, error } = await supabaseAdmin()
+    .from("orders")
+    .select("id, order_number, total_paise, created_at")
+    .eq("payment_status", "pending")
+    .lt("created_at", new Date(now - olderThan * 60_000).toISOString())
+    .gt("created_at", new Date(now - within * 3_600_000).toISOString())
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return (data as { id: string; order_number: string; total_paise: number; created_at: string }[]).map(
+    (r) => ({
+      id: r.id,
+      orderNumber: r.order_number,
+      totalPaise: r.total_paise,
+      createdAt: r.created_at,
+    }),
+  );
 }
 
 /** Whether the orders backend is usable (Supabase configured). */

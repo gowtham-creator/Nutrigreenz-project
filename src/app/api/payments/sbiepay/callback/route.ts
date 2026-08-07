@@ -1,5 +1,5 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { getOrder, setOrderPayment } from "@/lib/orders";
+import { getOrder, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 
 export const runtime = "nodejs";
@@ -166,7 +166,9 @@ async function handle(request: Request): Promise<Response> {
   );
 
   if (!result.ok) {
-    await setOrderPayment(order.id, "failed", result.reference ?? null);
+    // Only from pending. A payment already confirmed must never be walked back
+    // by a late-arriving failure notification for the same order.
+    await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
     return redirectTo("/checkout/failed", {
       order: order.orderNumber,
       reason: result.reason ?? "declined",
@@ -182,14 +184,23 @@ async function handle(request: Request): Promise<Response> {
    * because it means something is wrong that code should not paper over.
    */
   if (result.capturedPaise !== null && result.capturedPaise < order.totalPaise) {
-    await setOrderPayment(order.id, "failed", result.reference ?? null);
+    await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
     return redirectTo("/checkout/failed", {
       order: order.orderNumber,
       reason: "amount-mismatch",
     });
   }
 
-  await setOrderPayment(order.id, "paid", result.reference ?? null);
+  /*
+   * Atomic. The browser return and SBI's server notification both land here and
+   * can be in flight together; a plain read-then-write lets both believe they
+   * were the one that marked it paid, and anything conditional on that
+   * transition then happens twice. Exactly one caller gets a row back.
+   *
+   * Losing the race is a success, not an error — it means the other request
+   * already confirmed this payment, so the customer still goes to the receipt.
+   */
+  await transitionOrderPayment(order.id, "pending", "paid", result.reference ?? null);
   return redirectTo("/checkout/success", { order: order.orderNumber });
 }
 
