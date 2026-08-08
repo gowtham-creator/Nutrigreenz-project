@@ -219,15 +219,30 @@ function LoginForm() {
    * the MFA-ticket-gated endpoint. MSG91 never needs it — the server sends the
    * SMS itself and the number stays server-side.
    */
-  async function resolveMfaPhone(): Promise<string | null> {
+  /**
+   * The endpoint answers 401 `{ restart: true }` when the `ng_admin_mfa` ticket
+   * has expired — the passcode step is no longer proven, so there is nothing to
+   * send a code for. Collapsing that to `null` (as this used to) made an expired
+   * ticket indistinguishable from a missing phone factor, and both surfaced as
+   * "try another method" — advice that cannot work, because every factor is
+   * gated by the same dead ticket. The signal is carried out so the caller can
+   * send the operator back to the passcode instead.
+   */
+  async function resolveMfaPhone(): Promise<{ phone: string | null; restart: boolean }> {
     try {
       const res = await fetch("/api/admin/mfa/phone-target", { method: "POST" });
-      if (!res.ok) return null;
+      if (!res.ok) return { phone: null, restart: res.status === 401 };
       const data = (await res.json()) as { phone?: string };
-      return data.phone ?? null;
+      return { phone: data.phone ?? null, restart: false };
     } catch {
-      return null;
+      return { phone: null, restart: false };
     }
+  }
+
+  /** Bounce back to the passcode step after the 2FA window has lapsed. */
+  function restartSignIn() {
+    resetMfa();
+    setError("That took too long — enter your passcode again.");
   }
 
   // Auto-send the mobile-OTP 2FA code once the phone step (and its reCAPTCHA
@@ -241,7 +256,11 @@ function LoginForm() {
         await requestCode(false);
         return;
       }
-      const real = await resolveMfaPhone();
+      const { phone: real, restart } = await resolveMfaPhone();
+      if (restart) {
+        restartSignIn();
+        return;
+      }
       if (!real) {
         setError("Couldn't start mobile verification — try another method.");
         return;
@@ -1002,8 +1021,9 @@ function LoginForm() {
                               // resolve the real number for Firebase; MSG91
                               // sends server-side and needs no number.
                               if (msg91) return requestCode(true);
-                              const real = await resolveMfaPhone();
+                              const { phone: real, restart } = await resolveMfaPhone();
                               if (real) return requestCode(true, real);
+                              if (restart) return restartSignIn();
                               setError("Couldn't resend — try another method.");
                             })()
                           }

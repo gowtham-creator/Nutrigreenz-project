@@ -230,10 +230,26 @@ export async function verifyToken(
  * step, so completing 2FA can never elevate a plain `admin` to `superadmin`.
  * Throws if the secret is unset.
  */
+/*
+ * Ten minutes, not five.
+ *
+ * Five did not survive contact with a real SMS. Firebase can take the better
+ * part of a minute to deliver, the resend button is on a thirty-second
+ * cooldown, and an operator who mistypes once and waits for a second code is
+ * already past half the window. When it lapsed, `/api/admin/mfa/phone-target`
+ * refused, the resend failed, and the screen blamed the method.
+ *
+ * The ticket is still short-lived and still carries no portal access on its
+ * own: it is httpOnly, signed, and tagged `mfa` so `verifyToken` rejects it as
+ * a session. Ten minutes buys a second and third SMS attempt without turning
+ * a half-finished sign-in into a durable credential.
+ */
+const MFA_TICKET_TTL_MS = 10 * 60 * 1000;
+
 export async function createMfaTicket(
   email: string,
   role: AdminRole,
-  ttlMs = 5 * 60 * 1000,
+  ttlMs = MFA_TICKET_TTL_MS,
 ): Promise<string> {
   const secret = getSecret();
   if (!secret) {

@@ -240,7 +240,15 @@ export async function POST(request: Request): Promise<Response> {
       secure,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 5,
+      /*
+       * Must track the ticket's own expiry (MFA_TICKET_TTL_MS, 10 min). These
+       * are two separate clocks and they were five minutes apart from nothing
+       * but coincidence: the browser drops the cookie on this maxAge, so a
+       * longer signed expiry alone buys nothing — the ticket simply stops being
+       * sent. Raise one without the other and the 2FA window silently reverts
+       * to the shorter of the two.
+       */
+      maxAge: 60 * 10,
     });
     // Only a MASKED hint of the OTP number crosses the wire (last 2 digits) —
     // the client needs a hint, never the full number pre-2FA.
