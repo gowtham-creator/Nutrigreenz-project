@@ -1,4 +1,5 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { recordCallback } from "@/lib/sbiepay-callback-log";
 import { getOrder, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 
@@ -131,6 +132,18 @@ async function handle(request: Request): Promise<Response> {
   console.info("[sbiepay-callback] fields:", Object.keys(payload).sort().join(","));
 
   const orderNumber = orderNumberFrom(payload);
+
+  /*
+   * Record the arrival verbatim — encrypted as received, and decrypted.
+   *
+   * Deliberately BEFORE the no-reference bail below, because a callback we
+   * cannot match to an order is precisely the one worth having on file. It is
+   * also not awaited: this is a diagnostic record, and a customer who has just
+   * been charged must not wait on a logging insert, nor lose their redirect if
+   * one fails.
+   */
+  void recordCallback({ method: request.method, orderNumber, payload });
+
   if (!orderNumber) {
     console.warn("[sbiepay-callback] no order reference in callback");
     return redirectTo("/checkout/failed", { reason: "no-reference" });
