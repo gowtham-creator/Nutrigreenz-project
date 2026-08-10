@@ -224,7 +224,9 @@ const OILS: PdpCategoryContent = {
       { key: "Everyday sautéing — ", rest: "a healthy fat for stir-fries and shallow frying." },
       { key: "Oil pulling & massage — ", rest: "coconut and sesame double up beautifully for skin and hair." },
     ],
-    image: { src: `${OILS_IMG}/groundnut-side.webp`, alt: "Cold-pressed oil bottle — pack and label detail" },
+    // Was groundnut-side.webp — a different bottle in a different colour with
+    // unreadable label text. Replaced with the current pack in the kitchen.
+    image: { src: `${OILS_IMG}/gallery/gn-c-usage.webp`, alt: "Cold-pressed groundnut oil on an Indian kitchen counter" },
   },
   faq: [
     { q: "What does 'cold-pressed' actually mean?", a: "The seed is crushed mechanically at low temperature (below 40°C) without chemical solvents. That keeps the natural antioxidants, aroma and vitamin E that high-heat refining strips out." },
