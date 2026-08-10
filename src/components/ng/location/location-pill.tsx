@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { useLocation } from "@/lib/location";
 import { fetchServiceable } from "@/lib/serviceability";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
             className,
           )}
         >
-          <Icon name="map-point-bold" size={18} className="shrink-0 text-ng-leaf" />
+          <AppIcon name="location" size={18} className="shrink-0 text-ng-leaf" />
           <span className="min-w-0 flex-1">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">
               Deliver to
@@ -99,7 +100,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
           className,
         )}
       >
-        <Icon name="map-point-bold" size={18} className="shrink-0 text-ng-leaf" />
+        <AppIcon name="location" size={18} className="shrink-0 text-ng-leaf" />
         <span className="flex min-w-0 flex-col leading-tight">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">
             Deliver to
