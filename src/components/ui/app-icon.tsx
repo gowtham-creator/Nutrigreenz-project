@@ -44,7 +44,8 @@ export type AppIconName =
   | "lab"
   | "shipping-free"
   | "honey"
-  | "farm";
+  | "farm"
+  | "oil";
 
 interface AppIconProps {
   name: AppIconName;

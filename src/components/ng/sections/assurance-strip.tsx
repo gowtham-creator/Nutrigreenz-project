@@ -52,8 +52,24 @@ const POINTS = [
     tint: "text-ng-green-bright",
     bg: "bg-ng-green-bright/14",
     ring: "ring-ng-green-bright/28",
-    title: "FSSAI certified",
-    sub: "ISO 22000 quality assured",
+    title: "FSSAI licensed",
+    /*
+     * Shows the actual licence number when NEXT_PUBLIC_FSSAI_LIC is set.
+     *
+     * The sub-line used to read "ISO 22000 quality assured" under an FSSAI
+     * heading, which conflates two unrelated certifications — FSSAI is a
+     * statutory licence from the food authority, ISO 22000 is a voluntary
+     * management standard from a private auditor. Claiming one under the
+     * other's name is the kind of thing FSSAI's own labelling rules treat as
+     * misleading, and ISO 22000 already has its own badge two cells along.
+     *
+     * The licence NUMBER is also what actually evidences the claim — far more
+     * than a logo, which anyone can paste. Until it is configured the cell
+     * simply says the category is licensed and claims nothing further.
+     */
+    sub: process.env.NEXT_PUBLIC_FSSAI_LIC
+      ? `Lic. ${process.env.NEXT_PUBLIC_FSSAI_LIC}`
+      : "Licensed food business",
   },
 ] as const;
 

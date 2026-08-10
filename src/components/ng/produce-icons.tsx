@@ -1,5 +1,25 @@
 import { PRODUCE_ICON_DATA } from "./produce-icons-data";
+import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
 import { cn } from "@/lib/utils";
+
+/**
+ * Categories drawn from the imported Icons8 set instead of the inline family.
+ *
+ * These two were chosen for being far more specific than the generic family
+ * shapes: a honey jar with comb rather than a droplet, a pressed-oil bottle
+ * rather than a bottle outline.
+ *
+ * They still tint. Both are painted through AppIcon as CSS masks, so they take
+ * the category chip's accent from `currentColor` exactly as the inline SVGs do
+ * — which is the property that would have been lost had they been dropped in as
+ * images. The oil mark shipped as colour line art on a pale disc and was
+ * flattened to a mono glyph first; masked in its original form the disc counts
+ * as ink and the icon collapses into a filled circle.
+ */
+const IMPORTED: Partial<Record<keyof typeof PRODUCE_ICON_DATA, AppIconName>> = {
+  honey: "honey",
+  oil: "oil",
+};
 
 /**
  * Nutri Greenz produce category icons — a single cohesive, professionally
@@ -19,6 +39,11 @@ function ProduceGlyph({
   className,
   size = 32,
 }: IconProps & { iconKey: keyof typeof PRODUCE_ICON_DATA }) {
+  const imported = IMPORTED[iconKey];
+  if (imported) {
+    return <AppIcon name={imported} size={size} className={cn("inline-block shrink-0", className)} />;
+  }
+
   const data = PRODUCE_ICON_DATA[iconKey] ?? PRODUCE_ICON_DATA.leaf;
   return (
     <svg
