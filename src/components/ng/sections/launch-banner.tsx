@@ -103,7 +103,8 @@ export function LaunchBanner() {
                       Coming soon
                     </span>
                     <div className="grid h-24 w-24 place-items-center rounded-full bg-ng-cream shadow-[var(--shadow-ng-soft)]">
-                      <Logo variant="mark" tone="forest" className="h-14 w-14 opacity-90" />
+                      {/* Decorative watermark, not a mark assertion — the header already carries it. */}
+              <Logo variant="mark" tone="forest" showTrademark={false} className="h-14 w-14 opacity-90" />
                     </div>
                     <p className="font-display text-[17px] leading-tight text-ng-forest-deep/80">
                       Product feature image
