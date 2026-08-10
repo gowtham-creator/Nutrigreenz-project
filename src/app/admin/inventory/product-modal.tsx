@@ -3,6 +3,7 @@
 import { useRef, useState, type DragEvent } from "react";
 import { Icon } from "@/components/ui/icon";
 import { GalleryField } from "@/components/ng/admin/image-picker";
+import { PdpImagesPreview } from "@/components/ng/admin/inventory/pdp-images-preview";
 import { STATUS_OPTIONS, type Category, type Product, type ProductStatus } from "./types";
 
 export interface ProductDraft {
@@ -327,6 +328,16 @@ export function ProductModal({
                 onChange={(v) => setDraft((d) => ({ ...d, gallery: v }))}
                 hint="Shown on the product page after the main image, in this order — the label, the texture, the product in use. Leave empty and the page shows captioned placeholders instead."
               />
+
+              {/* The field above is only one of the sources the product page
+                  draws from, so it cannot show a duplicate or a generated
+                  panel. This reads the composed gallery back and does. Only for
+                  a saved product — an unsaved draft has no id to compose. */}
+              {product?.id ? (
+                <div className="mt-5">
+                  <PdpImagesPreview productId={product.id} />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
