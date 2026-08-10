@@ -1,5 +1,5 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { recordCallback } from "@/lib/sbiepay-callback-log";
+import { recordCallback, decryptCallback, flattenDecrypted } from "@/lib/sbiepay-callback-log";
 import { getOrder, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 
@@ -131,7 +131,26 @@ async function handle(request: Request): Promise<Response> {
    */
   console.info("[sbiepay-callback] fields:", Object.keys(payload).sort().join(","));
 
-  const orderNumber = orderNumberFrom(payload);
+  /*
+   * Decrypt before doing anything else.
+   *
+   * A real return carries only `encryptedPaymentFinalResponse` and `mId`. The
+   * order reference is NOT in the plaintext — it sits inside the ciphertext at
+   * [0].orderInfo.orderRefNumber. Reading the plaintext for it therefore fails
+   * on every genuine payment, and the customer is redirected to
+   * /checkout/failed?reason=no-reference seconds after being charged. The
+   * reconcile cron picks the order up within fifteen minutes, so the money is
+   * not lost, but the shopper has already been told it failed.
+   *
+   * Merging the decrypted fields over the raw ones gives the lookup and the
+   * confirmation step the flat names they already expect — orderRefNumber for
+   * the order, sbiOrderRefNumber and atrnNumber for the status query — so
+   * neither has to change.
+   */
+  const decryption = await decryptCallback(payload);
+  const fields = { ...payload, ...flattenDecrypted(decryption.decrypted) };
+
+  const orderNumber = orderNumberFrom(fields);
 
   /*
    * Record the arrival verbatim — encrypted as received, and decrypted.
@@ -142,7 +161,7 @@ async function handle(request: Request): Promise<Response> {
    * been charged must not wait on a logging insert, nor lose their redirect if
    * one fails.
    */
-  void recordCallback({ method: request.method, orderNumber, payload });
+  void recordCallback({ method: request.method, orderNumber, payload, decryption });
 
   if (!orderNumber) {
     console.warn("[sbiepay-callback] no order reference in callback");
@@ -175,7 +194,17 @@ async function handle(request: Request): Promise<Response> {
       customerEmail: order.userEmail,
       customerPhone: order.userPhone,
     },
-    payload,
+    /*
+     * The decrypted fields, not the raw two.
+     *
+     * confirmGatewayPayment prefers a direct lookup on sbiOrderRefNumber or
+     * atrnNumber and only falls back to a 24-hour date-range sweep when it has
+     * neither. Both live inside the ciphertext, so passing the plaintext
+     * payload meant every real payment took the slow path and matched by
+     * scanning a window of orders — more work at the bank, and more ways to
+     * come back empty.
+     */
+    fields,
   );
 
   if (!result.ok) {

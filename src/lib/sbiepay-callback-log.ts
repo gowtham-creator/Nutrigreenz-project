@@ -46,7 +46,7 @@ export interface CallbackLogRow {
  * one that decrypts wins. GCM's auth tag makes that safe: a field that decrypts
  * under our key was produced with our key, so a false positive is not possible.
  */
-async function decrypt(
+export async function decryptCallback(
   payload: Record<string, string>,
 ): Promise<{ decrypted: Record<string, unknown> | null; encField: string | null; note: string | null }> {
   const key = sbiepayEncryptionKey();
@@ -91,10 +91,12 @@ export async function recordCallback(input: {
   method: string;
   orderNumber: string | null;
   payload: Record<string, string>;
+  /** Result of {@link decryptCallback}, passed in so it is not done twice. */
+  decryption: { decrypted: Record<string, unknown> | null; encField: string | null; note: string | null };
 }): Promise<void> {
   if (!isSupabaseConfigured) return;
   try {
-    const { decrypted, encField, note } = await decrypt(input.payload);
+    const { decrypted, encField, note } = input.decryption;
     await supabaseAdmin().from("sbiepay_callback_log").insert({
       method: input.method,
       order_number: input.orderNumber,
@@ -111,6 +113,43 @@ export async function recordCallback(input: {
       err instanceof Error ? err.message : "unknown",
     );
   }
+}
+
+/**
+ * Flatten a decrypted callback into flat `field: value` pairs.
+ *
+ * ── Why this is the difference between paid and "payment failed" ──────────
+ *
+ * A real SBIePay return carries exactly two plaintext fields:
+ *
+ *     { encryptedPaymentFinalResponse, mId }
+ *
+ * The order reference is not among them. It lives inside the ciphertext, at
+ * `[0].orderInfo.orderRefNumber`, alongside orderStatus, sbiOrderRefNumber and
+ * the atrnNumber. So a lookup that reads the plaintext payload finds nothing on
+ * every real payment, and the customer is told their payment failed moments
+ * after being charged.
+ *
+ * The shape mirrors the Order Search API — an array of `{ orderInfo,
+ * paymentInfo }` — so both nested objects are lifted to the top level, giving
+ * the rest of the payment code the flat field names it already looks for.
+ * Nothing downstream has to know the response was ever encrypted.
+ */
+export function flattenDecrypted(decrypted: Record<string, unknown> | null): Record<string, string> {
+  if (!decrypted) return {};
+  const first = Array.isArray(decrypted) ? decrypted[0] : decrypted;
+  if (!first || typeof first !== "object") return {};
+
+  const out: Record<string, string> = {};
+  for (const group of ["orderInfo", "paymentInfo"]) {
+    const section = (first as Record<string, unknown>)[group];
+    if (!section || typeof section !== "object") continue;
+    for (const [k, v] of Object.entries(section as Record<string, unknown>)) {
+      if (v === null || v === undefined || typeof v === "object") continue;
+      out[k] = String(v);
+    }
+  }
+  return out;
 }
 
 /** Most recent callbacks, for the admin payment panel. */
