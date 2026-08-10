@@ -128,10 +128,35 @@ export function resetSbiepayToken(): void {
  * is surfaced, because retrying a payment call that failed for an unknown
  * reason risks charging twice.
  */
+/**
+ * Both sides of one call, for the diagnostics the bank keeps asking for.
+ *
+ * SBI's support team asks for the encrypted AND decrypted exchange, and neither
+ * survives a normal call — the ciphertext is a local, and the plaintext is
+ * returned as a parsed object with no trace of what came off the wire. Rather
+ * than reimplement the token, encryption and proxy path in a diagnostic route
+ * and risk it drifting from the real one, the real one hands a copy out when
+ * asked. Nothing is captured unless a caller passes the hook.
+ */
+export interface SbiepayExchange {
+  endpoint: string;
+  /** The request before encryption. */
+  request: unknown;
+  /** Exactly what was sent as `encryptedRequest`. */
+  encryptedRequest: string;
+  httpStatus: number;
+  /** The response body verbatim, still enciphered — what the bank asks for. */
+  rawResponse: string;
+  /** The same response after decryption. */
+  decrypted?: unknown;
+  error?: string;
+}
+
 export async function sbiepayCall<T>(
   endpoint: string,
   payload: unknown,
   retryOnAuthFailure = true,
+  capture?: (exchange: SbiepayExchange) => void,
 ): Promise<T> {
   const { encKey } = credentials();
   const bearer = await accessToken();
@@ -146,15 +171,30 @@ export async function sbiepayCall<T>(
     timeoutMs: 25_000,
   });
 
+  /*
+   * Record before interpreting. A malformed or error response is precisely the
+   * one support needs to see, and every path below this either throws or
+   * transforms it out of existence.
+   */
+  const exchange: SbiepayExchange = {
+    endpoint,
+    request: payload,
+    encryptedRequest,
+    httpStatus: res.status,
+    rawResponse: res.body,
+  };
+
   if (res.status === 401 && retryOnAuthFailure) {
     resetSbiepayToken();
-    return sbiepayCall<T>(endpoint, payload, false);
+    return sbiepayCall<T>(endpoint, payload, false, capture);
   }
 
   let body: Envelope;
   try {
     body = JSON.parse(res.body) as Envelope;
   } catch {
+    exchange.error = `${endpoint} returned a non-JSON response`;
+    capture?.(exchange);
     throw new SbiepayError(
       `${endpoint} returned a non-JSON response`,
       "bad-response",
@@ -165,6 +205,8 @@ export async function sbiepayCall<T>(
   // status 0 with HTTP 200 is SBI's failure shape.
   if (body.status !== 1 || !body.data?.[0]) {
     const err = body.errors?.[0];
+    exchange.error = err?.errorMessage ?? `${endpoint} failed`;
+    capture?.(exchange);
     throw new SbiepayError(
       err?.errorMessage ?? `${endpoint} failed`,
       err?.errorCode ?? "call-failed",
@@ -172,7 +214,10 @@ export async function sbiepayCall<T>(
     );
   }
 
-  return JSON.parse(await decryptPayload(encKey, body.data[0])) as T;
+  const decrypted = JSON.parse(await decryptPayload(encKey, body.data[0])) as T;
+  exchange.decrypted = decrypted;
+  capture?.(exchange);
+  return decrypted;
 }
 
 /* ── Orders ───────────────────────────────────────────────────────────── */
@@ -300,6 +345,21 @@ export interface OrderSearchCriteria {
 export async function searchSbiepayOrder(
   criteria: OrderSearchCriteria,
 ): Promise<SbiepayOrderSearchResult[]> {
+  return searchSbiepayOrderWithCapture(criteria);
+}
+
+/**
+ * The same search, optionally handing back both sides of the call.
+ *
+ * `searchSbiepayOrder` delegates here so the payment path and the diagnostic
+ * route run identical code. A separate implementation for support logs would
+ * drift from the real one, and the whole value of those logs is that they show
+ * what production actually sends.
+ */
+export async function searchSbiepayOrderWithCapture(
+  criteria: OrderSearchCriteria,
+  capture?: (exchange: SbiepayExchange) => void,
+): Promise<SbiepayOrderSearchResult[]> {
   if (
     !criteria.sbiOrderRefNumber &&
     !criteria.atrnNumber &&
@@ -314,6 +374,8 @@ export async function searchSbiepayOrder(
   const found = await sbiepayCall<SbiepayOrderSearchResult | SbiepayOrderSearchResult[]>(
     "order/status",
     criteria,
+    true,
+    capture,
   );
   // A single match may come back unwrapped; callers should not have to care.
   return Array.isArray(found) ? found : [found];
