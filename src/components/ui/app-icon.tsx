@@ -29,8 +29,22 @@ import { cn } from "@/lib/utils";
  * vector art, not these.
  */
 
-/** The imported glyphs. Filenames live under `public/icons/app/`. */
-export type AppIconName = "location" | "profile" | "fresh" | "lab" | "shipping-free";
+/**
+ * The imported single-colour glyphs. Filenames live under `public/icons/app/`.
+ *
+ * Only mono glyphs belong here. The colour marks alongside them —
+ * `fresh-colour`, `honey-colour`, `oil-colour` — are full illustrations and
+ * would be flattened to a silhouette by the mask, so they need a real <Image>
+ * when something actually uses them.
+ */
+export type AppIconName =
+  | "location"
+  | "profile"
+  | "fresh"
+  | "lab"
+  | "shipping-free"
+  | "honey"
+  | "farm";
 
 interface AppIconProps {
   name: AppIconName;
