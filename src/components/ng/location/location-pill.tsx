@@ -65,7 +65,9 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
             className,
           )}
         >
-          <AppIcon name="location" size={18} className="shrink-0 text-ng-leaf" />
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
+            <AppIcon name="location" size={15} />
+          </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">
               Deliver to
@@ -100,7 +102,9 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
           className,
         )}
       >
-        <AppIcon name="location" size={18} className="shrink-0 text-ng-leaf" />
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
+            <AppIcon name="location" size={15} />
+          </span>
         <span className="flex min-w-0 flex-col leading-tight">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">
             Deliver to

@@ -1,4 +1,5 @@
 import { Icon } from "@/components/ui/icon";
+import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
 import { Reveal } from "../motion";
 
 /**
@@ -7,12 +8,18 @@ import { Reveal } from "../motion";
  * at-a-glance reasons to buy: freshness, purity, shipping and certification.
  *
  * Hairline-divided cells (a 1px line bg showing through `gap-px`) keep it crisp
- * and premium without heavy borders. All icons are confirmed Solar glyphs.
+ * and premium without heavy borders.
+ *
+ * Three of the four now use imported glyphs, because each says the specific
+ * thing the generic Solar shape only gestured at: a sprout for freshness rather
+ * than a plain leaf, a flask for lab testing rather than a shield, and a van
+ * carrying its own FREE lettering rather than a parcel. The FSSAI cell keeps a
+ * Solar tick — see the note on its entry below.
  */
 
 const POINTS = [
   {
-    icon: "leaf-bold",
+    app: "fresh" as AppIconName,
     tint: "text-ng-forest-soft",
     bg: "bg-ng-leaf/18",
     ring: "ring-ng-leaf/30",
@@ -20,7 +27,7 @@ const POINTS = [
     sub: "Pressed within 7 days of dispatch",
   },
   {
-    icon: "shield-check-bold",
+    app: "lab" as AppIconName,
     tint: "text-ng-forest",
     bg: "bg-ng-forest/[0.08]",
     ring: "ring-ng-forest/15",
@@ -28,7 +35,7 @@ const POINTS = [
     sub: "Every lot — zero adulterants",
   },
   {
-    icon: "delivery-bold",
+    app: "shipping-free" as AppIconName,
     tint: "text-ng-clay-deep",
     bg: "bg-ng-clay/16",
     ring: "ring-ng-clay/25",
@@ -36,6 +43,11 @@ const POINTS = [
     sub: "On all orders over ₹599",
   },
   {
+    /*
+     * Stays a Solar tick. The FSSAI mark supplied was a Shutterstock preview,
+     * and the real mark may only be shown beside the 14-digit licence number,
+     * which is still a placeholder in the pack artwork.
+     */
     icon: "verified-check-bold",
     tint: "text-ng-green-bright",
     bg: "bg-ng-green-bright/14",
@@ -59,7 +71,7 @@ export function AssuranceStrip() {
                 <span
                   className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1 ring-inset ${p.bg} ${p.tint} ${p.ring}`}
                 >
-                  <Icon name={p.icon} size={24} />
+                  {"app" in p ? <AppIcon name={p.app} size={24} /> : <Icon name={p.icon} size={24} />}
                 </span>
                 <div className="min-w-0">
                   <div className="font-display text-[15px] font-semibold leading-tight text-ng-forest-deep md:text-[16px]">
