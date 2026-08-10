@@ -335,7 +335,12 @@ export function ProductModal({
                   a saved product — an unsaved draft has no id to compose. */}
               {product?.id ? (
                 <div className="mt-5">
-                  <PdpImagesPreview productId={product.id} />
+                  <PdpImagesPreview
+                    productId={product.id}
+                    gallery={draft.gallery}
+                    onReplaceLead={(url) => setDraft((d) => ({ ...d, imageUrl: url }))}
+                    onReplaceGallery={(next) => setDraft((d) => ({ ...d, gallery: next }))}
+                  />
                 </div>
               ) : null}
             </div>

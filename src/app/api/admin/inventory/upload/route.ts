@@ -12,6 +12,7 @@
  */
 import { isSignedInAdmin } from "../guard";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
+import sharp from "sharp";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
@@ -66,12 +67,51 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "too-large" }, { status: 413 });
   }
 
-  const key = `products/${Date.now()}-${slugifyName(file.name)}.${ext}`;
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  /*
+   * Normalise every upload to one canvas before it is stored.
+   *
+   * The product gallery lays its slides out square. An operator uploading a
+   * portrait phone photo next to a square studio render previously got exactly
+   * that — one slide letterboxed with grey bars, the next full-bleed — and
+   * nothing in the admin hinted at it, because the thumbnail is square either
+   * way.
+   *
+   * `contain` rather than `cover`: cropping a product shot to fill a square is
+   * how a bottle loses its cap or a label loses its edge, and a shopper
+   * checking a pack cannot be shown a cropped one. The spare area is filled
+   * with the brand cream the gallery already sits on, so the pad is invisible
+   * rather than a grey bar.
+   *
+   * webp at 88 because these are photographs served at 1200px; the format saves
+   * roughly a third over JPEG at a quality difference no one can see on a
+   * product shot.
+   */
+  const SLIDE = 1200;
+  const CREAM = { r: 249, g: 250, b: 245 };
+
+  let bytes: Uint8Array;
+  let storedType = "image/webp";
+  let storedExt = "webp";
+  try {
+    const normalised = await sharp(Buffer.from(await file.arrayBuffer()))
+      .rotate() // honour EXIF orientation, or phone uploads land sideways
+      .resize(SLIDE, SLIDE, { fit: "contain", background: CREAM })
+      .webp({ quality: 88 })
+      .toBuffer();
+    bytes = new Uint8Array(normalised);
+  } catch {
+    // An image sharp cannot decode is stored as-is rather than rejected — the
+    // operator still gets their file, just without the normalisation.
+    bytes = new Uint8Array(await file.arrayBuffer());
+    storedType = file.type;
+    storedExt = ext;
+  }
+
+  const key = `products/${Date.now()}-${slugifyName(file.name)}.${storedExt}`;
 
   const supabase = supabaseAdmin();
   const { error } = await supabase.storage.from(BUCKET).upload(key, bytes, {
-    contentType: file.type,
+    contentType: storedType,
     cacheControl: "31536000",
     upsert: false,
   });

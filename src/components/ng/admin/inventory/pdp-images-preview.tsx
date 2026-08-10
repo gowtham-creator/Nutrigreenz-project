@@ -46,7 +46,18 @@ const SOURCE_COPY: Record<Source, { tag: string; hint: string; className: string
   nutrition: { tag: "Nutrition", hint: "Swaps with the pack size the shopper selects", className: "bg-ng-sage/60 text-ng-forest-deep" },
 };
 
-export function PdpImagesPreview({ productId }: { productId: string }) {
+export function PdpImagesPreview({
+  productId,
+  gallery,
+  onReplaceLead,
+  onReplaceGallery,
+}: {
+  productId: string;
+  /** Current draft gallery, so a replace edits what will be SAVED, not what is stored. */
+  gallery?: readonly string[];
+  onReplaceLead?: (url: string) => void;
+  onReplaceGallery?: (next: string[]) => void;
+}) {
   /*
    * One state object carrying the id it belongs to, rather than separate
    * data / error / loading flags.
@@ -87,6 +98,67 @@ export function PdpImagesPreview({ productId }: { productId: string }) {
   const error = current.error;
   const loading = !data && !error;
 
+  const [busy, setBusy] = useState<string | null>(null);
+
+  /**
+   * Replace one slide in place.
+   *
+   * The upload normalises to the gallery's square canvas server-side, so the
+   * replacement lands at the same size as everything around it whatever the
+   * operator picked off their phone.
+   *
+   * The swap is applied to the DRAFT, not written straight through: a replace
+   * is part of the edit the operator is already making, and it must be
+   * discardable with Cancel like every other change in this modal.
+   */
+  async function replace(slide: Slide, file: File) {
+    const canEdit = slide.source === "lead" ? onReplaceLead : onReplaceGallery;
+    if (!canEdit) return;
+    setBusy(slide.src);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/inventory/upload", { method: "POST", body });
+      const json = (await res.json()) as { ok: boolean; url?: string };
+      if (!json.ok || !json.url) return;
+
+      /*
+       * Reflect it here immediately. This panel reads its list from the server,
+       * which still holds the old image until the modal is saved — without this
+       * the operator uploads a photo and watches the old one stay put.
+       */
+      const fresh = json.url;
+      setState((prev) =>
+        prev.data
+          ? {
+              ...prev,
+              data: {
+                ...prev.data,
+                slides: prev.data.slides.map((x) => (x.src === slide.src ? { ...x, src: fresh } : x)),
+              },
+            }
+          : prev,
+      );
+
+      if (slide.source === "lead") {
+        onReplaceLead?.(json.url);
+      } else {
+        const next = [...(gallery ?? [])];
+        const at = next.indexOf(slide.src);
+        if (at >= 0) next[at] = json.url;
+        else next.push(json.url);
+        onReplaceGallery?.(next);
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Editable here only when the parent gave us a setter for that source. */
+  const canReplace = (s: Slide) =>
+    (s.source === "lead" && Boolean(onReplaceLead)) ||
+    (s.source === "operator" && Boolean(onReplaceGallery));
+
   if (!productId) return null;
 
   return (
@@ -125,9 +197,13 @@ export function PdpImagesPreview({ productId }: { productId: string }) {
             return (
               <li key={`${s.src}-${i}`} className="min-w-0">
                 <div
-                  title={`${s.label} — ${copy.hint}`}
+                  title={
+                    canReplace(s)
+                      ? `${s.label} — click to replace. Uploads are resized to the gallery's square canvas.`
+                      : `${s.label} — ${copy.hint}`
+                  }
                   className={cn(
-                    "relative aspect-square overflow-hidden rounded-xl border bg-ng-paper",
+                    "group relative aspect-square overflow-hidden rounded-xl border bg-ng-paper",
                     s.duplicateOf ? "border-ng-amber ring-1 ring-ng-amber/40" : "border-ng-line-soft",
                   )}
                 >
@@ -139,6 +215,35 @@ export function PdpImagesPreview({ productId }: { productId: string }) {
                     <span className="absolute right-1 top-1 rounded-full bg-ng-forest-deep/70 p-1 text-ng-paper">
                       <Icon name="lock-keyhole-minimalistic-bold" size={10} />
                     </span>
+                  ) : null}
+
+                  {canReplace(s) ? (
+                    <label
+                      className={cn(
+                        "absolute inset-0 grid cursor-pointer place-items-center bg-ng-forest-deep/70 text-ng-paper transition-opacity",
+                        busy === s.src ? "opacity-100" : "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
+                      )}
+                    >
+                      <span className="flex flex-col items-center gap-1 text-[10px] font-semibold">
+                        <Icon
+                          name={busy === s.src ? "refresh-bold" : "gallery-add-bold"}
+                          size={16}
+                          className={busy === s.src ? "animate-spin" : undefined}
+                        />
+                        {busy === s.src ? "Uploading…" : "Replace"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        disabled={busy !== null}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void replace(s, f);
+                        }}
+                      />
+                    </label>
                   ) : null}
                 </div>
                 <span
