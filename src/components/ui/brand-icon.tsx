@@ -2,6 +2,8 @@ import {
   BadgeCheck,
   FlaskConical,
   Footprints,
+  KeyRound,
+  Lock,
   MapPin,
   Sprout,
   Tractor,
@@ -55,6 +57,15 @@ const ICONS = {
    * mechanism, not the promise.
    */
   traceable: Footprints,
+  /*
+   * The operator sign-in set. `profile` was already here for the shopper's
+   * account; these two join it so the whole admin auth flow — the passcode
+   * step, the reset link, the authenticator prompt — draws from one family
+   * instead of Solar's shield-keyhole in some places and lock-password in
+   * others.
+   */
+  lock: Lock,
+  key: KeyRound,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;

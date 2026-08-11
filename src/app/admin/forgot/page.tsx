@@ -7,6 +7,7 @@ import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 
 /**
  * /admin/forgot — operator password recovery.
@@ -97,7 +98,7 @@ export default function AdminForgotPage() {
 
         <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
           <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
-            <Icon name="shield-keyhole-bold" size={14} />
+            <BrandIcon name="lock" weight="solid" size={14} />
             Admin · v0.4.1
           </div>
           <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
@@ -130,7 +131,7 @@ export default function AdminForgotPage() {
         ))}
         <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
           <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
-            <Icon name="key-minimalistic-bold" size={24} />
+            <BrandIcon name="key" weight="solid" size={24} />
           </div>
 
           <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">

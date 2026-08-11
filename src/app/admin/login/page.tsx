@@ -19,6 +19,7 @@ import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { OtpInput } from "@/components/ng/otp-input";
 import { Icon } from "@/components/ui/icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 
 type Method = "passcode" | "phone";
 
@@ -789,7 +790,7 @@ function LoginForm() {
 
           <div className="relative z-10 hidden max-w-sm rounded-3xl bg-ng-paper/75 p-7 shadow-[0_12px_36px_rgba(20,51,31,0.14)] backdrop-blur-md lg:block">
             <div className="inline-flex items-center gap-2 rounded-full bg-ng-forest/10 px-3 py-1.5 text-[11px] uppercase tracking-wider font-mono font-semibold text-ng-forest">
-              <Icon name="shield-keyhole-bold" size={14} />
+              <BrandIcon name="lock" weight="solid" size={14} />
               Admin · v0.4.1
             </div>
             <h2 className="font-display text-[34px] leading-tight text-ng-forest-deep mt-5">
@@ -822,7 +823,7 @@ function LoginForm() {
           ))}
           <div className="login-card relative z-10 w-full max-w-sm rounded-3xl p-7 sm:p-8">
             <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
-              <Icon name="lock-keyhole-bold" size={24} />
+              <BrandIcon name="lock" weight="solid" size={24} />
             </div>
 
             <h1 className="font-display text-[28px] text-ng-forest-deep leading-tight">
@@ -977,7 +978,7 @@ function LoginForm() {
                       </div>
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <Icon name="shield-keyhole-bold" size={18} />
+                          <BrandIcon name="lock" weight="solid" size={18} />
                           {submitting ? "Verifying…" : "Verify & sign in"}
                         </Button>
                       </SpringPress>
@@ -1092,7 +1093,7 @@ function LoginForm() {
 
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <Icon name="shield-keyhole-bold" size={18} />
+                          <BrandIcon name="lock" weight="solid" size={18} />
                           {submitting ? "Signing in…" : "Sign in to Admin"}
                         </Button>
                       </SpringPress>
@@ -1148,7 +1149,7 @@ function LoginForm() {
                       </div>
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <Icon name="shield-keyhole-bold" size={18} />
+                          <BrandIcon name="lock" weight="solid" size={18} />
                           {submitting ? "Verifying…" : "Verify & sign in"}
                         </Button>
                       </SpringPress>
@@ -1183,7 +1184,7 @@ function LoginForm() {
             <div id="admin-recaptcha" />
 
             <div className="mt-6 flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted font-mono">
-              <Icon name="shield-keyhole-bold" size={13} />
+              <BrandIcon name="lock" weight="solid" size={13} />
               Authorised operators only
             </div>
           </div>
