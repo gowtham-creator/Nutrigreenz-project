@@ -1,23 +1,23 @@
-import { Icon } from "@/components/ui/icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 
-const PILLARS = [
+const PILLARS: { app: BrandIconName; title: string; note: string }[] = [
   {
-    icon: "shield-check-bold",
+    app: "verified",
     title: "FSSAI certified",
     note: "Lic. 10024051000987",
   },
   {
-    icon: "test-tube-bold",
+    app: "lab",
     title: "Lab-tested every lot",
     note: "Purity report per batch",
   },
   {
-    icon: "qr-code-bold",
+    app: "traceable",
     title: "Lot-traceable",
     note: "Scan back to the farm",
   },
   {
-    icon: "delivery-bold",
+    app: "shipping",
     title: "Free delivery ₹599+",
     note: "Cold-chain where needed",
   },
@@ -37,7 +37,7 @@ export function ShopTrustStrip() {
             className="group flex items-center gap-3 py-5 md:gap-3.5"
           >
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-cream text-ng-forest ring-1 ring-ng-line-soft transition-colors duration-300 group-hover:bg-ng-leaf/15 group-hover:text-ng-forest-deep">
-              <Icon name={p.icon} size={20} className="text-ng-clay" />
+              <BrandIcon name={p.app} weight="solid" size={20} className="text-ng-clay" />
             </span>
             <div className="min-w-0">
               <p className="text-[13.5px] font-semibold leading-tight text-ng-forest-deep">

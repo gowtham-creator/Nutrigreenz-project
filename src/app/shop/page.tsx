@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Icon } from "@/components/ui/icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
@@ -46,17 +47,21 @@ export default async function ShopPage() {
 
         {/* At-a-glance proof chips */}
         <dl className="mt-8 flex flex-wrap gap-2.5">
-          {[
+          {([
             { icon: "star-bold", label: `${avgRating} avg rating` },
-            { icon: "test-tube-bold", label: "Lab-tested every lot" },
-            { icon: "map-point-wave-bold", label: "Traceable to the farm" },
-            { icon: "delivery-bold", label: "Free delivery over ₹599" },
-          ].map((s) => (
+            { app: "lab" as const, label: "Lab-tested every lot" },
+            { app: "traceable" as const, label: "Traceable to the farm" },
+            { app: "shipping" as const, label: "Free delivery over ₹599" },
+          ] as ({ label: string } & ({ app: BrandIconName } | { icon: string }))[]).map((s) => (
             <div
               key={s.label}
               className="inline-flex items-center gap-2 rounded-full border border-ng-line-soft bg-ng-paper/70 px-3.5 py-1.5 text-[12px] font-medium text-ng-forest backdrop-blur-sm"
             >
-              <Icon name={s.icon} size={14} className="text-ng-clay" />
+              {"app" in s ? (
+                <BrandIcon name={s.app} size={14} weight="solid" className="text-ng-clay" />
+              ) : (
+                <Icon name={s.icon} size={14} className="text-ng-clay" />
+              )}
               {s.label}
             </div>
           ))}

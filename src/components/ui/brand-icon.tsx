@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   FlaskConical,
+  Footprints,
   MapPin,
   Sprout,
   Tractor,
@@ -48,6 +49,12 @@ const ICONS = {
    * with the surrounding text like every other icon in the row.
    */
   verified: BadgeCheck,
+  /*
+   * Traceability, as footprints — a trail back to the farm rather than the QR
+   * square that stood here before. The QR read as "scan me", which is a
+   * mechanism, not the promise.
+   */
+  traceable: Footprints,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;
