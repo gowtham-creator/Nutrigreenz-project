@@ -189,12 +189,20 @@ export function ProductListing({
             <Chip active={activeChip === null} onClick={() => selectChip(null)}>
               All
             </Chip>
+            {/*
+              These navigate rather than filter in place.
+              The tag IS the category slug, so each chip has a real page behind
+              it — with its own hero photograph, blurb and metadata. Filtering
+              here swapped the grid but left the pantry hero sitting above
+              honey, which is why the page looked stuck. Going to the route
+              changes the whole page, and it is the indexable URL besides.
+            */}
             {categoryTags.map(({ tag, label, image, iconName }) =>
               (tagCounts[tag] ?? 0) > 0 ? (
                 <Chip
                   key={tag}
+                  href={`/shop/${tag}`}
                   active={activeChip === tag}
-                  onClick={() => selectChip(tag)}
                   icon={
                     image ? (
                       // eslint-disable-next-line @next/next/no-img-element
