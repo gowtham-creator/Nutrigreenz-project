@@ -48,7 +48,12 @@ export type AppIconName =
   | "sesame"
   | "olive"
   | "mustard"
-  | "coconut";
+  | "coconut"
+  /* Interface marks that no vector set carries in the form we want: a cart with
+     the arrow dropping in, and a solid envelope. */
+  | "cart-add"
+  | "email"
+  | "message";
 
 interface AppIconProps {
   name: AppIconName;

@@ -7,6 +7,7 @@ import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 
 /**
@@ -149,12 +150,12 @@ export default function AdminForgotPage() {
               placeholder="you@nutrigreenz.farm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              prefix={<Icon name="letter-bold" size={18} />}
+              prefix={<AppIcon name="email" size={18} />}
               error={error ?? undefined}
             />
 
             <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-              <Icon name="letter-bold" size={18} />
+              <AppIcon name="email" size={18} />
               {submitting ? "Sending…" : "Send reset link"}
             </Button>
           </form>

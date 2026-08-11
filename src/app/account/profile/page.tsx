@@ -7,6 +7,7 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Input } from "@/components/ng/input";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -291,7 +292,7 @@ export default function ProfilePage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              prefix={<Icon name="letter-linear" size={18} />}
+              prefix={<AppIcon name="email" size={18} />}
             />
 
             {/* Phone — verified, read-only OTP identity */}

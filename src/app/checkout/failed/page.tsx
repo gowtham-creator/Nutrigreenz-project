@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { FloatIn, Reveal } from "@/components/ng/motion";
 
 /**
@@ -117,7 +118,7 @@ function FailedContent() {
                 ) : null}
                 <Button asChild variant="secondary" size="lg">
                   <Link href="/contact">
-                    <Icon name="chat-round-line-bold" size={18} />
+                    <AppIcon name="message" size={18} />
                     Contact support
                   </Link>
                 </Button>

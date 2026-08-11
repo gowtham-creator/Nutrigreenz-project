@@ -4,6 +4,7 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 
 export const metadata: Metadata = {
   title: "Bulk & corporate — Nutri Greenz",
@@ -57,7 +58,7 @@ export default function WholesalePage() {
           href="mailto:wholesale@nutrigreenz.farm?subject=Bulk%20%26%20corporate%20enquiry"
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-ng-clay text-ng-soil font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep hover:text-ng-paper transition-colors"
         >
-          <Icon name="letter-bold" size={17} />
+          <AppIcon name="email" size={17} />
           Request a quote
         </a>
       </PageHero>

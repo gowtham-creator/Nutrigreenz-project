@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
-import { CartIcon } from "@/components/ng/cart-icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import type { ProductCard } from "@/types/nutrigreenz";
@@ -137,17 +137,17 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
         </p>
         {variantOut ? (
           <Button disabled variant="secondary" size="md">
-            <CartIcon size={16} tone="dark" />
+            <AppIcon name="cart-add" size={16} />
             Out of stock
           </Button>
         ) : (
           <>
             <Button onClick={add} variant="secondary" size="md" className="cursor-pointer hidden sm:inline-flex">
-              <CartIcon size={16} tone="dark" />
+              <AppIcon name="cart-add" size={16} />
               Add to cart
             </Button>
             <Button onClick={add} variant="secondary" size="icon" aria-label="Add to cart" className="cursor-pointer sm:hidden">
-              <CartIcon size={18} tone="dark" />
+              <AppIcon name="cart-add" size={18} />
             </Button>
             <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
               <Icon name="bolt-bold" size={16} />

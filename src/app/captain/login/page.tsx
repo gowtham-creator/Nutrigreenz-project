@@ -15,6 +15,7 @@ import { clearCaptainCache } from "@/components/ng/captain/captain-store";
 import { Logo } from "@/components/ng/logo";
 import { OtpInput } from "@/components/ng/otp-input";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 
 const NOT_CONFIGURED =
   "Phone sign-in isn't configured yet — add your Firebase keys to .env.local.";
@@ -328,7 +329,7 @@ function CaptainLoginForm() {
               </label>
               {error ? <p className="text-[11.5px] text-ng-danger">{error}</p> : null}
               <button type="submit" disabled={submitting || (!msg91 && !isFirebaseConfigured)} className={leafCta}>
-                <Icon name="chat-round-dots-bold" size={18} />
+                <AppIcon name="message" size={18} />
                 {submitting ? "Sending…" : "Send OTP"}
               </button>
             </form>

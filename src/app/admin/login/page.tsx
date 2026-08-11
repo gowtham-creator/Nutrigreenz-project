@@ -19,6 +19,7 @@ import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { OtpInput } from "@/components/ng/otp-input";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 
 type Method = "passcode" | "phone";
@@ -937,7 +938,7 @@ function LoginForm() {
                       </div>
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <Icon name="letter-bold" size={18} />
+                          <AppIcon name="email" size={18} />
                           {submitting ? "Verifying…" : "Verify & sign in"}
                         </Button>
                       </SpringPress>
@@ -1055,7 +1056,7 @@ function LoginForm() {
                           placeholder="you@nutrigreenz.farm"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          prefix={<Icon name="letter-bold" size={18} />}
+                          prefix={<AppIcon name="email" size={18} />}
                           error={error ?? undefined}
                         />
                       </TactileField>
@@ -1129,7 +1130,7 @@ function LoginForm() {
                       </TactileField>
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <Icon name="chat-round-dots-bold" size={18} />
+                          <AppIcon name="message" size={18} />
                           {submitting ? "Sending…" : "Send OTP"}
                         </Button>
                       </SpringPress>

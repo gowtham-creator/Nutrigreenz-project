@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 
 /**
  * /referral — the customer's real Refer & Earn standing.
@@ -205,14 +206,14 @@ export default function ReferralPage() {
                   aria-disabled={!link}
                   className="inline-flex items-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-leaf/90 transition-colors"
                 >
-                  <Icon name="chat-round-line-bold" size={15} />
+                  <AppIcon name="message" size={15} />
                   WhatsApp
                 </a>
                 <a
                   href={`mailto:?subject=${encodeURIComponent("Try Nutri Greenz")}&body=${encodeURIComponent(shareText)}`}
                   className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-clay/25 transition-colors"
                 >
-                  <Icon name="letter-bold" size={15} />
+                  <AppIcon name="email" size={15} />
                   Email
                 </a>
                 <a

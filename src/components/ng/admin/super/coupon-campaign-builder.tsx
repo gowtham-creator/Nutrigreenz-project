@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { SectionHeader } from "@/components/ng/admin/super/command-center";
 import {
@@ -699,7 +700,7 @@ export function CouponCampaignBuilder() {
           {/* ---- Send the campaign ---------------------------------------- */}
           <div className="mt-5 pt-5 border-t border-ng-clay/20">
             <div className="flex items-center gap-2 mb-3">
-              <Icon name="chat-round-line-bold" size={15} className="text-ng-clay-deep" />
+              <AppIcon name="message" size={15} className="text-ng-clay-deep" />
               <span className="text-[12.5px] font-semibold text-ng-ink-muted">Send campaign</span>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 items-start">
