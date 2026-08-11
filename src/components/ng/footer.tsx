@@ -78,10 +78,14 @@ export function Footer() {
       */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[62%] select-none"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[78%] select-none"
         style={{
-          maskImage: "linear-gradient(180deg, transparent 0%, black 42%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, black 42%)",
+          /* A short fade at the very top only. The previous ramp ran to 42% of
+             the layer, which meant the photograph did not reach full strength
+             until well below the horizon — combined with the scrim over it,
+             nothing was visible at all. */
+          maskImage: "linear-gradient(180deg, transparent 0%, black 18%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, black 18%)",
         }}
       >
         <Image
@@ -94,15 +98,16 @@ export function Footer() {
         />
       </div>
 
-      {/* readability scrim — a gentle vertical wash from the link-column band
-          down through the legal bar, keeping the cream text crisp over the now
-          much taller, denser scene without dimming the illustration itself */}
+      {/* Readability scrim.
+          Sits ONLY behind the link columns at the top. It was widened to
+          inset-0 to strengthen contrast, which put a wash over the entire
+          footer — photograph included — and erased the image completely. */}
       <div
         aria-hidden
-        className="absolute inset-0 z-0 pointer-events-none"
+        className="absolute inset-x-0 top-0 z-0 h-[46%] pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(10,31,18,0.55) 0%, rgba(10,31,18,0.40) 30%, rgba(10,31,18,0.30) 62%, rgba(10,31,18,0.55) 100%)",
+            "linear-gradient(180deg, rgba(10,31,18,0.62) 0%, rgba(10,31,18,0.45) 55%, transparent 100%)",
         }}
       />
 
