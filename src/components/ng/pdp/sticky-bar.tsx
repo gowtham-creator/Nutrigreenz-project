@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -78,7 +79,22 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
     router.push("/checkout");
   };
 
-  return (
+  /*
+   * Portaled to <body>.
+   *
+   * `position: fixed` only resolves against the viewport when no ancestor
+   * establishes a containing block, and both `transform` and
+   * `will-change: transform` do. This page is built from framer-motion
+   * sections — a couple of hundred transforms and a dozen will-change hints —
+   * so the bar was being positioned against whichever animated wrapper
+   * happened to enclose it, which is why it never appeared where it should.
+   *
+   * Rendering into <body> puts it outside all of them, so inset-x-0 bottom-0
+   * means the screen again.
+   */
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 border-t border-ng-line-soft bg-ng-paper/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -119,6 +135,7 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
