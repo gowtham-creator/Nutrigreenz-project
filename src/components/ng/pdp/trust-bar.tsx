@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/ui/icon";
-import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 import { useCommerceRules } from "@/lib/commerce";
 
 interface TrustBarProps {
@@ -25,14 +25,13 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
   const freeOver = `₹${freeDeliveryThreshold.toLocaleString("en-IN")}`;
 
   /*
-   * Only the lab flask is swapped for an imported glyph here.
+   * Only the lab flask comes from Lucide here, and at the lighter stroke.
    *
-   * This row is deliberately linear, and of the icons imported only the lab one
-   * is an outline. The shipping glyph is a filled block carrying its own "FREE"
-   * lettering — it earns its place in the solid TrustRow, but dropped in here it
-   * would be the one heavy shape in a row of thin strokes.
+   * This row is deliberately thin-stroke; the delivery van stays a Solar linear
+   * glyph because swapping it would gain nothing and Solar already draws it in
+   * the same weight as its neighbours.
    */
-  const items: ({ label: string; sub: string } & ({ app: AppIconName } | { icon: string }))[] = [
+  const items: ({ label: string; sub: string } & ({ app: BrandIconName } | { icon: string }))[] = [
     { icon: "delivery-linear", label: "Free shipping", sub: `On orders over ${freeOver}` },
     { icon: "headphones-round-sound-linear", label: "360° customer support", sub: "Real people, here to help" },
     { app: "lab", label: `${checks}+ quality checks`, sub: "On every single lot" },
@@ -44,7 +43,7 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
       {items.map((t) => (
         <li key={t.label} className="flex flex-col items-center gap-2 px-1 text-center">
           <span className="grid h-11 w-11 place-items-center rounded-full bg-ng-sage/25 text-ng-forest">
-            {"app" in t ? <AppIcon name={t.app} size={22} /> : <Icon name={t.icon} size={22} />}
+            {"app" in t ? <BrandIcon name={t.app} size={22} weight="line" /> : <Icon name={t.icon} size={22} />}
           </span>
           <span className="text-[13px] font-semibold text-ng-forest-deep">{t.label}</span>
           <span className="text-[11px] leading-snug text-ng-ink-muted">{t.sub}</span>

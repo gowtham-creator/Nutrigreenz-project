@@ -1,5 +1,5 @@
 import { Icon } from "@/components/ui/icon";
-import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 
 /**
  * Certifications — text + icon badges, and deliberately no certification LOGOS.
@@ -10,7 +10,7 @@ import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
  * borrowing artwork we have no licence to reproduce.
  */
 export function Certifications() {
-  const certs: ({ label: string; sub: string } & ({ app: AppIconName } | { icon: string }))[] = [
+  const certs: ({ label: string; sub: string } & ({ app: BrandIconName } | { icon: string }))[] = [
     /*
      * FSSAI stays a text badge, deliberately.
      *
@@ -34,7 +34,7 @@ export function Certifications() {
           className="flex min-w-[110px] flex-1 items-center gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper px-4 py-3 sm:max-w-[180px]"
         >
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-leaf">
-            {"app" in c ? <AppIcon name={c.app} size={20} /> : <Icon name={c.icon} size={20} />}
+            {"app" in c ? <BrandIcon name={c.app} size={20} weight="solid" /> : <Icon name={c.icon} size={20} />}
           </span>
           <span className="flex flex-col">
             <span className="text-[13px] font-semibold text-ng-forest-deep">{c.label}</span>

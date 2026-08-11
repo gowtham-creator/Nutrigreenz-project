@@ -30,22 +30,18 @@ import { cn } from "@/lib/utils";
  */
 
 /**
- * The imported single-colour glyphs. Filenames live under `public/icons/app/`.
+ * The imported PRODUCT glyphs. Files live under `public/icons/app/`.
  *
- * Only mono glyphs belong here. The colour marks alongside them —
- * `fresh-colour`, `honey-colour`, `oil-colour` — are full illustrations and
- * would be flattened to a silhouette by the mask, so they need a real <Image>
- * when something actually uses them.
+ * Only these two remain. Everything generic — lab, shipping, location, profile,
+ * freshness, farm — moved to Lucide, which ships real SVG that scales past the
+ * ~48px these PNGs top out at and needs no attribution. What no general library
+ * carries is a honey jar or a cold-pressed oil bottle, so those stay here.
+ *
+ * `honey-colour` and `oil-colour` sit alongside as full illustrations. A mask
+ * would flatten them to a silhouette, so anything using them needs a real
+ * <Image>.
  */
-export type AppIconName =
-  | "location"
-  | "profile"
-  | "fresh"
-  | "lab"
-  | "shipping-free"
-  | "honey"
-  | "farm"
-  | "oil";
+export type AppIconName = "honey" | "oil";
 
 interface AppIconProps {
   name: AppIconName;

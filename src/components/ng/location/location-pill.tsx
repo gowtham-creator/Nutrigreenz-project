@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
-import { AppIcon } from "@/components/ui/app-icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { useLocation } from "@/lib/location";
 import { fetchServiceable } from "@/lib/serviceability";
 import { cn } from "@/lib/utils";
@@ -66,7 +66,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
           )}
         >
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
-            <AppIcon name="location" size={15} />
+            <BrandIcon name="location" size={15} weight="solid" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">
@@ -103,7 +103,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
         )}
       >
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
-            <AppIcon name="location" size={15} />
+            <BrandIcon name="location" size={15} weight="solid" />
           </span>
         <span className="flex min-w-0 flex-col leading-tight">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft">

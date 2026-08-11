@@ -1,5 +1,5 @@
 import { Icon } from "@/components/ui/icon";
-import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 
 interface TrustRowProps {
   checks: number;
@@ -11,13 +11,12 @@ interface TrustRowProps {
  */
 export function TrustRow({ checks }: TrustRowProps) {
   /*
-   * `app` names come from the imported Icons8 glyphs, `icon` from Solar. Both
-   * paint with currentColor, so the row stays one visual system — the shipping
-   * glyph carries its own "FREE" lettering, which says the offer better than a
-   * generic van, and the lab flask reads as testing rather than chemistry.
+   * `app` names are Lucide, `icon` are Solar. Both draw in currentColor, so the
+   * row stays one visual system; the Lucide pair carry a heavier stroke to sit
+   * level with the filled Solar glyphs beside them.
    */
-  const items: ({ label: string; sub: string } & ({ app: AppIconName } | { icon: string }))[] = [
-    { app: "shipping-free", label: "Free shipping", sub: "On orders over ₹599" },
+  const items: ({ label: string; sub: string } & ({ app: BrandIconName } | { icon: string }))[] = [
+    { app: "shipping", label: "Free shipping", sub: "On orders over ₹599" },
     { icon: "headphones-round-sound-bold", label: "Customer support", sub: "We reply within a day" },
     { icon: "box-bold", label: "Damage replacements", sub: "Damaged or incorrect items only" },
     { app: "lab", label: `${checks}+ quality checks`, sub: "On every single lot" },
@@ -31,7 +30,7 @@ export function TrustRow({ checks }: TrustRowProps) {
         >
           <span className="grid h-11 w-11 place-items-center rounded-full bg-ng-sage/50 text-ng-leaf">
             {"app" in t ? (
-              <AppIcon name={t.app} size={22} />
+              <BrandIcon name={t.app} size={22} weight="solid" />
             ) : (
               <Icon name={t.icon} size={22} />
             )}

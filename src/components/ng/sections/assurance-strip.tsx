@@ -1,5 +1,5 @@
 import { Icon } from "@/components/ui/icon";
-import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 import { Reveal } from "../motion";
 
 /**
@@ -19,7 +19,7 @@ import { Reveal } from "../motion";
 
 const POINTS = [
   {
-    app: "fresh" as AppIconName,
+    app: "fresh" as BrandIconName,
     tint: "text-ng-forest-soft",
     bg: "bg-ng-leaf/18",
     ring: "ring-ng-leaf/30",
@@ -27,7 +27,7 @@ const POINTS = [
     sub: "Pressed within 7 days of dispatch",
   },
   {
-    app: "lab" as AppIconName,
+    app: "lab" as BrandIconName,
     tint: "text-ng-forest",
     bg: "bg-ng-forest/[0.08]",
     ring: "ring-ng-forest/15",
@@ -35,7 +35,7 @@ const POINTS = [
     sub: "Every lot — zero adulterants",
   },
   {
-    app: "shipping-free" as AppIconName,
+    app: "shipping" as BrandIconName,
     tint: "text-ng-clay-deep",
     bg: "bg-ng-clay/16",
     ring: "ring-ng-clay/25",
@@ -87,7 +87,7 @@ export function AssuranceStrip() {
                 <span
                   className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1 ring-inset ${p.bg} ${p.tint} ${p.ring}`}
                 >
-                  {"app" in p ? <AppIcon name={p.app} size={24} /> : <Icon name={p.icon} size={24} />}
+                  {"app" in p ? <BrandIcon name={p.app} size={24} weight="solid" /> : <Icon name={p.icon} size={24} />}
                 </span>
                 <div className="min-w-0">
                   <div className="font-display text-[15px] font-semibold leading-tight text-ng-forest-deep md:text-[16px]">
