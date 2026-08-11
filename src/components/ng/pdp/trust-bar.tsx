@@ -35,7 +35,7 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
     { icon: "delivery-linear", label: "Free shipping", sub: `On orders over ${freeOver}` },
     { icon: "headphones-round-sound-linear", label: "360° customer support", sub: "Real people, here to help" },
     { app: "lab", label: `${checks}+ quality checks`, sub: "On every single lot" },
-    { icon: "verified-check-linear", label: "100% authentic", sub: "Farm-fresh, never adulterated" },
+    { app: "verified", label: "100% authentic", sub: "Farm-fresh, never adulterated" },
   ];
 
   return (

@@ -1,4 +1,3 @@
-import { Icon } from "@/components/ui/icon";
 import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 import { Reveal } from "../motion";
 
@@ -48,7 +47,7 @@ const POINTS = [
      * and the real mark may only be shown beside the 14-digit licence number,
      * which is still a placeholder in the pack artwork.
      */
-    icon: "verified-check-bold",
+    app: "verified" as BrandIconName,
     tint: "text-ng-green-bright",
     bg: "bg-ng-green-bright/14",
     ring: "ring-ng-green-bright/28",
@@ -87,7 +86,7 @@ export function AssuranceStrip() {
                 <span
                   className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1 ring-inset ${p.bg} ${p.tint} ${p.ring}`}
                 >
-                  {"app" in p ? <BrandIcon name={p.app} size={24} weight="solid" /> : <Icon name={p.icon} size={24} />}
+                  <BrandIcon name={p.app} size={24} weight="solid" />
                 </span>
                 <div className="min-w-0">
                   <div className="font-display text-[15px] font-semibold leading-tight text-ng-forest-deep md:text-[16px]">

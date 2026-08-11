@@ -16,9 +16,20 @@ import { cn } from "@/lib/utils";
  * flattened to a mono glyph first; masked in its original form the disc counts
  * as ink and the icon collapses into a filled circle.
  */
-const IMPORTED: Partial<Record<keyof typeof PRODUCE_ICON_DATA, AppIconName>> = {
+const IMPORTED: Record<string, AppIconName> = {
   honey: "honey",
   oil: "oil",
+  /*
+   * The individual oils. "Know your oil" used to label sesame with a seedling,
+   * coconut with a leaf and mustard with a grain — generic produce shapes
+   * standing in for four products that look nothing alike. A comparison table
+   * whose whole job is telling them apart should not draw them the same.
+   */
+  groundnut: "groundnut",
+  sesame: "sesame",
+  olive: "olive",
+  mustard: "mustard",
+  coconut: "coconut",
 };
 
 /**
@@ -38,13 +49,13 @@ function ProduceGlyph({
   iconKey,
   className,
   size = 32,
-}: IconProps & { iconKey: keyof typeof PRODUCE_ICON_DATA }) {
+}: IconProps & { iconKey: string }) {
   const imported = IMPORTED[iconKey];
   if (imported) {
     return <AppIcon name={imported} size={size} className={cn("inline-block shrink-0", className)} />;
   }
 
-  const data = PRODUCE_ICON_DATA[iconKey] ?? PRODUCE_ICON_DATA.leaf;
+  const data = PRODUCE_ICON_DATA[iconKey as keyof typeof PRODUCE_ICON_DATA] ?? PRODUCE_ICON_DATA.leaf;
   return (
     <svg
       width={size}
@@ -72,6 +83,12 @@ export const GiftIcon = (p: IconProps) => <ProduceGlyph iconKey="gift" {...p} />
 export const FlourIcon = (p: IconProps) => <ProduceGlyph iconKey="flour" {...p} />;
 export const NutsIcon = (p: IconProps) => <ProduceGlyph iconKey="nuts" {...p} />;
 
+export const GroundnutIcon = (p: IconProps) => <ProduceGlyph iconKey="groundnut" {...p} />;
+export const SesameIcon = (p: IconProps) => <ProduceGlyph iconKey="sesame" {...p} />;
+export const OliveIcon = (p: IconProps) => <ProduceGlyph iconKey="olive" {...p} />;
+export const MustardIcon = (p: IconProps) => <ProduceGlyph iconKey="mustard" {...p} />;
+export const CoconutIcon = (p: IconProps) => <ProduceGlyph iconKey="coconut" {...p} />;
+
 export const PRODUCE_ICONS = {
   leaf: LeafIcon,
   ghee: GheeIcon,
@@ -85,6 +102,11 @@ export const PRODUCE_ICONS = {
   gift: GiftIcon,
   flour: FlourIcon,
   nuts: NutsIcon,
+  groundnut: GroundnutIcon,
+  sesame: SesameIcon,
+  olive: OliveIcon,
+  mustard: MustardIcon,
+  coconut: CoconutIcon,
 } as const;
 
 export type ProduceIconName = keyof typeof PRODUCE_ICONS;

@@ -41,7 +41,14 @@ import { cn } from "@/lib/utils";
  * would flatten them to a silhouette, so anything using them needs a real
  * <Image>.
  */
-export type AppIconName = "honey" | "oil";
+export type AppIconName =
+  | "honey"
+  | "oil"
+  | "groundnut"
+  | "sesame"
+  | "olive"
+  | "mustard"
+  | "coconut";
 
 interface AppIconProps {
   name: AppIconName;

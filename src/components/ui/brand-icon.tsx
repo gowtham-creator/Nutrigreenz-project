@@ -1,4 +1,5 @@
 import {
+  BadgeCheck,
   FlaskConical,
   MapPin,
   Sprout,
@@ -40,6 +41,13 @@ const ICONS = {
   fresh: Sprout,
   profile: User,
   farm: Tractor,
+  /*
+   * The scalloped verification badge. Supplied as a 60px PNG, which would have
+   * gone soft anywhere it is shown large and needed masking to take a colour at
+   * all — this is the same mark as real vector, so it stays sharp and tints
+   * with the surrounding text like every other icon in the row.
+   */
+  verified: BadgeCheck,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;
