@@ -4,6 +4,9 @@ import {
   Footprints,
   KeyRound,
   Lock,
+  LogIn,
+  LogOut,
+  Store,
   MapPin,
   Sprout,
   Tractor,
@@ -66,6 +69,14 @@ const ICONS = {
    */
   lock: Lock,
   key: KeyRound,
+  /*
+   * Storefront and session marks. Solar spelled these three different ways
+   * across the portal — shop-bold, shop-2-bold, logout-3-bold, logout-2-linear
+   * — so the same action changed shape depending on which screen you were on.
+   */
+  store: Store,
+  signOut: LogOut,
+  signIn: LogIn,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
 import { DEFAULT_ADMIN_PERMISSIONS, type PermissionKey } from "@/lib/admin-permissions";
@@ -177,7 +178,7 @@ function AdminIdentity() {
             href="/"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
           >
-            <Icon name="shop-2-bold" size={16} className="text-ng-ink-muted" />
+            <BrandIcon name="store" weight="solid" size={16} className="text-ng-ink-muted" />
             View store
           </Link>
           <button
@@ -186,7 +187,7 @@ function AdminIdentity() {
             onClick={handleSignOut}
             className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors"
           >
-            <Icon name="logout-3-bold" size={16} />
+            <BrandIcon name="signOut" weight="solid" size={16} />
             Sign out
           </button>
         </div>

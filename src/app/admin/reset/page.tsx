@@ -156,7 +156,7 @@ export default function AdminResetPage() {
               </p>
               <Link href="/admin/login" className="mt-7 block">
                 <Button fullWidth>
-                  <Icon name="login-3-bold" size={18} />
+                  <BrandIcon name="signIn" weight="solid" size={18} />
                   Go to sign in
                 </Button>
               </Link>

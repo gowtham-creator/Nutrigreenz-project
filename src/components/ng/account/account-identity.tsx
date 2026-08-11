@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { useAuth } from "@/lib/auth";
 import { AccountAvatar } from "@/components/ng/account-avatar";
 
@@ -70,7 +71,7 @@ export function SignOutButton() {
       }}
       className="flex min-h-[44px] items-center gap-2.5 whitespace-nowrap rounded-xl px-4 py-3 text-left text-[14px] font-medium text-ng-danger transition-colors hover:bg-ng-danger/10 lg:mt-2"
     >
-      <Icon name="logout-2-linear" size={18} />
+      <BrandIcon name="signOut" weight="solid" size={18} />
       Sign out
     </button>
   );
