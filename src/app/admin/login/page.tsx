@@ -822,7 +822,7 @@ function LoginForm() {
             />
           ))}
           <div className="login-card relative z-10 w-full max-w-sm rounded-3xl p-7 sm:p-8">
-            <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
+            <div className="size-12 rounded-full bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
               <BrandIcon name="lock" weight="solid" size={24} />
             </div>
 

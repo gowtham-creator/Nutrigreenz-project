@@ -130,7 +130,7 @@ export default function AdminForgotPage() {
           />
         ))}
         <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
-          <div className="size-12 rounded-2xl bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
+          <div className="size-12 rounded-full bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <BrandIcon name="key" weight="solid" size={24} />
           </div>
 
