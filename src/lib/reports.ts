@@ -56,6 +56,21 @@ export interface CouponUsageEntry {
   discountPaise: number;
 }
 
+/**
+ * Visitor counts by place, for the report's audience map.
+ *
+ * Read from `visit_geo_daily`, which holds only day + country/region/city +
+ * a tally. There is no per-visitor row to join against, by design — the
+ * question this answers is "which places do people come from", not "where is
+ * this customer".
+ */
+export interface VisitorPlaceEntry {
+  country: string;
+  region: string;
+  city: string;
+  visits: number;
+}
+
 export interface AdminReport {
   range: ReportRange;
   revenuePaise: number;
@@ -69,6 +84,10 @@ export interface AdminReport {
   topProducts: TopProductEntry[];
   couponUsage: CouponUsageEntry[];
   newCustomers: number;
+  /** Top places by visits in the range; empty when nothing has been recorded. */
+  visitorPlaces: VisitorPlaceEntry[];
+  /** Every visit counted in the range, including places outside the top list. */
+  visitorTotal: number;
 }
 
 const PAYMENT_STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed"];
@@ -231,6 +250,35 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
   if (to) customerQuery = customerQuery.lte("created_at", to);
   const { count: newCustomers } = await customerQuery;
 
+  /*
+   * 3b. Where visitors came from.
+   *
+   * Queried on `day`, not a timestamp, because the table stores nothing finer —
+   * that coarseness is what keeps a row from ever describing one person. The
+   * range's from/to are ISO instants, so only their date part applies here; a
+   * half-day at either end counts whole.
+   */
+  let geoQuery = db
+    .from("visit_geo_daily")
+    .select("country, region, city, visits");
+  if (from) geoQuery = geoQuery.gte("day", from.slice(0, 10));
+  if (to) geoQuery = geoQuery.lte("day", to.slice(0, 10));
+  const { data: geoRows } = await geoQuery;
+
+  const placeMap = new Map<string, VisitorPlaceEntry>();
+  let visitorTotal = 0;
+  for (const r of (geoRows as VisitorPlaceEntry[] | null) ?? []) {
+    const key = `${r.country}|${r.region}|${r.city}`;
+    const prev = placeMap.get(key);
+    const visits = Number(r.visits) || 0;
+    visitorTotal += visits;
+    if (prev) prev.visits += visits;
+    else placeMap.set(key, { country: r.country, region: r.region, city: r.city, visits });
+  }
+  const visitorPlaces = Array.from(placeMap.values())
+    .sort((a, b) => b.visits - a.visits)
+    .slice(0, 25);
+
   // 4. Assemble the typed report (stable status ordering for the UI).
   const statusBreakdown: StatusBreakdownEntry[] = ORDER_STATUS_FLOW.map((status) => {
     const s = statusMap.get(status) ?? { orders: 0, revenuePaise: 0 };
@@ -258,5 +306,7 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
     topProducts,
     couponUsage,
     newCustomers: newCustomers ?? 0,
+    visitorPlaces,
+    visitorTotal,
   };
 }

@@ -33,6 +33,8 @@ function emptyReport(): AdminReport {
     topProducts: [],
     couponUsage: [],
     newCustomers: 0,
+  visitorPlaces: [],
+  visitorTotal: 0,
   };
 }
 

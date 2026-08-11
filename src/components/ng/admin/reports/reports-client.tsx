@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { VisitorPlaces } from "@/components/ng/admin/reports/visitor-places";
 import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
@@ -375,6 +376,14 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
               </div>
             )}
           </Card>
+
+          {/* Visitors by place. Sits outside the orders block on purpose: it is
+              recorded for everyone who browses, so it stays useful in a range
+              with no orders at all — which is exactly when knowing where the
+              interest came from matters most. */}
+          <div className="mt-6">
+            <VisitorPlaces places={report.visitorPlaces} total={report.visitorTotal} />
+          </div>
 
           <p className="text-[11.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             {hasOrders

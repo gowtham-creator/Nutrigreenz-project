@@ -31,6 +31,8 @@ function emptyReport(from: string | null, to: string | null): AdminReport {
     topProducts: [],
     couponUsage: [],
     newCustomers: 0,
+  visitorPlaces: [],
+  visitorTotal: 0,
   };
 }
 

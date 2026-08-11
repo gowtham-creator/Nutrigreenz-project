@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto_Slab, Lora, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { VisitBeacon } from "@/components/ng/visit-beacon";
 import { AuthProvider } from "@/lib/auth";
 import { LinkPhonePrompt } from "@/components/ng/account/link-phone-prompt";
 import { CommerceProvider } from "@/lib/commerce";
@@ -78,6 +79,10 @@ export default function RootLayout({
             <ngToast>, which draws its own branded surface, glyph and dismiss
             control. Leaving sonner's chrome on would paint a second frame
             around ours. */}
+        {/* Counts one visit per browser session against its city. Aggregate
+            only — see the route and the privacy policy's "Where visitors come
+            from" section. */}
+        <VisitBeacon />
         <Toaster
           position="top-center"
           duration={4200}

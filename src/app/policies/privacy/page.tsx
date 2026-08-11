@@ -70,6 +70,34 @@ export default function PrivacyPolicyPage() {
           ),
         },
         {
+          id: "visitor-locations",
+          heading: "Where visitors come from",
+          body: (
+            <>
+              <p>
+                {
+                  "When you open our website, our hosting provider resolves an approximate location — city, state and country — from the internet address your connection arrives on. We use this to count how many visits came from each place, so we can decide which cities and states to serve, stock and deliver to next."
+                }
+              </p>
+              <p>
+                {
+                  "We record only a tally. Each entry holds a date, a country, a state and a city, together with a number of visits. We do not store your internet address, a device or session identifier, an account reference, or a time more precise than the date. Entries are not linked to your account, your orders or your delivery addresses, and cannot be traced back to you or to any individual visitor."
+                }
+              </p>
+              <p>
+                {
+                  "Because these records are counts rather than information about an identifiable person, they are statistical in nature. We never ask your device for its GPS location for this purpose, and no separate location-tracking service is used."
+                }
+              </p>
+              <p>
+                {
+                  "This is distinct from the delivery addresses you choose to give us. Those are personal data, are stored against your account, and are used only to deliver your orders and to tell you whether we serve your area."
+                }
+              </p>
+            </>
+          ),
+        },
+        {
           id: "uses",
           heading: "Uses of your information",
           body: (
@@ -82,6 +110,7 @@ export default function PrivacyPolicyPage() {
                 <li>{"To provide you with information about services we consider similar to those you are using."}</li>
                 <li>{"To understand our users and improve our Services."}</li>
                 <li>{"To generate and review reports and data about our user base."}</li>
+                <li>{"To count visits by city, state and country so we can plan where to expand our service — as counts only, never linked to you (see \u201cWhere visitors come from\u201d)."}</li>
                 <li>{"To measure the effectiveness of advertising we serve."}</li>
               </ul>
             </>
