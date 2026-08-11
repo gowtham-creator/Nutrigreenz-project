@@ -55,7 +55,19 @@ export function ProductListing({
   // The pool of products the page operates over (pre-filtered for category routes).
   const pool = useMemo<ProductCardType[]>(() => {
     if (!categorySlug) return products;
-    const lockedTags = slugToTags[categorySlug] ?? [categorySlug];
+    /*
+     * Match the slug ITSELF as well as its mapped tags.
+     *
+     * SLUG_TO_TAGS was written for the bundled demo data, which tags products
+     * in the singular — `oils` → `["oil"]`. The live catalog stamps each product
+     * with its own category SLUG instead, so a real oil carries `"oils"`, the
+     * lookup returned only `["oil"]`, and /shop/oils filtered every product out:
+     * the page rendered "0 products in this view" over a catalogue of six.
+     *
+     * It only showed on the plural categories. Honey, ghee and gifting spell
+     * the same either way, so they worked and hid the fault.
+     */
+    const lockedTags = [categorySlug, ...(slugToTags[categorySlug] ?? [])];
     return products.filter((p) => p.tags?.some((t) => lockedTags.includes(t)));
   }, [categorySlug, products, slugToTags]);
 
