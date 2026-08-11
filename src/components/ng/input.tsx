@@ -23,12 +23,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ) : null}
         <div
           className={cn(
-            "flex items-center gap-2 h-12 px-4 rounded-xl bg-ng-paper border border-ng-line",
+            "flex items-center gap-2 h-12 rounded-xl bg-ng-paper border border-ng-line pl-4 pr-2 has-[input:only-of-type]:pr-4",
             "focus-within:border-ng-forest focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200",
             error && "border-ng-danger focus-within:border-ng-danger focus-within:shadow-[0_0_0_3px_rgba(178,58,46,0.18)]",
           )}
         >
-          {prefix ? <span className="text-ng-ink-soft">{prefix}</span> : null}
+          {prefix ? (
+            <span className="inline-flex size-5 shrink-0 items-center justify-center text-ng-ink-soft">
+              {prefix}
+            </span>
+          ) : null}
           <input
             id={inputId}
             ref={ref}
@@ -38,7 +42,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             )}
             {...rest}
           />
-          {suffix ? <span className="text-ng-ink-soft">{suffix}</span> : null}
+          {/*
+            Sized and centred rather than free-flowing. As a bare span the
+            control sat on the text baseline and its own focus ring could break
+            past the field's rounded edge — most visible on the passcode eye,
+            which appeared to hang outside the box.
+          */}
+          {suffix ? (
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-ng-ink-soft [&>button]:inline-flex [&>button]:size-8 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-lg">
+              {suffix}
+            </span>
+          ) : null}
         </div>
         {hint && !error ? (
           <p className="text-[12px] font-medium text-ng-ink-soft">{hint}</p>

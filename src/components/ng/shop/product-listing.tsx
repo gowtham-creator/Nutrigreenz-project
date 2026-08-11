@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ProductCard } from "@/components/ng/product-card";
 import { Button } from "@/components/ng/button";
 import { Chip } from "@/components/ng/chip";
@@ -302,13 +303,13 @@ export function ProductListing({
                       Clear filters
                     </Button>
                     {!categorySlug ? null : (
-                      <a
+                      <Link
                         href="/shop"
                         className="inline-flex items-center gap-1.5 rounded-full border border-ng-line px-4 py-2.5 text-[13px] font-medium text-ng-forest transition-colors hover:border-ng-leaf"
                       >
                         Browse the full pantry
                         <Icon name="alt-arrow-right-linear" size={14} />
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </div>
