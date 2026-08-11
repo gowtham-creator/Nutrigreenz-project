@@ -198,7 +198,21 @@ export function AreaChart({
 }) {
   const W = 720;
   const H = height;
-  const padL = 8;
+  /*
+   * The plot starts clear of the axis labels.
+   *
+   * padL was 8 and served two jobs at once: it positioned the y-axis text AND
+   * marked where the line begins. So the first data point was drawn at exactly
+   * the x the label occupies, and on any range whose first value sat near a
+   * gridline the marker landed on top of the number — "45" and "₹2,030" with a
+   * circle through them.
+   *
+   * The label now keeps the left gutter to itself and the plot begins after it.
+   * Wide enough for a formatted rupee value, which is the longest thing that
+   * ever renders there.
+   */
+  const labelX = 6;
+  const padL = 62;
   const padR = 8;
   const padT = 16;
   const padB = 26;
@@ -272,7 +286,7 @@ export function AreaChart({
           return (
             <g key={i}>
               <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--ng-line-soft)" strokeWidth="1" />
-              <text x={padL} y={y - 3} fontSize="11" fill="var(--ng-ink-soft)" className="font-mono font-medium">
+              <text x={labelX} y={y - 3} fontSize="11" fill="var(--ng-ink-soft)" className="font-mono font-medium">
                 {formatY ? formatY(val) : Math.round(val)}
               </text>
             </g>
