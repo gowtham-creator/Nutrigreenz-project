@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "./button";
-import { FooterScene } from "./footer-scene";
+import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 
 const SOCIALS = [
@@ -64,23 +64,34 @@ export function Footer() {
       />
 
       {/*
-        Hand-illustrated farm landscape, anchored to the bottom and kept there.
+        Photographic farm horizon, anchored to the bottom.
 
-        It used to run the full width at full strength, so the tree line climbed
-        through the link columns and the sun sat directly behind the FIND US
-        address — every line of it read against a moving background. Dropping
-        the layer's opacity and masking its top edge to transparent lets the
-        scene stay a horizon rather than a texture behind the text.
+        This replaces the drawn scene, which ran full-strength edge to edge: the
+        tree line climbed through the link columns and the sun sat behind the
+        FIND US address, so every line of that block read against moving shapes.
+
+        The photograph is chosen for what it does NOT contain — the upper part
+        is an almost empty dusk sky, so the columns sit on flat tone rather than
+        on detail. It is anchored bottom and faded out at its top edge, letting
+        the footer's own gradient own the area behind the text and the image own
+        the horizon beneath it.
       */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.55]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[62%] select-none"
         style={{
-          maskImage: "linear-gradient(180deg, transparent 0%, transparent 26%, black 58%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, transparent 26%, black 58%)",
+          maskImage: "linear-gradient(180deg, transparent 0%, black 42%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, black 42%)",
         }}
       >
-        <FooterScene />
+        <Image
+          src="/images/brand/footer-farm.webp"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-bottom"
+          quality={80}
+        />
       </div>
 
       {/* readability scrim — a gentle vertical wash from the link-column band
