@@ -182,7 +182,7 @@ export default function AdminAnalytics() {
                 type="button"
                 onClick={() => setBucket(b.id)}
                 aria-pressed={bucket === b.id}
-                className={`px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors cursor-pointer ${
                   bucket === b.id ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:text-ng-forest"
                 }`}
               >
@@ -197,7 +197,7 @@ export default function AdminAnalytics() {
                 type="button"
                 onClick={() => setRangeId(r.id)}
                 aria-pressed={rangeId === r.id}
-                className={`px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors cursor-pointer ${
                   rangeId === r.id ? "bg-ng-forest-deep text-ng-cream font-semibold" : "text-ng-ink-muted hover:text-ng-forest"
                 }`}
               >
@@ -209,7 +209,7 @@ export default function AdminAnalytics() {
       }
     >
       {!analytics ? (
-        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] font-medium text-ng-ink-muted">
+        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[14px] font-medium text-ng-ink-muted">
           {loading ? "Loading analytics…" : "No analytics available."}
         </div>
       ) : (
@@ -232,11 +232,11 @@ export default function AdminAnalytics() {
             className="mb-6"
           >
             {analytics.series.length === 0 ? (
-              <div className="py-8 text-center text-[13px] font-medium text-ng-ink-muted">No activity in this range yet.</div>
+              <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">No activity in this range yet.</div>
             ) : (
               <div className="grid lg:grid-cols-2 gap-8">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units &amp; views</div>
+                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units &amp; views</div>
                   <AreaChart
                     labels={labels}
                     series={[
@@ -246,7 +246,7 @@ export default function AdminAnalytics() {
                   />
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue (₹)</div>
+                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue (₹)</div>
                   <AreaChart
                     labels={labels}
                     formatY={(v) => `₹${NUM(v)}`}
@@ -261,7 +261,7 @@ export default function AdminAnalytics() {
           <Card title="Weekday vs weekend" className="mb-6">
             <div className="grid sm:grid-cols-3 gap-8">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units sold</div>
+                <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units sold</div>
                 <HBars
                   formatValue={(v) => NUM(v)}
                   rows={[
@@ -271,7 +271,7 @@ export default function AdminAnalytics() {
                 />
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue</div>
+                <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue</div>
                 <HBars
                   formatValue={(v) => INR(v)}
                   rows={[
@@ -281,7 +281,7 @@ export default function AdminAnalytics() {
                 />
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Product views</div>
+                <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Product views</div>
                 <HBars
                   formatValue={(v) => NUM(v)}
                   rows={[
@@ -296,15 +296,15 @@ export default function AdminAnalytics() {
           {/* 3 · PER-PRODUCT TABLE (sortable) ------------------------ */}
           <Card
             title="Products · demand"
-            action={<span className="text-[11.5px] font-medium text-ng-ink-soft">{NUM(sortedProducts.length)} products</span>}
+            action={<span className="text-[12.5px] font-medium text-ng-ink-soft">{NUM(sortedProducts.length)} products</span>}
             className="mb-6 !p-0"
           >
             {sortedProducts.length === 0 ? (
-              <div className="py-10 text-center text-[13px] font-medium text-ng-ink-muted">No products to show yet.</div>
+              <div className="py-10 text-center text-[14px] font-medium text-ng-ink-muted">No products to show yet.</div>
             ) : (
               <div className="overflow-x-auto">
                 <div className="min-w-[720px]">
-                  <div className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+                  <div className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                     <SortHead label="Product" k="name" sort={sort} onSort={toggleSort} />
                     <SortHead label="Category" k="categoryName" sort={sort} onSort={toggleSort} />
                     <SortHead label="Units" k="unitsSold" sort={sort} onSort={toggleSort} align="right" />
@@ -316,14 +316,14 @@ export default function AdminAnalytics() {
                     {sortedProducts.map((p) => (
                       <li
                         key={p.productId}
-                        className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-3 items-center text-[12.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                        className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                       >
                         <span className="font-semibold text-ng-ink truncate">{p.name}</span>
                         <span className="text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>
-                        <span className="font-mono text-[12px] tabular-nums text-ng-ink text-right">{NUM(p.unitsSold)}</span>
-                        <span className="font-mono text-[12px] tabular-nums text-ng-forest-deep font-semibold text-right">{INR(p.revenuePaise)}</span>
-                        <span className="font-mono text-[12px] tabular-nums text-ng-clay-deep text-right">{NUM(p.wishlistCount)}</span>
-                        <span className="font-mono text-[12px] tabular-nums text-ng-blue text-right">{NUM(p.views)}</span>
+                        <span className="font-mono text-[13px] tabular-nums text-ng-ink text-right">{NUM(p.unitsSold)}</span>
+                        <span className="font-mono text-[13px] tabular-nums text-ng-forest-deep font-semibold text-right">{INR(p.revenuePaise)}</span>
+                        <span className="font-mono text-[13px] tabular-nums text-ng-clay-deep text-right">{NUM(p.wishlistCount)}</span>
+                        <span className="font-mono text-[13px] tabular-nums text-ng-blue text-right">{NUM(p.views)}</span>
                       </li>
                     ))}
                   </ul>
@@ -337,7 +337,7 @@ export default function AdminAnalytics() {
             {signins && signins.total > 0 ? (
               <div className="grid lg:grid-cols-2 gap-8">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By provider</div>
+                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By provider</div>
                   <DonutChart
                     size={150}
                     thickness={20}
@@ -355,9 +355,9 @@ export default function AdminAnalytics() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Sign-ins over time</div>
+                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Sign-ins over time</div>
                   {signins.series.length === 0 ? (
-                    <div className="py-8 text-center text-[13px] font-medium text-ng-ink-muted">No sign-ins in this range.</div>
+                    <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">No sign-ins in this range.</div>
                   ) : (
                     <AreaChart
                       labels={signins.series.map((p) => p.label)}
@@ -370,11 +370,11 @@ export default function AdminAnalytics() {
                 </div>
               </div>
             ) : (
-              <div className="py-8 text-center text-[13px] font-medium text-ng-ink-muted">No customer sign-ins in this range yet.</div>
+              <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">No customer sign-ins in this range yet.</div>
             )}
           </Card>
 
-          <p className="text-[11.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
+          <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             Figures computed live ({range.label}, by {BUCKETS.find((b) => b.id === bucket)?.label.toLowerCase()}). Views are best-effort PDP
             pings; weekend = Sat/Sun (IST). Charts are hand-authored CSS/SVG — no chart libraries.
           </p>

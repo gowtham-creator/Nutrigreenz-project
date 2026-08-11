@@ -78,7 +78,7 @@ function ExportButton({ onClick, label = "Export CSV" }: { onClick: () => void; 
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[11.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+      className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
     >
       <Icon name="file-download-bold" size={14} className="text-ng-forest" />
       {label}
@@ -225,7 +225,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                 type="button"
                 onClick={() => setRangeId(r.id)}
                 aria-pressed={rangeId === r.id}
-                className={`px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors cursor-pointer ${
                   rangeId === r.id
                     ? "bg-ng-forest-deep text-ng-cream font-semibold"
                     : "text-ng-ink-muted hover:text-ng-forest"
@@ -239,7 +239,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             type="button"
             onClick={exportAll}
             disabled={!report}
-            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[13.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="file-download-bold" size={15} />
             Export all
@@ -248,7 +248,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
       }
     >
       {!report ? (
-        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] font-medium text-ng-ink-muted">
+        <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[14px] font-medium text-ng-ink-muted">
           {loading ? "Loading report…" : "No report available."}
         </div>
       ) : (
@@ -274,7 +274,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
           >
             <div className="grid lg:grid-cols-2 gap-8 mb-8">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By fulfilment status</div>
+                <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By fulfilment status</div>
                 <DonutChart
                   size={150}
                   thickness={20}
@@ -288,7 +288,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                 />
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By payment status</div>
+                <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">By payment status</div>
                 <DonutChart
                   size={150}
                   thickness={20}
@@ -303,7 +303,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
               </div>
             </div>
 
-            <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue by status</div>
+            <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue by status</div>
             <HBars
               tone="forest"
               formatValue={(v) => INR(v)}
@@ -322,7 +322,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             className="mb-6"
           >
             {report.topProducts.length === 0 ? (
-              <div className="py-8 text-center text-[13px] font-medium text-ng-ink-muted">
+              <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">
                 No product sales in this range yet.
               </div>
             ) : (
@@ -351,12 +351,12 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             </div>
 
             {report.couponUsage.length === 0 ? (
-              <div className="py-8 text-center text-[13px] font-medium text-ng-ink-muted">
+              <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">
                 No coupons were redeemed in this range.
               </div>
             ) : (
               <div className="rounded-2xl border border-ng-line-soft overflow-hidden">
-                <div className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+                <div className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                   <span>Code</span>
                   <span className="text-right">Redeemed</span>
                   <span className="text-right">Discount given</span>
@@ -365,11 +365,11 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                   {report.couponUsage.map((c) => (
                     <li
                       key={c.code}
-                      className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-3 items-center text-[12.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                      className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                     >
-                      <span className="font-mono text-[12px] font-semibold text-ng-ink truncate">{c.code}</span>
-                      <span className="font-mono text-[12px] tabular-nums font-medium text-ng-ink-muted text-right">{c.orders}</span>
-                      <span className="font-mono text-[12px] tabular-nums text-ng-forest-deep font-semibold text-right">{INR(c.discountPaise)}</span>
+                      <span className="font-mono text-[13px] font-semibold text-ng-ink truncate">{c.code}</span>
+                      <span className="font-mono text-[13px] tabular-nums font-medium text-ng-ink-muted text-right">{c.orders}</span>
+                      <span className="font-mono text-[13px] tabular-nums text-ng-forest-deep font-semibold text-right">{INR(c.discountPaise)}</span>
                     </li>
                   ))}
                 </ul>
@@ -385,7 +385,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             <VisitorPlaces places={report.visitorPlaces} total={report.visitorTotal} />
           </div>
 
-          <p className="text-[11.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
+          <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             {hasOrders
               ? `Figures computed live from real orders (${range.label}). Charts are hand-authored CSS/SVG — no chart libraries.`
               : `No orders in this range yet. Charts are hand-authored CSS/SVG — no chart libraries.`}

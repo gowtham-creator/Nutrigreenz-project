@@ -37,17 +37,17 @@ export function VisitorPlaces({
             <BrandIcon name="location" size={16} weight="solid" className="text-ng-leaf" />
             Where visitors come from
           </h3>
-          <p className="mt-1 text-[12px] leading-snug text-ng-ink-muted">
+          <p className="mt-1 text-[13px] leading-snug text-ng-ink-muted">
             Counted by place, never by person — no address or account is involved.
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-ng-sage/50 px-2.5 py-1 text-[12px] font-semibold text-ng-forest-deep">
+        <span className="shrink-0 rounded-full bg-ng-sage/50 px-2.5 py-1 text-[13px] font-semibold text-ng-forest-deep">
           {total.toLocaleString("en-IN")} visit{total === 1 ? "" : "s"}
         </span>
       </div>
 
       {places.length === 0 ? (
-        <p className="mt-4 rounded-xl bg-ng-cream px-4 py-6 text-center text-[12px] text-ng-ink-muted">
+        <p className="mt-4 rounded-xl bg-ng-cream px-4 py-6 text-center text-[13px] text-ng-ink-muted">
           Nothing recorded for this range yet. Counting starts with the next visit.
         </p>
       ) : (
@@ -56,10 +56,10 @@ export function VisitorPlaces({
             const label = [p.city, p.region].filter((v) => v && v !== "unknown").join(", ");
             return (
               <li key={`${p.country}-${p.region}-${p.city}`} className="flex items-center gap-3">
-                <span className="w-40 shrink-0 truncate text-[13px] font-medium text-ng-forest-deep">
+                <span className="w-40 shrink-0 truncate text-[14px] font-medium text-ng-forest-deep">
                   {label || "Unknown"}
                 </span>
-                <span className="w-8 shrink-0 text-[11px] uppercase tracking-wide text-ng-ink-soft">
+                <span className="w-8 shrink-0 text-[12px] uppercase tracking-wide text-ng-ink-soft">
                   {p.country !== "unknown" ? p.country : "—"}
                 </span>
                 {/* Bar is relative to the busiest place, so the shape of the
@@ -70,7 +70,7 @@ export function VisitorPlaces({
                     style={{ width: `${top > 0 ? Math.max(4, (p.visits / top) * 100) : 0}%` }}
                   />
                 </span>
-                <span className="w-14 shrink-0 text-right text-[12px] font-semibold tabular-nums text-ng-forest-deep">
+                <span className="w-14 shrink-0 text-right text-[13px] font-semibold tabular-nums text-ng-forest-deep">
                   {p.visits.toLocaleString("en-IN")}
                 </span>
               </li>
