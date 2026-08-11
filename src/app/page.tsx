@@ -46,12 +46,12 @@ export default async function Home() {
   const oils = products.filter(hasTag("oils", "oil"));
   const oilTabs: FocusSubTab[] = [
     { label: "All oils", icon: "oil", filter: { type: "all" } },
-    { label: "Groundnut", icon: "seedling", filter: { type: "titleHas", keywords: ["groundnut"] } },
-    { label: "Sesame", icon: "grain", filter: { type: "titleHas", keywords: ["sesame"] } },
+    { label: "Groundnut", icon: "groundnut", filter: { type: "titleHas", keywords: ["groundnut"] } },
+    { label: "Sesame", icon: "sesame", filter: { type: "titleHas", keywords: ["sesame"] } },
     { label: "Safflower", icon: "leaf", filter: { type: "titleHas", keywords: ["safflower"] } },
-    { label: "Olive", icon: "fruit", filter: { type: "titleHas", keywords: ["olive"] } },
-    { label: "Mustard", icon: "spice", filter: { type: "titleHas", keywords: ["mustard"] } },
-    { label: "Coconut", icon: "fruit", filter: { type: "titleHas", keywords: ["coconut"] } },
+    { label: "Olive", icon: "olive", filter: { type: "titleHas", keywords: ["olive"] } },
+    { label: "Mustard", icon: "mustard", filter: { type: "titleHas", keywords: ["mustard"] } },
+    { label: "Coconut", icon: "coconut", filter: { type: "titleHas", keywords: ["coconut"] } },
   ];
 
   // ── GHEE ──────────────────────────────────────────────────────────────
