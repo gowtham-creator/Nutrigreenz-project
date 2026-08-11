@@ -63,18 +63,35 @@ export function Footer() {
         }}
       />
 
-      {/* hand-illustrated tonal farm landscape, anchored to the bottom */}
-      <FooterScene />
+      {/*
+        Hand-illustrated farm landscape, anchored to the bottom and kept there.
+
+        It used to run the full width at full strength, so the tree line climbed
+        through the link columns and the sun sat directly behind the FIND US
+        address — every line of it read against a moving background. Dropping
+        the layer's opacity and masking its top edge to transparent lets the
+        scene stay a horizon rather than a texture behind the text.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.55]"
+        style={{
+          maskImage: "linear-gradient(180deg, transparent 0%, transparent 26%, black 58%)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, transparent 26%, black 58%)",
+        }}
+      >
+        <FooterScene />
+      </div>
 
       {/* readability scrim — a gentle vertical wash from the link-column band
           down through the legal bar, keeping the cream text crisp over the now
           much taller, denser scene without dimming the illustration itself */}
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 z-0 h-[60%] pointer-events-none"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, transparent 0%, rgba(10,31,18,0.30) 38%, rgba(10,31,18,0.52) 78%, rgba(10,31,18,0.70) 100%)",
+            "linear-gradient(180deg, rgba(10,31,18,0.55) 0%, rgba(10,31,18,0.40) 30%, rgba(10,31,18,0.30) 62%, rgba(10,31,18,0.55) 100%)",
         }}
       />
 
@@ -142,7 +159,7 @@ export function Footer() {
               className="pointer-events-none absolute -inset-x-4 -inset-y-3 rounded-3xl"
               style={{
                 background:
-                  "radial-gradient(ellipse 94% 84% at 50% 44%, rgba(10,31,18,0.60), rgba(10,31,18,0.28) 60%, transparent 80%)",
+                  "radial-gradient(ellipse 104% 96% at 50% 42%, rgba(10,31,18,0.78), rgba(10,31,18,0.46) 62%, transparent 82%)",
               }}
             />
             <div className="relative">

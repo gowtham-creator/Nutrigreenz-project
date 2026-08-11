@@ -51,17 +51,32 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Retract the bar once the footer scrolls into view so it never overlaps the
-  // footer's links, socials and legal bar (mobile + desktop).
+  /*
+   * Retract only at the very end of the page, not the whole footer.
+   *
+   * This watched the <footer> element, which is around 900px tall here — a
+   * landscape illustration with a deep bottom band. The bar therefore vanished
+   * the moment the tree line appeared and stayed gone for most of the lower
+   * page, exactly where a shopper who has read the whole thing decides to buy.
+   *
+   * Watching a sentinel at the footer's foot instead means the bar survives the
+   * scroll and steps aside only for the legal links it would actually cover.
+   */
   useEffect(() => {
     const footer = document.querySelector("footer");
     if (!footer) return;
-    const io = new IntersectionObserver(
-      ([entry]) => setFooterVisible(entry.isIntersecting),
-      { rootMargin: "0px 0px -64px 0px" },
-    );
-    io.observe(footer);
-    return () => io.disconnect();
+    const sentinel = document.createElement("div");
+    sentinel.style.cssText = "position:absolute;bottom:0;left:0;width:1px;height:120px;pointer-events:none";
+    const prevPosition = getComputedStyle(footer).position;
+    if (prevPosition === "static") footer.style.position = "relative";
+    footer.appendChild(sentinel);
+
+    const io = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting));
+    io.observe(sentinel);
+    return () => {
+      io.disconnect();
+      sentinel.remove();
+    };
   }, []);
 
   const visible = scrolled && !footerVisible;
@@ -97,23 +112,29 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
   return createPortal(
     <div
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t border-ng-line-soft bg-ng-paper/95 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-        "pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_rgba(31,77,46,0.08)]",
+        "fixed inset-x-0 bottom-0 z-40 border-t border-ng-line-soft bg-ng-paper/98 backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+        "pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_36px_rgba(31,77,46,0.16)]",
         visible ? "translate-y-0" : "translate-y-full",
       )}
       aria-hidden={!visible}
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 md:px-8">
-        <div className="relative hidden h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-ng-line-soft bg-ng-cream-deep sm:block">
-          <Image src={product.image || "/images/placeholder.svg"} alt={product.title} fill className="object-contain p-1.5" sizes="48px" />
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3.5 md:gap-4 md:px-8 md:py-4">
+        <div className="relative hidden h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-ng-line-soft bg-ng-cream-deep sm:block">
+          <Image src={product.image || "/images/placeholder.svg"} alt={product.title} fill className="object-contain p-1.5" sizes="56px" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-ng-forest-deep">
+          <p className="truncate text-[14px] font-semibold text-ng-forest-deep md:text-[15px]">
             {product.title}
-            {variantLabel ? <span className="text-ng-ink-muted"> · {variantLabel}</span> : null}
           </p>
-          <p className="text-[13px] font-bold tabular-nums text-ng-forest">₹{displayPrice.toLocaleString()}</p>
+          {variantLabel ? (
+            <p className="truncate text-[12px] text-ng-ink-muted">{variantLabel}</p>
+          ) : null}
         </div>
+        {/* Price reads as the decision point, so it sits apart from the name at
+            a size that survives a glance on a phone. */}
+        <p className="shrink-0 text-[17px] font-bold tabular-nums text-ng-forest-deep md:text-[19px]">
+          ₹{displayPrice.toLocaleString("en-IN")}
+        </p>
         {variantOut ? (
           <Button disabled variant="secondary" size="md">
             <CartIcon size={16} tone="dark" />
