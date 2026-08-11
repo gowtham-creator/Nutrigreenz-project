@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
@@ -882,7 +883,22 @@ function AddInviteAdminModal({
     { key: "whatsapp", label: "WhatsApp", icon: "chat-round-call-bold" },
   ];
 
-  return (
+  /*
+   * Rendered into <body>, not in place.
+   *
+   * `position: fixed` only resolves against the viewport when no ancestor
+   * establishes a containing block — and `backdrop-filter` does, exactly like
+   * `transform`. The admin shell header and the config page's sticky bar both
+   * use backdrop-blur, so this dialog was being positioned against the card it
+   * sits in rather than the screen: it opened low, ran off the bottom edge, and
+   * most of the form was unreachable.
+   *
+   * A portal puts it outside every one of those ancestors, so inset-0 means the
+   * viewport again.
+   */
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       <button
         type="button"
@@ -1031,7 +1047,8 @@ function AddInviteAdminModal({
         </div>
       </div>
       </div>
-    </div>
+    </div>,
+  document.body,
   );
 }
 
@@ -1128,7 +1145,15 @@ function EditAdminModal({
     { key: "superadmin", label: "Super Admin" },
   ];
 
-  return (
+  /*
+   * Portaled to <body>. `backdrop-filter` on the admin shell header and the
+   * sticky page bars establishes a containing block, so a fixed overlay left
+   * in place is positioned against that card rather than the viewport — it
+   * opens low and runs off the bottom edge.
+   */
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       <button
         type="button"
@@ -1248,6 +1273,7 @@ function EditAdminModal({
         </div>
       </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

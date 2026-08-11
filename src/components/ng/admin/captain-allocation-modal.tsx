@@ -11,6 +11,7 @@
  * Allocation is per VARIANT because that is what carries the price and stock.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -124,7 +125,15 @@ export function CaptainAllocationModal({
     }
   }
 
-  return (
+  /*
+   * Portaled to <body>. `backdrop-filter` on the admin shell header and the
+   * sticky page bars establishes a containing block, so a fixed overlay left
+   * in place is positioned against that card rather than the viewport — it
+   * opens low and runs off the bottom edge.
+   */
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       <button
         type="button"
@@ -261,6 +270,7 @@ export function CaptainAllocationModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
