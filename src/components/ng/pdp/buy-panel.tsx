@@ -7,6 +7,7 @@ import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
 import type { ProductCard } from "@/types/nutrigreenz";
 import { VariantSelector, type PdpVariant } from "./variant-selector";
@@ -184,7 +185,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             Currently sold out — we&apos;re restocking from the farm soon.
           </div>
           <Button disabled size="lg" fullWidth>
-            <AppIcon name="cart-add" size={18} />
+            <BrandIcon name="cart" size={18} weight="solid" />
             Out of stock
           </Button>
         </div>
@@ -214,7 +215,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
               </button>
             </div>
             <Button onClick={add} size="lg" fullWidth className="min-w-0 flex-1 cursor-pointer px-4 sm:px-8">
-              <AppIcon name="cart-add" size={18} />
+              <BrandIcon name="cart" size={18} weight="solid" />
               <span className="min-w-0 truncate">Add to cart · ₹{lineTotal.toLocaleString()}</span>
             </Button>
           </div>

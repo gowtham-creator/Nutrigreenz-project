@@ -138,7 +138,7 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
         </p>
         {variantOut ? (
           <Button disabled variant="secondary" size="md">
-            <AppIcon name="cart-add" size={16} />
+            <BrandIcon name="cart" size={16} weight="solid" />
             Out of stock
           </Button>
         ) : (
@@ -148,7 +148,7 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
               Add to cart
             </Button>
             <Button onClick={add} variant="secondary" size="icon" aria-label="Add to cart" className="cursor-pointer sm:hidden">
-              <AppIcon name="cart-add" size={18} />
+              <BrandIcon name="cart" size={18} weight="solid" />
             </Button>
             <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
               <AppIcon name="cart-add" size={16} />
