@@ -104,18 +104,44 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
 
   const count = displayImages.length;
   const [active, setActive] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+  /*
+   * Paused as soon as the shopper touches the gallery.
+   *
+   * A carousel that keeps moving under someone who has just chosen a slide is
+   * actively hostile — they lose the panel they were reading. Any click, key or
+   * swipe stops it for good; it exists to show that more images exist, not to
+   * drive the experience.
+   */
+  const [autoPlay, setAutoPlay] = useState(true);
   const [zoomed, setZoomed] = useState(false);
   // createPortal needs document; guard for the server render.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const clampedActive = Math.min(active, count - 1);
 
+  // Advance every 3.5s until the shopper interacts.
+  useEffect(() => {
+    if (!autoPlay || count <= 1) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % count), 3500);
+    return () => clearInterval(t);
+  }, [autoPlay, count]);
+
+  // Follow the active slide so the rail never shows a selection off-screen.
+  useEffect(() => {
+    const rail = railRef.current;
+    const thumb = rail?.children[clampedActive] as HTMLElement | undefined;
+    if (!rail || !thumb) return;
+    const left = thumb.offsetLeft - rail.clientWidth / 2 + thumb.clientWidth / 2;
+    rail.scrollTo({ left, behavior: "smooth" });
+  }, [clampedActive]);
+
   useEffect(() => {
     if (!zoomed) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setZoomed(false);
-      if (e.key === "ArrowRight") setActive((i) => Math.min(i + 1, count - 1));
-      if (e.key === "ArrowLeft") setActive((i) => Math.max(i - 1, 0));
+      if (e.key === "ArrowRight") go(clampedActive + 1);
+      if (e.key === "ArrowLeft") go(clampedActive - 1);
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -134,7 +160,15 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
 
   const activeIsPanel = isPanel(displayImages[clampedActive]?.src ?? "");
 
-  const go = (i: number) => setActive(Math.min(Math.max(0, i), count - 1));
+  /*
+   * Every deliberate move — thumbnail click, arrow, swipe — comes through here,
+   * so it is the one place autoplay needs to stop. Rotating on under someone
+   * who has just opened the nutrition panel would take it away mid-read.
+   */
+  const go = (i: number) => {
+    setAutoPlay(false);
+    setActive(Math.min(Math.max(0, i), count - 1));
+  };
 
   const { offset, dragging, handlers } = useDragSwipe({
     enabled: count > 1,
@@ -161,7 +195,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
   const zoomImage = displayImages[clampedActive];
 
   return (
-    <div className="flex flex-col-reverse gap-4 md:flex-row">
+    <div className="flex flex-col-reverse gap-4">
       {/*
         Full-screen viewer. Rendered at the panel's own scale so the nutrition
         table and the comparison chart are finally readable at the size they
@@ -234,7 +268,19 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
         : null}
 
       {/* Thumbnails */}
-      <div className="flex flex-row gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-col md:overflow-visible md:pb-0">
+      {/*
+        Horizontal rail beneath the viewer.
+
+        It used to stack vertically on desktop, so a gallery of nine panels ran
+        far past the product image and left a column of dead space beside it.
+        Laid along the bottom the strip stays the height of one thumbnail
+        however many images there are, shows about four at a time, and scrolls
+        for the rest.
+      */}
+      <div
+        ref={railRef}
+        className="flex flex-row gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
         {displayImages.map((img, i) => (
           <button
             key={`${img.src}-${i}`}
@@ -243,7 +289,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             aria-label={`View image ${i + 1}`}
             aria-pressed={i === clampedActive}
             className={cn(
-              "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border bg-ng-cream-deep transition-colors md:h-20 md:w-20",
+              "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-ng-cream-deep transition-colors",
               i === clampedActive ? "border-ng-forest ring-1 ring-ng-forest" : "border-ng-line hover:border-ng-leaf",
             )}
           >

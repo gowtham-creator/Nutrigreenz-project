@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import type { ProductCard } from "@/types/nutrigreenz";
@@ -143,14 +144,14 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
         ) : (
           <>
             <Button onClick={add} variant="secondary" size="md" className="cursor-pointer hidden sm:inline-flex">
-              <AppIcon name="cart-add" size={16} />
+              <BrandIcon name="cart" size={16} weight="solid" />
               Add to cart
             </Button>
             <Button onClick={add} variant="secondary" size="icon" aria-label="Add to cart" className="cursor-pointer sm:hidden">
               <AppIcon name="cart-add" size={18} />
             </Button>
             <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
-              <Icon name="bolt-bold" size={16} />
+              <AppIcon name="cart-add" size={16} />
               <span className="font-display tracking-wide">Buy Now</span>
             </Button>
           </>

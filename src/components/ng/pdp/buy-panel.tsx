@@ -219,7 +219,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             </Button>
           </div>
           <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
-            <Icon name="wallet-money-bold" size={18} />
+            <AppIcon name="cart-add" size={18} />
             <span className="font-display tracking-wide">Buy Now</span>
           </Button>
         </div>

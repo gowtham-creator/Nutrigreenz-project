@@ -6,6 +6,7 @@ import {
   Lock,
   LogIn,
   LogOut,
+  ShoppingCart,
   Store,
   MapPin,
   Sprout,
@@ -77,6 +78,7 @@ const ICONS = {
   store: Store,
   signOut: LogOut,
   signIn: LogIn,
+  cart: ShoppingCart,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;
