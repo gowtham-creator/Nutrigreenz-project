@@ -6,7 +6,7 @@
  * `/api/auth/otp/verify` trades a six-digit code for a thirty-day session
  * cookie. Until this existed there was no attempt counter anywhere on that
  * path: `proxy.ts` excludes `/api` from its matcher, the send-side limiter in
- * `@/lib/otp-rate-limit` only caps how many codes go OUT, and MSG91's own
+ * the send-side guard only caps how many codes go OUT, and MSG91's own
  * throttle is undocumented and not ours to rely on. So the only thing between a
  * known mobile number and somebody else's order history, saved addresses and
  * personal details was guessing six digits, unlimited times, with nothing

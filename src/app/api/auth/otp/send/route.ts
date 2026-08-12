@@ -1,5 +1,5 @@
 import { sendOtp, isMsg91OtpConfigured, normalizeMsg91Mobile } from "@/lib/msg91-otp";
-import { checkOtpSendLimit } from "@/lib/otp-rate-limit";
+import { checkOtpSendAllowed, clientIp } from "@/lib/otp-send-guard";
 
 // Uses fetch to MSG91 from the server; keep on the Node runtime.
 export const runtime = "nodejs";
@@ -34,7 +34,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // Anti-abuse: cap sends per number before spending an SMS.
-  const limit = checkOtpSendLimit(mobile);
+  /*
+   * Persisted, and counted per number AND per source address. The previous
+   * limiter lived in a module Map, so on serverless it was five sends per
+   * INSTANCE and reset on every cold start — and keyed only on the number, so
+   * one client could request codes for a thousand different handsets and trip
+   * nothing. Each of those is a real SMS we pay for.
+   */
+  const limit = await checkOtpSendAllowed(mobile, clientIp(request));
   if (!limit.ok) {
     return Response.json(
       { ok: false, error: "rate_limited" },

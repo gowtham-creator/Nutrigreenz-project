@@ -3,7 +3,7 @@ import { ADMIN_MFA_COOKIE } from "@/lib/admin-auth";
 import { verifyMfaTicket } from "@/lib/admin-session";
 import { getAdminFactors } from "@/lib/admin-security";
 import { sendOtp, isMsg91OtpConfigured } from "@/lib/msg91-otp";
-import { checkOtpSendLimit } from "@/lib/otp-rate-limit";
+import { checkOtpSendAllowed, clientIp } from "@/lib/otp-send-guard";
 
 // Uses fetch to MSG91 from the server; keep on the Node runtime.
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export const runtime = "nodejs";
  * signed `ng_admin_mfa` ticket, so a code can't be requested without first
  * clearing the passcode step.
  */
-export async function POST(): Promise<Response> {
+export async function POST(request: Request): Promise<Response> {
   const c = await cookies();
   const ticket = await verifyMfaTicket(c.get(ADMIN_MFA_COOKIE)?.value);
   if (!ticket) {
@@ -35,7 +35,7 @@ export async function POST(): Promise<Response> {
 
   // Anti-abuse: 30s resend cooldown + max 5 sends / 15 min per number, before
   // spending an SMS.
-  const limit = checkOtpSendLimit(factors.otpPhone);
+  const limit = await checkOtpSendAllowed(factors.otpPhone, clientIp(request));
   if (!limit.ok) {
     return Response.json(
       { ok: false, error: "rate_limited" },
