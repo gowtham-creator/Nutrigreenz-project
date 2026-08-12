@@ -99,15 +99,17 @@ export function Footer() {
       </div>
 
       {/* Readability scrim.
-          Sits ONLY behind the link columns at the top. It was widened to
-          inset-0 to strengthen contrast, which put a wash over the entire
-          footer — photograph included — and erased the image completely. */}
+          Covers the full height. Confining it to the top 46% left the pale
+          dusk sky sitting directly behind the link columns, brighter than the
+          cream text on it. The photograph is dark enough now that a wash this
+          strong still leaves the horizon readable — the scene should be felt,
+          not competed with. */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 z-0 h-[46%] pointer-events-none"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(10,31,18,0.62) 0%, rgba(10,31,18,0.45) 55%, transparent 100%)",
+            "linear-gradient(180deg, rgba(8,24,14,0.86) 0%, rgba(8,24,14,0.78) 40%, rgba(8,24,14,0.62) 72%, rgba(8,24,14,0.55) 100%)",
         }}
       />
 
