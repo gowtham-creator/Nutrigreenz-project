@@ -39,7 +39,7 @@ export default function TrackOrderPage() {
             <span aria-hidden className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-ng-leaf/10 blur-2xl" />
             <div className="relative space-y-5">
               <Input label="Order ID" placeholder="NG-25-1042" prefix={<Icon name="hashtag-linear" size={17} />} />
-              <Input label="Phone or email used at checkout" placeholder="+91 98xxx xxxxx" prefix={<Icon name="phone-linear" size={17} />} />
+              <Input label="Phone or email used at checkout" placeholder="+91 98xxx xxxxx" prefix={<Icon name="phone-bold" size={17} />} />
               <Button variant="primary" size="lg" fullWidth>
                 Track my order →
               </Button>

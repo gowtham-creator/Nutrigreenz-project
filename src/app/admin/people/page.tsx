@@ -27,7 +27,7 @@ export default function AdminPeople() {
       <Card title="Customers" className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="size-12 rounded-2xl bg-ng-sage/50 flex items-center justify-center shrink-0">
-            <Icon name="user-rounded-bold" size={24} className="text-ng-forest" />
+            <Icon name="user-circle-bold" size={24} className="text-ng-forest" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[15px] text-ng-forest-deep">Deduped customer directory</p>
@@ -41,7 +41,7 @@ export default function AdminPeople() {
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer shrink-0"
           >
             Open customers
-            <Icon name="alt-arrow-right-bold" size={14} />
+            <Icon name="arrow-right-linear" size={14} />
           </Link>
         </div>
       </Card>

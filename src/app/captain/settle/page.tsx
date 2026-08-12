@@ -141,7 +141,7 @@ export default function CaptainSettle() {
         <CaptainCard className="h-full">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-lg bg-ng-leaf/15 flex items-center justify-center">
-              <Icon name="smartphone-2-bold" size={18} className="text-ng-forest" />
+              <Icon name="smartphone-bold" size={18} className="text-ng-forest" />
             </div>
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">UPI</span>
           </div>
@@ -230,7 +230,7 @@ export default function CaptainSettle() {
             disabled={stats.count === 0 || submitting}
             className="w-full flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-4 text-[15px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf active:scale-[0.99] shadow-[0_12px_28px_-10px_rgba(102,191,115,0.75)]"
           >
-            <Icon name="square-arrow-right-up-bold" size={19} />
+            <Icon name="arrow-right-up-linear" size={19} />
             {submitting ? "Submitting…" : "Submit settlement to HQ"}
           </button>
         )}

@@ -24,11 +24,23 @@ const SRC = join(ROOT, "src");
 
 /* ── 1. collect every icon name referenced in the codebase ───────────────── */
 
-// Icons arrive two ways: as a JSX prop (`name="bag-4-bold"`) and as plain data
-// on config objects (`{ icon: "leaf-bold" }`), which the nav/pillar/section
-// arrays use heavily. Both must be captured or icons go missing at runtime.
+// Icons arrive two ways: as a JSX prop (`<Icon name="bag-4-bold" />`) and as
+// plain data on config objects (`{ icon: "leaf-bold" }`), which the nav/pillar/
+// section arrays use heavily. Both must be captured or icons go missing at
+// runtime.
+//
+// The JSX pattern is anchored to `<Icon` rather than reading every `name=` in
+// the tree. A bare `name=` also matches `<AppIcon name="honey">`, `<BrandIcon
+// name="cart">` and every `<input name="…">`, none of which are Solar icons —
+// they came out the far end as 38 lines of "not found in any collection", and a
+// warning list that is mostly noise is a warning list nobody reads. A genuinely
+// missing icon has to be able to stand out in it.
+//
+// `\b` after `<Icon` is what keeps `<IconButton` out: there is no word boundary
+// between `n` and `B`. `[^>]` spans newlines, so an attribute list broken across
+// lines still matches.
 const PATTERNS = [
-  /\bname=["']([a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9-]+)?)["']/g,
+  /<Icon\b[^>]*?\bname=["']([a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9-]+)?)["']/g,
   /\bicon:\s*["']([a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9-]+)?)["']/g,
   /\bicon=["']([a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9-]+)?)["']/g,
 ];
@@ -42,11 +54,26 @@ function walk(dir, out = []) {
   return out;
 }
 
+/*
+ * `icon:` and `icon=` are not exclusively Iconify fields. The category and tab
+ * arrays use `icon: "honey"` for the hand-drawn produce set, and
+ * `sections/categories.tsx` uses `icon:` for a Tailwind colour class outright.
+ * Neither is a Solar name and neither should be reported as a missing one.
+ *
+ * Solar names always carry a style suffix, so that is the discriminator: an
+ * unprefixed name qualifies only if it ends in one. Names written with an
+ * explicit collection prefix (`simple-icons:upi`) are taken at their word.
+ */
+const SOLAR_STYLE = /-(bold|linear|broken|outline|duotone|bold-duotone)$/;
+const isIconifyName = (raw) => raw.includes(":") || SOLAR_STYLE.test(raw);
+
 const referenced = new Set();
 for (const file of walk(SRC)) {
   const text = readFileSync(file, "utf8");
   for (const re of PATTERNS) {
-    for (const m of text.matchAll(re)) referenced.add(m[1]);
+    for (const m of text.matchAll(re)) {
+      if (isIconifyName(m[1])) referenced.add(m[1]);
+    }
   }
 }
 

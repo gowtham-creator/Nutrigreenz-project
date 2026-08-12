@@ -77,7 +77,7 @@ function AccessRequired() {
     <AdminShell active="/admin/config" title="Super Admin">
       <div className="max-w-md mx-auto text-center py-20">
         <span className="relative inline-flex size-16 items-center justify-center rounded-2xl bg-ng-forest-deep ring-1 ring-ng-clay/40 mb-5 shadow-[0_8px_24px_rgba(31,77,46,0.18)]">
-          <Icon name="lock-keyhole-bold" size={28} className="text-ng-clay" />
+          <Icon name="lock-keyhole-minimalistic-bold" size={28} className="text-ng-clay" />
         </span>
         <h2 className="font-display text-[22px] text-ng-forest-deep">Super Admin access required</h2>
         <p className="text-[13.5px] font-medium text-ng-ink-muted mt-2">
@@ -88,7 +88,7 @@ function AccessRequired() {
           href="/admin"
           className="inline-flex items-center gap-1.5 mt-6 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-forest transition-colors cursor-pointer"
         >
-          <Icon name="arrow-left-bold" size={15} />
+          <Icon name="arrow-left-linear" size={15} />
           Back to overview
         </a>
       </div>

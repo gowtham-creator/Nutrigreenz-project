@@ -619,7 +619,7 @@ export default function AdminProfilePage() {
           <Card
             title={
               <span className="inline-flex items-center gap-2">
-                <Icon name="lock-keyhole-minimalistic-linear" size={18} className="text-ng-forest" />
+                <Icon name="lock-keyhole-minimalistic-bold" size={18} className="text-ng-forest" />
                 Security
               </span>
             }

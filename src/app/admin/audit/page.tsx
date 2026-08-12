@@ -688,7 +688,7 @@ export default function AdminAuditPage() {
         ) : visible.length === 0 ? (
           <div className="py-14 text-center">
             <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
-              <Icon name="history-2-bold" size={22} />
+              <Icon name="history-bold" size={22} />
             </div>
             <p className="text-[14px] font-semibold text-ng-forest-deep">
               {hasFilters ? "No activity matches your filters" : "No activity recorded yet"}

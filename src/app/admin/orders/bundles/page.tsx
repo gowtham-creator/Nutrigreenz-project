@@ -14,7 +14,7 @@ export default function AdminOrderBundles() {
           href="/admin/orders"
           className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors"
         >
-          <Icon name="arrow-left-bold" size={14} />
+          <Icon name="arrow-left-linear" size={14} />
           Back to orders
         </Link>
       }

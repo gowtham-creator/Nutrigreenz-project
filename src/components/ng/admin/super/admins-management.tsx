@@ -499,7 +499,7 @@ export function AdminsManagement() {
                   title="Owner account — only the account holder can change it"
                   className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest-deep"
                 >
-                  <Icon name="lock-keyhole-bold" size={10} />
+                  <Icon name="lock-keyhole-minimalistic-bold" size={10} />
                   Owner
                 </span>
               ) : null}

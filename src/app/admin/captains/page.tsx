@@ -699,7 +699,7 @@ function CaptainDrawer({
                           </span>
                           {cap.linkedCustomerId ? (
                             <span className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider text-ng-success shrink-0">
-                              <Icon name="link-circle-bold" size={12} />
+                              <Icon name="link-round-bold" size={12} />
                               Linked
                             </span>
                           ) : (

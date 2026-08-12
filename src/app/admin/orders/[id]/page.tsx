@@ -114,7 +114,7 @@ export default function AdminOrderDetail({
       >
         <Card className="text-center py-16">
           <div className="mx-auto size-12 rounded-full bg-ng-cream flex items-center justify-center text-ng-ink-soft mb-4">
-            <Icon name="box-minimalistic-broken" size={24} />
+            <Icon name="box-bold" size={24} />
           </div>
           <h2 className="font-display text-[20px] text-ng-forest-deep">
             We couldn&rsquo;t find that order

@@ -122,7 +122,7 @@ export default function CaptainPickups() {
           </div>
           <div className="font-display text-[19px] text-ng-cream mt-2.5 leading-tight">{nextStop.community}</div>
           <div className="flex items-center gap-1.5 text-[11.5px] text-ng-cream/65 mt-1.5">
-            <Icon name="box-minimalistic-linear" size={13} />
+            <Icon name="box-bold" size={13} />
             {nextStop.address ?? "Community pickup"}
           </div>
           <div className="mt-4 flex items-center gap-2.5">
@@ -131,7 +131,7 @@ export default function CaptainPickups() {
               onClick={() => toast.info(`Opening route to ${nextStop.community}`)}
               className="flex items-center justify-center gap-1.5 rounded-full bg-ng-cream/10 ring-1 ring-ng-cream/15 text-ng-cream px-4 py-3 text-[12.5px] font-semibold cursor-pointer hover:bg-ng-cream/15 transition-colors active:scale-[0.98]"
             >
-              <Icon name="map-point-wave-linear" size={15} />
+              <Icon name="map-point-wave-bold" size={15} />
               Navigate
             </button>
             <button
@@ -211,7 +211,7 @@ export default function CaptainPickups() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[12px] text-ng-ink-muted mt-1.5">
-                        <Icon name="clock-circle-linear" size={13} className="text-ng-ink-soft" />
+                        <Icon name="clock-circle-bold" size={13} className="text-ng-ink-soft" />
                         {formatPickupWhen(p.dueAt)}
                       </div>
                       <div className="text-[11.5px] text-ng-ink-soft font-mono mt-1">#{p.id.slice(0, 8)}</div>
@@ -219,7 +219,7 @@ export default function CaptainPickups() {
                   </div>
 
                   <div className="mt-3 flex items-start gap-1.5 text-[12px] text-ng-ink-muted">
-                    <Icon name="box-minimalistic-linear" size={14} className="text-ng-ink-soft mt-0.5 shrink-0" />
+                    <Icon name="box-bold" size={14} className="text-ng-ink-soft mt-0.5 shrink-0" />
                     <span>{p.address ?? "Community pickup"}</span>
                   </div>
 
@@ -245,7 +245,7 @@ export default function CaptainPickups() {
                       onClick={() => toast.info(`Opening route to ${p.community}`)}
                       className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
                     >
-                      <Icon name="map-point-wave-linear" size={15} />
+                      <Icon name="map-point-wave-bold" size={15} />
                       Route
                     </button>
                     <button
@@ -253,7 +253,7 @@ export default function CaptainPickups() {
                       onClick={() => toast.info("Calling community coordinator")}
                       className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
                     >
-                      <Icon name="phone-linear" size={15} />
+                      <Icon name="phone-bold" size={15} />
                       Call
                     </button>
                     {p.status === "handed_over" ? (

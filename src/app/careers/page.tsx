@@ -123,7 +123,7 @@ export default function CareersPage() {
                      dangerouslySetInnerHTML={{ __html: r.blurb }} />
                   <div className="mt-3 flex flex-wrap gap-4 text-[13px] text-ng-ink-soft">
                     <span className="inline-flex items-center gap-1.5"><Icon name="map-point-linear" size={15} />{r.location}</span>
-                    <span className="inline-flex items-center gap-1.5"><Icon name="clock-circle-linear" size={15} />{r.type}</span>
+                    <span className="inline-flex items-center gap-1.5"><Icon name="clock-circle-bold" size={15} />{r.type}</span>
                   </div>
                 </div>
                 <a

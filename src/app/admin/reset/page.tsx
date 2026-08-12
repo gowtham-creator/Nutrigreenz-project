@@ -204,7 +204,7 @@ export default function AdminResetPage() {
               href="/admin/login"
               className="inline-flex items-center gap-1.5 text-[13px] font-sans font-medium text-ng-ink-muted hover:text-ng-forest-deep transition-colors"
             >
-              <Icon name="alt-arrow-left-bold" size={15} />
+              <Icon name="arrow-left-linear" size={15} />
               Back to sign in
             </Link>
           </div>
