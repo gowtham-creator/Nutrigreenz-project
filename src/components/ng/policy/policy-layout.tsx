@@ -18,6 +18,7 @@ const POLICY_NAV = [
   { href: "/policies/privacy", label: "Privacy" },
   { href: "/policies/terms", label: "Terms of service" },
   { href: "/policies/cookies", label: "Cookies" },
+  { href: "/policies/attributions", label: "Attributions" },
 ] as const;
 
 /**

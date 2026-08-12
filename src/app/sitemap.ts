@@ -31,6 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: url("/policies/privacy"), lastModified: now, changeFrequency: "yearly", priority: 0.4 },
     { url: url("/policies/terms"), lastModified: now, changeFrequency: "yearly", priority: 0.4 },
     { url: url("/policies/cookies"), lastModified: now, changeFrequency: "yearly", priority: 0.4 },
+    { url: url("/policies/attributions"), lastModified: now, changeFrequency: "yearly", priority: 0.4 },
   ];
 
   const categoryEntries: MetadataRoute.Sitemap = CATEGORIES.map((c) => ({

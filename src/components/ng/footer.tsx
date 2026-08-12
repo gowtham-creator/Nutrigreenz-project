@@ -215,6 +215,9 @@ export function Footer() {
             <li><Link href="/policies/privacy" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Privacy</Link></li>
             <li><Link href="/policies/terms" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Terms</Link></li>
             <li><Link href="/policies/cookies" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Cookies</Link></li>
+            {/* CC BY 4.0 on the Solar icon set wants the credit discoverable from
+                the site, not only from inside /policies. */}
+            <li><Link href="/policies/attributions" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Attributions</Link></li>
             <li><Link href="/sitemap" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Sitemap</Link></li>
           </ul>
         </div>
