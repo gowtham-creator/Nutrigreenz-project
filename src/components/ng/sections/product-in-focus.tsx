@@ -254,8 +254,8 @@ export function ProductInFocus({
                       "transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       isActive
-                        ? "text-ng-forest-deep"
-                        : "text-ng-ink-soft hover:text-ng-forest-deep",
+                        ? "font-semibold text-ng-forest-deep"
+                        : "text-ng-ink hover:text-ng-forest-deep",
                     )}
                   >
                     {Icon ? (
@@ -271,15 +271,17 @@ export function ProductInFocus({
                        * still scans as one family and the active one is picked
                        * out by the rule beneath it.
                        */
-                      <Icon
-                        size={40}
-                        className={cn(
-                          "transition-opacity duration-300",
-                          isActive
-                            ? "text-ng-forest opacity-100"
-                            : "text-ng-forest-soft opacity-55 group-hover:opacity-90",
-                        )}
-                      />
+                      /*
+                       * Every mark the same near-black, active or not. Drawn in
+                       * `forest-soft` at 55% these washed out to a pale sage
+                       * over cream, and the muted ink token that replaced it
+                       * (#5C6A60) still carries a green cast — so the row read
+                       * as seven faded green stickers either way. Selection is
+                       * carried by the rule and the label weight; restating it
+                       * by fading six of seven drawings only makes six drawings
+                       * harder to see.
+                       */
+                      <Icon size={40} className="text-ng-forest-deep" />
                     ) : null}
                     <span className="whitespace-nowrap">{tab.label}</span>
                     {/* The active rule. Always present so selecting a tab does not

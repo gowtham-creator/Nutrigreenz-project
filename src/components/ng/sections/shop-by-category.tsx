@@ -44,26 +44,15 @@ const SLUG_ICONS: Record<string, keyof typeof PRODUCE_ICONS> = {
   gifting: "gift",
 };
 
-/**
- * Per-category accent colour so the row reads colourful and varied instead of
- * all-green. `tint` colours the glyph; `ring` is the soft circle behind it. The
- * glyphs stay vector `currentColor`, so on the active (forest) tab they invert
- * to cream cleanly — something a fixed-colour image could never do.
+/*
+ * A per-category tint table used to live here — clay for oils, terracotta for
+ * spices, soil for pulses — to keep the row "colourful and varied". It is gone
+ * with the discs it coloured. Twelve accents across one row of tabs meant the
+ * strongest signal in the control was hue, and hue was the one thing not
+ * carrying meaning: nothing about a category is amber rather than terracotta,
+ * and the genuinely meaningful state, which tab is selected, had to compete
+ * with all of it. Selection is now the only thing the row colours.
  */
-const CAT_COLORS: Record<string, { tint: string; ring: string }> = {
-  all: { tint: "text-ng-forest-soft", ring: "bg-ng-leaf/20" },
-  oils: { tint: "text-ng-clay-deep", ring: "bg-ng-amber/20" },
-  ghee: { tint: "text-ng-clay-deep", ring: "bg-ng-clay/24" },
-  honey: { tint: "text-ng-clay", ring: "bg-ng-amber/20" },
-  rice: { tint: "text-ng-clay-deep", ring: "bg-ng-clay-deep/16" },
-  millets: { tint: "text-ng-soil", ring: "bg-ng-soil/16" },
-  spices: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/20" },
-  superfoods: { tint: "text-ng-green-bright", ring: "bg-ng-green-bright/20" },
-  pulses: { tint: "text-ng-soil", ring: "bg-ng-soil/16" },
-  flours: { tint: "text-ng-clay", ring: "bg-ng-clay/20" },
-  fruits: { tint: "text-ng-terracotta", ring: "bg-ng-terracotta/20" },
-  gifting: { tint: "text-ng-forest", ring: "bg-ng-forest/16" },
-};
 
 /** Highest-rated products first — the live mapper sets no "Best seller" badge. */
 function bestsellers(products: ProductCardType[]): ProductCardType[] {
@@ -139,7 +128,6 @@ export function ShopByCategory({ categories, products, className }: Props) {
           {tabs.map((tab) => {
             const Icon = PRODUCE_ICONS[tab.icon] ?? PRODUCE_ICONS.leaf;
             const isActive = tab.key === active;
-            const color = CAT_COLORS[tab.key] ?? CAT_COLORS.all;
             return (
               <button
                 key={tab.key}
@@ -148,25 +136,41 @@ export function ShopByCategory({ categories, products, className }: Props) {
                 aria-selected={isActive}
                 onClick={() => setActive(tab.key)}
                 className={cn(
-                  "group inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium",
-                  "transition-[background-color,border-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                  "group inline-flex shrink-0 flex-col items-center gap-2 rounded-lg px-4 pb-2 pt-1 text-[14px] font-medium",
+                  "transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                   isActive
-                    ? "border-ng-forest bg-ng-forest text-ng-cream shadow-[0_10px_28px_-12px_rgba(31,77,46,0.7)]"
-                    : "border-ng-line bg-ng-paper text-ng-ink-soft hover:border-ng-leaf-soft hover:text-ng-forest",
+                    ? "font-semibold text-ng-forest-deep"
+                    : "text-ng-ink hover:text-ng-forest-deep",
                 )}
               >
-                <span
-                  className={cn(
-                    "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
-                    isActive
-                      ? cn("bg-ng-cream", color.tint)
-                      : cn("ring-1 ring-inset ring-black/[0.05]", color.ring, color.tint),
-                  )}
-                >
-                  <Icon size={18} />
-                </span>
+                {/*
+                  Same treatment as the product-in-focus tabs: the mark drawn
+                  bare at 40px in ink, with a rule under the active label. The
+                  pill-and-tinted-disc version put a 18px glyph inside a coloured
+                  circle inside a bordered capsule — three nested shapes around a
+                  drawing too small to be recognised, and each category tinted a
+                  different colour on top. One row, one weight, one colour.
+                */}
+                {/*
+                  Every mark the same near-black, active or not. `ink-muted` is
+                  #5C6A60 — a grey with a green cast — so dimming the inactive
+                  ones tinted them sage against cream, which is the "green"
+                  being complained about. Selection is carried by the rule and
+                  the label weight, which is enough; a row that also restates it
+                  by fading six of seven drawings just makes six drawings harder
+                  to see.
+                */}
+                <Icon size={40} className="text-ng-forest-deep" />
                 <span className="whitespace-nowrap">{tab.label}</span>
+                {/* Always rendered, so selecting a tab never shifts the row. */}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-[3px] w-full rounded-full transition-colors duration-300",
+                    isActive ? "bg-ng-forest-deep" : "bg-transparent",
+                  )}
+                />
               </button>
             );
           })}
