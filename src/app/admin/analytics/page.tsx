@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { AreaChart, DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
@@ -120,26 +121,37 @@ export default function AdminAnalytics() {
 
   const range = useMemo(() => DATE_RANGES.find((r) => r.id === rangeId) ?? DATE_RANGES[0], [rangeId]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { from, to } = rangeWindow(range.days);
-      const params = new URLSearchParams({ bucket });
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
-      const res = await fetch(`/api/admin/analytics?${params.toString()}`, { cache: "no-store" });
-      const json = (await res.json()) as { ok: boolean; analytics?: Analytics };
-      setAnalytics(json.ok && json.analytics ? json.analytics : null);
-    } catch {
-      setAnalytics(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [range.days, bucket]);
+  const load = useCallback(
+    async ({ quiet = false }: { quiet?: boolean } = {}) => {
+      // See the note in `useLiveRefresh`: a background refresh keeps the
+      // current figures on screen while it runs, rather than collapsing the
+      // page to skeletons for a query nobody asked for.
+      if (!quiet) setLoading(true);
+      try {
+        const { from, to } = rangeWindow(range.days);
+        const params = new URLSearchParams({ bucket });
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        const res = await fetch(`/api/admin/analytics?${params.toString()}`, { cache: "no-store" });
+        const json = (await res.json()) as { ok: boolean; analytics?: Analytics };
+        setAnalytics(json.ok && json.analytics ? json.analytics : null);
+      } catch {
+        // A failed background poll must not wipe a good screen — only a
+        // foreground load is allowed to resolve to the empty state.
+        if (!quiet) setAnalytics(null);
+      } finally {
+        if (!quiet) setLoading(false);
+      }
+    },
+    [range.days, bucket],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Order status and payment changes move these numbers; follow them.
+  useLiveRefresh(() => void load({ quiet: true }));
 
   const toggleSort = (key: SortKey) =>
     setSort((s) =>

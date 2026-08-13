@@ -430,6 +430,29 @@ export function DonutChart({
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
 
+  /*
+   * Percentages by largest remainder, so the column adds up to 100.
+   *
+   * Rounding each share on its own is what produced "Placed 25% · Confirmed 38%
+   * · Delivered 38%" against eight orders — 101% — and once a reader has caught
+   * the legend disagreeing with itself, they stop trusting it to say which arc
+   * is which. Floors first, then the leftover points go to whichever segments
+   * were cut hardest.
+   */
+  const shares = segments.map((s) => (s.value / total) * 100);
+  const pct = shares.map(Math.floor);
+  let leftover = 100 - pct.reduce((a, b) => a + b, 0);
+  const byRemainder = shares
+    .map((v, i) => ({ i, rem: v - Math.floor(v) }))
+    .sort((a, b) => b.rem - a.rem);
+  for (const { i } of byRemainder) {
+    if (leftover <= 0) break;
+    // A segment with no orders must never be rounded up to 1%.
+    if (segments[i].value === 0) continue;
+    pct[i] += 1;
+    leftover -= 1;
+  }
+
   // Each arc starts where the previous one ended. Precomputed rather than
   // accumulated inside the render loop — mutating during render is not safe
   // under the React Compiler and can desync across re-renders.
@@ -447,6 +470,15 @@ export function DonutChart({
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ng-line-soft)" strokeWidth={thickness} />
           {segments.map((s, i) => {
             const { len, start } = arcs[i];
+            if (len <= 0) return null;
+            /*
+             * A hairline of page colour between arcs. Two adjacent segments in
+             * neighbouring greens used to fuse into one band, which is most of
+             * why the ring could not be read against the legend — the boundary
+             * simply was not visible. Only shortened when there is room, so a
+             * thin sliver is never erased by its own gap.
+             */
+            const gap = len > 3 ? 1.5 : 0;
             return (
               <circle
                 key={i}
@@ -456,7 +488,7 @@ export function DonutChart({
                 fill="none"
                 stroke={TONE_STROKE[s.tone]}
                 strokeWidth={thickness}
-                strokeDasharray={`${len} ${c - len}`}
+                strokeDasharray={`${len - gap} ${c - len + gap}`}
                 strokeDashoffset={-start}
                 strokeLinecap="butt"
               />
@@ -472,16 +504,60 @@ export function DonutChart({
           </div>
         )}
       </div>
-      <ul className="space-y-2 min-w-0">
-        {segments.map((s) => (
-          <li key={s.label} className="flex items-center gap-2.5 text-[12.5px]">
-            <span className="size-2.5 rounded-full shrink-0" style={{ background: TONE_STROKE[s.tone] }} />
-            <span className="text-ng-ink-muted font-medium truncate">{s.label}</span>
-            <span className="ml-auto font-mono tabular-nums text-ng-forest-deep font-semibold pl-3">
-              {Math.round((s.value / total) * 100)}%
-            </span>
-          </li>
-        ))}
+      <ul className="min-w-0 space-y-1.5">
+        {segments.map((s, i) => {
+          const empty = s.value === 0;
+          return (
+            <li key={s.label} className="flex items-center gap-2.5 text-[12.5px]">
+              {/*
+                A ring, not a disc. The filled dot rendered `forest` as a 10px
+                near-black circle that was indistinguishable from `ink` beside
+                it — the reader could not tell which of two dark rows belonged
+                to which dark arc. A ring shows the same colour along an edge
+                and around a light centre, where a hue is far easier to name.
+
+                Rows with no orders are drawn hollow and dimmed: the status is
+                still listed, because "nothing is packed right now" is worth
+                knowing, but it no longer looks like a segment to hunt for on a
+                ring it does not appear on.
+              */}
+              <span
+                className="size-2.5 shrink-0 rounded-full border-2"
+                style={{
+                  borderColor: TONE_STROKE[s.tone],
+                  opacity: empty ? 0.35 : 1,
+                }}
+              />
+              <span
+                className={cn(
+                  "truncate font-medium",
+                  empty ? "text-ng-ink-soft" : "text-ng-ink-muted",
+                )}
+              >
+                {s.label}
+              </span>
+              {/* The count is the unambiguous number. A percentage alone cannot
+                  tell 3 orders of 8 from 3,000 of 8,000, and on a catalogue this
+                  size the raw figure is usually the one being looked for. */}
+              <span
+                className={cn(
+                  "ml-auto pl-3 font-mono tabular-nums",
+                  empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
+                )}
+              >
+                {s.value.toLocaleString("en-IN")}
+              </span>
+              <span
+                className={cn(
+                  "w-10 shrink-0 text-right font-mono tabular-nums font-semibold",
+                  empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
+                )}
+              >
+                {pct[i]}%
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

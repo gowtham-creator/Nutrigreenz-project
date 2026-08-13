@@ -11,7 +11,8 @@
  * empty state when Supabase is unconfigured or the roster is fresh.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
@@ -122,39 +123,47 @@ const STATUS_TONE: Record<OrderStatus, VizTone> = {
 };
 const PAYMENT_ORDER: PaymentStatus[] = ["paid", "pending", "failed"];
 const PAYMENT_LABEL: Record<PaymentStatus, string> = { paid: "Paid", pending: "Pending", failed: "Failed" };
-const PAYMENT_TONE: Record<PaymentStatus, VizTone> = { paid: "forest", pending: "amber", failed: "terracotta" };
+/* `leaf` for paid, not `forest` — see the note in reports-client: forest is
+   near-black at legend size and reads as an unlabelled dark marker. */
+const PAYMENT_TONE: Record<PaymentStatus, VizTone> = { paid: "leaf", pending: "amber", failed: "terracotta" };
 
 export default function AdminOverview() {
   const [report, setReport] = useState<AdminReport | null>(null);
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [rRes, oRes] = await Promise.all([
-          fetch("/api/admin/reports", { cache: "no-store" }),
-          fetch("/api/admin/orders?limit=8", { cache: "no-store" }),
-        ]);
-        if (alive && rRes.ok) {
-          const j = (await rRes.json()) as { report?: AdminReport };
-          if (j.report) setReport(j.report);
-        }
-        if (alive && oRes.ok) {
-          const j = (await oRes.json()) as { orders?: AdminOrderRow[] };
-          if (Array.isArray(j.orders)) setOrders(j.orders);
-        }
-      } catch {
-        /* graceful — the page falls back to its empty state */
-      } finally {
-        if (alive) setLoading(false);
+  const load = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
+    try {
+      const [rRes, oRes] = await Promise.all([
+        fetch("/api/admin/reports", { cache: "no-store" }),
+        fetch("/api/admin/orders?limit=8", { cache: "no-store" }),
+      ]);
+      if (rRes.ok) {
+        const j = (await rRes.json()) as { report?: AdminReport };
+        if (j.report) setReport(j.report);
       }
-    })();
-    return () => {
-      alive = false;
-    };
+      if (oRes.ok) {
+        const j = (await oRes.json()) as { orders?: AdminOrderRow[] };
+        if (Array.isArray(j.orders)) setOrders(j.orders);
+      }
+    } catch {
+      /* graceful — the page falls back to its empty state */
+    } finally {
+      if (!quiet) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  /*
+   * This screen is the one most likely to be left open on a second monitor all
+   * day, which is precisely the case where a single mount fetch goes stale
+   * without ever looking stale. The recent-orders list and the status rings
+   * both come from endpoints that change every time somebody touches an order.
+   */
+  useLiveRefresh(() => void load({ quiet: true }), { intervalMs: 45_000 });
 
   const statusMap = new Map<OrderStatus, number>();
   for (const s of report?.statusBreakdown ?? []) statusMap.set(s.status, s.orders);

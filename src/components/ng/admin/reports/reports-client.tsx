@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { VisitorPlaces } from "@/components/ng/admin/reports/visitor-places";
 import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
@@ -51,7 +52,10 @@ const STATUS_TONE: Record<OrderStatus, VizTone> = {
 
 const PAYMENT_TONE: Record<PaymentStatus, VizTone> = {
   pending: "amber",
-  paid: "forest",
+  /* Leaf, not forest. Forest renders near-black at legend size, so the paid
+     row read as an unnamed dark marker sitting next to an amber one — green
+     for money received is also the reading anyone expects. */
+  paid: "leaf",
   failed: "terracotta",
 };
 
@@ -101,17 +105,28 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
 
   const range = DATE_RANGES.find((r) => r.id === rangeId)!;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { from, to } = rangeWindow(range.days);
-    const params = new URLSearchParams();
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
-    const res = await fetch(`/api/admin/reports?${params.toString()}`);
-    const data = (await res.json()) as { ok: boolean; report?: AdminReport };
-    if (data.ok && data.report) setReport(data.report);
-    setLoading(false);
-  }, [range.days]);
+  const load = useCallback(
+    async ({ quiet = false }: { quiet?: boolean } = {}) => {
+      // A background refresh must not blank the page it is refreshing: the
+      // loading flag swaps the report for skeletons, which is right when the
+      // operator asked for a different range and wrong when nobody asked for
+      // anything.
+      if (!quiet) setLoading(true);
+      const { from, to } = rangeWindow(range.days);
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      // no-store: this is a figure an operator acts on, and a status changed
+      // thirty seconds ago must not come back from the browser's cache.
+      const res = await fetch(`/api/admin/reports?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const data = (await res.json()) as { ok: boolean; report?: AdminReport };
+      if (data.ok && data.report) setReport(data.report);
+      if (!quiet) setLoading(false);
+    },
+    [range.days],
+  );
 
   useEffect(() => {
     if (skipInitialLoad.current) {
@@ -126,6 +141,12 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
+
+  // Follow the orders table: re-query on tab focus and on a slow poll, so
+  // marking an order delivered in the next tab is reflected here without a
+  // reload. Quiet, so the figures update in place rather than flashing back to
+  // skeletons under the operator.
+  useLiveRefresh(() => void load({ quiet: true }));
 
   /* derived coupon totals (memoised) -------------------------------- */
   const couponTotals = useMemo(() => {
