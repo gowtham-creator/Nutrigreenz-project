@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
+import { EnterKey, EscKey, Keycap, ModifierKey } from "@/components/ui/keycap";
 import { cn } from "@/lib/utils";
 import type { SearchCategoryHit, SearchProductHit } from "@/app/api/search/route";
 
@@ -309,7 +311,7 @@ export function SiteSearch({ className }: { className?: string }) {
           className,
         )}
       >
-        <Icon name="magnifer-linear" size={19} />
+        <UiIcon name="search" size={19} />
       </button>
 
       {open && typeof document !== "undefined"
@@ -332,7 +334,7 @@ export function SiteSearch({ className }: { className?: string }) {
                 className="relative mx-auto mt-[8vh] w-[min(680px,92vw)] overflow-hidden rounded-2xl border border-ng-line bg-ng-paper shadow-[0_40px_90px_-30px_rgba(10,31,18,0.5)]"
               >
                 <div className="flex items-center gap-3 border-b border-ng-line-soft px-5 py-4">
-                  <Icon name="magnifer-linear" size={20} className="shrink-0 text-ng-ink-muted" />
+                  <UiIcon name="search" size={20} className="shrink-0 text-ng-ink-muted" />
                   <input
                     ref={inputRef}
                     type="text"
@@ -358,9 +360,7 @@ export function SiteSearch({ className }: { className?: string }) {
                       <Icon name="close-circle-linear" size={18} />
                     </button>
                   ) : null}
-                  <kbd className="hidden shrink-0 rounded border border-ng-line bg-ng-cream px-1.5 py-0.5 font-mono text-[11px] text-ng-ink-muted sm:block">
-                    esc
-                  </kbd>
+                  <EscKey className="hidden shrink-0 sm:inline-flex" />
                 </div>
 
                 <div
@@ -452,11 +452,7 @@ export function SiteSearch({ className }: { className?: string }) {
                                 onClick={() => go(item)}
                                 className={rowClass(i)}
                               >
-                                <Icon
-                                  name="bag-4-bold"
-                                  size={17}
-                                  className="shrink-0 text-ng-leaf"
-                                />
+                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-leaf" />
                                 <span className="truncate text-[14px] text-ng-ink">
                                   {item.label}
                                 </span>
@@ -479,11 +475,7 @@ export function SiteSearch({ className }: { className?: string }) {
                                 onClick={() => go(item)}
                                 className={rowClass(i)}
                               >
-                                <Icon
-                                  name="bag-4-bold"
-                                  size={17}
-                                  className="shrink-0 text-ng-leaf"
-                                />
+                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-leaf" />
                                 <span className="min-w-0 flex-1 truncate text-[14px] text-ng-ink">
                                   <Highlight text={item.hit.title} term={q} />
                                 </span>
@@ -510,7 +502,7 @@ export function SiteSearch({ className }: { className?: string }) {
                                 "border-t border-ng-line-soft text-[13px] font-semibold text-ng-forest",
                               )}
                             >
-                              <Icon name="magnifer-linear" size={16} className="shrink-0" />
+                              <UiIcon name="search" size={16} className="shrink-0" />
                               {item.label}
                             </button>
                           );
@@ -574,10 +566,23 @@ export function SiteSearch({ className }: { className?: string }) {
                 {/* Keyboard legend. Hidden on touch, where there are no keys to
                     press and the row would just be noise. */}
                 <div className="hidden items-center gap-4 border-t border-ng-line-soft px-5 py-2.5 text-[11px] text-ng-ink-soft sm:flex">
-                  <LegendKey keys={["↑", "↓"]}>navigate</LegendKey>
-                  <LegendKey keys={["↵"]}>open</LegendKey>
-                  <LegendKey keys={["esc"]}>close</LegendKey>
-                  <span className="ml-auto font-mono">⌘K</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Keycap>↑</Keycap>
+                    <Keycap>↓</Keycap>
+                    navigate
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <EnterKey />
+                    open
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <EscKey />
+                    close
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1">
+                    <ModifierKey />
+                    <Keycap>K</Keycap>
+                  </span>
                 </div>
               </div>
             </div>,
@@ -596,18 +601,3 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LegendKey({ keys, children }: { keys: string[]; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      {keys.map((k) => (
-        <kbd
-          key={k}
-          className="rounded border border-ng-line bg-ng-cream px-1.5 py-0.5 font-mono text-[10px]"
-        >
-          {k}
-        </kbd>
-      ))}
-      {children}
-    </span>
-  );
-}
