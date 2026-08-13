@@ -1,16 +1,20 @@
 import {
   BadgeCheck,
+  ClipboardCheck,
+  CookingPot,
   FlaskConical,
   Footprints,
   KeyRound,
   Lock,
   LogIn,
   LogOut,
+  ReceiptIndianRupee,
   ShoppingCart,
   Store,
   MapPin,
   Sprout,
   Tractor,
+  TreeDeciduous,
   Truck,
   User,
   type LucideIcon,
@@ -79,6 +83,18 @@ const ICONS = {
   signOut: LogOut,
   signIn: LogIn,
   cart: ShoppingCart,
+  /*
+   * The four promise marks, drawn large (56–64px) above their headings rather
+   * than inside a chip. They are grouped here on purpose: shown at that size,
+   * side by side, four icons read as one drawing or as four clip-art pieces,
+   * and nothing makes them read as four pieces faster than sourcing them from
+   * different families. Every one of these is Lucide, so the stroke weight,
+   * corner radius and optical size are shared by construction.
+   */
+  tree: TreeDeciduous,
+  churn: CookingPot,
+  checklist: ClipboardCheck,
+  fairPrice: ReceiptIndianRupee,
 } satisfies Record<string, LucideIcon>;
 
 export type BrandIconName = keyof typeof ICONS;

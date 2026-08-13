@@ -5,7 +5,8 @@ import { Hero } from "@/components/ng/sections/hero";
 import { AssuranceStrip } from "@/components/ng/sections/assurance-strip";
 import { ShopByCategory } from "@/components/ng/sections/shop-by-category";
 import { Why } from "@/components/ng/sections/why";
-import { Traceability } from "@/components/ng/sections/traceability";
+import { NativeIngredients } from "@/components/ng/sections/native-ingredients";
+import { OnlyPerfect } from "@/components/ng/sections/only-perfect";
 import { ProductInFocus, type FocusSubTab } from "@/components/ng/sections/product-in-focus";
 import { Farms } from "@/components/ng/sections/farms";
 import { Testimonials } from "@/components/ng/sections/testimonials";
@@ -106,7 +107,10 @@ export default async function Home() {
         />
       )}
 
-      <Traceability />
+      {/* The traceability lot-lookup that used to sit here now lives at
+          /traceability, reached from the "See the proof" card in <OnlyPerfect>
+          below. */}
+      <NativeIngredients />
       {ghee.length > 0 && (
         <ProductInFocus
           sectionId="pif-ghee"
@@ -163,6 +167,7 @@ export default async function Home() {
         />
       )}
 
+      <OnlyPerfect />
       <Journal />
       <Footer />
     </main>

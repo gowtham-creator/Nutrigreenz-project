@@ -142,15 +142,8 @@ export function ProductInFocus({
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
   };
 
-  // Resting icon-disc tint per family, so the sub-category chips read as a
-  // coherent, intentionally-coloured set instead of one flat sage placeholder.
-  const ACCENT_DISC: Record<NonNullable<Props["accent"]>, string> = {
-    amber: "bg-ng-amber/18 text-ng-clay-deep",
-    gold: "bg-ng-clay/18 text-ng-clay-deep",
-    honey: "bg-ng-amber/18 text-ng-clay",
-    forest: "bg-ng-leaf/18 text-ng-forest",
-  };
-  const restingDisc = accent ? ACCENT_DISC[accent] : "bg-ng-sage/55 text-ng-forest";
+  /* The per-family disc tint that used to sit behind each sub-category icon is
+     gone with the discs themselves — the marks are drawn bare at 40px now. */
 
   const ACCENT_WASH: Record<NonNullable<Props["accent"]>, string> = {
     amber:
@@ -257,27 +250,47 @@ export function ProductInFocus({
                     aria-selected={isActive}
                     onClick={() => setActive(i)}
                     className={cn(
-                      "group inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 md:py-2 text-sm font-medium",
-                      "transition-[background-color,border-color,color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                      "group inline-flex shrink-0 flex-col items-center gap-2 rounded-lg px-3 pb-2 pt-1 text-[14px] font-medium",
+                      "transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       isActive
-                        ? "border-ng-forest bg-ng-forest text-ng-cream shadow-[0_10px_28px_-12px_rgba(31,77,46,0.7)]"
-                        : "border-ng-line bg-ng-paper text-ng-ink-soft hover:border-ng-forest hover:text-ng-forest-deep",
+                        ? "text-ng-forest-deep"
+                        : "text-ng-ink-soft hover:text-ng-forest-deep",
                     )}
                   >
                     {Icon ? (
-                      <span
+                      /*
+                       * Drawn at 40px and bare — no disc, no chip, no fill. The
+                       * produce marks are the one genuinely distinctive thing in
+                       * this row: a honey jar with comb, a pressed-oil bottle, a
+                       * groundnut still in its shell. At 18px inside a tinted
+                       * circle none of that survived, and seven categories read
+                       * as seven identical pills with seven smudges on them.
+                       *
+                       * Inactive tabs are dimmed rather than greyed, so the set
+                       * still scans as one family and the active one is picked
+                       * out by the rule beneath it.
+                       */
+                      <Icon
+                        size={40}
                         className={cn(
-                          "grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors duration-300",
+                          "transition-opacity duration-300",
                           isActive
-                            ? "bg-ng-cream/15 text-ng-cream"
-                            : cn("ring-1 ring-inset ring-black/[0.05]", restingDisc),
+                            ? "text-ng-forest opacity-100"
+                            : "text-ng-forest-soft opacity-55 group-hover:opacity-90",
                         )}
-                      >
-                        <Icon size={18} />
-                      </span>
+                      />
                     ) : null}
                     <span className="whitespace-nowrap">{tab.label}</span>
+                    {/* The active rule. Always present so selecting a tab does not
+                        shift the row's height by a pixel. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "h-[3px] w-full rounded-full transition-colors duration-300",
+                        isActive ? "bg-ng-forest" : "bg-transparent",
+                      )}
+                    />
                   </button>
                 );
               })}

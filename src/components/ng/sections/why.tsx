@@ -2,183 +2,99 @@
 
 import { Section } from "../section";
 import { Stagger, StaggerItem } from "../motion";
-import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils";
+import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
 
-type Variant = "forest" | "clay" | "leaf" | "terracotta";
+/**
+ * Why — the four promises, as a centred icon row.
+ *
+ * ── What changed and why ──────────────────────────────────────────────────
+ *
+ * This was four large numbered cards, each on its own gradient — forest, clay,
+ * leaf, terracotta — with a blurred colour blob behind it. Four different
+ * saturated surfaces stacked two-by-two meant the section competed with the
+ * product rails on either side of it for attention, and the reader met four
+ * separate designs before meeting four promises. The claims were carrying the
+ * decoration rather than the other way round.
+ *
+ * One line of mark, one line of heading, one line of body, four times across.
+ * Nothing tinted, nothing numbered, no card edges. On a page whose job is
+ * selling groceries, the section that states what the company will not do
+ * should be the quietest thing on it.
+ *
+ * ── The promises themselves are unchanged ─────────────────────────────────
+ *
+ * Same four claims, same numbers, same words — 42 partner farms, the Hyderabad
+ * lab, the farmer price on the label. These are statements a regulator can hold
+ * us to under the Consumer Protection Act, so they are not the sort of copy
+ * that gets rewritten to fit a layout. The layout was fitted to them.
+ */
 
 interface Pillar {
-  num: string;
-  eyebrow: string;
   title: string;
   body: string;
-  icon: string;
-  variant: Variant;
+  icon: BrandIconName;
 }
 
 const PILLARS: Pillar[] = [
   {
-    num: "01",
-    eyebrow: "Soil-up",
-    title: "Direct from farm. No middlemen.",
+    icon: "tree",
+    title: "Direct from farm",
     body: "We work with 42 partner farms across India. Every farmer is named, paid fairly, and shares in our growth.",
-    icon: "leaf-bold",
-    variant: "forest",
   },
   {
-    num: "02",
-    eyebrow: "Slow methods",
-    title: "Bilona, cold-press, hand-churn.",
-    body: "We never use refined, hexane-extracted, or industrially heated processes. The old ways are the right ways.",
-    icon: "bottle-bold",
-    variant: "clay",
+    icon: "churn",
+    title: "Traditional processing",
+    body: "Bilona-churned, cold-pressed, hand-finished. Never refined, hexane-extracted, or industrially heated.",
   },
   {
-    num: "03",
-    eyebrow: "Lab-tested every lot",
-    title: "Heavy metals · aflatoxin · adulterants.",
-    body: "Every batch goes through our Hyderabad lab before it ships. Test reports are public — scan the lot code.",
-    icon: "shield-check-bold",
-    variant: "leaf",
+    icon: "checklist",
+    title: "Tested every single lot",
+    body: "Heavy metals, aflatoxin and adulterants, checked in our Hyderabad lab before a batch ships. Reports are public.",
   },
   {
-    num: "04",
-    eyebrow: "Honest pricing",
-    title: "What we pay the farmer is on every label.",
-    body: "No marketing markup. No designer packaging tax. Just the cost to grow it well, plus a fair operating margin.",
-    icon: "tag-price-bold",
-    variant: "terracotta",
+    icon: "fairPrice",
+    title: "Honest pricing",
+    body: "What we pay the farmer is printed on every label. No marketing markup, no designer packaging tax.",
   },
 ];
-
-interface Treatment {
-  /** Card surface (background + border). */
-  card: string;
-  /** Decorative blurred blob colour. */
-  blob: string;
-  /** Numbered badge / icon chip. */
-  badge: string;
-  /** Eyebrow accent text. */
-  eyebrow: string;
-  /** Big serif title text. */
-  title: string;
-  /** Body copy text. */
-  body: string;
-  /** Hover shadow. */
-  shadow: string;
-}
-
-const TREATMENTS: Record<Variant, Treatment> = {
-  // 01 — bold filled hero card: deep forest gradient, cream text, soft leaf inner glow.
-  forest: {
-    card: "bg-gradient-to-br from-ng-forest via-ng-forest to-ng-forest-deep border-ng-forest-deep/70 ring-1 ring-inset ring-ng-leaf/12",
-    blob: "bg-ng-leaf/25",
-    badge: "bg-ng-leaf text-ng-forest-deep shadow-[0_8px_24px_-8px_rgba(102,191,115,0.7)]",
-    eyebrow: "text-ng-leaf",
-    title: "text-ng-cream",
-    body: "text-ng-cream/75",
-    shadow: "hover:shadow-[0_28px_60px_-24px_rgba(10,31,18,0.55)]",
-  },
-  // 02 — warm gold / clay block: deliberate tint with a firm edge, not a wash.
-  clay: {
-    card: "bg-gradient-to-br from-ng-clay/[0.16] via-ng-cream-deep/70 to-ng-cream-deep border-ng-clay/40 ring-1 ring-inset ring-ng-clay/12",
-    blob: "bg-ng-clay/28",
-    badge: "bg-ng-clay text-ng-cream shadow-[0_8px_24px_-8px_rgba(181,134,47,0.6)]",
-    eyebrow: "text-ng-clay-deep",
-    title: "text-ng-forest-deep",
-    body: "text-ng-ink",
-    shadow: "hover:shadow-[0_28px_60px_-24px_rgba(138,100,32,0.4)]",
-  },
-  // 03 — fresh leaf green block, saturated enough to read as a designed surface.
-  leaf: {
-    card: "bg-gradient-to-br from-ng-leaf/28 via-ng-sage/35 to-ng-cream-deep/55 border-ng-forest-soft/30 ring-1 ring-inset ring-ng-leaf/15",
-    blob: "bg-ng-leaf/40",
-    badge: "bg-ng-forest-soft text-ng-cream shadow-[0_8px_24px_-8px_rgba(31,77,46,0.6)]",
-    eyebrow: "text-ng-forest-soft",
-    title: "text-ng-forest",
-    body: "text-ng-ink",
-    shadow: "hover:shadow-[0_28px_60px_-24px_rgba(31,77,46,0.4)]",
-  },
-  // 04 — warm terracotta block: clay-free warmth so gold stays sparing.
-  terracotta: {
-    card: "bg-gradient-to-br from-ng-terracotta/20 via-ng-cream-deep/60 to-ng-cream-deep border-ng-terracotta/35 ring-1 ring-inset ring-ng-terracotta/12",
-    blob: "bg-ng-terracotta/30",
-    badge: "bg-ng-terracotta text-ng-cream shadow-[0_8px_24px_-8px_rgba(199,77,51,0.6)]",
-    eyebrow: "text-ng-terracotta",
-    title: "text-ng-terracotta",
-    body: "text-ng-ink",
-    shadow: "hover:shadow-[0_28px_60px_-24px_rgba(199,77,51,0.4)]",
-  },
-};
 
 export function Why() {
   return (
     <Section
       className="bg-ng-cream-mesh bg-ng-cream"
+      align="center"
       eyebrow="Why we do this"
-      heading={<>Four promises we put <em className="italic text-ng-leaf">in writing.</em></>}
-      description="No tagline can replace the practice. Here's exactly how we operate, in plain language."
+      heading={
+        <>
+          Why choose <em className="italic text-ng-leaf">Nutri Greenz?</em>
+        </>
+      }
     >
-      <Stagger className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-        {PILLARS.map((p) => {
-          const t = TREATMENTS[p.variant];
-          return (
-            <StaggerItem key={p.title} className="h-full">
-              <article
-                className={cn(
-                  "group relative h-full rounded-3xl border p-7 md:p-9 overflow-hidden",
-                  "transition-all duration-500 hover:-translate-y-1.5",
-                  t.card,
-                  t.shadow,
-                )}
-              >
-                {/* Colour blob */}
-                <div
-                  className={cn(
-                    "pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full opacity-70 blur-3xl transition-all duration-700 group-hover:opacity-100 group-hover:scale-110",
-                    t.blob,
-                  )}
-                />
-                <div className="relative">
-                  {/* Badge row: numbered icon chip + big number */}
-                  <div className="flex items-center justify-between gap-4">
-                    <span
-                      className={cn(
-                        "flex h-12 w-12 items-center justify-center rounded-2xl",
-                        t.badge,
-                      )}
-                    >
-                      <Icon name={p.icon} size={24} />
-                    </span>
-                    <span
-                      className={cn(
-                        "font-display text-4xl md:text-5xl leading-none tabular-nums opacity-40",
-                        t.title,
-                      )}
-                    >
-                      {p.num}
-                    </span>
-                  </div>
-
-                  <span className={cn("ng-eyebrow mt-6 block", t.eyebrow)}>
-                    {p.eyebrow}
-                  </span>
-                  <h3
-                    className={cn(
-                      "font-display text-[clamp(23px,2.9vw,31px)] leading-tight mt-2.5",
-                      t.title,
-                    )}
-                  >
-                    {p.title}
-                  </h3>
-                  <p className={cn("text-[15px] mt-3 leading-relaxed max-w-md", t.body)}>
-                    {p.body}
-                  </p>
-                </div>
-              </article>
-            </StaggerItem>
-          );
-        })}
+      <Stagger className="grid grid-cols-2 gap-x-6 gap-y-12 md:gap-x-8 lg:grid-cols-4 lg:gap-x-10">
+        {PILLARS.map((p) => (
+          <StaggerItem key={p.title}>
+            <div className="flex flex-col items-center text-center">
+              {/*
+                Drawn at 64px on a light stroke. The mark is the only thing at
+                this size in the whole section, so it does not need a disc, a
+                tint or a shadow to be found — those were added when it was
+                24px inside a badge and competing with a number twice its size.
+              */}
+              <BrandIcon
+                name={p.icon}
+                size={64}
+                weight="line"
+                className="text-ng-forest"
+              />
+              <h3 className="mt-6 font-display text-[clamp(19px,2.2vw,23px)] leading-tight text-ng-forest-deep">
+                {p.title}
+              </h3>
+              <p className="mt-3 max-w-[30ch] text-[15px] leading-relaxed text-ng-ink-muted">
+                {p.body}
+              </p>
+            </div>
+          </StaggerItem>
+        ))}
       </Stagger>
     </Section>
   );
