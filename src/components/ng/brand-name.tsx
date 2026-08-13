@@ -27,9 +27,16 @@ import { cn } from "@/lib/utils";
  *     but Lora is the only serif already loaded, and one more webfont for one
  *     word on a few headings is not a trade worth making. It reads as the same
  *     kind of letter: classic, bracketed serifs, upright.
- *   · `#293E24`, the ink sampled off the wordmark itself. Close to
- *     `--ng-forest-soft` but a touch warmer, and since the whole point is to
- *     match the printed mark, it uses the printed mark's green.
+ *   · `#2F4729`, the ink read off the wordmark itself.
+ *
+ *     Worth recording how that number was arrived at, because the obvious
+ *     method gives the wrong answer. Averaging the darkest pixels in the file
+ *     returns #293E24 — visibly darker and duller than the mark actually is —
+ *     because the darkest pixels include every anti-aliased edge, where the
+ *     ink is already blending toward the background. The real value comes from
+ *     sampling only pixels whose whole 5x5 neighbourhood is also ink, so no
+ *     edge pixel is counted, and #2F4729 is then both the modal colour and the
+ *     mean of that set.
  *   · 0.04em tracking, matching the wordmark's letterspacing.
  *   · 0.86em, because uppercase reads optically larger than the mixed-case
  *     words beside it; at 1em the name looked shouted rather than set.
@@ -43,7 +50,7 @@ export function BrandName({ className }: { className?: string }) {
     <span
       className={cn(
         "font-serif font-semibold uppercase not-italic tracking-[0.04em]",
-        "text-[0.86em] text-[#293E24]",
+        "text-[0.86em] text-[#2F4729]",
         className,
       )}
     >
