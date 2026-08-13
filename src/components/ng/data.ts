@@ -11,17 +11,31 @@ import type {
   Testimonial,
 } from "@/types/nutrigreenz";
 
+/**
+ * The categories we actually sell.
+ *
+ * This list used to carry ten — millets, spices, superfoods, pulses, flours,
+ * seasonal produce and gifting hampers alongside the real three — with invented
+ * product counts of 22, 18 and 17. None of those categories exist in the
+ * catalogue. They were placeholder content from the scaffold that nothing ever
+ * removed, and because the sitemap is generated from this array, Google was
+ * being told about /shop/spices and /shop/gifting on every crawl. Each one is a
+ * soft-404 for a shopper and a thin-content signal for the site.
+ *
+ * Counts are not repeated here on purpose. The live catalogue owns them, and a
+ * number sitting in a constant is a number that goes stale the first time
+ * somebody publishes a product.
+ *
+ * `rice` ships one product that is still a draft, so /shop/rice is currently
+ * empty. It is listed because the range is announced and the product is
+ * imminent — but that is exactly why the sitemap no longer reads this array: a
+ * category we want in the navigation is not automatically one we want indexed.
+ */
 export const CATEGORIES: Category[] = [
-  { id: "oils", slug: "oils", title: "Cold-pressed oils", icon: "oil", productCount: 14 },
-  { id: "ghee", slug: "ghee", title: "A2 Ghee", icon: "ghee", productCount: 6 },
-  { id: "honey", slug: "honey", title: "Honey", icon: "honey", productCount: 8 },
-  { id: "millets", slug: "millets", title: "Millets & grains", icon: "grain", productCount: 17 },
-  { id: "spices", slug: "spices", title: "Spices & masalas", icon: "spice", productCount: 22 },
-  { id: "superfoods", slug: "superfoods", title: "Superfoods", icon: "seedling", productCount: 13 },
-  { id: "pulses", slug: "pulses", title: "Pulses & dals", icon: "nuts", productCount: 18 },
-  { id: "flours", slug: "flours", title: "Stone-ground flours", icon: "flour", productCount: 9 },
-  { id: "fruits", slug: "fruits", title: "Seasonal produce", icon: "fruit", productCount: 12 },
-  { id: "gifting", slug: "gifting", title: "Gifting hampers", icon: "gift", productCount: 7 },
+  { id: "oils", slug: "oils", title: "Cold-Pressed Oils", icon: "oil", productCount: 6 },
+  { id: "honey", slug: "honey", title: "Honey", icon: "honey", productCount: 4 },
+  { id: "ghee", slug: "ghee", title: "Ghee", icon: "ghee", productCount: 4 },
+  { id: "rice", slug: "rice", title: "Rice", icon: "grain", productCount: 0 },
 ];
 
 export const PRODUCTS: ProductCard[] = [
