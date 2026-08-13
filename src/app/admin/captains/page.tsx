@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { shortCommunity } from "@/lib/community-label";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { CaptainAllocationModal } from "@/components/ng/admin/captain-allocation-modal";
 import { CaptainModal, Switch, type CaptainDraft } from "./captain-modal";
 import type {
@@ -583,7 +584,7 @@ function CaptainDrawer({
                 onClick={() => onAllocate(c)}
                 className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
-                <Icon name="bag-4-bold" size={13} className="text-ng-forest" />
+                <UiIcon name="bag" size={13} className="text-ng-forest" />
                 Products
               </button>
             ) : null}

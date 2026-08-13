@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { FloatIn, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { OrderSummary } from "@/components/ng/checkout/order-summary";
 import { NoCancellationNotice } from "@/components/ng/checkout/no-cancellation";
@@ -184,7 +185,7 @@ function SuccessContent() {
               </Button>
               <Button variant="secondary" size="lg" asChild>
                 <Link href="/shop">
-                  <Icon name="bag-4-bold" size={18} />
+                  <UiIcon name="bag" size={18} />
                   Continue shopping
                 </Link>
               </Button>

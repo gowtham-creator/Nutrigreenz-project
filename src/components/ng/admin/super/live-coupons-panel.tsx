@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -286,7 +287,7 @@ export function LiveCouponsPanel() {
                           className="inline-flex items-center gap-1 rounded-full bg-ng-clay/25 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep"
                           title="Only applies when the cart contains one of the targeted products"
                         >
-                          <Icon name="bag-4-bold" size={10} />
+                          <UiIcon name="bag" size={10} />
                           {c.productIds.length === 1
                             ? "1 product"
                             : `${c.productIds.length} products`}

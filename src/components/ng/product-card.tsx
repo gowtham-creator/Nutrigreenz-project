@@ -7,6 +7,7 @@ import { Badge } from "./badge";
 import { Stars } from "./stars";
 import { Button } from "./button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
@@ -206,13 +207,13 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         {hasChoices ? (
           <Button asChild variant="secondary" size="sm" fullWidth className="mt-2.5">
             <Link href={href}>
-              <Icon name="bag-4-linear" size={16} />
+              <UiIcon name="bag" size={16} />
               Select options
             </Link>
           </Button>
         ) : qty === 0 ? (
           <Button variant="secondary" size="sm" fullWidth className="mt-2.5" onClick={handleAddToBag}>
-            <Icon name="bag-4-linear" size={16} />
+            <UiIcon name="bag" size={16} />
             Add to bag
           </Button>
         ) : (

@@ -110,6 +110,43 @@ function BrandMarkGlyph({ className, size = 32 }: IconProps) {
 
 export const BrandMarkIcon = (p: IconProps) => <BrandMarkGlyph {...p} />;
 
+/**
+ * A bee, for the honey rail's "All honey" tab.
+ *
+ * The house mark earns its place on a row where "All" contrasts with named
+ * varieties — it means "everything here". The honey rail has exactly one tab,
+ * so there is nothing for it to contrast with, and a monogram standing alone
+ * above the word "honey" says nothing the word does not. A bee does.
+ *
+ * Traced from the supplied Icons8 file, which is a 28-frame GIF that is opaque
+ * black-on-white rather than ink-on-transparent — so it had to be thresholded
+ * on luminance. Read for its alpha, every pixel is 255 and the trace comes back
+ * empty.
+ */
+function BeeGlyph({ className, size = 32 }: IconProps) {
+  const url = "url(/icons/ui/bee.svg)";
+  return (
+    <span
+      aria-hidden
+      className={cn("inline-block shrink-0 bg-current", className)}
+      style={{
+        width: size,
+        height: size,
+        maskImage: url,
+        WebkitMaskImage: url,
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+      }}
+    />
+  );
+}
+
+export const BeeIcon = (p: IconProps) => <BeeGlyph {...p} />;
+
 export const LeafIcon = (p: IconProps) => <ProduceGlyph iconKey="leaf" {...p} />;
 export const GheeIcon = (p: IconProps) => <ProduceGlyph iconKey="ghee" {...p} />;
 export const OilIcon = (p: IconProps) => <ProduceGlyph iconKey="oil" {...p} />;
@@ -131,6 +168,7 @@ export const CoconutIcon = (p: IconProps) => <ProduceGlyph iconKey="coconut" {..
 
 export const PRODUCE_ICONS = {
   brandMark: BrandMarkIcon,
+  bee: BeeIcon,
   leaf: LeafIcon,
   ghee: GheeIcon,
   oil: OilIcon,

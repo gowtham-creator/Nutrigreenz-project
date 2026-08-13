@@ -61,7 +61,7 @@ export default async function Home() {
 
   // ── HONEY ─────────────────────────────────────────────────────────────
   const honey = products.filter(hasTag("honey"));
-  const honeyTabs: FocusSubTab[] = [{ label: "All honey", icon: "brandMark", filter: { type: "all" } }];
+  const honeyTabs: FocusSubTab[] = [{ label: "All honey", icon: "bee", filter: { type: "all" } }];
 
   // ── COMMUNITY FAVOURITES ──────────────────────────────────────────────
   // The real catalog has no "gifting"/"superfood" category, so this rail is the

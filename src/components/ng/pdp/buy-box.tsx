@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Chip } from "@/components/ng/chip";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import type { ProductCard } from "@/types/nutrigreenz";
@@ -162,7 +163,7 @@ export function BuyBox({ title, basePrice, mrp, unit, variants, product }: BuyBo
             </button>
           </div>
           <Button onClick={addToCart} size="lg" fullWidth className="flex-1">
-            <Icon name="bag-4-bold" size={18} />
+            <UiIcon name="bag" size={18} />
             Add to cart · ₹{lineTotal.toLocaleString()}
           </Button>
         </div>

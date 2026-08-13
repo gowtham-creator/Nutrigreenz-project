@@ -145,7 +145,7 @@ export function ShopByCategory({ categories, products, className }: Props) {
                   // Hover paints the whole target, mark and label together, so
                   // the tab reads as one thing you can press rather than a
                   // label that happens to sit under a picture.
-                  "hover:bg-ng-sage/35",
+                  "hover:bg-ng-ink/[0.05]",
                   isActive
                     ? "font-semibold text-ng-forest-deep"
                     : "text-ng-ink hover:text-ng-forest-deep",
@@ -177,7 +177,7 @@ export function ShopByCategory({ categories, products, className }: Props) {
                     "h-[3px] w-full rounded-full transition-colors duration-300",
                     // A faint rule previews the active state on hover, so the
                     // pointer shows what selecting would do.
-                    isActive ? "bg-ng-forest-deep" : "bg-transparent group-hover:bg-ng-forest-deep/25",
+                    isActive ? "bg-ng-forest-deep" : "bg-transparent group-hover:bg-ng-forest-deep/20",
                   )}
                 />
               </button>

@@ -255,7 +255,7 @@ export function ProductInFocus({
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
                       // See the note in shop-by-category: hover paints the whole
                       // target so mark and label read as one pressable thing.
-                      "hover:bg-ng-sage/35",
+                      "hover:bg-ng-ink/[0.05]",
                       isActive
                         ? "font-semibold text-ng-forest-deep"
                         : "text-ng-ink hover:text-ng-forest-deep",
@@ -293,7 +293,7 @@ export function ProductInFocus({
                       aria-hidden
                       className={cn(
                         "h-[3px] w-full rounded-full transition-colors duration-300",
-                        isActive ? "bg-ng-forest" : "bg-transparent group-hover:bg-ng-forest/25",
+                        isActive ? "bg-ng-forest" : "bg-transparent group-hover:bg-ng-forest/20",
                       )}
                     />
                   </button>

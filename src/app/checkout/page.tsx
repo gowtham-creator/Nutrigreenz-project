@@ -8,6 +8,7 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -488,7 +489,7 @@ export default function CheckoutPage() {
                 </p>
                 <Button variant="primary" size="lg" className="mt-7" asChild>
                   <Link href="/shop">
-                    <Icon name="bag-4-bold" size={18} />
+                    <UiIcon name="bag" size={18} />
                     Start shopping
                   </Link>
                 </Button>

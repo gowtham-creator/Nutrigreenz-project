@@ -99,7 +99,7 @@ function Highlight({ text, term }: { text: string; term: string }) {
   return (
     <>
       {text.slice(0, at)}
-      <mark className="bg-transparent font-semibold text-ng-forest">
+      <mark className="bg-transparent font-semibold text-ng-ink">
         {text.slice(at, at + term.length)}
       </mark>
       {text.slice(at + term.length)}
@@ -294,7 +294,7 @@ export function SiteSearch({ className }: { className?: string }) {
   const rowClass = (i: number) =>
     cn(
       "flex w-full items-center gap-3 px-5 py-3 text-left transition-colors",
-      i === active ? "bg-ng-sage/40" : "hover:bg-ng-sage/25",
+      i === active ? "bg-ng-ink/[0.07]" : "hover:bg-ng-ink/[0.04]",
     );
 
   return (
@@ -452,7 +452,7 @@ export function SiteSearch({ className }: { className?: string }) {
                                 onClick={() => go(item)}
                                 className={rowClass(i)}
                               >
-                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-leaf" />
+                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-ink-muted" />
                                 <span className="truncate text-[14px] text-ng-ink">
                                   {item.label}
                                 </span>
@@ -475,7 +475,7 @@ export function SiteSearch({ className }: { className?: string }) {
                                 onClick={() => go(item)}
                                 className={rowClass(i)}
                               >
-                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-leaf" />
+                                <UiIcon name="bag" size={17} className="shrink-0 text-ng-ink-muted" />
                                 <span className="min-w-0 flex-1 truncate text-[14px] text-ng-ink">
                                   <Highlight text={item.hit.title} term={q} />
                                 </span>
@@ -499,7 +499,7 @@ export function SiteSearch({ className }: { className?: string }) {
                               onClick={() => go(item)}
                               className={cn(
                                 rowClass(i),
-                                "border-t border-ng-line-soft text-[13px] font-semibold text-ng-forest",
+                                "border-t border-ng-line-soft text-[13px] font-semibold text-ng-ink",
                               )}
                             >
                               <UiIcon name="search" size={16} className="shrink-0" />

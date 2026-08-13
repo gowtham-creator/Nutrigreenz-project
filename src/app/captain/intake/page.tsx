@@ -19,6 +19,7 @@ import {
   CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import {
   useCaptain,
   type PayMode,
@@ -389,7 +390,7 @@ export default function CaptainIntake() {
                 </div>
               </div>
               <div className="mt-2.5 pt-2.5 border-t border-ng-line-soft flex items-center gap-1.5 text-[11.5px] text-ng-ink-muted">
-                <Icon name="bag-4-bold" size={13} className="text-ng-ink-soft" />
+                <UiIcon name="bag" size={13} className="text-ng-ink-soft" />
                 {c.items.map((i) => `${i.title.split(" ").slice(0, 2).join(" ")} ×${i.qty}`).join(" · ")}
               </div>
             </CaptainCard>

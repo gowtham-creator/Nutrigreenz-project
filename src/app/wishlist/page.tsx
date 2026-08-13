@@ -7,6 +7,7 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
@@ -122,7 +123,7 @@ function WishlistCard({
           className="mt-auto pt-0"
           onClick={onAdd}
         >
-          <Icon name="bag-4-linear" size={16} />
+          <UiIcon name="bag" size={16} />
           Add to bag
         </Button>
       </div>

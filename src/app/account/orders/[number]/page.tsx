@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { NoCancellationNotice } from "@/components/ng/checkout/no-cancellation";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
@@ -285,7 +286,7 @@ export default function AccountOrderDetailPage({
             <section>
               <h2 className="mb-4 flex items-center gap-2.5 font-display text-[22px] text-ng-forest-deep">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
-                  <Icon name="bag-4-bold" size={16} />
+                  <UiIcon name="bag" size={16} />
                 </span>
                 Items in this order
               </h2>
@@ -303,7 +304,7 @@ export default function AccountOrderDetailPage({
                           <Image src={img} alt={item.title} fill className="object-cover" sizes="80px" />
                         ) : (
                           <span className="grid h-full w-full place-items-center text-ng-ink-soft">
-                            <Icon name="bag-4-bold" size={26} />
+                            <UiIcon name="bag" size={26} />
                           </span>
                         )}
                       </div>
