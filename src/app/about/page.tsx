@@ -4,7 +4,8 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Button } from "@/components/ng/button";
-import { Icon } from "@/components/ui/icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
+import { IndiaFlag } from "@/components/ui/india-flag";
 
 export const metadata: Metadata = {
   title: "Our story — Nutri Greenz",
@@ -12,11 +13,22 @@ export const metadata: Metadata = {
     "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
 };
 
-const VISION_PILLARS = [
-  { icon: "leaf-bold", label: "Healthy soil" },
-  { icon: "earth-bold", label: "Sustainable farming" },
-  { icon: "shield-check-bold", label: "Healthy customers" },
-  { icon: "star-bold", label: "Healthy Nation" },
+/*
+ * Solar stand-ins were doing duty here for ideas none of them described: a
+ * leaf for soil, a globe for sustainable farming, a shield-tick for customers
+ * and a star for the nation. Four generic marks where four specific ones exist.
+ *
+ * `flag` is its own kind rather than another icon name because the tricolour
+ * cannot be a `currentColor` mask — rendered in one colour it is three
+ * identical stripes, not a flag. See `IndiaFlag`.
+ */
+const VISION_PILLARS: Array<
+  { label: string } & ({ kind: "icon"; icon: UiIconName } | { kind: "flag" })
+> = [
+  { kind: "icon", icon: "soil", label: "Healthy soil" },
+  { kind: "icon", icon: "farmhouse", label: "Sustainable farming" },
+  { kind: "icon", icon: "customers", label: "Healthy customers" },
+  { kind: "flag", label: "Healthy Nation" },
 ];
 
 const FOUNDERS = [
@@ -105,7 +117,11 @@ export default function AboutPage() {
               className="flex flex-col items-center text-center gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper p-6"
             >
               <span className="h-12 w-12 rounded-xl bg-ng-leaf/15 ring-1 ring-inset ring-ng-forest/12 inline-flex items-center justify-center text-ng-forest-deep">
-                <Icon name={p.icon} size={24} />
+                {p.kind === "flag" ? (
+                  <IndiaFlag size={21} className="rounded-[2px]" />
+                ) : (
+                  <UiIcon name={p.icon} size={26} />
+                )}
               </span>
               <span className="font-display text-[17px] text-ng-forest-deep leading-snug">{p.label}</span>
             </Reveal>

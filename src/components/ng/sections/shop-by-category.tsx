@@ -139,9 +139,13 @@ export function ShopByCategory({ categories, products, className }: Props) {
                 aria-selected={isActive}
                 onClick={() => setActive(tab.key)}
                 className={cn(
-                  "group inline-flex shrink-0 flex-col items-center gap-2 rounded-lg px-4 pb-2 pt-1 text-[14px] font-medium",
-                  "transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                  "group inline-flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 pb-2 pt-2.5 text-[14px] font-medium",
+                  "transition-[background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ng-paper",
+                  // Hover paints the whole target, mark and label together, so
+                  // the tab reads as one thing you can press rather than a
+                  // label that happens to sit under a picture.
+                  "hover:bg-ng-sage/35",
                   isActive
                     ? "font-semibold text-ng-forest-deep"
                     : "text-ng-ink hover:text-ng-forest-deep",
@@ -171,7 +175,9 @@ export function ShopByCategory({ categories, products, className }: Props) {
                   aria-hidden
                   className={cn(
                     "h-[3px] w-full rounded-full transition-colors duration-300",
-                    isActive ? "bg-ng-forest-deep" : "bg-transparent",
+                    // A faint rule previews the active state on hover, so the
+                    // pointer shows what selecting would do.
+                    isActive ? "bg-ng-forest-deep" : "bg-transparent group-hover:bg-ng-forest-deep/25",
                   )}
                 />
               </button>
