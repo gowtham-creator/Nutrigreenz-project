@@ -2,6 +2,7 @@
 
 import { Section } from "../section";
 import { Stagger, StaggerItem } from "../motion";
+import { BrandName } from "../brand-name";
 import { PromiseIcon, type PromiseIconName } from "@/components/ui/promise-icon";
 
 /**
@@ -76,7 +77,7 @@ export function Why() {
       eyebrow="Why we do this"
       heading={
         <>
-          Why choose <em className="italic text-ng-leaf">Nutri Greenz?</em>
+          Why choose <BrandName />?
         </>
       }
     >
