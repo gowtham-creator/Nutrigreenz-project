@@ -65,6 +65,34 @@ export default function AttributionsPage() {
           ),
         },
         {
+          id: "product-icons",
+          heading: "Product and promise marks",
+          body: (
+            <>
+              <p>
+                The produce marks — the honey jar, the cold-pressed oil bottle, the individual
+                nuts and seeds — and the four marks in our promises row come from{" "}
+                <a
+                  href="https://icons8.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-ng-forest"
+                >
+                  Icons8
+                </a>
+                . They exist because no general-purpose icon set draws the things we actually
+                sell.
+              </p>
+              <p>
+                Icons8&rsquo; free tier is usable with a link back, which is what this entry is.
+                We have modified them: each is recoloured to match this site&rsquo;s palette, and
+                several were traced from the supplied images to outlines so they stay sharp at the
+                sizes we display them.
+              </p>
+            </>
+          ),
+        },
+        {
           id: "brand-marks",
           heading: "Payment and social marks",
           body: (
