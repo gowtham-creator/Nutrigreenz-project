@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
@@ -69,7 +70,13 @@ export default async function ShopPage() {
       </PageHero>
 
       <ShopTrustStrip />
-      <ProductListing products={products} categoryTags={categoryTags} />
+      {/* Suspense because ProductListing reads ?q= via useSearchParams, which
+          opts a client component out of prerendering unless a boundary exists.
+          Without it the whole page falls back to client-side rendering and the
+          catalogue stops being static. */}
+      <Suspense fallback={null}>
+        <ProductListing products={products} categoryTags={categoryTags} />
+      </Suspense>
     </PageShell>
   );
 }

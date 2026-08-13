@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/ng/product-card";
 import { Button } from "@/components/ng/button";
 import { Chip } from "@/components/ng/chip";
@@ -92,7 +93,15 @@ export function ProductListing({
     inStockOnly: false,
   };
 
-  const [search, setSearch] = useState("");
+  /*
+   * Seeded from ?q= so /shop?q=honey is a real, linkable search. The header's
+   * search panel hands off here for "see all results", and until this read the
+   * URL that link arrived at an unfiltered catalogue — the query silently
+   * dropped on the way. It is an initial value, not a binding: typing in the
+   * box afterwards is a new search and does not need to rewrite the address.
+   */
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [sort, setSort] = useState<SortKey>("featured");
   const [filters, setFilters] = useState<ShopFilters>(initialFilters);
   const [visible, setVisible] = useState(PAGE_SIZE);

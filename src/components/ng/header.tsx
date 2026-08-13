@@ -12,6 +12,7 @@ import { CartIcon } from "@/components/ng/cart-icon";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { ProfileMenu } from "./profile-menu";
+import { SiteSearch } from "./search/site-search";
 import { cn } from "@/lib/utils";
 
 const NAV: Array<{ label: string; href: string; mega?: Array<{ label: string; href: string; description?: string }> }> = [
@@ -106,15 +107,10 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 ml-auto">
-          <button
-            aria-label="Search"
-            className="hidden xl:inline-flex shrink-0 h-10 w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-          </button>
+          {/* Was a bare <button> with no handler — it drew a magnifier and did
+              nothing — and `hidden xl:inline-flex`, so below 1280px there was no
+              search control at all, phones included. */}
+          <SiteSearch />
           <div className="shrink-0">
             <ProfileMenu />
           </div>
