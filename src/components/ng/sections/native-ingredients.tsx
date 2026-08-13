@@ -121,18 +121,51 @@ export function NativeIngredients() {
                         : "linear-gradient(180deg, rgba(12,26,16,0.78) 0%, rgba(12,26,16,0.55) 55%, rgba(12,26,16,0) 100%)",
                   }}
                 />
+                {/*
+                  ── Type over photography ─────────────────────────────────
+
+                  These were set in `font-display`, which is Roboto Slab. A slab
+                  serif is the wrong tool here: its serifs are heavy rectangles
+                  that fill in at 17px, and the stroke contrast that gives it
+                  character on a flat cream band works against it over a
+                  photograph, where every thin part of a letter competes with
+                  whatever texture happens to sit behind it.
+
+                  Both lines are Hanken Grotesk now — the body sans, so the card
+                  speaks in one voice — with hierarchy carried by weight, size
+                  and colour rather than by a second typeface. Even grotesque
+                  strokes hold their shape against soil, leaves and hide.
+
+                  The measure is tightened from 28ch to 24ch. Centred text needs
+                  a shorter line than ranged-left before the ragged edges start
+                  reading as untidy, and at this card width 28ch was breaking
+                  three-line bodies at awkward places.
+                */}
                 <div className="absolute inset-x-0 top-0 p-5 text-center md:p-6">
                   <h3
-                    className={`font-display text-[clamp(17px,1.5vw,20px)] leading-[1.2] text-balance ${
+                    className={`font-sans text-[clamp(18px,1.6vw,21px)] font-bold leading-[1.16] tracking-[-0.012em] text-balance ${
                       p.tone === "light" ? "text-ng-forest-deep" : "text-ng-cream"
                     }`}
+                    style={
+                      /* Only the dark cards need it: a soft drop shadow keeps
+                         the type separable where the photo behind it is busy or
+                         bright, without reading as a shadow. */
+                      p.tone === "dark"
+                        ? { textShadow: "0 1px 12px rgba(8,20,12,0.55)" }
+                        : undefined
+                    }
                   >
                     {p.title}
                   </h3>
                   <p
-                    className={`mx-auto mt-2 max-w-[28ch] text-[13px] leading-snug text-pretty ${
-                      p.tone === "light" ? "text-ng-ink" : "text-ng-cream/85"
+                    className={`mx-auto mt-2.5 max-w-[24ch] text-[13.5px] font-normal leading-[1.5] text-pretty ${
+                      p.tone === "light" ? "text-ng-ink" : "text-ng-cream/90"
                     }`}
+                    style={
+                      p.tone === "dark"
+                        ? { textShadow: "0 1px 10px rgba(8,20,12,0.5)" }
+                        : undefined
+                    }
                   >
                     {p.body}
                   </p>

@@ -31,6 +31,12 @@ interface Check {
   alt: string;
   title: string;
   body: string;
+  /**
+   * Set for product shots photographed on a white sweep rather than on
+   * location. Those arrive with a hard white field that meets the card's cream
+   * at a visible seam — see the note at the render site.
+   */
+  onWhite?: boolean;
 }
 
 const CHECKS: Check[] = [
@@ -57,15 +63,29 @@ const CHECKS: Check[] = [
     alt: "The Nutri Greenz cold-pressed oil range, each bottle carrying its own lot code",
     title: "See the proof. Don't just trust us.",
     body: "Every bottle carries a six-character lot code. Type it in and read the same report we do.",
+    onWhite: true,
   },
 ];
 
 export function OnlyPerfect() {
   return (
+    /*
+      ── On the band colour ────────────────────────────────────────────────
+      This was a pale blue with a slate-blue heading, carried over from the
+      layout that inspired it. Nutri Greenz has no blue: the palette is forest,
+      cream, clay and gold, and the one blue token in the system is `--ng-blue`,
+      reserved for informational states in the admin console. A cold band
+      halfway down a warm page read as a screenshot from a different product.
+
+      Pale sage keeps the separation the blue was there for — this section has
+      to feel distinct from the cream band above it — while staying inside the
+      brand. The cards keep their warm cream, which now sits on sage the way
+      paper sits on a leaf rather than fighting a cold ground.
+    */
     <Section
       align="center"
-      className="relative overflow-hidden bg-[#DCEAF0]"
-      heading={<span className="text-[#3A7B92]">Only perfect makes the cut</span>}
+      className="relative overflow-hidden bg-[#E9F0E4]"
+      heading={<span className="text-ng-forest-soft">Only perfect makes the cut</span>}
     >
       <div
         aria-hidden
@@ -77,7 +97,7 @@ export function OnlyPerfect() {
             "linear-gradient(90deg, black 0%, transparent 26%, transparent 74%, black 100%)",
         }}
       >
-        <BotanicalField color="#8FB8C8" opacity={0.5} className="absolute inset-0" />
+        <BotanicalField color="#A9C09E" opacity={0.55} className="absolute inset-0" />
       </div>
 
       <Stagger className="relative z-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
@@ -85,15 +105,20 @@ export function OnlyPerfect() {
           const isLast = i === CHECKS.length - 1;
           const card = (
             <article
-              className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-[#FAF3E2] shadow-[0_18px_44px_-26px_rgba(30,60,74,0.5)] ${
-                isLast ? "transition-shadow hover:shadow-[0_22px_50px_-22px_rgba(30,60,74,0.6)]" : ""
+              className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-[#FAF3E2] shadow-[0_18px_44px_-26px_rgba(28,52,32,0.42)] ${
+                isLast ? "transition-shadow hover:shadow-[0_22px_50px_-22px_rgba(28,52,32,0.5)]" : ""
               }`}
             >
               <div className="px-5 pb-5 pt-7 text-center md:px-6">
-                <h3 className="font-display text-[clamp(17px,1.5vw,20px)] leading-[1.2] text-ng-forest-deep text-balance">
+                {/* Hanken Grotesk, not the Roboto Slab display face. The slab's
+                    heavy rectangular serifs clot at 17–20px, and four of these
+                    headings stacked in a row across a band made the section read
+                    as older and denser than everything around it. Hierarchy
+                    comes from weight and size, in one typeface. */}
+                <h3 className="font-sans text-[clamp(18px,1.6vw,21px)] font-bold leading-[1.16] tracking-[-0.012em] text-ng-forest-deep text-balance">
                   {c.title}
                 </h3>
-                <p className="mx-auto mt-2.5 max-w-[30ch] text-[13px] leading-snug text-ng-ink-muted text-pretty">
+                <p className="mx-auto mt-2.5 max-w-[26ch] text-[13.5px] font-normal leading-[1.5] text-ng-ink-muted text-pretty">
                   {c.body}
                 </p>
                 {isLast ? (
@@ -105,13 +130,30 @@ export function OnlyPerfect() {
               </div>
               {/* Photo anchors the card. mt-auto keeps the images on one baseline
                   when the headings above them wrap to different depths. */}
-              <div className="relative mt-auto aspect-[4/3.4] w-full">
+              <div
+                className="relative mt-auto aspect-[4/3.4] w-full"
+                style={c.onWhite ? { background: "#FAF3E2" } : undefined}
+              >
                 <Image
                   src={c.src}
                   alt={c.alt}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+                  /*
+                   * The range shot is photographed on a white sweep, so it met
+                   * the card's cream at a hard horizontal seam halfway down —
+                   * the only card of four that looked like two pieces. Multiply
+                   * over a cream ground drops the white out and leaves the
+                   * bottles, which is what the pack shot is for. `contain` too:
+                   * `cover` was cropping the outer bottles of a six-bottle
+                   * lineup, and a range shot missing part of the range is not
+                   * showing the range.
+                   */
+                  className={
+                    c.onWhite
+                      ? "object-contain p-3 mix-blend-multiply transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+                      : "object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+                  }
                 />
               </div>
             </article>
@@ -122,7 +164,7 @@ export function OnlyPerfect() {
               {isLast ? (
                 <Link
                   href="/traceability"
-                  className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-[#DCEAF0]"
+                  className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest focus-visible:ring-offset-2 focus-visible:ring-offset-[#E9F0E4]"
                 >
                   {card}
                 </Link>
