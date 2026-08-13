@@ -23,7 +23,10 @@ type TabDef = {
   href: string;
 };
 
-const ALL_TAB: TabDef = { key: "all", label: "All", icon: "leaf", href: "/shop" };
+/* The house mark, not the generic leaf — see `BrandMarkIcon`. Every other tab
+   shows what it filters to; the one that means "everything" shows whose
+   everything it is. */
+const ALL_TAB: TabDef = { key: "all", label: "All", icon: "brandMark", href: "/shop" };
 
 /**
  * A produce glyph per known category slug so the live catalog (whose categories

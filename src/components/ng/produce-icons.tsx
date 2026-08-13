@@ -70,6 +70,46 @@ function ProduceGlyph({
   );
 }
 
+/**
+ * The Nutri Greenz monogram, for the "All" tab.
+ *
+ * Every other tab in these rows shows the thing it filters to — a honey jar, an
+ * olive, a groundnut. "All" has no such thing, and it was borrowing the generic
+ * leaf, which then had to stand for both "everything we sell" and, on the oils
+ * row, for safflower specifically. The house mark is the honest answer: the tab
+ * that means "all of it" shows whose catalogue it is.
+ *
+ * Traced from `public/brand/logo-mark.png` to outlines and painted as a mask,
+ * so it takes `currentColor` like every other glyph in the row rather than
+ * arriving as a fixed two-tone green logo dropped into a monochrome set. The
+ * threshold was taken on luminance rather than alpha specifically to keep the
+ * lighter vein inside the leaf as a cut-out; an alpha silhouette filled it in
+ * and lost the drawing.
+ */
+function BrandMarkGlyph({ className, size = 32 }: IconProps) {
+  const url = "url(/icons/brand/mark-n.svg)";
+  return (
+    <span
+      aria-hidden
+      className={cn("inline-block shrink-0 bg-current", className)}
+      style={{
+        width: size,
+        height: size,
+        maskImage: url,
+        WebkitMaskImage: url,
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+      }}
+    />
+  );
+}
+
+export const BrandMarkIcon = (p: IconProps) => <BrandMarkGlyph {...p} />;
+
 export const LeafIcon = (p: IconProps) => <ProduceGlyph iconKey="leaf" {...p} />;
 export const GheeIcon = (p: IconProps) => <ProduceGlyph iconKey="ghee" {...p} />;
 export const OilIcon = (p: IconProps) => <ProduceGlyph iconKey="oil" {...p} />;
@@ -90,6 +130,7 @@ export const MustardIcon = (p: IconProps) => <ProduceGlyph iconKey="mustard" {..
 export const CoconutIcon = (p: IconProps) => <ProduceGlyph iconKey="coconut" {...p} />;
 
 export const PRODUCE_ICONS = {
+  brandMark: BrandMarkIcon,
   leaf: LeafIcon,
   ghee: GheeIcon,
   oil: OilIcon,

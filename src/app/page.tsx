@@ -46,7 +46,7 @@ export default async function Home() {
   // cross the Server → Client boundary into <ProductInFocus>.
   const oils = products.filter(hasTag("oils", "oil"));
   const oilTabs: FocusSubTab[] = [
-    { label: "All oils", icon: "oil", filter: { type: "all" } },
+    { label: "All oils", icon: "brandMark", filter: { type: "all" } },
     { label: "Groundnut", icon: "groundnut", filter: { type: "titleHas", keywords: ["groundnut"] } },
     { label: "Sesame", icon: "sesame", filter: { type: "titleHas", keywords: ["sesame"] } },
     { label: "Safflower", icon: "leaf", filter: { type: "titleHas", keywords: ["safflower"] } },
@@ -57,11 +57,11 @@ export default async function Home() {
 
   // ── GHEE ──────────────────────────────────────────────────────────────
   const ghee = products.filter(hasTag("ghee"));
-  const gheeTabs: FocusSubTab[] = [{ label: "All ghee", icon: "ghee", filter: { type: "all" } }];
+  const gheeTabs: FocusSubTab[] = [{ label: "All ghee", icon: "brandMark", filter: { type: "all" } }];
 
   // ── HONEY ─────────────────────────────────────────────────────────────
   const honey = products.filter(hasTag("honey"));
-  const honeyTabs: FocusSubTab[] = [{ label: "All honey", icon: "honey", filter: { type: "all" } }];
+  const honeyTabs: FocusSubTab[] = [{ label: "All honey", icon: "brandMark", filter: { type: "all" } }];
 
   // ── COMMUNITY FAVOURITES ──────────────────────────────────────────────
   // The real catalog has no "gifting"/"superfood" category, so this rail is the
@@ -70,7 +70,7 @@ export default async function Home() {
     .sort((a, b) => b.rating - a.rating || (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
     .slice(0, 10);
   const favouriteTabs: FocusSubTab[] = [
-    { label: "All", icon: "leaf", filter: { type: "all" } },
+    { label: "All", icon: "brandMark", filter: { type: "all" } },
     { label: "Oils", icon: "oil", filter: { type: "tag", tags: ["oils", "oil"] } },
     { label: "Ghee", icon: "ghee", filter: { type: "tag", tags: ["ghee"] } },
     { label: "Honey", icon: "honey", filter: { type: "tag", tags: ["honey"] } },
