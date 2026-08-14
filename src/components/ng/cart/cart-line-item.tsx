@@ -40,9 +40,13 @@ export function CartLineItem({ item }: { item: CartItem }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
+            {/* block, not inline. The pill below is `inline-flex`, so with an
+                inline title the two shared a line, sat flush against each other
+                with no gap, and the pill's `mt-1` did nothing — vertical margin
+                is ignored on an inline box. */}
             <Link
               href={`/products/${item.productId}`}
-              className="font-display text-[16px] leading-tight text-ng-forest-deep transition-colors hover:text-ng-forest sm:text-[17px]"
+              className="block font-display text-[16px] leading-tight text-ng-forest-deep transition-colors hover:text-ng-forest sm:text-[17px]"
             >
               {item.title}
             </Link>
@@ -57,8 +61,12 @@ export function CartLineItem({ item }: { item: CartItem }) {
                 but disappeared into its own background. Cream ground, ink text
                 and ink mark now, with a hairline to hold the shape.
               */
-              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-ng-cream px-2.5 py-1 text-[11px] font-medium text-ng-forest-deep ring-1 ring-ng-line-soft">
-                <UiIcon name="weight" size={12} className="text-ng-forest-deep" />
+              /* Sized to its text rather than padded to a shape: an 11px label
+                 in px-2.5/py-1 with a 12px icon made the mark taller than the
+                 words beside it and the pill taller than it needed to be. Icon
+                 and text now share a size, and the padding follows them. */
+              <p className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-ng-cream px-2 py-0.5 text-[11px] font-medium leading-5 text-ng-forest-deep ring-1 ring-ng-line-soft">
+                <UiIcon name="weight" size={11} className="shrink-0 text-ng-forest-deep" />
                 {item.unit}
               </p>
             ) : null}

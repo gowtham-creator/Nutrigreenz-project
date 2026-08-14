@@ -114,15 +114,21 @@ export default function AboutPage() {
             <Reveal
               key={p.label}
               delay={i * 0.05}
-              className="flex flex-col items-center text-center gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper p-6"
+              className="flex flex-col items-center gap-4 rounded-2xl border border-ng-line-soft bg-ng-paper p-7 text-center"
             >
-              <span className="h-12 w-12 rounded-xl bg-ng-leaf/15 ring-1 ring-inset ring-ng-forest/12 inline-flex items-center justify-center text-ng-forest-deep">
-                {p.kind === "flag" ? (
-                  <IndiaFlag size={21} className="rounded-[2px]" />
-                ) : (
-                  <UiIcon name={p.icon} size={26} />
-                )}
-              </span>
+              {/* No disc. A 26px mark inside a 48px tinted square is a container
+                  competing with the drawing it holds, and at that size the
+                  drawing is the smaller of the two — the eye lands on the box.
+                  Drawn bare at 40px in ink instead.
+
+                  The flag keeps a hairline, and only the flag: it is the one
+                  mark here made of three pale bands, and without an edge the
+                  white centre band bleeds into the card behind it. */}
+              {p.kind === "flag" ? (
+                <IndiaFlag size={28} className="rounded-[3px] ring-1 ring-ng-line" />
+              ) : (
+                <UiIcon name={p.icon} size={40} className="text-ng-forest-deep" />
+              )}
               <span className="font-display text-[17px] text-ng-forest-deep leading-snug">{p.label}</span>
             </Reveal>
           ))}
