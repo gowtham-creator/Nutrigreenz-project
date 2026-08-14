@@ -65,6 +65,9 @@ const UI_ICONS = {
   /* Field-sales captains, and the audit log. */
   captain: "captain",
   audit: "audit",
+  /* Product categories, and the wishlist. */
+  category: "category",
+  wishlist: "wishlist",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

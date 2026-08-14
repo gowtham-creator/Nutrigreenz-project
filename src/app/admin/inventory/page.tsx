@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { getAdminRole } from "@/lib/admin-auth";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { StockMeter } from "@/components/ng/admin/viz";
 import { ProductModal, type ProductDraft } from "./product-modal";
 import { CategoryModal } from "./category-modal";
@@ -270,7 +271,7 @@ export default function AdminInventory() {
               onClick={() => setCategoryOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
             >
-              <Icon name="tag-bold" size={15} className="text-ng-forest" />
+              <UiIcon name="category" size={15} className="text-ng-forest" />
               Categories
             </button>
           )}

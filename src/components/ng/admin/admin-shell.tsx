@@ -41,7 +41,7 @@ const NAV: NavItem[] = [
   { href: "/admin/captains", label: "Captains", icon: "captain", key: "captains" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", key: "people", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
-  { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold", key: "wishlists" },
+  { href: "/admin/wishlists", label: "Wishlists", icon: "wishlist", key: "wishlists" },
   // Audit log — the completed-action trail for the whole team. Both roles.
   { href: "/admin/audit", label: "Audit log", icon: "audit", key: "audit" },
   // Super Admin control center — gated below; only superadmins see this item.
