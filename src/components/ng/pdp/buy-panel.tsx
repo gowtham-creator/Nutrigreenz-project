@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
@@ -116,7 +117,11 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
           <li key={c} className="flex items-center gap-2">
             {i > 0 ? <span aria-hidden className="text-ng-line">·</span> : null}
             <span className="inline-flex items-center gap-1">
-              <Icon name="check-circle-bold" size={13} className="text-ng-leaf" />
+              {/* The supplied Icons8 badge, traced. At 14px rather than 13: this
+                  mark carries a tick cut out of a scalloped disc, and one more
+                  pixel is the difference between the counter reading as a tick
+                  and closing up into a blob. */}
+              <UiIcon name="verified" size={14} className="text-ng-leaf" />
               {c}
             </span>
           </li>

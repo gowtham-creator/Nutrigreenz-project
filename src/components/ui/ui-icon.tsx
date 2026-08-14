@@ -41,6 +41,8 @@ const UI_ICONS = {
   press: "press",
   /* The produce mark on a product card's category line and in the cart. */
   leaf: "leaf",
+  /* The scalloped verification badge on the PDP credential strip. */
+  verified: "verified",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;
