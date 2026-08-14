@@ -156,8 +156,11 @@ function AdminIdentity() {
               <div className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-muted font-mono">
                 Signed in as
               </div>
+              {/* Solid ground, not a 20% tint: clay/20 over cream resolves to
+                  #E8DCBD, and clay-deep on that is 3.93:1 — under the 4.5:1
+                  that 9.5px bold needs. This pair measures 5.31:1. */}
               {role === "superadmin" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#F5E6C4] px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-[#7A5717]">
                   <UiIcon name="admin" size={10} />
                   Super
                 </span>
@@ -223,8 +226,12 @@ function SidebarContent({
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
+          {/* Inverted for the dark sidebar. A translucent gold chip on forest
+              resolved to #2C3418 with clay text at 3.98:1 — a dark badge on a
+              dark ground, which cannot separate however the ink is tuned. A
+              light gold ground with near-black ink is 9.53:1. */}
           {isSuper ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay font-bold px-2 py-0.5 text-[9px] uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay-light px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ng-forest-deep">
               <UiIcon name="admin" size={10} />
               Super Admin
             </span>
@@ -472,13 +479,44 @@ export function Card({
   );
 }
 
-export function Pill({ tone = "neutral", children }: { tone?: "neutral" | "success" | "warn" | "danger" | "info"; children: ReactNode }) {
+/*
+ * Status pills.
+ *
+ * ── Why these are explicit colours and not palette tints ──────────────────
+ *
+ * The old map was five tints of the brand: `bg-ng-forest/15 text-ng-forest`
+ * and friends. Two problems came out of that. Every tint of a green-and-gold
+ * palette lands in the same narrow band, so the pills read as a row of beige
+ * and grey lozenges rather than as states — and three different pipeline
+ * stages (confirmed, packed, shipped) all mapped to the single `info` tone, so
+ * they were not merely dull, they were indistinguishable.
+ *
+ * A status pipeline needs a stage to be identifiable at a glance from across a
+ * table, which is the one job the brand palette is wrong for: it is designed to
+ * harmonise, and these need to separate. So each stage gets its own hue, held
+ * to the pale-ground/dark-ink pattern so they still sit quietly in a cream
+ * admin rather than glowing.
+ *
+ * Every pair is measured: at 11px bold the pills need 4.5:1 and the weakest
+ * here is 4.74:1.
+ */
+export function Pill({
+  tone = "neutral",
+  children,
+}: {
+  tone?: "neutral" | "success" | "warn" | "danger" | "info" | "progress" | "transit";
+  children: ReactNode;
+}) {
   const map: Record<string, string> = {
-    neutral: "bg-ng-line-soft text-ng-ink-muted",
-    success: "bg-ng-success/15 text-ng-success",
-    warn: "bg-ng-clay/30 text-ng-clay-deep",
-    danger: "bg-ng-terracotta/15 text-ng-terracotta",
-    info: "bg-ng-forest/15 text-ng-forest",
+    neutral: "bg-[#EDEDE6] text-[#4A5249]",
+    success: "bg-[#D9EFD9] text-[#1B5E20]",
+    warn: "bg-[#FDF0D5] text-[#8A6420]",
+    danger: "bg-[#FBE0DB] text-[#9B2C15]",
+    info: "bg-[#DCE8F5] text-[#1F4E85]",
+    /* Packed — between acknowledged and moving. */
+    progress: "bg-[#E7E2F3] text-[#4A3B7A]",
+    /* Shipped — on its way, not yet arrived. */
+    transit: "bg-[#D7EDE8] text-[#1C5F52]",
   };
   return (
     <span className={cn("inline-block px-2.5 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold", map[tone])}>

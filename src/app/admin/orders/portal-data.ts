@@ -60,8 +60,12 @@ type PillTone = NonNullable<ComponentProps<typeof Pill>["tone"]>;
 export const STATUS_TONE: Record<OrderStatus, PillTone> = {
   placed: "warn",
   confirmed: "info",
-  packed: "info",
-  shipped: "info",
+  /* Distinct from `confirmed` and `shipped`. All three used to be `info`, so
+     three stages of the pipeline rendered as the same grey pill and the table
+     could not be read at a glance — which is the only reason to colour a
+     status in the first place. */
+  packed: "progress",
+  shipped: "transit",
   delivered: "success",
 };
 

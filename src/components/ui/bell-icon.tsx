@@ -20,16 +20,24 @@ import { cn } from "@/lib/utils";
  *
  * ── Two files, one mark ───────────────────────────────────────────────────
  *
- * The animation is a 24-frame GIF, used as supplied. It cannot be a CSS
- * animation over the traced SVG because the frames are a drawn swing, not a
- * transform of one shape — approximating it with a rotate would look like a
- * different icon moving.
+ * The animation is the supplied 24-frame sequence, re-encoded as animated WebP.
+ * It is not a CSS animation over the traced SVG because the frames are a drawn
+ * swing, not a transform of one shape — approximating it with a rotate would
+ * look like a different icon moving.
  *
- * The static form is that GIF's first frame traced to outlines, so the two are
- * the same drawing. It goes through {@link UiIcon}, which means it takes
- * `currentColor` like every other mark; the GIF cannot, and is drawn at the ink
- * it ships with. That is the trade for real motion, and it is why the animated
- * form is confined to surfaces where it is on a known background.
+ * The re-encode exists because the source GIF ships black art on an OPAQUE
+ * WHITE field: dropped onto the cream notification chip it painted a white
+ * square around itself. GIF carries only 1-bit transparency, so keying the
+ * white out there would have left a hard, jagged edge on every anti-aliased
+ * pixel of the bell's outline. WebP has a real alpha channel, and because the
+ * art is pure black on pure white, luminance IS the coverage — alpha = 255 −
+ * luma keeps every partial pixel at exactly the strength it was drawn, so the
+ * edge survives intact.
+ *
+ * The static form is that sequence's first frame traced to outlines, so the two
+ * are the same drawing. It goes through {@link UiIcon} and takes
+ * `currentColor` like every other mark; the animated one is flat ink and cannot,
+ * which is the trade for real motion.
  */
 export function BellIcon({
   size = 20,
@@ -46,11 +54,11 @@ export function BellIcon({
   }
   return (
     <Image
-      src="/icons/ui/bell.gif"
+      src="/icons/ui/bell.webp"
       alt=""
       width={size}
       height={size}
-      unoptimized /* Next's optimiser would flatten the GIF to a still frame. */
+      unoptimized /* Next's optimiser would flatten this to a single frame. */
       className={cn("inline-block shrink-0", className)}
       style={{ width: size, height: size }}
     />
