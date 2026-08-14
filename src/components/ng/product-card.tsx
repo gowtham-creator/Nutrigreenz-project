@@ -177,30 +177,54 @@ export function ProductCard({ product, variant = "default", className }: Props) 
           </p>
         ) : null}
 
-        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1.5 pt-1">
-          {product.priceFrom ? (
-            <span className="text-[12px] font-medium text-ng-ink-soft">from</span>
-          ) : null}
-          {/* On sale: the discount % sits to the LEFT of the price, then the
-              marked-down price, then the original struck through — the familiar
-              ecommerce sale treatment. */}
-          {hasPromo ? (
-            <span className="self-center shrink-0 whitespace-nowrap rounded-md bg-ng-forest px-1.5 py-[3px] text-[11px] font-bold uppercase tracking-wide text-ng-cream tabular-nums">
-              {promoLabel}
+        {/*
+          ── Price block ─────────────────────────────────────────────────────
+
+          Two fixed rows, not one wrapping row.
+
+          This was a single `flex flex-wrap` line holding five things — "from",
+          the promo badge, the price, the struck MRP, and a "Save ₹x" pill with
+          `ml-auto`. Once a promotion is applied from the admin panel there is
+          too much in it to fit, so it wrapped: the badge wedged itself between
+          "from" and the price, and the struck MRP was pushed onto a second line
+          where `ml-auto` parked "Save" at the far right of it. A crossed-out
+          number stranded on its own line, a column away from the price it
+          modifies, is not a design — it is whatever the flex algorithm did that
+          day, and it changed with the card width and the length of the label.
+
+          The two facts have different jobs, so they get different rows. What
+          you pay and what it was struck from are one thought and must never
+          separate; how much off and how much saved are the offer, and belong
+          together beneath it.
+        */}
+        <div className="mt-auto pt-1">
+          <div className="flex items-baseline gap-x-2">
+            {product.priceFrom ? (
+              <span className="shrink-0 text-[12px] font-medium text-ng-ink-soft">from</span>
+            ) : null}
+            <span className="font-display text-[19px] font-semibold tabular-nums text-ng-forest-deep sm:text-[21px]">
+              ₹{product.price.toLocaleString("en-IN")}
             </span>
-          ) : null}
-          <span className="font-display text-[19px] sm:text-[21px] font-semibold text-ng-forest-deep tabular-nums">
-            ₹{product.price.toLocaleString("en-IN")}
-          </span>
-          {product.mrp && product.mrp > product.price ? (
-            <span className="text-[13px] text-ng-ink-soft line-through tabular-nums">
-              ₹{product.mrp.toLocaleString("en-IN")}
-            </span>
-          ) : null}
-          {savings > 0 ? (
-            <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[11px] font-semibold text-ng-forest tabular-nums">
-              Save ₹{savings.toLocaleString("en-IN")}
-            </span>
+            {product.mrp && product.mrp > product.price ? (
+              <span className="text-[13px] tabular-nums text-ng-ink-soft line-through">
+                ₹{product.mrp.toLocaleString("en-IN")}
+              </span>
+            ) : null}
+          </div>
+
+          {hasPromo || savings > 0 ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {hasPromo ? (
+                <span className="shrink-0 whitespace-nowrap rounded-md bg-ng-forest px-1.5 py-[3px] text-[11px] font-bold uppercase tracking-wide tabular-nums text-ng-cream">
+                  {promoLabel}
+                </span>
+              ) : null}
+              {savings > 0 ? (
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-ng-forest">
+                  Save ₹{savings.toLocaleString("en-IN")}
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
