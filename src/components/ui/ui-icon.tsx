@@ -54,6 +54,9 @@ const UI_ICONS = {
   weight: "weight",
   /* The super-admin role badge. */
   admin: "admin",
+  /* Notifications. The animated form lives in <BellIcon>; this is the static
+     cut, for the storefront. */
+  bell: "bell",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { BellIcon } from "@/components/ui/bell-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -162,7 +163,7 @@ export function AnnouncementsPanel() {
     >
       <div className="mb-5 flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
-          <Icon name="bell-bing-bold" size={20} />
+          <BellIcon size={20} animated />
         </span>
         <div>
           <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">

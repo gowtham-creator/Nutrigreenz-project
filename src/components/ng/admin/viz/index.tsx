@@ -14,7 +14,7 @@
  * the module being pulled into a client graph by accident.
  */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -243,6 +243,33 @@ export function AreaChart({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
 
+  /*
+   * Which x labels to print. At most eight, evenly spaced, always including the
+   * first and the last, and never two adjacent — computing the set up front is
+   * what avoids the gap the old "print every Nth, then drop crowded ones" rule
+   * produced at the right-hand end.
+   */
+  const xTickSet = useMemo(() => {
+    const n = labels.length;
+    const set = new Set<number>();
+    if (n === 0) return set;
+    if (n <= 8) {
+      for (let i = 0; i < n; i++) set.add(i);
+      return set;
+    }
+    /*
+     * Eight ticks is the target, but not at any cost: eight spread over
+     * fourteen points rounds two of them onto neighbouring slots, and two
+     * dates in adjacent slots touch. Cap the count so consecutive ticks are
+     * always at least two slots apart, then take whichever is smaller.
+     */
+    const count = Math.max(2, Math.min(8, Math.floor((n - 1) / 2) + 1));
+    for (let k = 0; k < count; k++) {
+      set.add(Math.round((k * (n - 1)) / (count - 1)));
+    }
+    return set;
+  }, [labels]);
+
   const pointCount = Math.max(...series.map((s) => s.data.length), 0);
   const stepX = pointCount > 1 ? (W - padL - padR) / (pointCount - 1) : 0;
 
@@ -380,28 +407,42 @@ export function AreaChart({
         </div>
       ) : null}
 
-      {/* x labels — thinned to fit.
-          Rendering one label per point collides as soon as a range covers more
-          than a couple of weeks: the dates overlap into an unreadable smear and
-          each one wraps onto two lines. Every point still gets a slot so labels
-          stay aligned with their data, but only every Nth prints its text, with
-          the first and last always shown to anchor the range. */}
-      <div className="mt-1.5 flex px-1">
-        {labels.map((l, i, arr) => {
-          const stride = Math.max(1, Math.ceil(arr.length / 8));
-          const isLast = i === arr.length - 1;
-          const show = i === 0 || isLast || i % stride === 0;
-          // Suppress a label that would sit right beside the final one.
-          const crowdsLast = show && !isLast && arr.length - 1 - i < stride;
-          return (
+      {/*
+        x labels — thinned to fit, with the ticks they belong to.
+
+        Rendering one label per point collides as soon as a range covers a
+        couple of weeks. The previous rule printed every Nth, then suppressed
+        any that "crowded" the last one — which left a visible hole near the
+        right-hand end, so the axis read as though a stretch of days were
+        missing rather than merely unlabelled.
+
+        The shown indices are chosen up front instead: evenly spaced across the
+        range, first and last always included, and never two adjacent. Every
+        point still gets a slot, so a label stays directly under its own data
+        point, and a short tick is drawn above each printed one — otherwise a
+        date floats between two points and it is guesswork which it names.
+      */}
+      <div className="mt-1 flex px-1" aria-hidden>
+        {labels.map((_, i) => (
+          <span key={i} className="flex min-w-0 flex-1 justify-center">
             <span
-              key={i}
-              className="min-w-0 flex-1 whitespace-nowrap text-center text-[10.5px] font-mono font-medium text-ng-ink-soft"
-            >
-              {show && !crowdsLast ? l : ""}
-            </span>
-          );
-        })}
+              className={cn(
+                "block w-px",
+                xTickSet.has(i) ? "h-1.5 bg-ng-line" : "h-0",
+              )}
+            />
+          </span>
+        ))}
+      </div>
+      <div className="mt-0.5 flex px-1">
+        {labels.map((l, i) => (
+          <span
+            key={i}
+            className="min-w-0 flex-1 whitespace-nowrap text-center font-mono text-[10.5px] font-medium text-ng-ink-soft"
+          >
+            {xTickSet.has(i) ? l : ""}
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -246,8 +246,17 @@ export default function AdminAnalytics() {
             {analytics.series.length === 0 ? (
               <div className="py-8 text-center text-[14px] font-medium text-ng-ink-muted">No activity in this range yet.</div>
             ) : (
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div>
+              /*
+                A divider between the two charts, and real space around each.
+
+                Side by side with only an 8-unit gap, the two x-axes ran into
+                one another and read as a single strip of dates that repeated
+                halfway along — "…8 Aug, 15 Aug, 15 Jul, 19 Jul…" — which looks
+                like a data bug rather than two charts covering the same range.
+                A rule and a wider gutter say plainly that the axis starts again.
+              */
+              <div className="grid gap-8 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-ng-line-soft">
+                <div className="lg:pr-8">
                   <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units &amp; views</div>
                   <AreaChart
                     labels={labels}
@@ -257,7 +266,7 @@ export default function AdminAnalytics() {
                     ]}
                   />
                 </div>
-                <div>
+                <div className="lg:pl-8">
                   <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue (₹)</div>
                   <AreaChart
                     labels={labels}

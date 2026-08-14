@@ -7,6 +7,7 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Input } from "@/components/ng/input";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { BellIcon } from "@/components/ui/bell-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
@@ -362,7 +363,7 @@ export default function ProfilePage() {
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-              <Icon name="bell-bold" size={20} />
+              <BellIcon size={20} />
             </span>
             <div>
               <h2 className="font-display text-[22px] leading-none text-ng-forest-deep">Communication preferences</h2>

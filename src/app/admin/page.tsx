@@ -16,6 +16,7 @@ import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { BellIcon } from "@/components/ui/bell-icon";
 import { DonutChart, HBars, Pipeline, type VizTone } from "@/components/ng/admin/viz";
 
 /* ── API shapes (JSON only — no server modules imported client-side) ─────── */
@@ -215,7 +216,7 @@ export default function AdminOverview() {
         <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-forest/[0.05] border border-ng-forest/15 px-5 py-3.5">
           {/* Neutral forest surface; the gold bell is the single gold accent. */}
           <span className="size-8 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
-            <Icon name="bell-bing-bold" size={17} className="text-ng-clay-deep" />
+            <BellIcon size={17} animated className="shrink-0" />
           </span>
           <p className="text-[13px] font-medium text-ng-ink">
             <span className="font-semibold text-ng-forest-deep tabular-nums">{needAttention} order{needAttention === 1 ? "" : "s"}</span>{" "}
