@@ -23,6 +23,7 @@ import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { VisitorPlaces } from "@/components/ng/admin/reports/visitor-places";
 import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
 import {
   PAYMENT_LABEL,
@@ -84,7 +85,7 @@ function ExportButton({ onClick, label = "Export CSV" }: { onClick: () => void; 
       onClick={onClick}
       className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
     >
-      <Icon name="file-download-bold" size={14} className="text-ng-forest" />
+      <UiIcon name="export" size={14} className="text-ng-forest" />
       {label}
     </button>
   );
@@ -262,7 +263,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             disabled={!report}
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[13.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Icon name="file-download-bold" size={15} />
+            <UiIcon name="export" size={15} />
             Export all
           </button>
         </>

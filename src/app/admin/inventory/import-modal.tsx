@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { formatPaise, type ImportPreview, type ImportSummary } from "./types";
 
 type Phase = "upload" | "preview" | "done";
@@ -207,7 +208,7 @@ export function ImportModal({
                 onClick={() => void commit()}
                 className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Icon name="import-bold" size={15} />
+                <UiIcon name="import" size={15} />
                 {busy ? "Importing…" : `Import ${preview?.validCount ?? 0}`}
               </button>
             </>

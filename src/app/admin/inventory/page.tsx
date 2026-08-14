@@ -281,7 +281,7 @@ export default function AdminInventory() {
               onClick={() => setImportOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
             >
-              <Icon name="import-bold" size={15} className="text-ng-forest" />
+              <UiIcon name="import" size={15} className="text-ng-forest" />
               Import CSV
             </button>
           )}
@@ -289,7 +289,7 @@ export default function AdminInventory() {
             href="/api/admin/inventory/export"
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
-            <Icon name="export-bold" size={15} className="text-ng-forest" />
+            <UiIcon name="export" size={15} className="text-ng-forest" />
             Export CSV
           </a>
           {isSuper && (
@@ -298,7 +298,7 @@ export default function AdminInventory() {
               onClick={() => setVariantImportOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
             >
-              <Icon name="import-bold" size={15} className="text-ng-clay" />
+              <UiIcon name="import" size={15} className="text-ng-clay" />
               Import variants
             </button>
           )}
@@ -306,7 +306,7 @@ export default function AdminInventory() {
             href="/api/admin/inventory/variants/export"
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
-            <Icon name="export-bold" size={15} className="text-ng-clay" />
+            <UiIcon name="export" size={15} className="text-ng-clay" />
             Export variants
           </a>
           <button

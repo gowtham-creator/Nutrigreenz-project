@@ -413,7 +413,7 @@ export default function AccountOrderDetailPage({
                 <a
                   href={`/api/orders/${encodeURIComponent(order.orderNumber)}/document?doc=invoice`}
                 >
-                  <Icon name="file-download-bold" size={17} />
+                  <UiIcon name="export" size={17} />
                   Download invoice
                 </a>
               </Button>

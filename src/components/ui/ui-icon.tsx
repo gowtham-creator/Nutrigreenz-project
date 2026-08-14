@@ -68,6 +68,9 @@ const UI_ICONS = {
   /* Product categories, and the wishlist. */
   category: "category",
   wishlist: "wishlist",
+  /* Data in and out: CSV import, CSV export, invoice download. */
+  import: "import",
+  export: "export",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

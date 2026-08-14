@@ -323,7 +323,7 @@ function OrderListRow({ order }: { order: OrderView }) {
               title={`Download invoice for ${order.orderNumber}`}
               className="min-h-[40px] whitespace-nowrap"
             >
-              <Icon name="file-download-bold" size={16} />
+              <UiIcon name="export" size={16} />
               Invoice
             </a>
           </Button>

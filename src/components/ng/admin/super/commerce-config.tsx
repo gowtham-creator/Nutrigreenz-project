@@ -3,6 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { SectionHeader, PrimarySection } from "@/components/ng/admin/super/command-center";
 import { NumberField, Toggle, SegToggle, TextField, SaveBar } from "@/components/ng/admin/super/controls";
@@ -663,7 +664,7 @@ function AreasCard({
             onClick={() => setShowImport((v) => !v)}
             className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-semibold px-3.5 py-1.5 text-[12px] hover:bg-ng-cream transition-colors cursor-pointer"
           >
-            <Icon name="import-bold" size={14} />
+            <UiIcon name="import" size={14} />
             Import CSV
           </button>
         }
