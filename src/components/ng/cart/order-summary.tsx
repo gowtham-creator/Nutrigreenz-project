@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { MagneticHover } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useCommerceRules } from "@/lib/commerce";
@@ -47,7 +48,7 @@ export function OrderSummary() {
         {/* Header band */}
         <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-forest-deep px-6 py-5 sm:px-7">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-leaf">
-            <Icon name="bag-check-bold" size={18} />
+            <UiIcon name="order" size={18} />
           </span>
           <h2 className="font-display text-[20px] text-ng-cream">Order summary</h2>
         </div>

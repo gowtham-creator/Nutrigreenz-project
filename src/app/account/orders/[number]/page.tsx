@@ -334,7 +334,7 @@ export default function AccountOrderDetailPage({
           <aside className="space-y-5 self-start lg:sticky lg:top-24">
             <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)]">
               <h2 className="mb-4 flex items-center gap-2 font-display text-[18px] text-ng-forest-deep">
-                <Icon name="bill-list-bold" size={17} className="text-ng-forest" />
+                <UiIcon name="order" size={17} className="text-ng-forest" />
                 Summary
               </h2>
               <dl className="space-y-2 text-[13px]">

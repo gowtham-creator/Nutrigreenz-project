@@ -43,6 +43,9 @@ const UI_ICONS = {
   leaf: "leaf",
   /* The scalloped verification badge on the PDP credential strip. */
   verified: "verified",
+  /* An order: a lined docket with a tick. Used for the order summary, the
+     order history and the admin Orders section. */
+  order: "order",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;
