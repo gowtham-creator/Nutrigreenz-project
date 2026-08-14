@@ -57,9 +57,27 @@ const UI_ICONS = {
   /* Notifications. The animated form lives in <BellIcon>; this is the static
      cut, for the storefront. */
   bell: "bell",
+  /* Admin sidebar. `catalog` and `analytics` are the supplied marks; `customer`
+     is the person outline used for shoppers everywhere. */
+  catalog: "catalog",
+  analytics: "analytics",
+  customer: "customer",
+  /* Field-sales captains, and the audit log. */
+  captain: "captain",
+  audit: "audit",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;
+
+/**
+ * The set of names this family answers to.
+ *
+ * For call sites that hold icon names as data and mix families — the admin nav,
+ * the roles list, the toast tone map. Rendering a UiIcon name through Solar's
+ * <Icon> resolves to no glyph and draws nothing, with no type error to catch it,
+ * because both components take a plain string.
+ */
+export const UI_ICON_NAMES: ReadonlySet<string> = new Set(Object.keys(UI_ICONS));
 
 export function UiIcon({
   name,

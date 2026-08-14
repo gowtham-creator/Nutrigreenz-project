@@ -8,7 +8,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
-import { UiIcon } from "@/components/ui/ui-icon";
+import { UiIcon, UI_ICON_NAMES, type UiIconName } from "@/components/ui/ui-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
@@ -24,7 +24,7 @@ const NAV: NavItem[] = [
   // Catalog is the single product surface — it maps onto the real inventory
   // admin (products, pricing, stock, variants). The old mock catalog route now
   // redirects here, so there is no separate "Inventory" nav item.
-  { href: "/admin/inventory", label: "Catalog", icon: "bag-4-bold", key: "catalog" },
+  { href: "/admin/inventory", label: "Catalog", icon: "catalog", key: "catalog" },
   // Editorial content surfaces — the storefront Journal + Farms directories.
   { href: "/admin/journal", label: "Journal", icon: "notebook-bold", key: "journal" },
   { href: "/admin/farms", label: "Farms", icon: "leaf-bold", key: "farms" },
@@ -33,17 +33,17 @@ const NAV: NavItem[] = [
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
   { href: "/admin/reports", label: "Reports", icon: "chart-2-bold", key: "reports" },
   // Product & customer analytics (demand signals + sign-in mix) — both roles.
-  { href: "/admin/analytics", label: "Analytics", icon: "chart-square-bold", key: "analytics" },
+  { href: "/admin/analytics", label: "Analytics", icon: "analytics", key: "analytics" },
   // DEDUPED canonical customer directory (one row per real person).
   { href: "/admin/referrals", label: "Referrals", icon: "users-group-rounded-bold", key: "referrals" },
-  { href: "/admin/customers", label: "Customers", icon: "user-rounded-bold", key: "customers" },
+  { href: "/admin/customers", label: "Customers", icon: "customer", key: "customers" },
   // Field-sales captains — roster, community stalls, commissions and settlements.
-  { href: "/admin/captains", label: "Captains", icon: "map-point-bold", key: "captains" },
+  { href: "/admin/captains", label: "Captains", icon: "captain", key: "captains" },
   { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", key: "people", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
   { href: "/admin/wishlists", label: "Wishlists", icon: "heart-bold", key: "wishlists" },
   // Audit log — the completed-action trail for the whole team. Both roles.
-  { href: "/admin/audit", label: "Audit log", icon: "history-2-bold", key: "audit" },
+  { href: "/admin/audit", label: "Audit log", icon: "audit", key: "audit" },
   // Super Admin control center — gated below; only superadmins see this item.
   { href: "/admin/config", label: "Config", icon: "settings-bold", key: "config", superadminOnly: true },
 ];
@@ -176,7 +176,7 @@ function AdminIdentity() {
             href="/admin/profile"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
           >
-            <Icon name="user-circle-bold" size={16} className="text-ng-ink-muted" />
+            <UiIcon name="customer" size={16} className="text-ng-ink-muted" />
             Profile
           </Link>
           <Link
@@ -260,14 +260,23 @@ function SidebarContent({
                   : "text-ng-cream/80 hover:bg-ng-cream/5 hover:text-ng-cream",
               )}
             >
-              <Icon
-                name={n.icon}
-                size={18}
-                className={cn(
-                  "transition-colors",
-                  isActive ? "text-ng-clay" : "text-ng-cream/60",
-                )}
-              />
+              {/* The nav mixes Solar names with the supplied Icons8 marks, so
+                  the family is chosen by name. Rendering everything through
+                  <Icon> would leave the migrated rows blank — a name with no
+                  Solar glyph resolves to nothing and fails silently. */}
+              {UI_ICON_NAMES.has(n.icon) ? (
+                <UiIcon
+                  name={n.icon as UiIconName}
+                  size={18}
+                  className={cn("transition-colors", isActive ? "text-ng-clay" : "text-ng-cream/60")}
+                />
+              ) : (
+                <Icon
+                  name={n.icon}
+                  size={18}
+                  className={cn("transition-colors", isActive ? "text-ng-clay" : "text-ng-cream/60")}
+                />
+              )}
               {n.label}
             </Link>
           );

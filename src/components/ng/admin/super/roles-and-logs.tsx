@@ -215,7 +215,7 @@ export function RolesAndLogs() {
         <div className="mt-6 pt-5 border-t border-ng-line-soft">
           <div className="flex items-center justify-between gap-3 mb-3">
             <span className="text-[13px] font-semibold text-ng-ink-muted flex items-center gap-2">
-              <Icon name="history-bold" size={16} className="text-ng-forest" />
+              <UiIcon name="audit" size={16} className="text-ng-forest" />
               System activity
             </span>
             <span className="text-[11.5px] font-medium text-ng-ink-soft font-mono">Recent · sign-ins &amp; admin changes</span>

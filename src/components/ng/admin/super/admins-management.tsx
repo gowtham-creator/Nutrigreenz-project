@@ -947,7 +947,7 @@ function AddInviteAdminModal({
             placeholder="e.g. Priya Nair"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            prefix={<Icon name="user-circle-bold" size={18} />}
+            prefix={<UiIcon name="customer" size={18} />}
             error={errors.name ?? undefined}
           />
           <Input
@@ -1202,7 +1202,7 @@ function EditAdminModal({
             placeholder="e.g. Priya Nair"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            prefix={<Icon name="user-circle-bold" size={18} />}
+            prefix={<UiIcon name="customer" size={18} />}
             error={errors.name ?? undefined}
           />
           <Input

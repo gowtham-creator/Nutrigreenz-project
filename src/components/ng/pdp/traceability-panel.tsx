@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import type { Farm } from "@/types/nutrigreenz";
 
 interface TraceabilityPanelProps {
@@ -18,7 +19,7 @@ export function TraceabilityPanel({ lotCode, farm, harvestDate, labReportHref = 
     { icon: "qr-code-bold", label: "Lot code", value: lotCode },
     { icon: "leaf-bold", label: "Partner farm", value: `${farm.name} · ${farm.region}` },
     { icon: "calendar-bold", label: "Harvest / pressed", value: harvestDate },
-    { icon: "user-rounded-bold", label: "Farmer", value: farm.farmerName ?? "Verified partner" },
+    { icon: "customer", label: "Farmer", value: farm.farmerName ?? "Verified partner" },
   ];
 
   return (

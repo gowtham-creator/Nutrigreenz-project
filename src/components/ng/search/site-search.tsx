@@ -428,6 +428,9 @@ export function SiteSearch({ className }: { className?: string }) {
                               onClick={() => go(item)}
                               className={rowClass(i)}
                             >
+                              {/* A clock, not the audit mark. This row is "you
+                                  searched this before" — recency, not a record
+                                  of administrative actions. */}
                               <Icon
                                 name="history-bold"
                                 size={17}

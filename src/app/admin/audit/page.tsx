@@ -82,7 +82,7 @@ const ACTION_META: Record<string, ActionMeta> = {
   "admin.reset_password": { group: "admins", kind: "Admin", icon: "key-minimalistic-bold", tone: "clay" },
   "admin.delete": { group: "admins", kind: "Admin", icon: "trash-bin-trash-bold", tone: "terracotta" },
   // The operator's own account & security
-  "admin.profile_update": { group: "account", kind: "Account", icon: "user-circle-bold", tone: "muted" },
+  "admin.profile_update": { group: "account", kind: "Account", icon: "customer", tone: "muted" },
   "admin.totp_enrolled": { group: "account", kind: "Security", icon: "shield-check-bold", tone: "forest" },
   "admin.photo_update": { group: "account", kind: "Account", icon: "camera-bold", tone: "muted" },
   "admin.photo_remove": { group: "account", kind: "Account", icon: "camera-bold", tone: "muted" },
@@ -106,7 +106,7 @@ const ACTION_META: Record<string, ActionMeta> = {
 const FALLBACK_META: ActionMeta = {
   group: "other",
   kind: "Activity",
-  icon: "history-2-bold",
+  icon: "audit",
   tone: "muted",
 };
 
@@ -611,7 +611,7 @@ export default function AdminAuditPage() {
         >
           {[
             { on: false, label: "Everyone", icon: "users-group-rounded-bold" },
-            { on: true, label: "Mine only", icon: "user-rounded-bold" },
+            { on: true, label: "Mine only", icon: "customer" },
           ].map((opt) => (
             <button
               key={opt.label}
@@ -689,7 +689,7 @@ export default function AdminAuditPage() {
         ) : visible.length === 0 ? (
           <div className="py-14 text-center">
             <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
-              <Icon name="history-bold" size={22} />
+              <UiIcon name="audit" size={22} />
             </div>
             <p className="text-[14px] font-semibold text-ng-forest-deep">
               {hasFilters ? "No activity matches your filters" : "No activity recorded yet"}

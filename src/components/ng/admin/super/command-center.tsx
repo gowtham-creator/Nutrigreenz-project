@@ -105,7 +105,7 @@ export function CommandCenterHero({
                 loyalty &amp; growth levers.
               </p>
               <div className="mt-3.5 flex items-center gap-2 text-[11.5px] font-medium text-ng-cream/85">
-                <Icon name="user-circle-bold" size={14} className="text-ng-cream/70" />
+                <UiIcon name="customer" size={14} className="text-ng-cream/70" />
                 <span>Operator</span>
                 <span className="font-mono font-semibold text-ng-cream truncate max-w-[220px]">
                   {operator ?? "admin"}

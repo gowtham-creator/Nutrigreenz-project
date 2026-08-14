@@ -552,8 +552,8 @@ function CustomerDrawer({
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-2.5">
                                   {a.fullName ? (
                                     <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ng-ink">
-                                      <Icon
-                                        name="user-circle-bold"
+                                      <UiIcon
+                                        name="customer"
                                         size={14}
                                         className="text-ng-ink-soft"
                                       />

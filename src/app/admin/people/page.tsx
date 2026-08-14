@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell, Card } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
 
 /**
@@ -27,7 +28,7 @@ export default function AdminPeople() {
       <Card title="Customers" className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="size-12 rounded-2xl bg-ng-cream flex items-center justify-center shrink-0">
-            <Icon name="user-circle-bold" size={24} className="text-ng-forest" />
+            <UiIcon name="customer" size={24} className="text-ng-forest" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[15px] text-ng-forest-deep">Deduped customer directory</p>

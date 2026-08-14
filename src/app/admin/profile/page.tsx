@@ -46,13 +46,13 @@ interface ActivityItem {
 /** Friendly label + Solar icon for a known activity action code (fallback: humanised). */
 const ACTIVITY_LABELS: Record<string, { label: string; icon: string }> = {
   "admin.signin": { label: "Signed in", icon: "login-3-bold" },
-  "admin.profile_update": { label: "Updated your profile", icon: "user-circle-bold" },
+  "admin.profile_update": { label: "Updated your profile", icon: "customer" },
   "admin.photo_update": { label: "Changed your photo", icon: "camera-bold" },
   "admin.photo_remove": { label: "Removed your photo", icon: "camera-bold" },
-  "admin.create": { label: "Added an admin", icon: "user-rounded-bold" },
+  "admin.create": { label: "Added an admin", icon: "customer" },
   "admin.update": { label: "Updated an admin", icon: "pen-2-bold" },
   "admin.reset_password": { label: "Reset an admin’s password", icon: "key-minimalistic-bold" },
-  "admin.delete": { label: "Removed an admin", icon: "user-rounded-bold" },
+  "admin.delete": { label: "Removed an admin", icon: "customer" },
   "coupon.create": { label: "Created a coupon", icon: "speaker-bold" },
   "coupon.update": { label: "Updated a coupon", icon: "speaker-bold" },
   "coupon.delete": { label: "Deleted a coupon", icon: "speaker-bold" },
@@ -595,7 +595,7 @@ export default function AdminProfilePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your full name"
-                prefix={<Icon name="user-circle-bold" size={18} />}
+                prefix={<UiIcon name="customer" size={18} />}
               />
               <Input
                 label="Mobile number"
