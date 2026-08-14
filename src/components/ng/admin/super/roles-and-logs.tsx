@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Card } from "@/components/ng/admin/admin-shell";
 import { SectionHeader } from "@/components/ng/admin/super/command-center";
 import { AdminsManagement } from "@/components/ng/admin/super/admins-management";
@@ -45,7 +46,7 @@ const ROLES: {
   {
     key: "superadmin",
     label: "Super Admin",
-    icon: "crown-bold",
+    icon: "admin",
     blurb: "Full platform control",
     tone: "clay",
     can: [
@@ -176,7 +177,15 @@ export function RolesAndLogs() {
                       : "bg-ng-forest/12 text-ng-forest ring-ng-forest/15",
                   )}
                 >
-                  <Icon name={r.icon} size={18} />
+                  {/* The role list holds Solar names for the lesser roles and a
+                      UiIcon name for super admin. Rendering everything through
+                      <Icon> would leave the super-admin badge blank — the name
+                      resolves to no Solar glyph and fails silently. */}
+                  {r.icon === "admin" ? (
+                    <UiIcon name="admin" size={18} />
+                  ) : (
+                    <Icon name={r.icon} size={18} />
+                  )}
                 </span>
                 <div>
                   <div className="font-display text-[15.5px] text-ng-forest-deep leading-tight">{r.label}</div>
@@ -225,7 +234,11 @@ export function RolesAndLogs() {
                 return (
                   <li key={e.id} className="flex items-start gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
                     <span className={cn("grid place-items-center size-8 rounded-lg shrink-0 mt-0.5", meta.cls)}>
-                      <Icon name={meta.icon} size={15} />
+                      {meta.icon === "admin" ? (
+                        <UiIcon name="admin" size={15} />
+                      ) : (
+                        <Icon name={meta.icon} size={15} />
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">

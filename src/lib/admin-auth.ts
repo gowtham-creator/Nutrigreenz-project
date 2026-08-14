@@ -26,6 +26,15 @@ export const ADMIN_EMAIL_COOKIE = "ng_admin_email";
 export const ADMIN_ROLE_COOKIE = "ng_admin_role";
 
 /**
+ * Readable absolute session expiry (epoch ms), for the header countdown.
+ *
+ * Display only, like the email and role cookies: forging it moves a number on
+ * screen and nothing else, because the expiry the server enforces is signed
+ * INSIDE `ng_admin` and re-checked on every request.
+ */
+export const ADMIN_EXPIRY_COOKIE = "ng_admin_exp";
+
+/**
  * Short-lived, httpOnly signed ticket proving the passcode step passed and the
  * super-admin still owes an authenticator code. It carries NO portal access on
  * its own — it uses a distinct `mfa` payload tag that the session verifier
@@ -81,4 +90,21 @@ export function getAdminRole(): AdminRole | null {
   const raw = match.slice(ADMIN_ROLE_COOKIE.length + 1);
   if (raw === "admin" || raw === "superadmin") return raw;
   return null;
+}
+
+/**
+ * Absolute epoch-ms deadline for this session, or null when not signed in.
+ *
+ * The countdown reads this rather than starting its own clock at mount, so a
+ * refresh, a new tab or a navigation all show the same remaining time — the
+ * session ends when it ends, not a fresh 30 minutes after the last page load.
+ */
+export function getAdminSessionExpiry(): number | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${ADMIN_EXPIRY_COOKIE}=`));
+  if (!match) return null;
+  const value = Number(decodeURIComponent(match.slice(ADMIN_EXPIRY_COOKIE.length + 1)));
+  return Number.isFinite(value) ? value : null;
 }

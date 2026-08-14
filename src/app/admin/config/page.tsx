@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import {
   NumberField,
   Toggle,
@@ -202,7 +203,7 @@ function ConfigContent() {
       subtitle="The live storefront control center"
       actions={
         <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-4 py-2 text-[12px] uppercase tracking-wider">
-          <Icon name="crown-bold" size={14} />
+          <UiIcon name="admin" size={14} />
           Super Admin
         </span>
       }

@@ -52,6 +52,8 @@ const UI_ICONS = {
   caution: "caution",
   /* Pack size — the unit line on a product card and the cart line item. */
   weight: "weight",
+  /* The super-admin role badge. */
+  admin: "admin",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

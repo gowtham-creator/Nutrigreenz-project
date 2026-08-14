@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useSyncExternalStore,
   useCallback,
   useContext,
   useEffect,
@@ -10,54 +11,56 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getAdminRole } from "@/lib/admin-auth";
+import { getAdminRole, getAdminSessionExpiry } from "@/lib/admin-auth";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /**
- * The operator session clock: one owner for the idle deadline, the heartbeat,
- * the automatic sign-out, and the countdown the header shows.
+ * The operator session clock: a FIXED lifetime, counted down in the header and
+ * enforced by signing the operator out when it reaches zero.
  *
- * ── Why these are one component and not two ───────────────────────────────
+ * ── Fixed, not idle ───────────────────────────────────────────────────────
  *
- * A visible countdown is only worth having if it is the SAME clock that signs
- * you out. Running a second timer beside the existing idle guard would give two
- * deadlines that drift apart, and the number on screen would be a decoration
- * that happens to look like a fact — the worst kind of security UI, because it
- * is trusted and wrong. So the provider owns the deadline, the sign-out reads
- * it, and the display subscribes to it.
+ * The portal used to run an idle timeout: any mouse move, key, click or scroll
+ * pushed the deadline out another 30 minutes, and a heartbeat minted a fresh
+ * token so the server agreed. An operator who kept working was never signed
+ * out — which is convenient, and is also why a session left open on an
+ * unattended machine could live indefinitely as long as anything nudged the
+ * page.
  *
- * ── What the number means ─────────────────────────────────────────────────
+ * The session now ends 30 minutes after sign-in, whatever happens in between.
+ * Nothing an operator does extends it. That is a real ceiling on how long a
+ * stolen laptop, a shared desk or a forgotten tab stays useful, and it is the
+ * behaviour a CERT-In reviewer expects to find on an admin surface.
  *
- * Time until sign-out IF THE OPERATOR STOPS NOW. Any activity — mouse, key,
- * click, scroll — slides the server session forward via the heartbeat and
- * resets this deadline with it, so the countdown climbing back to full is the
- * timer working, not a glitch. That is what an idle timeout is.
+ * ── Why the deadline comes from a cookie ──────────────────────────────────
  *
- * ── On the two windows ────────────────────────────────────────────────────
+ * Starting a 30-minute clock when this component mounts would restart the
+ * session on every refresh, every new tab and every hard navigation — the
+ * timer would say 30:00 while the real session had four minutes left. So the
+ * login routes publish the absolute deadline in a readable `ng_admin_exp`
+ * cookie and this counts down to THAT. Refresh, reopen, or open a second tab:
+ * every one of them shows the same remaining time, because they are all
+ * reading the same instant.
  *
- * The client idles out at 30 minutes; the signed session token is good for 35
- * (ADMIN_SESSION_TTL_SECONDS). The gap is deliberate — the browser gives up
- * first, so an operator is signed out by this timer rather than discovering it
- * from a failed request — and the countdown therefore tracks the 30, which is
- * the deadline that actually ends the session.
- *
- * If this component never runs (tab closed, JavaScript disabled, the timer
- * killed by a background throttle) the session still dies: the token carries
- * its own `expiresAt` and the proxy rejects it. The countdown is the courtesy,
- * not the control.
+ * The cookie is display-only. It is not httpOnly precisely so the countdown can
+ * read it, and editing it moves a number on screen and nothing else: the expiry
+ * the server enforces is signed inside `ng_admin` and re-checked on every
+ * request. A forged cookie buys a longer-looking clock and a 401.
  */
 
-/** Idle window before automatic sign-out. */
-const IDLE_MS = 30 * 60 * 1000;
-/** Ping the heartbeat at most this often, however busy the mouse is. */
-const HEARTBEAT_THROTTLE_MS = 60 * 1000;
 /** How often the visible clock re-renders. */
 const TICK_MS = 1000;
 /** Below this, the countdown starts warning. */
 const WARN_MS = 5 * 60 * 1000;
-
-const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
+/**
+ * How often to confirm the session is still alive server-side.
+ *
+ * Not a keep-alive — it extends nothing. It exists so a tab left open finds out
+ * about a "sign out everywhere" from another device, or a revoked account,
+ * without waiting for the operator's next navigation.
+ */
+const LIVENESS_MS = 2 * 60 * 1000;
 
 function isAuthScreen(pathname: string): boolean {
   return pathname === "/admin/login" || pathname === "/admin/forgot" || pathname === "/login";
@@ -75,16 +78,29 @@ export function useAdminSession(): SessionState {
   return useContext(Ctx);
 }
 
+/*
+ * The deadline is a client-only value the server cannot know, so it is read
+ * through useSyncExternalStore rather than pulled into state inside an effect.
+ * Reading it during render would mismatch on hydration; reading it in an effect
+ * and calling setState is the cascading render `react-hooks/set-state-in-effect`
+ * exists to catch. This is the API for exactly this shape.
+ */
+const subscribeToCookie = () => () => {};
+
 export function AdminSessionProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [msRemaining, setMsRemaining] = useState<number | null>(null);
+  // Ticks once a second; `msRemaining` is derived from it, never stored.
+  const [now, setNow] = useState<number | null>(null);
 
-  // Guards the sign-out so a racing timer and event cannot both fire it.
+  const expiresAt = useSyncExternalStore(
+    subscribeToCookie,
+    () => (getAdminRole() ? getAdminSessionExpiry() : null),
+    () => null,
+  );
+
+  // Guards the sign-out so a racing tick and a 401 cannot both fire it.
   const signedOut = useRef(false);
-  // The single source of truth for when this session ends.
-  const deadline = useRef<number>(0);
-  const lastPing = useRef(0);
 
   const active = !isAuthScreen(pathname);
 
@@ -100,56 +116,52 @@ export function AdminSessionProvider({ children }: { children: React.ReactNode }
   }, [router]);
 
   useEffect(() => {
-    if (!active) {
-      setMsRemaining(null);
-      return;
-    }
-    if (!getAdminRole()) {
-      setMsRemaining(null);
-      return; // no readable session → nothing to protect or display
-    }
+    // No session, an auth screen, or a session minted before this cookie
+    // existed: nothing to count. The signed token still expires on its own.
+    if (!active || !expiresAt) return;
 
     signedOut.current = false;
-    deadline.current = Date.now() + IDLE_MS;
-
-    const bump = () => {
-      if (signedOut.current) return;
-      deadline.current = Date.now() + IDLE_MS;
-      const now = Date.now();
-      if (now - lastPing.current >= HEARTBEAT_THROTTLE_MS) {
-        lastPing.current = now;
-        // Slides the SERVER session so an active operator is never signed out.
-        void fetch("/api/admin/heartbeat", { method: "POST" }).catch(() => {});
-      }
-    };
 
     /*
-     * One interval drives both the display and the sign-out, rather than a
-     * setTimeout for the deadline and a separate interval for the clock. A
-     * backgrounded tab throttles timers unpredictably; comparing against a
-     * wall-clock deadline each tick means a throttled tab signs out late but
-     * never early, and never fails to notice it is past due.
+     * One interval drives both the display and the sign-out, comparing against
+     * a wall-clock deadline rather than counting down a stored number. A
+     * backgrounded tab throttles timers unpredictably and a laptop that sleeps
+     * stops them entirely; measuring the gap to a fixed instant each tick means
+     * a throttled or resumed tab signs out late but never early, and never
+     * fails to notice it is already past due.
      */
     const tick = () => {
-      const left = deadline.current - Date.now();
-      setMsRemaining(Math.max(0, left));
-      if (left <= 0) void signOut();
+      const stamp = Date.now();
+      setNow(stamp);
+      if (expiresAt - stamp <= 0) void signOut();
     };
 
-    for (const ev of ACTIVITY_EVENTS) {
-      window.addEventListener(ev, bump, { passive: true });
-    }
-    bump();
     tick();
-    const interval = setInterval(tick, TICK_MS);
+    const clock = setInterval(tick, TICK_MS);
+
+    // Liveness only. A 401 means the session died elsewhere (revoked, or signed
+    // out from another device), so stop showing a portal that cannot act.
+    const liveness = setInterval(() => {
+      void fetch("/api/admin/heartbeat", { method: "POST" })
+        .then((res) => {
+          if (res.status === 401) void signOut();
+        })
+        .catch(() => {});
+    }, LIVENESS_MS);
 
     return () => {
-      clearInterval(interval);
-      for (const ev of ACTIVITY_EVENTS) window.removeEventListener(ev, bump);
+      clearInterval(clock);
+      clearInterval(liveness);
     };
-  }, [active, signOut]);
+  }, [active, expiresAt, signOut]);
 
-  const value = useMemo(() => ({ msRemaining }), [msRemaining]);
+  const value = useMemo(
+    () => ({
+      msRemaining:
+        active && expiresAt && now != null ? Math.max(0, expiresAt - now) : null,
+    }),
+    [active, expiresAt, now],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
@@ -160,8 +172,8 @@ function pad(n: number): string {
 /**
  * The countdown itself, for the portal header.
  *
- * Renders nothing until the provider has a deadline, so it never flashes a
- * placeholder time that was never true.
+ * Renders nothing until there is a real deadline to show, so it never displays
+ * a placeholder time that was never true.
  */
 export function SessionCountdown({ className }: { className?: string }) {
   const { msRemaining } = useAdminSession();
@@ -181,10 +193,10 @@ export function SessionCountdown({ className }: { className?: string }) {
           : "border-ng-line bg-ng-paper text-ng-ink-muted",
         className,
       )}
-      /* The clock is decorative to a screen reader — it re-reads every second
-         and would talk over everything else. The label carries the meaning, and
-         `aria-live` is deliberately absent for the same reason. */
-      title={`Signed out automatically after ${Math.round(IDLE_MS / 60000)} minutes of inactivity`}
+      /* Decorative to a screen reader: it changes every second and would talk
+         over everything else. The title and the sr-only label carry the meaning,
+         and `aria-live` is deliberately absent for the same reason. */
+      title="This session ends at 00:00 and cannot be extended. Sign in again to continue."
     >
       <UiIcon name="caution" size={12} className={warning ? "" : "opacity-0"} aria-hidden />
       <span className="sr-only">Time left in this session:</span>

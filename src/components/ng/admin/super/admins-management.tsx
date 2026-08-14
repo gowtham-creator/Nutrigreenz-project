@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Pill } from "@/components/ng/admin/admin-shell";
 import { getAdminEmail } from "@/lib/admin-auth";
@@ -708,7 +709,7 @@ function PermissionSelector({
         <span className="text-[13px] font-semibold text-ng-ink">Access &amp; permissions</span>
         {isSuper ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
-            <Icon name="crown-bold" size={10} />
+            <UiIcon name="admin" size={10} />
             Full access
           </span>
         ) : null}

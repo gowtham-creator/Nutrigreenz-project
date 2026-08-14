@@ -2,9 +2,8 @@ import { cookies } from "next/headers";
 import {
   ADMIN_COOKIE,
   ADMIN_EMAIL_COOKIE,
-  ADMIN_ROLE_COOKIE,
-} from "@/lib/admin-auth";
-import { createToken } from "@/lib/admin-session";
+  ADMIN_ROLE_COOKIE, ADMIN_EXPIRY_COOKIE } from "@/lib/admin-auth";
+import { createToken, sessionExpiryFromNow } from "@/lib/admin-session";
 import { adminByPhone, touchAdminLastLogin, getAdminTokenVersion } from "@/lib/admins";
 import { isAdminConfigured, verifyIdToken } from "@/lib/firebase-admin";
 import { operatorForPhone } from "@/lib/admin-allowlist";
@@ -122,6 +121,9 @@ export async function POST(request: Request): Promise<Response> {
   c.set({ name: ADMIN_COOKIE, value: token, httpOnly: true, ...base });
   c.set({ name: ADMIN_EMAIL_COOKIE, value: op.email, httpOnly: false, ...base });
   c.set({ name: ADMIN_ROLE_COOKIE, value: op.role, httpOnly: false, ...base });
+  /* Display-only deadline for the header countdown. Not a control:
+     the enforced expiry is signed inside the session token. */
+  c.set({ name: ADMIN_EXPIRY_COOKIE, value: String(sessionExpiryFromNow()), httpOnly: false, ...base });
 
   // Best-effort audit of the phone-OTP sign-in.
   await logActivity({

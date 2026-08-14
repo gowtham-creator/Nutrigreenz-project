@@ -8,6 +8,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
@@ -157,7 +158,7 @@ function AdminIdentity() {
               </div>
               {role === "superadmin" ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay-deep font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
-                  <Icon name="crown-bold" size={10} />
+                  <UiIcon name="admin" size={10} />
                   Super
                 </span>
               ) : null}
@@ -224,7 +225,7 @@ function SidebarContent({
           <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
           {isSuper ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 text-ng-clay font-bold px-2 py-0.5 text-[9px] uppercase tracking-wider">
-              <Icon name="crown-bold" size={10} />
+              <UiIcon name="admin" size={10} />
               Super Admin
             </span>
           ) : null}

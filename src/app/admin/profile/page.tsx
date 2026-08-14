@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
 import { Input } from "@/components/ng/input";
@@ -573,7 +574,7 @@ export default function AdminProfilePage() {
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/15 text-ng-clay-deep font-bold px-2.5 py-1 text-[11px] uppercase tracking-wider">
-                    <Icon name={isSuper ? "crown-bold" : "shield-keyhole-bold"} size={12} />
+                    <UiIcon name={isSuper ? "admin" : "lock"} size={12} />
                     {roleLabel(role)}
                   </span>
                   <Pill tone="success">Active</Pill>
@@ -771,14 +772,14 @@ export default function AdminProfilePage() {
           <Card title="Account">
             <dl className="space-y-3.5">
               {[
-                { k: "Role", icon: isSuper ? "crown-bold" : "shield-keyhole-bold", v: roleLabel(role) },
+                { k: "Role", icon: isSuper ? "admin" : "lock", v: roleLabel(role) },
                 { k: "Status", icon: "check-circle-bold", v: "Active" },
                 { k: "Member since", icon: "calendar-minimalistic-bold", v: formatMemberSince(createdAt) },
                 { k: "Last sign-in", icon: "clock-circle-bold", v: formatLastSignIn(lastLoginAt) },
               ].map((row) => (
                 <div key={row.k} className="flex items-center justify-between gap-3">
                   <dt className="inline-flex items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
-                    <Icon name={row.icon} size={15} className="text-ng-ink-soft" />
+                    <UiIcon name={row.icon as UiIconName} size={15} className="text-ng-ink-soft" />
                     {row.k}
                   </dt>
                   <dd className="text-[13px] font-semibold text-ng-ink tabular-nums">{row.v}</dd>

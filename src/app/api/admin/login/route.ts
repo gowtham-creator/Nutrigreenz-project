@@ -3,13 +3,11 @@ import {
   ADMIN_COOKIE,
   ADMIN_EMAIL_COOKIE,
   ADMIN_ROLE_COOKIE,
-  ADMIN_MFA_COOKIE,
-} from "@/lib/admin-auth";
+  ADMIN_MFA_COOKIE, ADMIN_EXPIRY_COOKIE } from "@/lib/admin-auth";
 import {
   createMfaTicket,
   createToken,
-  type AdminRole,
-} from "@/lib/admin-session";
+  type AdminRole, sessionExpiryFromNow } from "@/lib/admin-session";
 import { isTotpConfigured } from "@/lib/totp";
 import {
   getAdminFactors,
@@ -289,6 +287,16 @@ export async function POST(request: Request): Promise<Response> {
   c.set({
     name: ADMIN_ROLE_COOKIE,
     value: role,
+    httpOnly: false,
+    secure,
+    sameSite: "lax",
+    path: "/",
+  });
+  /* Display-only deadline for the header countdown. Not a control:
+     the enforced expiry is signed inside the session token. */
+  c.set({
+    name: ADMIN_EXPIRY_COOKIE,
+    value: String(sessionExpiryFromNow()),
     httpOnly: false,
     secure,
     sameSite: "lax",

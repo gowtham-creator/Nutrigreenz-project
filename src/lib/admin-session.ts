@@ -147,6 +147,17 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
  * with without invalidating the signature.
  * Throws if `ADMIN_SESSION_SECRET` is not configured (fail closed).
  */
+/**
+ * The absolute deadline a session minted right now would carry.
+ *
+ * Same formula `createToken` bakes into the token, exported so the login routes
+ * can publish it in the readable expiry cookie without recomputing the TTL and
+ * risking the two drifting apart.
+ */
+export function sessionExpiryFromNow(): number {
+  return Date.now() + ADMIN_SESSION_TTL_SECONDS * 1000;
+}
+
 export async function createToken(
   email: string,
   role: AdminRole,

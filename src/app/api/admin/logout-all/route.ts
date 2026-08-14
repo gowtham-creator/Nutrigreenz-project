@@ -2,8 +2,7 @@ import { cookies } from "next/headers";
 import {
   ADMIN_COOKIE,
   ADMIN_EMAIL_COOKIE,
-  ADMIN_ROLE_COOKIE,
-} from "@/lib/admin-auth";
+  ADMIN_ROLE_COOKIE, ADMIN_EXPIRY_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { bumpAdminTokenVersion } from "@/lib/admins";
 import { logActivity } from "@/lib/activity-log";
@@ -34,7 +33,7 @@ export async function POST(): Promise<Response> {
   await bumpAdminTokenVersion(session.email);
 
   const secure = process.env.NODE_ENV === "production";
-  for (const name of [ADMIN_COOKIE, ADMIN_EMAIL_COOKIE, ADMIN_ROLE_COOKIE]) {
+  for (const name of [ADMIN_COOKIE, ADMIN_EMAIL_COOKIE, ADMIN_ROLE_COOKIE, ADMIN_EXPIRY_COOKIE]) {
     c.set({
       name,
       value: "",
