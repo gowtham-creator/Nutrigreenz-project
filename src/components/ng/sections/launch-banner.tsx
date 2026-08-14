@@ -47,7 +47,7 @@ export function LaunchBanner() {
               </FloatIn>
 
               <div className="relative z-10 max-w-md">
-                <span className="ng-eyebrow text-ng-clay">This season&rsquo;s harvest</span>
+                <span className="ng-eyebrow text-ng-clay-light">This season&rsquo;s harvest</span>
 
                 <h2 className="mt-3 font-display text-[clamp(38px,5.4vw,68px)] font-medium leading-[0.96] tracking-tight text-ng-cream">
                   Freshly Pressed

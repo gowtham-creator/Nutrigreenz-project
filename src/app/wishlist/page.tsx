@@ -20,7 +20,7 @@ export default function WishlistPage() {
   return (
     <AccountShell active="wishlist">
       <Reveal className="mb-8">
-        <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+        <span className="ng-eyebrow inline-flex items-center gap-2">
           <Icon name="heart-bold" size={14} />
           Your account
         </span>

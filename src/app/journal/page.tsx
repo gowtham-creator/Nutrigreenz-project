@@ -102,7 +102,7 @@ export default async function JournalIndex() {
       <Section className="bg-ng-forest-deep text-ng-cream !py-16">
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
-            <span className="ng-eyebrow text-ng-clay">Harvest letter</span>
+            <span className="ng-eyebrow text-ng-clay-light">Harvest letter</span>
             <h2 className="font-display text-[clamp(28px,4vw,42px)] leading-tight text-ng-cream mt-3">
               One letter a month. <em className="italic text-ng-clay">Zero marketing.</em>
             </h2>

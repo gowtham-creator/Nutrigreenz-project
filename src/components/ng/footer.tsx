@@ -121,7 +121,7 @@ export function Footer() {
         {/* Top: Harvest Letter — one calm, centered newsletter band */}
         <div className="mb-16 border-b border-ng-cream/15 pb-14 md:pb-16">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="ng-eyebrow text-ng-clay">Harvest Letter</span>
+            <span className="ng-eyebrow text-ng-clay-light">Harvest Letter</span>
             <h2 className="mt-4 font-display text-[clamp(28px,4vw,44px)] leading-[1.08] text-ng-cream">
               Born in soil. Built for tomorrow.
             </h2>

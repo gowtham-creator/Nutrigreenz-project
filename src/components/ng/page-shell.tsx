@@ -76,7 +76,11 @@ export function PageHero({
         ? "bg-ng-sage/30"
         : "bg-ng-cream";
   const titleColor = tone === "forest" ? "text-ng-cream" : "text-ng-forest-deep";
-  const eyebrowColor = tone === "forest" ? "text-ng-clay" : "text-ng-forest";
+  /* Light gold on the dark hero, not --ng-clay: clay is 4.21:1 on --ng-forest,
+     under the 4.5:1 that 12px type needs, and the hero gradient runs across
+     both greens. See the note on `.ng-eyebrow` in globals.css for why this
+     prop had no effect at all until now. */
+  const eyebrowColor = tone === "forest" ? "text-ng-clay-light" : "text-ng-forest";
   const descColor = tone === "forest" ? "text-ng-cream/70" : "text-ng-ink-muted";
   return (
     <section

@@ -129,7 +129,7 @@ export default function LabPage() {
         <div className="grid lg:grid-cols-2 gap-10 items-center rounded-3xl bg-ng-forest-deep text-ng-cream p-8 md:p-12 overflow-hidden relative">
           <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-ng-terracotta/20 blur-3xl" aria-hidden />
           <div className="relative">
-            <span className="ng-eyebrow text-ng-clay">When a lot fails</span>
+            <span className="ng-eyebrow text-ng-clay-light">When a lot fails</span>
             <h2 className="font-display text-[clamp(26px,3.4vw,36px)] text-ng-cream mt-3 leading-tight">
               We name it on the journal. <em className="italic text-ng-clay">Every time.</em>
             </h2>

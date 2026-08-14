@@ -23,6 +23,7 @@
   --color-ng-paper: var(--ng-paper);
   --color-ng-clay: var(--ng-clay);
   --color-ng-clay-deep: var(--ng-clay-deep);
+  --color-ng-clay-light: var(--ng-clay-light);
   --color-ng-terracotta: var(--ng-terracotta);
   --color-ng-soil: var(--ng-soil);
   --color-ng-ink: var(--ng-ink);
@@ -69,6 +70,10 @@
   --ng-white: #FFFFFF;
   --ng-clay: #B5862F;            /* gold accent */
   --ng-clay-deep: #8A6420;       /* darker gold */
+  /* Gold for DARK surfaces. --ng-clay is 4.21:1 on --ng-forest and fails AA at
+     the 12px the eyebrow is set in; this is 6.65:1 there and 8.32:1 on
+     --ng-forest-deep, so it clears the hero gradient end to end. */
+  --ng-clay-light: #D8AE5E;
   --ng-amber: #F29E12;           /* amber / warning */
   --ng-terracotta: #C74D33;      /* warm clay */
   --ng-soil: #3C2F1F;
@@ -490,7 +495,32 @@
   font-family: var(--font-sans);
   font-size: 12px; font-weight: 600;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: #7A5717; /* darker gold — clears WCAG AA (~5:1) for the 12px eyebrow */
+}
+/*
+ * The default eyebrow colour — in a LAYER, so utilities can override it.
+ *
+ * This was a plain `color` on `.ng-eyebrow`, which quietly beat every Tailwind
+ * `text-*` utility placed on the same element, including the `eyebrowColor`
+ * prop in PageHero — whose forest-tone branch had therefore never once taken
+ * effect. Every dark hero on the site rendered its eyebrow in #7A5717, a gold
+ * chosen to clear AA on CREAM, against #0A1F12: 2.63:1, where 12px text needs
+ * 4.5:1.
+ *
+ * Lowering specificity with `:where()` does NOT fix that on its own, which is
+ * worth recording because it looks like it should. Tailwind v4 emits utilities
+ * into `@layer utilities`, and unlayered CSS beats layered CSS outright — the
+ * cascade compares layers before it ever compares specificity. An unlayered
+ * zero-specificity rule still wins against a layered utility.
+ *
+ * So the rule has to live in a layer that loses to utilities. `components`
+ * sits below `utilities` in Tailwind's order, so this is the default on light
+ * surfaces and any `text-*` class overrides it, which is what every call site
+ * always assumed.
+ */
+@layer components {
+  .ng-eyebrow {
+    color: #7A5717; /* darker gold — clears WCAG AA (~5:1) on cream */
+  }
 }
 
 /* ----------------------------------------------------------------

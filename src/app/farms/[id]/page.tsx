@@ -41,7 +41,7 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
           <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep/85 via-ng-forest-deep/30 to-transparent" />
           <div className="absolute inset-0 flex items-end">
             <div className="mx-auto max-w-7xl w-full px-5 md:px-8 pb-10 md:pb-16 text-ng-cream">
-              <span className="ng-eyebrow text-ng-clay">
+              <span className="ng-eyebrow text-ng-clay-light">
                 Partner since {farm.partneredSince ? new Date(farm.partneredSince).getFullYear() : "—"}
               </span>
               <h1 className="font-display text-[clamp(40px,6vw,72px)] leading-[1.02] tracking-tight mt-3 max-w-3xl">

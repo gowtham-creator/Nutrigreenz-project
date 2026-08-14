@@ -21,7 +21,7 @@ export default function TrackOrderPage() {
     <AccountShell active="orders">
       <div className="space-y-8">
         <div>
-          <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+          <span className="ng-eyebrow inline-flex items-center gap-2">
             <Icon name="map-arrow-square-bold" size={14} />
             No account needed
           </span>

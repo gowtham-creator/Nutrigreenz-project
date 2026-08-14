@@ -109,7 +109,7 @@ export default async function LoyaltyPage() {
   return (
     <AccountShell active="loyalty">
       <Reveal className="mb-8">
-        <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-clay">
+        <span className="ng-eyebrow inline-flex items-center gap-2">
           <Icon name="wallet-money-bold" size={14} />
           Your wallet
         </span>
@@ -130,7 +130,7 @@ export default async function LoyaltyPage() {
             <div aria-hidden className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-ng-clay/30 blur-3xl" />
             <div aria-hidden className="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-ng-leaf/20 blur-3xl" />
             <div className="relative">
-              <div className="ng-eyebrow text-ng-clay">Current balance</div>
+              <div className="ng-eyebrow text-ng-clay-light">Current balance</div>
               <div className="mt-2 font-display text-[clamp(40px,6vw,64px)] leading-none text-ng-cream tabular-nums">
                 ₹{balance.toLocaleString("en-IN")}
               </div>

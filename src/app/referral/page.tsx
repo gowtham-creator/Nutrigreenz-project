@@ -133,7 +133,7 @@ export default function ReferralPage() {
   return (
     <AccountShell active="referral">
       <div className="mb-8">
-        <span className="ng-eyebrow text-ng-clay">Refer a friend</span>
+        <span className="ng-eyebrow">Refer a friend</span>
         <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
           Good food spreads <em className="italic text-ng-leaf">by word of mouth</em>
         </h1>
@@ -152,7 +152,7 @@ export default function ReferralPage() {
             <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-ng-clay/30 blur-3xl" aria-hidden />
             <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-ng-leaf/20 blur-3xl" aria-hidden />
             <div className="relative">
-              <span className="ng-eyebrow text-ng-clay inline-flex items-center gap-2">
+              <span className="ng-eyebrow text-ng-clay-light inline-flex items-center gap-2">
                 <Icon name="gift-bold" size={15} />
                 Your referral link
               </span>
