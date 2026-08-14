@@ -1,5 +1,6 @@
 "use client";
 
+import { SessionCountdown } from "@/components/ng/admin/session-timer";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { fetchAdminMe } from "@/lib/admin-me-client";
@@ -378,7 +379,9 @@ export function AdminShell({
                   {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
                 </div>
               </div>
-              <div className="shrink-0">
+              <div className="flex shrink-0 items-center gap-3">
+                {/* Left of the identity: the live session countdown. */}
+                <SessionCountdown className="hidden sm:inline-flex" />
                 <AdminIdentity />
               </div>
             </div>

@@ -83,11 +83,32 @@ export default function RootLayout({
             only — see the route and the privacy policy's "Where visitors come
             from" section. */}
         <VisitBeacon />
+        {/*
+          `closeButton` is the whole reason this comment exists.
+
+          43 files call `toast()` straight from sonner and exactly one uses the
+          branded wrapper, so nearly every notification in the product — cart
+          confirmations, admin saves, captain sales, checkout errors — rendered
+          with no way to dismiss it. A shopper who triggered one waited it out.
+          Setting it here fixes all 43 at once, which is the only reason not to
+          migrate the call sites instead.
+
+          Sonner places the button at the top-left of the toast; the styling
+          below just brings it onto the brand's cream/ink rather than its
+          default white-on-grey.
+        */}
         <Toaster
           position="top-center"
           duration={4200}
+          closeButton
           offset={{ top: "84px" }}
           mobileOffset={{ top: "84px" }}
+          toastOptions={{
+            classNames: {
+              closeButton:
+                "!bg-ng-cream !border-ng-line !text-ng-forest-deep hover:!bg-ng-sage/60",
+            },
+          }}
         />
       </body>
     </html>
