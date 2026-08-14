@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { useLocation } from "@/lib/location";
 import { fetchServiceable } from "@/lib/serviceability";
@@ -112,7 +113,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
           <span className="flex items-center gap-1">
             <span className="truncate text-[13px] font-medium text-ng-forest">{label}</span>
             {hasZone && !serviceable ? (
-              <Icon name="danger-triangle-bold" size={13} className="shrink-0 text-ng-amber" label="Not serviceable yet" />
+              <UiIcon name="caution" size={13} className="shrink-0 text-ng-amber" label="Not serviceable yet" />
             ) : null}
           </span>
         </span>

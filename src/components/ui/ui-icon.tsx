@@ -46,6 +46,10 @@ const UI_ICONS = {
   /* An order: a lined docket with a tick. Used for the order summary, the
      order history and the admin Orders section. */
   order: "order",
+  /* Secure payment, on the cart trust rows. */
+  lock: "lock",
+  /* The "!" warning mark, everywhere a caution is raised. */
+  caution: "caution",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;
@@ -54,15 +58,28 @@ export function UiIcon({
   name,
   size = 20,
   className,
+  label,
 }: {
   name: UiIconName;
   size?: number;
   className?: string;
+  /**
+   * Accessible name, for the cases where the icon IS the message.
+   *
+   * Decorative by default — an icon beside its own label is noise to a screen
+   * reader, which would otherwise hear the meaning twice. But a caution mark
+   * standing alone, with the warning carried only by colour and shape, is
+   * silent without this. Matches the `label` prop on {@link Icon} so the two
+   * families behave the same at call sites.
+   */
+  label?: string;
 }) {
   const url = `url(/icons/ui/${UI_ICONS[name]}.svg)`;
   return (
     <span
-      aria-hidden
+      aria-hidden={label ? undefined : true}
+      role={label ? "img" : undefined}
+      aria-label={label}
       className={cn("inline-block shrink-0 bg-current", className)}
       style={{
         width: size,

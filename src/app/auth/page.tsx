@@ -259,7 +259,7 @@ function AuthScreen() {
               <ul className="mt-10 max-w-sm space-y-6">
                 {PERKS.map((p) => (
                   <li key={p.title} className="flex gap-4">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-cream text-ng-leaf ring-1 ring-ng-leaf/30">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-cream text-ng-forest-deep ring-1 ring-ng-leaf/30">
                       <Icon name={p.icon} size={22} />
                     </div>
                     <div>

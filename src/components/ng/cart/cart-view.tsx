@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Section } from "@/components/ng/section";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { Stagger, StaggerItem } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useCommerceRules } from "@/lib/commerce";
@@ -15,10 +16,10 @@ export function CartView() {
   const { items, count } = useCart();
   const { freeDeliveryThreshold } = useCommerceRules();
   const freeDeliveryLabel = `₹${freeDeliveryThreshold.toLocaleString("en-IN")}`;
-  const trust: { icon: string; label: string }[] = [
-    { icon: "lock-keyhole-minimalistic-bold", label: "Secure payment" },
-    { icon: "qr-code-bold", label: "Lot-traceable" },
-    { icon: "delivery-bold", label: `Free delivery over ${freeDeliveryLabel}` },
+  const trust: { icon: UiIconName; label: string }[] = [
+    { icon: "lock" as const, label: "Secure payment" },
+    { icon: "qr" as const, label: "Lot-traceable" },
+    { icon: "delivery" as const, label: `Free delivery over ${freeDeliveryLabel}` },
   ];
 
   if (items.length === 0) {
@@ -67,7 +68,7 @@ export function CartView() {
                   key={t.label}
                   className="inline-flex items-center gap-2 text-[12.5px] font-medium text-ng-forest"
                 >
-                  <Icon name={t.icon} size={15} className="text-ng-leaf" />
+                  <UiIcon name={t.icon} size={15} className="text-ng-forest-deep" />
                   {t.label}
                 </li>
               ))}

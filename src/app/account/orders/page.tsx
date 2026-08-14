@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -154,7 +155,7 @@ export default function AccountOrdersPage() {
         {state === "error" ? (
           <section className="rounded-3xl border border-ng-danger/40 bg-ng-danger/5 p-10 text-center">
             <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-ng-paper text-ng-danger shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-              <Icon name="danger-triangle-bold" size={26} />
+              <UiIcon name="caution" size={26} />
             </span>
             <p className="font-display text-[20px] text-ng-forest-deep">We couldn&apos;t load your orders</p>
             <p className="mx-auto mt-1.5 max-w-sm text-[14px] text-ng-ink-muted">

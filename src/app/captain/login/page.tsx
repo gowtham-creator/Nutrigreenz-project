@@ -15,6 +15,7 @@ import { clearCaptainCache } from "@/components/ng/captain/captain-store";
 import { Logo } from "@/components/ng/logo";
 import { OtpInput } from "@/components/ng/otp-input";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 
 const NOT_CONFIGURED =
@@ -302,7 +303,7 @@ function CaptainLoginForm() {
         <main className="flex-1 px-5 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
           {!msg91 && !isFirebaseConfigured ? (
             <div className="flex gap-2.5 rounded-2xl bg-ng-amber/15 border border-ng-amber/30 px-3.5 py-3 mb-5">
-              <Icon name="danger-triangle-bold" size={18} className="text-ng-soil shrink-0" />
+              <UiIcon name="caution" size={18} className="text-ng-soil shrink-0" />
               <p className="text-[12.5px] leading-snug text-ng-ink-muted">{NOT_CONFIGURED}</p>
             </div>
           ) : null}

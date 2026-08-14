@@ -3,6 +3,7 @@
 import { toast as sonner } from "sonner";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -47,7 +48,7 @@ const TONES: Record<
     rail: "bg-ng-amber",
     glyphBg: "bg-ng-amber/14",
     glyph: "text-ng-clay-deep",
-    icon: "danger-triangle-bold",
+    icon: "caution",
     progress: "bg-ng-amber/45",
   },
   info: {

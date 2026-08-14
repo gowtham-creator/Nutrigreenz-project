@@ -47,7 +47,7 @@ export function OrderSummary() {
       <div className="overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-paper shadow-[var(--shadow-ng-float)]">
         {/* Header band */}
         <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-forest-deep px-6 py-5 sm:px-7">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-leaf">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
             <UiIcon name="order" size={18} />
           </span>
           <h2 className="font-display text-[20px] text-ng-cream">Order summary</h2>
@@ -82,7 +82,7 @@ export function OrderSummary() {
             )}
             <div className="relative mt-2.5 h-2.5 overflow-hidden rounded-full bg-ng-paper ring-1 ring-ng-line-soft">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-ng-leaf to-ng-green-bright transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-ng-forest-deep transition-all duration-700 ease-out"
                 style={{ width: `${freeDeliveryProgress}%` }}
               />
             </div>
@@ -148,7 +148,7 @@ export function OrderSummary() {
           {/* No-cancellation disclosure (§3.9) + required acknowledgement */}
           <div className="mt-5 rounded-2xl border border-ng-line bg-ng-cream/60 p-4">
             <div className="flex items-start gap-2.5">
-              <Icon name="shield-warning-bold" size={20} className="mt-0.5 shrink-0 text-ng-clay-deep" />
+              <UiIcon name="caution" size={20} className="mt-0.5 shrink-0 text-ng-clay-deep" />
               <div>
                 <p className="text-[13px] font-semibold text-ng-forest-deep">No cancellations</p>
                 <p className="mt-1 text-[12px] leading-relaxed text-ng-ink-muted">
@@ -216,8 +216,8 @@ export function OrderSummary() {
           {/* Reassurance row */}
           <ul className="mt-5 grid grid-cols-3 gap-2 border-t border-ng-line-soft pt-5 text-center">
             {[
-              { icon: "lock-keyhole-minimalistic-bold", label: "Secure payment" },
-              { icon: "qr-code-bold", label: "Lot-traceable" },
+              { icon: "lock" as const, label: "Secure payment" },
+              { icon: "qr" as const, label: "Lot-traceable" },
               {
                 icon: "delivery-bold",
                 label: `Free over ₹${freeDeliveryThreshold.toLocaleString("en-IN")}`,

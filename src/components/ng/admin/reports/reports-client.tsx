@@ -348,7 +348,10 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
               </div>
             ) : (
               <HBars
-                tone="leaf"
+                /* forest, not leaf: at #66BF73 on a #EFEFE8 track the filled
+                   and empty halves of a bar sit close enough in value that the
+                   boundary — the only thing the chart encodes — goes soft. */
+                tone="forest"
                 formatValue={(v) => INR(v)}
                 rows={report.topProducts.map((p) => ({
                   label: p.title,

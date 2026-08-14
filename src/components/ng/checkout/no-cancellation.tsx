@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 export const NO_CANCELLATION_TEXT =
@@ -15,8 +16,8 @@ export function NoCancellationNotice({ className }: { className?: string }) {
         className,
       )}
     >
-      <Icon
-        name="shield-warning-bold"
+      <UiIcon
+        name="caution"
         size={20}
         className="mt-0.5 shrink-0 text-ng-amber"
       />

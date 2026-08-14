@@ -378,7 +378,7 @@ export default function AdminCaptains() {
               </ul>
             ) : error ? (
               <div className="px-6 py-16 text-center">
-                <Icon name="danger-triangle-bold" size={28} className="text-ng-terracotta mx-auto" />
+                <UiIcon name="caution" size={28} className="text-ng-terracotta mx-auto" />
                 <p className="mt-3 text-[14px] font-semibold text-ng-ink">Couldn&apos;t load captains</p>
                 <p className="mt-1 text-[12.5px] font-medium text-ng-ink-muted">
                   Please try again in a moment.
@@ -616,7 +616,7 @@ function CaptainDrawer({
             </div>
           ) : !c ? (
             <div className="text-center py-10">
-              <Icon name="danger-triangle-bold" size={26} className="text-ng-terracotta mx-auto" />
+              <UiIcon name="caution" size={26} className="text-ng-terracotta mx-auto" />
               <p className="mt-3 text-[13px] font-medium text-ng-ink-muted">
                 This captain could not be loaded.
               </p>

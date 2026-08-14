@@ -528,7 +528,7 @@ export default function CheckoutPage() {
             {belowMinimum ? (
               <StaggerItem>
                 <div className="flex items-center gap-3 rounded-2xl border border-ng-danger/40 bg-ng-danger/10 p-4 text-[14px] text-ng-danger">
-                  <Icon name="danger-triangle-bold" size={20} />
+                  <UiIcon name="caution" size={20} />
                   <span>
                     Add {INR(rules.minOrderValue - subtotal)} more to reach the{" "}
                     {INR(rules.minOrderValue)} minimum order value.

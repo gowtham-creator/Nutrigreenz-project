@@ -118,7 +118,7 @@ export function AddressBook() {
 
       {addresses.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
-          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay-deep shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
             <Icon name="map-point-bold" size={30} />
           </span>
           <p className="font-display text-[22px] leading-tight text-ng-forest-deep">

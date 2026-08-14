@@ -7,6 +7,7 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { FloatIn, Reveal } from "@/components/ng/motion";
 
@@ -89,7 +90,7 @@ function FailedContent() {
         <FloatIn>
           <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 sm:p-8">
             <span className="grid h-12 w-12 place-items-center rounded-full bg-ng-clay/[0.10] text-ng-clay-deep">
-              <Icon name="danger-triangle-bold" size={24} />
+              <UiIcon name="caution" size={24} />
             </span>
 
             <h1 className="mt-4 text-[22px] font-semibold leading-tight text-ng-forest-deep sm:text-[26px]">

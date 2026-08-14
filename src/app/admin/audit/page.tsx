@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
 
@@ -676,7 +677,7 @@ export default function AdminAuditPage() {
         ) : errored && entries.length === 0 ? (
           <div className="py-14 text-center">
             <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-ng-cream text-ng-terracotta">
-              <Icon name="danger-triangle-bold" size={22} />
+              <UiIcon name="caution" size={22} />
             </div>
             <p className="text-[14px] font-semibold text-ng-forest-deep">Couldn&rsquo;t load the audit trail</p>
             <p className="mt-1 text-[12.5px] text-ng-ink-soft">Check your connection and try again.</p>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -182,7 +183,7 @@ export function PdpImagesPreview({
 
       {data && data.duplicates > 0 ? (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-ng-amber/12 px-3 py-2 text-[11px] leading-snug text-ng-amber">
-          <Icon name="danger-triangle-bold" size={14} className="mt-px shrink-0" />
+          <UiIcon name="caution" size={14} className="mt-px shrink-0" />
           <span>
             {data.duplicates} slide{data.duplicates === 1 ? " is" : "s are"} listed twice. A path already
             supplied by the manifest will show again if you also add it to the gallery — remove it above.

@@ -86,7 +86,7 @@ export function CommandCenterHero({
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
                 {/* The crown is the SINGLE gold accent icon on this surface. */}
-                <span className="grid place-items-center size-11 rounded-2xl bg-ng-cream ring-1 ring-ng-clay/40 text-ng-clay shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+                <span className="grid place-items-center size-11 rounded-2xl bg-ng-cream ring-1 ring-ng-clay/40 text-ng-clay-deep shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <Icon name="crown-bold" size={22} />
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-cream/[0.08] ring-1 ring-ng-cream/20 text-ng-cream/90 font-bold px-3 py-1 text-[11px] uppercase tracking-[0.14em]">
