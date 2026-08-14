@@ -187,7 +187,7 @@ export default function CaptainSettle() {
           <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={16} className="shrink-0" />
           {matched
             ? "Cash matches captured total."
-            : `Variance ${cashVariance > 0 ? "+" : ""}₹${cashVariance.toLocaleString("en-IN")} — note it before submitting.`}
+            : `Variance ${cashVariance > 0 ? "+" : ""}₹${cashVariance.toLocaleString("en-IN")}. Note it before submitting.`}
         </div>
       </CaptainCard>
 

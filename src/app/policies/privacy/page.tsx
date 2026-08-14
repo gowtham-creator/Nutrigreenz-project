@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Privacy policy — Nutri Greenz",
+  title: "Privacy policy · Nutri Greenz",
   description:
     "How Nutri Greenz Farm Technologies Pvt. Ltd collects, uses, discloses and protects your information when you use the Nutrigreenz Platform.",
 };
@@ -76,7 +76,7 @@ export default function PrivacyPolicyPage() {
             <>
               <p>
                 {
-                  "When you open our website, our hosting provider resolves an approximate location — city, state and country — from the internet address your connection arrives on. We use this to count how many visits came from each place, so we can decide which cities and states to serve, stock and deliver to next."
+                  "When you open our website, our hosting provider resolves an approximate location. City, state and country. From the internet address your connection arrives on. We use this to count how many visits came from each place, so we can decide which cities and states to serve, stock and deliver to next."
                 }
               </p>
               <p>
@@ -110,7 +110,7 @@ export default function PrivacyPolicyPage() {
                 <li>{"To provide you with information about services we consider similar to those you are using."}</li>
                 <li>{"To understand our users and improve our Services."}</li>
                 <li>{"To generate and review reports and data about our user base."}</li>
-                <li>{"To count visits by city, state and country so we can plan where to expand our service — as counts only, never linked to you (see \u201cWhere visitors come from\u201d)."}</li>
+                <li>{"To count visits by city, state and country so we can plan where to expand our service. As counts only, never linked to you (see \u201cWhere visitors come from\u201d)."}</li>
                 <li>{"To measure the effectiveness of advertising we serve."}</li>
               </ul>
             </>

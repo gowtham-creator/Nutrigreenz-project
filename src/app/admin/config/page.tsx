@@ -394,7 +394,7 @@ function LoyaltySection() {
           icon="star-bold"
           tone="clay"
           title="Loyalty programme"
-          caption="Earn & redemption ratios, floors and caps — drives points on orders and checkout redemption."
+          caption="Earn & redemption ratios, floors and caps. Drives points on orders and checkout redemption."
           badge={
             loading ? (
               <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -462,7 +462,7 @@ function LoyaltySection() {
           note={
             saving
               ? "Saving…"
-              : "Persisted to Supabase — drives points earned on orders and redemption at checkout."
+              : "Persisted to Supabase. Drives points earned on orders and redemption at checkout."
           }
           onSave={save}
           onReset={reset}

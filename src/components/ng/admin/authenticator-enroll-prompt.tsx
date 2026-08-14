@@ -74,7 +74,7 @@ export function AuthenticatorEnrollPrompt() {
           toast.error(
             d?.error === "already-enrolled"
               ? "Authenticator is already set up."
-              : "Couldn't start setup — try again.",
+              : "Couldn't start setup. Try again.",
           );
           return;
         }
@@ -85,7 +85,7 @@ export function AuthenticatorEnrollPrompt() {
           setOpen(true);
         }
       } catch {
-        toast.error("Couldn't start setup — try again.");
+        toast.error("Couldn't start setup. Try again.");
       }
     }
     window.addEventListener(ENROLL_AUTHENTICATOR_EVENT, onRequest);
@@ -131,7 +131,7 @@ export function AuthenticatorEnrollPrompt() {
         });
       }
     } catch {
-      toast.error("Couldn't verify — try again.");
+      toast.error("Couldn't verify. Try again.");
     } finally {
       setBusy(false);
     }

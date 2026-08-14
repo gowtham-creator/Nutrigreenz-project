@@ -6,7 +6,7 @@ import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
 
 export const metadata: Metadata = {
-  title: "Careers — Nutri Greenz",
+  title: "Careers · Nutri Greenz",
   description:
     "Join Nutri Greenz in Hyderabad. We're a small farm-to-table team building an honest, fully traceable food supply chain. See our culture and open roles.",
 };
@@ -45,14 +45,14 @@ const ROLES = [
     team: "Quality",
     location: "Hyderabad · On-site",
     type: "Full-time",
-    blurb: "Run our lot-testing protocol end to end — coordinate NABL labs, log reports, and make the no-compromise call on what ships.",
+    blurb: "Run our lot-testing protocol end to end. Coordinate NABL labs, log reports, and make the no-compromise call on what ships.",
   },
   {
     title: "Customer Experience Lead",
     team: "Support",
     location: "Hyderabad · Hybrid",
     type: "Full-time",
-    blurb: "Be the warm, fast voice customers remember — own support, returns and delight across chat, email and phone.",
+    blurb: "Be the warm, fast voice customers remember. Own support, returns and delight across chat, email and phone.",
   },
   {
     title: "Delivery Captain",
@@ -73,7 +73,7 @@ export default function CareersPage() {
             Grow something <em className="italic text-ng-leaf">honest</em> with us
           </>
         }
-        description="We're a small, stubborn team in Hyderabad building an honest, fully traceable food supply chain — from 42 partner farms to kitchens across the city. If that fires you up, we should talk."
+        description="We're a small, stubborn team in Hyderabad building an honest, fully traceable food supply chain. From 42 partner farms to kitchens across the city. If that fires you up, we should talk."
       />
 
       {/* Culture */}

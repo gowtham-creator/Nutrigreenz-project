@@ -124,7 +124,7 @@ export async function GET(): Promise<Response> {
       step: "authentication",
       ok: authWorked,
       detail: authWorked
-        ? `SBI responded: ${message} (auth ok — the reference does not exist, as expected)`
+        ? `SBI responded: ${message} (auth ok: the reference does not exist, as expected)`
         : `rejected: ${message}`,
     });
     if (!authWorked) {

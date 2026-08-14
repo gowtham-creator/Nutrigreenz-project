@@ -187,7 +187,7 @@ export default function FlowMapPage() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="User journeys · F1—F12"
+        eyebrow="User journeys · F1 · F12"
         title={<>Twelve flows. <em className="italic text-ng-leaf">One pantry.</em></>}
         description="Every user journey across customer, admin, captain, and community surfaces. Each flow ends in a measurable success criterion."
       />

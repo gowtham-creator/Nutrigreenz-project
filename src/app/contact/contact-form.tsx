@@ -38,7 +38,7 @@ export function ContactForm() {
     // No backend: simulate a send, then confirm with a toast.
     setTimeout(() => {
       setSubmitting(false);
-      toast.success("Thanks — we've got your message. We'll reply within one business day.");
+      toast.success("Thanks. We've got your message. We'll reply within one business day.");
       setName("");
       setEmail("");
       setSubject(SUBJECTS[0]);

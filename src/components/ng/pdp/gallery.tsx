@@ -98,7 +98,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
     }
 
     if (!variantSrc) return list;
-    return [{ src: variantSrc, alt: `${baseAlt} — ${selected?.size ?? "selected size"}`, label: selected?.size }, ...list];
+    return [{ src: variantSrc, alt: `${baseAlt} · ${selected?.size ?? "selected size"}`, label: selected?.size }, ...list];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, variantSrc, selected?.size, nutritionBySize]);
 
@@ -308,7 +308,7 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
           ref={stageRef}
           role="group"
           aria-roledescription="carousel"
-          aria-label="Product images — swipe or use arrow keys"
+          aria-label="Product images · swipe or use arrow keys"
           tabIndex={0}
           onKeyDown={onKeyDown}
           {...handlers}

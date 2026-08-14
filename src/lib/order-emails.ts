@@ -51,12 +51,12 @@ const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intr
     subject: (n) => `Order ${n} received · Nutri Greenz`,
     heading: "Order received 🌿",
     intro:
-      "Thank you — we've got your order and our team is reviewing it. Your tax invoice is attached. We'll email you again the moment it's confirmed.",
+      "Thank you. We've got your order and our team is reviewing it. Your tax invoice is attached. We'll email you again the moment it's confirmed.",
   },
   confirmed: {
     subject: (n) => `Order ${n} confirmed · Nutri Greenz`,
     heading: "Order confirmed 🌿",
-    intro: "Good news — your order is confirmed and we're preparing it for your delivery slot.",
+    intro: "Good news. Your order is confirmed and we're preparing it for your delivery slot.",
   },
   packed: {
     subject: (n) => `Order ${n} is packed · Nutri Greenz`,
@@ -66,12 +66,12 @@ const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intr
   shipped: {
     subject: (n) => `Order ${n} is on its way 🚚 · Nutri Greenz`,
     heading: "Your order shipped 🚚",
-    intro: "Good news — your order is on its way. We'll confirm once it reaches you.",
+    intro: "Good news. Your order is on its way. We'll confirm once it reaches you.",
   },
   delivered: {
     subject: (n) => `Order ${n} delivered 🎉 · Nutri Greenz`,
     heading: "Delivered 🎉",
-    intro: "Your order has reached you — we hope you love it. Reply here if anything isn't perfect.",
+    intro: "Your order has reached you. We hope you love it. Reply here if anything isn't perfect.",
   },
 };
 

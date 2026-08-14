@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Cancellation & refund policy — Nutri Greenz",
+  title: "Cancellation & refund policy · Nutri Greenz",
   description:
     "The cancellation and refund policy for orders placed on the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
 };

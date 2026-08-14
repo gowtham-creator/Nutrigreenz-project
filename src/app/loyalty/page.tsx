@@ -118,8 +118,8 @@ export default async function LoyaltyPage() {
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
           {hasActivity
-            ? `Every order and every referral earns wallet credit you can redeem on anything in the pantry — up to ${config.maxRedeemPercent}% of an order.`
-            : `Place your first order to start earning. Every order and every referral earns wallet credit you can redeem on anything in the pantry — up to ${config.maxRedeemPercent}% of an order.`}
+            ? `Every order and every referral earns wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`
+            : `Place your first order to start earning. Every order and every referral earns wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`}
         </p>
       </Reveal>
 

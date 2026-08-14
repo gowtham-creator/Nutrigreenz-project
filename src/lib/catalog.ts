@@ -689,7 +689,7 @@ export async function importProductsCsv(rows: readonly ProductCsvRow[]): Promise
     const name = row.name?.trim();
     if (!name) {
       result.skipped++;
-      result.errors.push(`Row ${lineNo}: missing product name — skipped.`);
+      result.errors.push(`Row ${lineNo}: missing product name, skipped.`);
       continue;
     }
 
@@ -738,7 +738,7 @@ export async function importProductsCsv(rows: readonly ProductCsvRow[]): Promise
     } catch (err) {
       result.skipped++;
       const message = err instanceof Error ? err.message : "unknown error";
-      result.errors.push(`Row ${lineNo}: ${message} — skipped.`);
+      result.errors.push(`Row ${lineNo}: ${message}, skipped.`);
     }
   }
 
@@ -790,7 +790,7 @@ export async function importVariantsCsv(rows: readonly VariantCsvRow[]): Promise
     const sku = row.sku?.trim();
     if (!sku) {
       result.skipped++;
-      result.errors.push(`Row ${lineNo}: missing SKU — skipped.`);
+      result.errors.push(`Row ${lineNo}: missing SKU, skipped.`);
       continue;
     }
 
@@ -816,7 +816,7 @@ export async function importVariantsCsv(rows: readonly VariantCsvRow[]): Promise
         const productKey = (row.product ?? "").trim();
         if (!productKey) {
           result.skipped++;
-          result.errors.push(`Row ${lineNo}: ${sku} not found and no product given — skipped.`);
+          result.errors.push(`Row ${lineNo}: ${sku} not found and no product given, skipped.`);
           continue;
         }
         let product: { id: string } | null = null;
@@ -838,7 +838,7 @@ export async function importVariantsCsv(rows: readonly VariantCsvRow[]): Promise
         }
         if (!product) {
           result.skipped++;
-          result.errors.push(`Row ${lineNo}: product "${productKey}" not found — skipped.`);
+          result.errors.push(`Row ${lineNo}: product "${productKey}" not found, skipped.`);
           continue;
         }
         await createVariant({
@@ -854,7 +854,7 @@ export async function importVariantsCsv(rows: readonly VariantCsvRow[]): Promise
     } catch (err) {
       result.skipped++;
       const message = err instanceof Error ? err.message : "unknown error";
-      result.errors.push(`Row ${lineNo}: ${message} — skipped.`);
+      result.errors.push(`Row ${lineNo}: ${message}, skipped.`);
     }
   }
 

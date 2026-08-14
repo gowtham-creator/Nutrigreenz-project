@@ -317,7 +317,7 @@ export default function ProfilePage() {
               </div>
               <p className="text-[12px] text-ng-ink-soft">
                 {hasVerifiedPhone
-                  ? "Your verified mobile — used to sign in and for delivery updates."
+                  ? "Your verified mobile. Used to sign in and for delivery updates."
                   : "Add a phone number at checkout for delivery updates."}
               </p>
             </div>

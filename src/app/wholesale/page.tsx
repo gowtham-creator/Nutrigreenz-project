@@ -7,16 +7,16 @@ import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export const metadata: Metadata = {
-  title: "Bulk & corporate — Nutri Greenz",
+  title: "Bulk & corporate · Nutri Greenz",
   description:
-    "Buy Nutri Greenz in bulk or gift it at scale. Pantry supply for cafés and offices, curated corporate hampers and festival gifting — sourced direct, lab-tested, delivered across Hyderabad.",
+    "Buy Nutri Greenz in bulk or gift it at scale. Pantry supply for cafés and offices, curated corporate hampers and festival gifting: sourced direct, lab-tested, delivered across Hyderabad.",
 };
 
 const USE_CASES = [
   {
     icon: "shop-bold",
     title: "Cafés, cloud kitchens & restaurants",
-    body: "Cold-pressed oils, A2 ghee and stone-ground flours in catering sizes — the same single-origin, lab-tested quality, at volume pricing.",
+    body: "Cold-pressed oils, A2 ghee and stone-ground flours in catering sizes: the same single-origin, lab-tested quality, at volume pricing.",
   },
   {
     icon: "buildings-2-bold",
@@ -26,19 +26,19 @@ const USE_CASES = [
   {
     icon: "gift-bold",
     title: "Corporate gifting",
-    body: "Curated hampers for clients, employees and festivals — co-branded and delivered to one address or many.",
+    body: "Curated hampers for clients, employees and festivals. Co-branded and delivered to one address or many.",
   },
 ];
 
 const STEPS = [
-  { t: "Tell us what you need", d: "Share your products, volumes and how often — one-off or recurring." },
+  { t: "Tell us what you need", d: "Share your products, volumes and how often, one-off or recurring." },
   { t: "Get a tailored quote", d: "We confirm availability from our partner farms and send transparent bulk pricing." },
-  { t: "We deliver across Hyderabad", d: "Scheduled drops to your café, office or gifting list — fresh and traceable as always." },
+  { t: "We deliver across Hyderabad", d: "Scheduled drops to your café, office or gifting list. Fresh and traceable as always." },
 ];
 
 const PROOF = [
   { icon: "test-tube-bold", t: "Every lot lab-tested", d: "The same no-compromise quality as our retail shelf." },
-  { icon: "leaf-bold", t: "Sourced direct from 42 farms", d: "No anonymous middle layer — named farms, fair prices." },
+  { icon: "leaf-bold", t: "Sourced direct from 42 farms", d: "No anonymous middle layer: named farms, fair prices." },
   { icon: "qr-code-bold", t: "Fully traceable", d: "Lot codes on every pack, even at volume." },
 ];
 
@@ -52,7 +52,7 @@ export default function WholesalePage() {
             Honest food, <em className="italic text-ng-leaf">at scale</em>
           </>
         }
-        description="Whether you're stocking a café pantry, a 200-person office, or gifting clients this festive season — get Nutri Greenz quality in bulk, sourced direct and delivered across Hyderabad."
+        description="Whether you're stocking a café pantry, a 200-person office, or gifting clients this festive season. Get Nutri Greenz quality in bulk, sourced direct and delivered across Hyderabad."
       >
         <a
           href="mailto:wholesale@nutrigreenz.farm?subject=Bulk%20%26%20corporate%20enquiry"

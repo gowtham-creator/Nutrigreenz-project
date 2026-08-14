@@ -136,7 +136,7 @@ export async function alertAccountLocked(alert: LockoutAlert): Promise<boolean> 
 
     // The masked account in the subject makes a phone notification useful on
     // its own, without opening the mail.
-    const subject = `Security: admin account locked — ${maskEmail(alert.email)}`;
+    const subject = `Security: admin account locked, ${maskEmail(alert.email)}`;
     const body = html(alert, when);
 
     /*

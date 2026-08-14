@@ -446,7 +446,7 @@ export default function CheckoutPage() {
               <p className="mt-3 text-[15px] leading-relaxed text-ng-ink-muted">
                 {authLoading
                   ? "Checking your session."
-                  : "Sign in so your order, address and details are saved to your account — then you'll come straight back to checkout."}
+                  : "Sign in so your order, address and details are saved to your account. Then you'll come straight back to checkout."}
               </p>
               {!authLoading ? (
                 <Button variant="primary" size="lg" className="mt-7" asChild>

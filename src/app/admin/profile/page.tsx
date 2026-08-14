@@ -78,7 +78,7 @@ function describeActivity(
   return { label, icon, detail };
 }
 
-/** "12 May 2026" — the join date, or "—" when unknown. */
+/** "12 May 2026"the join date, or "—" when unknown. */
 function formatMemberSince(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -86,7 +86,7 @@ function formatMemberSince(iso: string | null): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** "Today, 9:12 AM" / "Yesterday, …" / "3 May, …" — last sign-in, or "—". */
+/** "Today, 9:12 AM" / "Yesterday, …" / "3 May, …"last sign-in, or "—". */
 function formatLastSignIn(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -322,7 +322,7 @@ export default function AdminProfilePage() {
               ? "Name can’t be empty."
               : data.error === "no-profile"
                 ? "Your sign-in isn’t backed by a saved profile."
-                : "Couldn’t save — please try again.";
+                : "Couldn’t save, please try again.";
         toast.error("Not saved", { description: msg });
         return;
       }
@@ -381,7 +381,7 @@ export default function AdminProfilePage() {
       void refreshActivity();
       toast.success("Profile updated", { description: "Your name, mobile and photo were saved." });
     } catch {
-      toast.error("Not saved", { description: "Couldn’t reach the server — try again." });
+      toast.error("Not saved", { description: "Couldn’t reach the server. Try again." });
     } finally {
       setSaving(false);
     }
@@ -431,10 +431,10 @@ export default function AdminProfilePage() {
         void refreshActivity();
         toast.success("Photo removed");
       } else {
-        toast.error("Not removed", { description: "Couldn’t remove your photo — try again." });
+        toast.error("Not removed", { description: "Couldn’t remove your photo. Try again." });
       }
     } catch {
-      toast.error("Not removed", { description: "Couldn’t reach the server — try again." });
+      toast.error("Not removed", { description: "Couldn’t reach the server. Try again." });
     }
   }
   function sendReset() {
@@ -475,7 +475,7 @@ export default function AdminProfilePage() {
               ? "Connect email (add your Brevo key) first."
               : data.error === "phone-required"
                 ? "Add an operator mobile (ADMIN_PHONE) first."
-                : "Couldn’t update — try again.";
+                : "Couldn’t update. Try again.";
         toast.error("Not updated", { description: msg });
         return;
       }
@@ -608,7 +608,7 @@ export default function AdminProfilePage() {
               />
             </div>
             <SaveBar
-              note="Saved to your account — name, mobile and photo persist to the database."
+              note="Saved to your account: name, mobile and photo persist to the database."
               dirty={dirty}
               onSave={handleSave}
               onReset={handleReset}

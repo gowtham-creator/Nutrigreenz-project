@@ -236,7 +236,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
           Reports <em className="italic text-ng-clay font-display">&amp; analytics</em>
         </span>
       }
-      subtitle="Revenue, fulfilment, products & coupons — computed live from real orders"
+      subtitle="Revenue, fulfilment, products & coupons. Computed live from real orders"
       actions={
         <>
           <div className="hidden sm:flex gap-1 bg-ng-paper border border-ng-line-soft rounded-full p-1">
@@ -411,8 +411,8 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
 
           <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             {hasOrders
-              ? `Figures computed live from real orders (${range.label}). Charts are hand-authored CSS/SVG — no chart libraries.`
-              : `No orders in this range yet. Charts are hand-authored CSS/SVG — no chart libraries.`}
+              ? `Figures computed live from real orders (${range.label}). Charts are hand-authored CSS/SVG, no chart libraries.`
+              : `No orders in this range yet. Charts are hand-authored CSS/SVG, no chart libraries.`}
           </p>
         </>
       )}

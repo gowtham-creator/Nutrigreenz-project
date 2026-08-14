@@ -69,14 +69,14 @@ export default function AdminOrderDetail({
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
       if (!res.ok || !data.ok) {
         toast.error("Not recorded", {
-          description: data.message ?? "Couldn't record the payment — try again.",
+          description: data.message ?? "Couldn't record the payment. Try again.",
         });
         return;
       }
       toast.success("Payment recorded", { description: "This order now counts as paid." });
       await load();
     } catch {
-      toast.error("Not recorded", { description: "Couldn't reach the server — try again." });
+      toast.error("Not recorded", { description: "Couldn't reach the server. Try again." });
     } finally {
       setMarkingPaid(false);
     }

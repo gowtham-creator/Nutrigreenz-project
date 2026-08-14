@@ -22,7 +22,7 @@ export interface TraceFarm {
 // driven by a real, DB-backed farm passed in from the server component.
 const SAMPLE = {
   code: "ANT-24-051",
-  product: "Cold-Pressed Groundnut Oil — 1L Glass",
+  product: "Cold-Pressed Groundnut Oil, 1L Glass",
   harvestedOn: "2026-03-04",
   pressedOn: "2026-04-18",
   testedOn: "2026-04-21",
@@ -51,7 +51,7 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
         tone="forest"
         eyebrow="Traceability is the product"
         title={<>Type a code. <em className="italic text-ng-leaf">See the farm.</em></>}
-        description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the full story — farmer, harvest date, pressing, lab tests, and kilometres travelled."
+        description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the full story. Farmer, harvest date, pressing, lab tests, and kilometres travelled."
       >
         <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
           <Input

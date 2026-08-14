@@ -287,7 +287,7 @@ export function CaptainModal({
             hint={
               draft.communities.length > 0
                 ? `${draft.communities.length} assigned. Search to add another, anywhere in India.`
-                : "Search and assign the communities this captain runs stalls in — anywhere in India."
+                : "Search and assign the communities this captain runs stalls in, anywhere in India."
             }
           />
 

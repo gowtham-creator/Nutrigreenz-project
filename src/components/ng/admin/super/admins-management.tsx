@@ -281,7 +281,7 @@ export function AdminsManagement() {
                 ? "Use at least 12 characters for the password."
                 : data.error === "db-unavailable"
                   ? "The database isn’t configured yet."
-                  : "Couldn’t add the admin — check the details.";
+                  : "Couldn’t add the admin. Check the details.";
         toast.error("Not added", { description: msg });
         return false;
       }
@@ -322,7 +322,7 @@ export function AdminsManagement() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error("Not saved", { description: "Couldn’t update the admin — check the details." });
+        toast.error("Not saved", { description: "Couldn’t update the admin. Check the details." });
         return false;
       }
       setAdmins((prev) =>
@@ -356,7 +356,7 @@ export function AdminsManagement() {
         toast.success("Credentials regenerated", {
           description: sent.includes("admin")
             ? `New password emailed to ${a.email}.`
-            : `New password ready for ${a.email} — copy it below.`,
+            : `New password ready for ${a.email}, copy it below.`,
         });
       } else {
         const emailedAdmin = sent.includes("admin");
@@ -368,7 +368,7 @@ export function AdminsManagement() {
               ? ` Also emailed to ${a.email}.`
               : "";
         toast.success("Password reset", {
-          description: `New password ready for ${a.email} — copy it below.${note}`,
+          description: `New password ready for ${a.email}, copy it below.${note}`,
         });
       }
     } catch {
@@ -496,7 +496,7 @@ export function AdminsManagement() {
               {a.role === "superadmin" ? <Pill tone="warn">Super Admin</Pill> : <Pill tone="info">Admin</Pill>}
               {a.isProtected ? (
                 <span
-                  title="Owner account — only the account holder can change it"
+                  title="Owner account · only the account holder can change it"
                   className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest-deep"
                 >
                   <Icon name="lock-keyhole-minimalistic-bold" size={10} />
@@ -522,7 +522,7 @@ export function AdminsManagement() {
                   operator a pointless click and a 403. */}
               {(() => {
                 const locked = a.isProtected && !isSelf(a.email);
-                const lockNote = locked ? "Owner account — only the account holder can change it" : undefined;
+                const lockNote = locked ? "Owner account. Only the account holder can change it" : undefined;
                 return (
                   <>
                     <RowAction
@@ -566,14 +566,14 @@ export function AdminsManagement() {
 
       {created ? (
         <CredentialsPanel
-          title="Credentials created — copy & share"
+          title="Credentials created · copy & share"
           creds={created}
           onDismiss={() => setCreated(null)}
         />
       ) : null}
       {reset ? (
         <CredentialsPanel
-          title="New password — copy & share"
+          title="New password · copy & share"
           creds={reset}
           onDismiss={() => setReset(null)}
         />
@@ -715,7 +715,7 @@ function PermissionSelector({
       </div>
       <p className="text-[11px] font-medium leading-snug text-ng-ink-soft">
         {isSuper
-          ? "Super Admins can open every section — this can’t be narrowed."
+          ? "Super Admins can open every section. This can’t be narrowed."
           : "Choose which portal sections this admin can open. Overview is always available."}
       </p>
       <div className="divide-y divide-ng-line-soft rounded-xl border border-ng-line bg-ng-paper">
@@ -1255,7 +1255,7 @@ function EditAdminModal({
             <div className="min-w-0">
               <span className="text-[13px] font-semibold text-ng-ink">Account status</span>
               <p className="text-[11.5px] font-medium text-ng-ink-soft">
-                {active ? "Active — can sign in." : "Deactivated — sign-in is blocked."}
+                {active ? "Active, can sign in." : "Deactivated, sign-in is blocked."}
               </p>
             </div>
             <Switch checked={active} onChange={setActive} label="Toggle account status" />

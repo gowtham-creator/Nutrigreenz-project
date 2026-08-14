@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Terms & conditions — Nutri Greenz",
+  title: "Terms & conditions · Nutri Greenz",
   description:
     "The terms and conditions governing your use of the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
 };

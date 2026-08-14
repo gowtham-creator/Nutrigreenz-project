@@ -108,7 +108,7 @@ const ABUSE_GUARDS: {
   {
     key: "dedupeMobile",
     label: "Mobile dedupe",
-    desc: "One reward per unique mobile number — no recycled numbers",
+    desc: "One reward per unique mobile number, no recycled numbers",
     icon: "phone-bold",
   },
   {
@@ -200,7 +200,7 @@ export function ReferralConfigSection() {
           icon="share-bold"
           tone="clay"
           title="Referral programme"
-          caption="Reward values, the confirmed-order qualifier and anti-abuse guards — drives refer-a-friend."
+          caption="Reward values, the confirmed-order qualifier and anti-abuse guards, drives refer-a-friend."
           badge={
             loading ? (
               <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -308,7 +308,7 @@ export function ReferralConfigSection() {
           note={
             saving
               ? "Saving…"
-              : "Persisted to Supabase. Rewards fire only after a referee's confirmed order — no claw-back."
+              : "Persisted to Supabase. Rewards fire only after a referee's confirmed order, no claw-back."
           }
           onSave={save}
           onReset={reset}

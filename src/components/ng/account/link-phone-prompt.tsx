@@ -238,7 +238,7 @@ export function LinkPhonePrompt() {
       return;
     }
     if (!auth || !user) {
-      setError("Sign-in isn't ready — please try again.");
+      setError("Sign-in isn't ready, please try again.");
       return;
     }
     setBusy(true);
@@ -336,10 +336,10 @@ export function LinkPhonePrompt() {
       const code = (err as { code?: string })?.code ?? "";
       setError(
         code === "auth/invalid-verification-code"
-          ? "That code is incorrect — check it and re-enter."
+          ? "That code is incorrect. Check it and re-enter."
           : code === "auth/code-expired"
-            ? "Your code expired — request a new one."
-            : "Couldn't verify the code — request a fresh one and try again.",
+            ? "Your code expired. Request a new one."
+            : "Couldn't verify the code. Request a fresh one and try again.",
       );
     } finally {
       setBusy(false);
@@ -482,14 +482,14 @@ export function LinkPhonePrompt() {
 function friendlySendError(code: string): string {
   switch (code) {
     case "auth/operation-not-allowed":
-      return "Phone verification isn't enabled yet — please try again later.";
+      return "Phone verification isn't enabled yet. Please try again later.";
     case "auth/invalid-app-credential":
     case "auth/captcha-check-failed":
-      return "Verification check failed — please retry.";
+      return "Verification check failed, please retry.";
     case "auth/invalid-phone-number":
       return "That mobile number looks invalid.";
     case "auth/too-many-requests":
-      return "Too many attempts — wait a few minutes and retry.";
+      return "Too many attempts. Wait a few minutes and retry.";
     default:
       return `Couldn't send the code${code ? ` (${code})` : ""}.`;
   }

@@ -7,9 +7,9 @@ import { Icon } from "@/components/ui/icon";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
-  title: "Contact us — Nutri Greenz",
+  title: "Contact us · Nutri Greenz",
   description:
-    "Get in touch with Nutri Greenz Farm Technologies Pvt. Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370 — we reply within one business day.",
+    "Get in touch with Nutri Greenz Farm Technologies Pvt. Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370. We reply within one business day.",
 };
 
 const CHANNELS = [
@@ -18,7 +18,7 @@ const CHANNELS = [
     title: "Email",
     value: "customersupport@nutrigreenz.farm",
     href: "mailto:customersupport@nutrigreenz.farm",
-    note: "For anything — orders, quality, wholesale.",
+    note: "For anything: orders, quality, wholesale.",
   },
   {
     icon: "phone-bold",
@@ -52,7 +52,7 @@ export default function ContactPage() {
             We&rsquo;d love to <em className="italic text-ng-leaf">hear from you.</em>
           </>
         }
-        description="Questions about an order, a quality concern, a wholesale enquiry, or just want to say hello? Reach us however suits you — a real person in Hyderabad will get back to you."
+        description="Questions about an order, a quality concern, a wholesale enquiry, or just want to say hello? Reach us however suits you. A real person in Hyderabad will get back to you."
       />
 
       <Section className="!pt-10">

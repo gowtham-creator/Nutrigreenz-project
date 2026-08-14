@@ -257,7 +257,7 @@ export function LiveCouponsPanel() {
                     <span className="inline-flex flex-wrap items-center gap-1.5">
                       {c.code}
                       {c.requiresVerifiedPhone ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome / first-order code — requires a verified phone, once per customer">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome / first-order code · requires a verified phone, once per customer">
                           <Icon name="phone-bold" size={10} />
                           Welcome
                         </span>

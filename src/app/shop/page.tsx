@@ -10,9 +10,9 @@ import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 
 export const metadata: Metadata = {
-  title: "Shop the pantry — Nutri Greenz",
+  title: "Shop the pantry · Nutri Greenz",
   description:
-    "Browse the whole pantry — cold-pressed oils, A2 ghee, raw honey, millets, spices and more. Single-origin, lab-tested, fairly sourced.",
+    "Browse the whole pantry. Cold-pressed oils, A2 ghee, raw honey, millets, spices and more. Single-origin, lab-tested, fairly sourced.",
 };
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,

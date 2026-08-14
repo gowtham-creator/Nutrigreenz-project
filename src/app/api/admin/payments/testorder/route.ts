@@ -41,7 +41,7 @@ export const dynamic = "force-dynamic";
  * or if SBI changes the contract, without rebuilding the harness.
  */
 const EXPIRY_ENCODINGS: { mode: string; explain: string; value?: number }[] = [
-  { mode: "expiry = 25", explain: "minutes — the encoding the bank accepts", value: 25 },
+  { mode: "expiry = 25", explain: "minutes. The encoding the bank accepts", value: 25 },
 ];
 
 /**
@@ -226,6 +226,6 @@ export async function GET(): Promise<Response> {
     ok: attempts.some((a) => a.ok),
     environment: sbiepayEnv(),
     attempts,
-    next: "Open each working link. The one that loads a real payment page — not a 404 — is the encoding to use.",
+    next: "Open each working link. The one that loads a real payment page. Not a 404. Is the encoding to use.",
   });
 }

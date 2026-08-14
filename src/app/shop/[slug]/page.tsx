@@ -20,11 +20,11 @@ const CATEGORY_BLURBS: Record<string, string> = {
   honey: "Raw, unheated, lab-tested for purity. Harvested without smoke or queen-killing.",
   millets: "Climate-smart grains from dryland farms we helped transition away from monoculture.",
   spices: "Whole, sun-dried, stone-milled in small batches so the oils stay alive.",
-  superfoods: "Nutrient-dense staples — sun-dried, cold-milled, nothing added.",
+  superfoods: "Nutrient-dense staples: sun-dried, cold-milled, nothing added.",
   pulses: "Unpolished dals and pulses, sorted by hand, free of artificial colour.",
   flours: "Stone-ground in slow chakkis so the bran and germ stay in the bag.",
   fruits: "Seasonal produce picked ripe and shipped within the harvest window.",
-  gifting: "Curated hampers of our best-loved jars — ready to give, fully traceable.",
+  gifting: "Curated hampers of our best-loved jars: ready to give, fully traceable.",
 };
 
 // Category heroes use real origin/craft photography — NOT the product banners —
@@ -45,9 +45,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const { categories } = await getStorefrontCatalog();
   const cat = categories.find((c) => c.slug === slug);
-  if (!cat) return { title: "Category not found — Nutri Greenz" };
+  if (!cat) return { title: "Category not found · Nutri Greenz" };
   return {
-    title: `${cat.title} — Nutri Greenz`,
+    title: `${cat.title} · Nutri Greenz`,
     description: CATEGORY_BLURBS[slug] ?? `Shop ${cat.title} from named partner farms. Single-origin, lab-tested.`,
   };
 }

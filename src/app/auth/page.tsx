@@ -88,7 +88,7 @@ function AuthScreen() {
     setBusy(true);
     try {
       await verifyOtp(otp);
-      toast.success("You're in — welcome!");
+      toast.success("You're in, welcome!");
       router.push(next);
     } catch {
       toast.error("Invalid or expired code");
@@ -132,7 +132,7 @@ function AuthScreen() {
             </Reveal>
             <p className="mt-3 text-[15px] leading-relaxed text-ng-ink-muted">
               {step === "phone"
-                ? "Enter your mobile number — we'll text you a one-time code. No password needed."
+                ? "Enter your mobile number. We'll text you a one-time code. No password needed."
                 : `We sent a 6-digit code to ${e164}.`}
             </p>
 

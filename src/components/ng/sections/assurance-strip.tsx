@@ -39,7 +39,7 @@ const points = (freeFrom: string): { icon: UiIconName | "fssai"; title: string; 
   {
     icon: "flask",
     title: "Lab-tested purity",
-    sub: "Every lot — zero adulterants",
+    sub: "Every lot, zero adulterants",
   },
   {
     icon: "delivery",

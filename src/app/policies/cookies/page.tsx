@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Cookie policy — Nutri Greenz",
+  title: "Cookie policy · Nutri Greenz",
   description:
-    "How Nutri Greenz uses cookies and similar local storage — to keep you signed in, remember your cart and delivery area, and understand how the site is used.",
+    "How Nutri Greenz uses cookies and similar local storage. To keep you signed in, remember your cart and delivery area, and understand how the site is used.",
 };
 
 export default function CookiePolicyPage() {

@@ -32,7 +32,7 @@ const M = 48;
 const SELLER = {
   name: "Nutri Greenz Farm Technologies Pvt. Ltd.",
   lines: [
-    "1st Floor, H.No. 5-35/167, Double Road",
+    "1st Floor, H.No: 5-35/167, Double Road",
     "Near Moosapet Y Junction, Prashanth Nagar",
     "Kukatpally, Hyderabad, Telangana 500072",
     "India",

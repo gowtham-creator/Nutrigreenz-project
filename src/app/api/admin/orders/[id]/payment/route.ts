@@ -72,7 +72,7 @@ export async function POST(
     order_id: order.id,
     status: order.status,
     by: session.email ?? "admin",
-    note: `Cash on delivery collected — ${(order.totalPaise / 100).toFixed(2)}`,
+    note: `Cash on delivery collected, ${(order.totalPaise / 100).toFixed(2)}`,
   });
 
   return Response.json({ ok: true, paidAt });

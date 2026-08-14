@@ -134,7 +134,7 @@ const COPY_PRESETS: Record<
   "ganesh-chaturthi": {
     title: "Ganesh Chaturthi Sale",
     headline: "Blessings & {p}% off this Ganesh Chaturthi",
-    subcopy: "Celebrate with pure, wholesome pantry staples — {p}% off everything.",
+    subcopy: "Celebrate with pure, wholesome pantry staples, {p}% off everything.",
     cta: "Shop the sale",
     announcement: "🕉️ Ganesh Chaturthi Sale · {p}% OFF everything · Shop now",
   },
@@ -147,50 +147,50 @@ const COPY_PRESETS: Record<
   },
   ugadi: {
     title: "Ugadi Special",
-    headline: "A fresh start this Ugadi — {p}% off",
-    subcopy: "Ring in the Telugu new year with clean, honest food — {p}% off.",
+    headline: "A fresh start this Ugadi, {p}% off",
+    subcopy: "Ring in the Telugu new year with clean, honest food, {p}% off.",
     cta: "Shop the sale",
     announcement: "🌿 Ugadi Special · {p}% OFF everything · Shop now",
   },
   sankranti: {
     title: "Sankranti Sale",
-    headline: "Harvest joy this Sankranti — {p}% off",
-    subcopy: "Celebrate the harvest with pure oils, ghee & honey — {p}% off.",
+    headline: "Harvest joy this Sankranti, {p}% off",
+    subcopy: "Celebrate the harvest with pure oils, ghee & honey, {p}% off.",
     cta: "Shop the sale",
     announcement: "🪁 Sankranti Sale · {p}% OFF everything · Shop now",
   },
   dussehra: {
     title: "Dussehra Dhamaka",
-    headline: "Victory savings this Dussehra — {p}% off",
-    subcopy: "Purity over shortcuts — {p}% off across the whole pantry.",
+    headline: "Victory savings this Dussehra, {p}% off",
+    subcopy: "Purity over shortcuts. {p}% off across the whole pantry.",
     cta: "Shop the sale",
     announcement: "🏹 Dussehra Sale · {p}% OFF everything · Shop now",
   },
   "summer-end": {
     title: "Summer End Sale",
-    headline: "Summer's ending — {p}% off before it's gone",
-    subcopy: "Stock the pantry for the season ahead — {p}% off.",
+    headline: "Summer's ending. {p}% off before it's gone",
+    subcopy: "Stock the pantry for the season ahead, {p}% off.",
     cta: "Shop the sale",
     announcement: "☀️ Summer End Sale · {p}% OFF · Shop now",
   },
   "winter-end": {
     title: "Winter End Sale",
-    headline: "Warm savings before winter ends — {p}% off",
-    subcopy: "Cosy up with ghee, honey & cold-pressed oils — {p}% off.",
+    headline: "Warm savings before winter ends, {p}% off",
+    subcopy: "Cosy up with ghee, honey & cold-pressed oils, {p}% off.",
     cta: "Shop the sale",
     announcement: "❄️ Winter End Sale · {p}% OFF · Shop now",
   },
   "end-of-season": {
     title: "End of Season Sale",
-    headline: "End of Season — {p}% off across the pantry",
-    subcopy: "The season's best staples at their best price — {p}% off.",
+    headline: "End of Season. {p}% off across the pantry",
+    subcopy: "The season's best staples at their best price, {p}% off.",
     cta: "Shop the sale",
     announcement: "🍂 End of Season Sale · {p}% OFF · Shop now",
   },
   "end-of-month": {
     title: "{month} Sale",
-    headline: "{month} savings — {p}% off everything",
-    subcopy: "This month only — {p}% off across every shelf.",
+    headline: "{month} savings, {p}% off everything",
+    subcopy: "This month only. {p}% off across every shelf.",
     cta: "Shop the sale",
     announcement: "🗓️ {month} Sale · {p}% OFF everything · Shop now",
   },
@@ -202,7 +202,7 @@ const ERROR_COPY: Record<string, string> = {
   "invalid-banner-key": "Pick a banner.",
   "invalid-discount-percent": "Discount must be a whole number 1–90%.",
   "slug-exists": "A promotion with that title already exists.",
-  "db-unavailable": "Database unavailable — check the Supabase config.",
+  "db-unavailable": "Database unavailable. Check the Supabase config.",
 };
 
 /* ── pure helpers ──────────────────────────────────────────────────────────── */
@@ -357,7 +357,7 @@ export function PromotionsPanel() {
       discountPercent: f.discountPercent.trim() || pct,
       autoMonth: f.bannerKey === "end-of-month" ? true : f.autoMonth,
     }));
-    toast.success("Copy generated — tweak anything you like.");
+    toast.success("Copy generated. Tweak anything you like.");
   }
 
   async function submit() {

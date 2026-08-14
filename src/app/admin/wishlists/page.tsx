@@ -74,7 +74,7 @@ export default function AdminWishlists() {
           Wishlists <em className="italic text-ng-clay font-display">&amp; saved items</em>
         </span>
       }
-      subtitle="What customers have hearted but not yet bought — your live demand & restock signal"
+      subtitle="What customers have hearted but not yet bought. Your live demand & restock signal"
       actions={
         <button
           type="button"

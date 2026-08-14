@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Shipping & delivery — Nutri Greenz",
+  title: "Shipping & delivery · Nutri Greenz",
   description:
-    "How and when Nutri Greenz delivers across Hyderabad — delivery slots, free delivery on orders over ₹599, cold-chain handling and packaging.",
+    "How and when Nutri Greenz delivers across Hyderabad. Delivery slots, free delivery on orders over ₹599, cold-chain handling and packaging.",
 };
 
 export default function ShippingPolicyPage() {

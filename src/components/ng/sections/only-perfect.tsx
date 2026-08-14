@@ -56,7 +56,7 @@ const CHECKS: Check[] = [
     src: "/images/farms/farms-hero.webp",
     alt: "A partner farmer checking soil and root health in a groundnut field before harvest",
     title: "Checked at three stages.",
-    body: "At sourcing, after pressing, and before sealing — because problems start upstream.",
+    body: "At sourcing, after pressing, and before sealing. Because problems start upstream.",
   },
   {
     src: "/images/products/oils/gallery/oils-tile-range.webp",

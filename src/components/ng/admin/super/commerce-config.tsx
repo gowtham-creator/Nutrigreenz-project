@@ -220,7 +220,7 @@ function RulesCard({
         icon="settings-bold"
         tone="forest"
         title="Commerce rules"
-        caption="Order minimum, free-delivery threshold, shipping model & tax — the live storefront economics."
+        caption="Order minimum, free-delivery threshold, shipping model & tax. The live storefront economics."
         badge={
           loading ? (
             <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -375,7 +375,7 @@ function RulesCard({
             note={
               saving
                 ? "Saving…"
-                : "Persisted to Supabase — the storefront reads it from /api/commerce-rules."
+                : "Persisted to Supabase. The storefront reads it from /api/commerce-rules."
             }
             onSave={save}
             onReset={reset}

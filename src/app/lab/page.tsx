@@ -3,10 +3,10 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 
 const TESTS = [
-  { name: "Pesticide residue", limit: "FSSAI compliant — 0 ppm tolerance for organochlorines", method: "GC-MS multi-residue scan (172 compounds)" },
+  { name: "Pesticide residue", limit: "FSSAI compliant: 0 ppm tolerance for organochlorines", method: "GC-MS multi-residue scan (172 compounds)" },
   { name: "Aflatoxin B1", limit: "< 2 ppb (FSSAI: 30 ppb)", method: "HPLC-FLD with immunoaffinity cleanup" },
   { name: "Heavy metals", limit: "Lead < 0.1 ppm · Cadmium < 0.05 ppm · Arsenic < 0.05 ppm", method: "ICP-MS digest" },
-  { name: "Adulteration check", limit: "Pure A2 — no skim, no foreign fats, no preservatives", method: "FTIR fingerprint vs reference library" },
+  { name: "Adulteration check", limit: "Pure A2: no skim, no foreign fats, no preservatives", method: "FTIR fingerprint vs reference library" },
   { name: "Microbial load", limit: "Total plate count < 10,000 CFU/g · No Salmonella · No E. coli", method: "Membrane filtration culture, 72-hour incubation" },
   { name: "Moisture content", limit: "Within ±0.5% of declared", method: "Karl Fischer titration" },
   { name: "Nutritional panel", limit: "Within ±5% of label claim", method: "AOAC certified methods for protein, fat, fibre, ash" },
@@ -33,7 +33,7 @@ export default function LabPage() {
         tone="forest"
         eyebrow="The Nutrigreenz lab desk"
         title={<>Every batch. <em className="italic text-ng-clay">Three labs.</em> One verdict.</>}
-        description="We do not sell anything we have not tested. Every lot goes through eight checks across two NABL-accredited labs plus our in-house QC. If anything fails, the lot does not ship — full stop."
+        description="We do not sell anything we have not tested. Every lot goes through eight checks across two NABL-accredited labs plus our in-house QC. If anything fails, the lot does not ship, full stop."
       />
 
       <Section>
@@ -134,7 +134,7 @@ export default function LabPage() {
               We name it on the journal. <em className="italic text-ng-clay">Every time.</em>
             </h2>
             <p className="text-[15px] text-ng-cream/70 mt-5 leading-relaxed max-w-md">
-              In 2024 we rejected ₹14.2 lakh worth of inventory across 23 lots. The most common reason: moisture creep above 2% in groundnut after monsoon delays. We don't hide these — they're written up in our journal with the farmer's name and the resolution.
+              In 2024 we rejected ₹14.2 lakh worth of inventory across 23 lots. The most common reason: moisture creep above 2% in groundnut after monsoon delays. We don't hide these, they're written up in our journal with the farmer's name and the resolution.
             </p>
             <Link href="/journal" className="inline-block mt-7 rounded-full bg-ng-clay text-ng-forest-deep font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep transition-colors">
               Read the rejection journal →

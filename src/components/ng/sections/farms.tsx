@@ -22,7 +22,7 @@ export function Farms() {
       className="relative overflow-hidden"
       eyebrow="The 42 names behind your jars"
       heading={<>Meet a few of our <em className="italic text-ng-leaf">partner farms.</em></>}
-      description="We're not just sourcing — we're investing. Long-term agreements, soil-health programmes, transition financing."
+      description="We're not just sourcing. We're investing. Long-term agreements, soil-health programmes, transition financing."
     >
       {/* Parallaxed landscape blobs behind the grid */}
       <Parallax speed={0.35} className="absolute inset-0 -z-0 pointer-events-none">

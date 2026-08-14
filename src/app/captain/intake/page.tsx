@@ -138,7 +138,7 @@ export default function CaptainIntake() {
     <CaptainShell
       eyebrow="Stall capture"
       title="New customer"
-      subtitle="Log a walk-up sale. Mobile is the key — it auto-links on online signup."
+      subtitle="Log a walk-up sale. Mobile is the key. It auto-links on online signup."
     >
       {/* Capture progress */}
       <div className="flex items-center gap-2 mb-4">
@@ -184,7 +184,7 @@ export default function CaptainIntake() {
           {touched && !nameValid ? <FieldError>Enter the customer&apos;s name.</FieldError> : null}
         </Field>
 
-        <Field label="Mobile number" required hint="10-digit Indian mobile — used to match the customer’s account">
+        <Field label="Mobile number" required hint="10-digit Indian mobile. Used to match the customer’s account">
           <div className={inputWrapCls(touched && !mobileValid)}>
             <span className="text-[14px] text-ng-ink-soft font-mono pl-0.5">+91</span>
             <input

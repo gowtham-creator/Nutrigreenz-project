@@ -94,7 +94,7 @@ export async function POST(request: Request): Promise<Response> {
               html: resetEmailHtml(link),
             });
           } else {
-            console.info(`[admin/forgot] email not configured — reset link for ${email}: ${link}`);
+            console.info(`[admin/forgot] email not configured. Reset link for ${email}: ${link}`);
           }
         }
       }

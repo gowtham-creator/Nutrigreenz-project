@@ -139,7 +139,7 @@ export function MediaBrowser({
             <div className="flex flex-col items-center gap-1 text-ng-ink-muted">
               <Icon name={uploading ? "refresh-bold" : "upload-bold"} size={22} className={uploading ? "animate-spin" : ""} />
               <span className="text-[12px] font-medium">
-                {uploading ? "Uploading…" : "Upload a new image — drop or click · JPG/PNG/WebP ≤ 5 MB"}
+                {uploading ? "Uploading…" : "Upload a new image. Drop or click · JPG/PNG/WebP ≤ 5 MB"}
               </span>
             </div>
           </div>

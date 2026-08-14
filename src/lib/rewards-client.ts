@@ -84,7 +84,7 @@ const COUPON_REASON_COPY: Record<string, string> = {
   "usage-limit": "This coupon has reached its usage limit.",
   "customer-limit": "You've already used this coupon.",
   "phone-verification-required":
-    "Verify your mobile number to use this welcome offer — we'll ask for a quick OTP.",
+    "Verify your mobile number to use this welcome offer. We'll ask for a quick OTP.",
   "area-not-eligible": "This code isn't available for your delivery address.",
   unavailable: "Coupons are unavailable right now. Please try again.",
   unauthenticated: "Please sign in to apply a coupon.",

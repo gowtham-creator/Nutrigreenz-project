@@ -572,7 +572,7 @@ export default function AdminAuditPage() {
     <AdminShell
       active="/admin/audit"
       title="Audit log"
-      subtitle="Every completed admin action, newest first — confirm what went through, at a glance."
+      subtitle="Every completed admin action, newest first: confirm what went through, at a glance."
       actions={
         <div className="flex items-center gap-3">
           <span

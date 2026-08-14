@@ -326,7 +326,7 @@ export function ProductModal({
                 label="More photos"
                 values={draft.gallery}
                 onChange={(v) => setDraft((d) => ({ ...d, gallery: v }))}
-                hint="Shown on the product page after the main image, in this order — the label, the texture, the product in use. Leave empty and the page shows captioned placeholders instead."
+                hint="Shown on the product page after the main image, in this order. The label, the texture, the product in use. Leave empty and the page shows captioned placeholders instead."
               />
 
               {/* The field above is only one of the sources the product page

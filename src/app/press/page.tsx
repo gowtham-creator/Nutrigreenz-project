@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
 
 export const metadata: Metadata = {
-  title: "Press & media — Nutri Greenz",
+  title: "Press & media · Nutri Greenz",
   description:
     "Press resources for Nutri Greenz, the Hyderabad farm-to-table brand. Media kit, brand facts, recent mentions and a press contact.",
 };
@@ -21,7 +21,7 @@ const FACTS = [
 
 const MENTIONS = [
   {
-    outlet: "The Hindu — MetroPlus",
+    outlet: "The Hindu, MetroPlus",
     title: "The Hyderabad brand that lets you scan your ghee back to the cow",
     quote: "Nutri Greenz has turned traceability from marketing jargon into something you can actually check on your phone.",
     date: "March 2026",
@@ -35,7 +35,7 @@ const MENTIONS = [
   {
     outlet: "Telangana Today",
     title: "Farm-to-table, done the hard way",
-    quote: "Every lot tested, every farm named — Nutri Greenz is setting a quietly high bar for clean-label food in the city.",
+    quote: "Every lot tested, every farm named. Nutri Greenz is setting a quietly high bar for clean-label food in the city.",
     date: "November 2025",
   },
 ];
@@ -57,7 +57,7 @@ export default function PressPage() {
             The story behind <em className="italic text-ng-clay">the label</em>
           </>
         }
-        description="Nutri Greenz is a Hyderabad farm-to-table brand building a fully traceable food supply chain — from 42 partner farms to kitchens across the city. Resources for journalists and partners are below."
+        description="Nutri Greenz is a Hyderabad farm-to-table brand building a fully traceable food supply chain. From 42 partner farms to kitchens across the city. Resources for journalists and partners are below."
       >
         <a
           href="mailto:press@nutrigreenz.farm?subject=Press%20enquiry"

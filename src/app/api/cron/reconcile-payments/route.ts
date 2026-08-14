@@ -141,7 +141,7 @@ export async function GET(request: Request): Promise<Response> {
         outcomes.push({
           orderNumber: order.orderNumber,
           result: "still-pending",
-          detail: result.reason ?? "gateway unreachable — will retry",
+          detail: result.reason ?? "gateway unreachable, will retry",
         });
       }
     } catch (err) {

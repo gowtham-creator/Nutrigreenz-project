@@ -65,7 +65,7 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
   {
     key: "overview",
     label: "Overview",
-    description: "The operator dashboard — KPIs, the order pipeline and recent activity. Always available.",
+    description: "The operator dashboard. KPIs, the order pipeline and recent activity. Always available.",
     icon: "widget-5-bold",
   },
   {
@@ -102,7 +102,7 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
   {
     key: "referrals",
     label: "Referrals",
-    description: "The referral programme — who referred whom, and the rewards paid out.",
+    description: "The referral programme: who referred whom, and the rewards paid out.",
     icon: "users-group-rounded-bold",
   },
   {
@@ -114,7 +114,7 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
   {
     key: "captains",
     label: "Captains",
-    description: "Field-sales captains — the roster, their stall sales, settlements and pickups.",
+    description: "Field-sales captains: the roster, their stall sales, settlements and pickups.",
     icon: "map-point-bold",
   },
   {
@@ -152,7 +152,7 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
   {
     key: "config",
     label: "Config",
-    description: "The Super Admin control center — commerce rules, delivery, loyalty. Stays super-admin only.",
+    description: "The Super Admin control center. Commerce rules, delivery, loyalty. Stays super-admin only.",
     icon: "settings-bold",
     sensitive: true,
     superOnly: true,

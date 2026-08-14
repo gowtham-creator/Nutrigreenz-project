@@ -57,7 +57,7 @@ const TARGET_MODES: {
     value: "individual",
     label: "Specific customers",
     icon: "user-plus-bold",
-    hint: "Issue to named individuals — e.g. a VIP or win-back list.",
+    hint: "Issue to named individuals, e.g. a VIP or win-back list.",
     selectorLabel: "Customer mobiles / IDs",
     placeholder: "+91 98xxxxxx01, +91 98xxxxxx02",
   },
@@ -312,7 +312,7 @@ export function CouponCampaignBuilder() {
           campaignKey: code,
           vars: {
             offerCode: code,
-            offerTitle: draft.description || `${code} — Nutri Greenz`,
+            offerTitle: draft.description || `${code}, Nutri Greenz`,
             discount: draft.type === "percent" ? `${draft.value}%` : INR(draft.value),
             // Every template ends on {ctaUrl}; without it the message trails off
             // into nothing and the SMS spends characters on a dangling arrow.
@@ -341,7 +341,7 @@ export function CouponCampaignBuilder() {
         toast.error("Campaign not sent", {
           description:
             data.error === "consent-not-configured"
-              ? "Marketing consent isn't set up yet — the consent migration hasn't been applied. Nothing was sent."
+              ? "Marketing consent isn't set up yet. The consent migration hasn't been applied. Nothing was sent."
               : "The send failed. Nothing was delivered.",
         });
         return;
@@ -494,7 +494,7 @@ export function CouponCampaignBuilder() {
         description:
           reason === "duplicate" || reason === "code-taken"
             ? `${code} already exists.`
-            : "Couldn't save the coupon — it is not live. Try again.",
+            : "Couldn't save the coupon. It is not live. Try again.",
       });
     } finally {
       setSaving(false);
@@ -588,7 +588,7 @@ export function CouponCampaignBuilder() {
               onChange={(v) => patch("maxDiscount", v)}
               prefix="₹"
               step={10}
-              hint={draft.type === "percent" ? "Ceiling on a % discount" : "0 — n/a for flat coupons"}
+              hint={draft.type === "percent" ? "Ceiling on a % discount" : "0. N/a for flat coupons"}
             />
             <div className="flex flex-col gap-1.5">
               <label htmlFor="ng-campaign-expiry" className="text-[12.5px] font-medium text-ng-ink-muted">
@@ -750,7 +750,7 @@ export function CouponCampaignBuilder() {
                 <p className="text-[11px] text-ng-ink-soft leading-relaxed max-w-[190px]">
                   {isEditing
                     ? "Goes to customers who haven't opted out. Already-sent recipients are skipped."
-                    : "Save the coupon first — a campaign sends an existing code."}
+                    : "Save the coupon first. A campaign sends an existing code."}
                 </p>
               </div>
 

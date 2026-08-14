@@ -19,7 +19,7 @@ import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 
 const NOT_CONFIGURED =
-  "Phone sign-in isn't configured yet — add your Firebase keys to .env.local.";
+  "Phone sign-in isn't configured yet. Add your Firebase keys to .env.local.";
 
 /** Best-effort E.164 for an India-first mobile. Returns null when implausible. */
 function toE164(raw: string): string | null {
@@ -89,7 +89,7 @@ function CaptainLoginForm() {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
           const msg =
             res.status === 429
-              ? "Too many attempts — wait a few minutes and retry."
+              ? "Too many attempts. Wait a few minutes and retry."
               : data.error === "SMS OTP not configured"
                 ? "SMS sign-in isn't configured yet."
                 : "Couldn't send the code.";
@@ -134,13 +134,13 @@ function CaptainLoginForm() {
       console.error("[captain phone OTP] sendCode failed:", err);
       const friendly =
         c === "auth/operation-not-allowed"
-          ? "Phone sign-in isn't enabled — turn on Authentication → Sign-in method → Phone in Firebase."
+          ? "Phone sign-in isn't enabled. Turn on Authentication → Sign-in method → Phone in Firebase."
           : c === "auth/invalid-app-credential" || c === "auth/captcha-check-failed"
-            ? "reCAPTCHA check failed for this domain — add it to Firebase Authorized domains."
+            ? "reCAPTCHA check failed for this domain. Add it to Firebase Authorized domains."
             : c === "auth/invalid-phone-number"
               ? "That mobile number looks invalid."
               : c === "auth/too-many-requests"
-                ? "Too many attempts — wait a few minutes and retry."
+                ? "Too many attempts. Wait a few minutes and retry."
                 : `Couldn't send the code${c ? ` (${c})` : ""}.`;
       setError(friendly);
       toast.error("Couldn't send code", { description: friendly });
@@ -189,10 +189,10 @@ function CaptainLoginForm() {
           res.status === 403
             ? (data.message ?? "This number isn't registered as an active captain.")
             : res.status === 401
-              ? "That code is incorrect or expired — request a fresh one."
+              ? "That code is incorrect or expired. Request a fresh one."
               : res.status === 503
-                ? "Sign-in isn't available right now — please try again shortly."
-                : "We couldn't verify your sign-in — request a fresh code and try again.";
+                ? "Sign-in isn't available right now. Please try again shortly."
+                : "We couldn't verify your sign-in. Request a fresh code and try again.";
         setError(msg);
         toast.error("Sign in failed", { description: msg });
       } catch {
@@ -236,8 +236,8 @@ function CaptainLoginForm() {
         res.status === 403
           ? (data.message ?? "This number isn't registered as an active captain.")
           : res.status === 503
-            ? "Sign-in isn't available right now — please try again shortly."
-            : "We couldn't verify your sign-in — request a fresh code and try again.";
+            ? "Sign-in isn't available right now. Please try again shortly."
+            : "We couldn't verify your sign-in. Request a fresh code and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } catch (err) {
@@ -245,10 +245,10 @@ function CaptainLoginForm() {
       console.error("[captain phone sign-in] confirm failed:", c || err);
       const msg =
         c === "auth/invalid-verification-code"
-          ? "That code is incorrect — check it and re-enter."
+          ? "That code is incorrect. Check it and re-enter."
           : c === "auth/code-expired" || c === "auth/session-expired"
-            ? "Your code expired — request a new one."
-            : "Couldn't verify the code — request a fresh one and try again.";
+            ? "Your code expired. Request a new one."
+            : "Couldn't verify the code. Request a fresh one and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } finally {

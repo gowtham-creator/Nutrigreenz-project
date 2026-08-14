@@ -222,7 +222,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
           Customers <em className="italic text-ng-clay font-display">deduped</em>
         </span>
       }
-      subtitle="One canonical row per real person — Google and phone sign-ins folded into a single customer"
+      subtitle="One canonical row per real person. Google and phone sign-ins folded into a single customer"
       actions={
         <button
           onClick={() => void load()}

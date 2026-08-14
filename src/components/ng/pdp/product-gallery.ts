@@ -89,7 +89,7 @@ export function galleryPanelsFor(slug: string, title: string): ResolvedPanel[] {
 
   const out: ResolvedPanel[] = entry.panels.map((p: GalleryPanel) => ({
     src: p.src,
-    alt: `${title} — ${LABELS[p.name] ?? p.name}`,
+    alt: `${title} · ${LABELS[p.name] ?? p.name}`,
     label: LABELS[p.name] ?? p.name,
   }));
 
@@ -111,7 +111,7 @@ export function galleryPanelsFor(slug: string, title: string): ResolvedPanel[] {
   if (nutrition) {
     out.push({
       src: nutrition,
-      alt: `${title} — nutrition facts`,
+      alt: `${title} · nutrition facts`,
       label: LABELS.nutrition,
     });
   }

@@ -31,7 +31,7 @@ const REASONS: Record<string, { title: string; detail: string; retry: boolean }>
   declined: {
     title: "Your payment was declined",
     detail:
-      "Your bank did not approve the payment. Nothing has been charged. This is usually a daily limit or a card restriction — trying a different method often works.",
+      "Your bank did not approve the payment. Nothing has been charged. This is usually a daily limit or a card restriction. Trying a different method often works.",
     retry: true,
   },
   cancel: {
@@ -42,7 +42,7 @@ const REASONS: Record<string, { title: string; detail: string; retry: boolean }>
   expired: {
     title: "The payment link expired",
     detail:
-      "Payment links stay valid for a short time for security. Nothing was charged — start again and you will get a fresh one.",
+      "Payment links stay valid for a short time for security. Nothing was charged. Start again and you will get a fresh one.",
     retry: true,
   },
   "amount-mismatch": {
@@ -60,7 +60,7 @@ const REASONS: Record<string, { title: string; detail: string; retry: boolean }>
   "no-reference": {
     title: "We could not identify your payment",
     detail:
-      "The gateway did not tell us which order this payment was for. If money has left your account, please contact us with your bank reference — do not pay again until we have checked.",
+      "The gateway did not tell us which order this payment was for. If money has left your account, please contact us with your bank reference. Do not pay again until we have checked.",
     retry: false,
   },
   unavailable: {

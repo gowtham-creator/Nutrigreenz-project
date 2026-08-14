@@ -394,7 +394,7 @@ export async function importAreas(
     const pincode = (rows[i].pincode ?? "").trim();
     if (!pincode) {
       result.skipped++;
-      result.errors.push(`Row ${lineNo}: missing pincode — skipped.`);
+      result.errors.push(`Row ${lineNo}: missing pincode, skipped.`);
       continue;
     }
     if (seen.has(pincode)) {
@@ -422,7 +422,7 @@ export async function importAreas(
     } catch (err) {
       result.skipped++;
       const message = err instanceof Error ? err.message : "unknown error";
-      result.errors.push(`Row ${lineNo}: ${message} — skipped.`);
+      result.errors.push(`Row ${lineNo}: ${message}, skipped.`);
     }
   }
   return result;

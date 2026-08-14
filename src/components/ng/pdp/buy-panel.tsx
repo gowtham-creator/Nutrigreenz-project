@@ -71,7 +71,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
   const buyNow = () => {
     if (variantOut) return;
     addItem(product, qty, cartVariant);
-    toast.success("Added — taking you to checkout", { description: `${qty} × ${product.title} · ${variantLabel}` });
+    toast.success("Added. Taking you to checkout", { description: `${qty} × ${product.title} · ${variantLabel}` });
     router.push("/checkout");
   };
 

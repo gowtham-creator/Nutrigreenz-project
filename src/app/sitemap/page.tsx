@@ -115,7 +115,7 @@ export default function SitemapPage() {
       <PageHero
         eyebrow="Information architecture"
         title={<>The full <em className="italic text-ng-leaf">Nutrigreenz map.</em></>}
-        description="Every route in the system — storefront, admin, captain PWA, and community bundle. Click any node to jump to that page."
+        description="Every route in the system. Storefront, admin, captain PWA, and community bundle. Click any node to jump to that page."
       />
 
       <Section>

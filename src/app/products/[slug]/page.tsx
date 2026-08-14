@@ -167,15 +167,15 @@ function resolveVariants(p: Product): { variants: PdpVariant[]; baseIndex: numbe
 function getIntro(p: Product, categoryId: string): string {
   const byCat: Record<string, string> = {
     oils: "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
-    ghee: "Made the traditional Bilona way — curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
-    honey: "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs — in the jar.",
-    millets: "An ancient grain grown the way it always was — rain-fed, intercropped and minimally processed. A wholesome, gluten-free base for everyday meals.",
+    ghee: "Made the traditional Bilona way. Curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
+    honey: "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs, in the jar.",
+    millets: "An ancient grain grown the way it always was. Rain-fed, intercropped and minimally processed. A wholesome, gluten-free base for everyday meals.",
     spices: "Single-origin whole spice, stone-ground in small batches so the aroma oils survive. Colour and fragrance you can smell the moment you open the pack.",
     superfoods: "Grown on partner farms, harvested at peak potency and gently milled so the goodness survives the journey to powder. A small spoon that does real work.",
-    pulses: "Honest, unpolished dal from a single-origin farm — no water-polish, no oil coating. It cooks creamy and tastes of the pulse itself.",
-    flours: "Stone-ground slowly on a traditional chakki so the grain stays cool and whole. Flour with the wheatgerm still in it — more flavour, more fibre.",
+    pulses: "Honest, unpolished dal from a single-origin farm. No water-polish, no oil coating. It cooks creamy and tastes of the pulse itself.",
+    flours: "Stone-ground slowly on a traditional chakki so the grain stays cool and whole. Flour with the wheatgerm still in it: more flavour, more fibre.",
     fruits: "Ripened on the tree, picked to order and never gassed with carbide. Seasonal fruit that actually tastes the way it should.",
-    gifting: "A curated hamper of our most-loved single-origin staples, in plastic-free packaging — a way to gift wellness you can stand behind, down to the farm.",
+    gifting: "A curated hamper of our most-loved single-origin staples, in plastic-free packaging. A way to gift wellness you can stand behind, down to the farm.",
   };
   return (
     byCat[categoryId] ??
@@ -184,7 +184,7 @@ function getIntro(p: Product, categoryId: string): string {
 }
 
 const SAMPLE_REVIEWS: Review[] = [
-  { id: "r1", name: "Anjali R.", location: "Hyderabad", rating: 5, date: "12 May 2026", title: "The traceability is real", body: "I scanned the lot code on the label and actually saw the farm it came from. The quality is exceptional — this is now a permanent pantry staple for us.", verified: true },
+  { id: "r1", name: "Anjali R.", location: "Hyderabad", rating: 5, date: "12 May 2026", title: "The traceability is real", body: "I scanned the lot code on the label and actually saw the farm it came from. The quality is exceptional. This is now a permanent pantry staple for us.", verified: true },
   { id: "r2", name: "Rahul M.", location: "Mumbai", rating: 5, date: "28 Apr 2026", title: "Tastes like my grandmother's kitchen", body: "Switched our entire household over. The aroma when you open it tells you everything you need to know. Worth every rupee.", verified: true },
   { id: "r3", name: "Priya K.", location: "Bengaluru", rating: 4, date: "15 Apr 2026", title: "Lovely product, premium packaging", body: "Five stars on the contents. The packaging is genuinely premium, a little heavy to handle but that's a minor gripe for this quality.", verified: true },
   { id: "r4", name: "Vikram S.", location: "Pune", rating: 5, date: "02 Apr 2026", title: "You can taste the freshness", body: "There's a freshness here you just don't get from supermarket brands. The difference was obvious from the first use.", verified: true },
@@ -208,7 +208,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { categoryId } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
   const title = `${p.title} · Nutri Greenz`;
-  const description = `Buy ${p.title} (${p.unit ?? cat.title}) — single-origin, lab-tested and fully traceable to the farm. Rated ${p.rating}/5 by ${p.reviewCount.toLocaleString()} customers. Free delivery over ₹599.`;
+  const description = `Buy ${p.title} (${p.unit ?? cat.title}). Single-origin, lab-tested and fully traceable to the farm. Rated ${p.rating}/5 by ${p.reviewCount.toLocaleString()} customers. Free delivery over ₹599.`;
   const url = `${SITE}/products/${p.slug}`;
 
   return {
@@ -290,7 +290,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const hasRealImage = p.image.length > 0 && p.image !== PLACEHOLDER;
   const ownShots = (p.gallery ?? [])
     .filter((src) => src && src !== PLACEHOLDER && src !== p.image)
-    .map((src, i) => ({ src, alt: `${p.title} — photo ${i + 2}`, label: undefined }));
+    .map((src, i) => ({ src, alt: `${p.title} · photo ${i + 2}`, label: undefined }));
 
   /*
    * Generated panels for THIS product — nutrition, sourcing, comparison and so
@@ -329,9 +329,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ];
 
   const PLACEHOLDER_SLOTS = [
-    { alt: `${p.title} — pack & label`, label: "Pack & label" },
-    { alt: `${p.title} — texture & pour`, label: "Texture & pour" },
-    { alt: `${p.title} — in the kitchen`, label: "In the kitchen" },
+    { alt: `${p.title} · pack & label`, label: "Pack & label" },
+    { alt: `${p.title} · texture & pour`, label: "Texture & pour" },
+    { alt: `${p.title} · in the kitchen`, label: "In the kitchen" },
   ];
 
   const images =
@@ -512,7 +512,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section
         eyebrow="You may also like"
         heading={<>More from the <em className="italic text-ng-leaf">{cat.title.toLowerCase()}</em></>}
-        description="Single-origin staples chosen by fellow shoppers — same lab-tested, lot-traceable promise."
+        description="Single-origin staples chosen by fellow shoppers: same lab-tested, lot-traceable promise."
       >
         <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
           {relatedRail.map((r) => (

@@ -84,7 +84,7 @@ async function fetchPerson(accessToken: string): Promise<PeoplePerson | null> {
     if (typeof json !== "object" || json === null) return null;
     const person = json as PeoplePerson;
     console.log(
-      "[google-enrich] people api ok — addresses:",
+      "[google-enrich] people api ok, addresses:",
       person.addresses?.length ?? 0,
       "phones:",
       person.phoneNumbers?.length ?? 0,
@@ -252,7 +252,7 @@ export async function enrichFromGoogle(
   accessToken: string,
 ): Promise<EnrichResult> {
   if (!accessToken) {
-    console.log("[google-enrich] skipped — no access token in request");
+    console.log("[google-enrich] skipped. No access token in request");
     return NO_OP;
   }
 

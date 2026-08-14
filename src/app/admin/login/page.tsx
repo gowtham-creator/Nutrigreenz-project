@@ -244,7 +244,7 @@ function LoginForm() {
   /** Bounce back to the passcode step after the 2FA window has lapsed. */
   function restartSignIn() {
     resetMfa();
-    setError("That took too long — enter your passcode again.");
+    setError("That took too long. Enter your passcode again.");
   }
 
   // Auto-send the mobile-OTP 2FA code once the phone step (and its reCAPTCHA
@@ -264,7 +264,7 @@ function LoginForm() {
         return;
       }
       if (!real) {
-        setError("Couldn't start mobile verification — try another method.");
+        setError("Couldn't start mobile verification. Try another method.");
         return;
       }
       await requestCode(false, real);
@@ -359,7 +359,7 @@ function LoginForm() {
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
       if (data.restart) {
         resetMfa();
-        const msg = "That took too long — enter your passcode again.";
+        const msg = "That took too long. Enter your passcode again.";
         setError(msg);
         toast.error("Session expired", { description: msg });
         return;
@@ -398,7 +398,7 @@ function LoginForm() {
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
       if (data.restart) {
         resetMfa();
-        const msg = "That took too long — enter your passcode again.";
+        const msg = "That took too long. Enter your passcode again.";
         setError(msg);
         toast.error("Session expired", { description: msg });
         return;
@@ -439,12 +439,12 @@ function LoginForm() {
         const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
         if (data.restart) {
           resetMfa();
-          const msg = "That took too long — enter your passcode again.";
+          const msg = "That took too long. Enter your passcode again.";
           setError(msg);
           toast.error("Session expired", { description: msg });
           return;
         }
-        const msg = "We couldn't verify that code — request a fresh one and try again.";
+        const msg = "We couldn't verify that code. Request a fresh one and try again.";
         setError(msg);
         toast.error("Verification failed", { description: msg });
       } catch {
@@ -484,12 +484,12 @@ function LoginForm() {
       const data = (await res.json().catch(() => ({}))) as { restart?: boolean };
       if (data.restart) {
         resetMfa();
-        const msg = "That took too long — enter your passcode again.";
+        const msg = "That took too long. Enter your passcode again.";
         setError(msg);
         toast.error("Session expired", { description: msg });
         return;
       }
-      const msg = "We couldn't verify that code — request a fresh one and try again.";
+      const msg = "We couldn't verify that code. Request a fresh one and try again.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } catch (err) {
@@ -498,10 +498,10 @@ function LoginForm() {
       console.error("[admin mobile 2FA] confirm failed:", errCode || err);
       const msg =
         errCode === "auth/invalid-verification-code"
-          ? "That code is incorrect — check it and re-enter."
+          ? "That code is incorrect. Check it and re-enter."
           : errCode === "auth/code-expired" || errCode === "auth/session-expired"
-            ? "Your code expired — request a new one."
-            : "Couldn't verify the code — request a fresh one and try again.";
+            ? "Your code expired. Request a new one."
+            : "Couldn't verify the code. Request a fresh one and try again.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } finally {
@@ -547,13 +547,13 @@ function LoginForm() {
           };
           if (data.restart) {
             resetMfa();
-            const msg = "That took too long — enter your passcode again.";
+            const msg = "That took too long. Enter your passcode again.";
             setError(msg);
             toast.error("Session expired", { description: msg });
           } else {
             const msg =
               res.status === 429
-                ? "Too many attempts — wait a few minutes and retry."
+                ? "Too many attempts. Wait a few minutes and retry."
                 : data.error === "SMS OTP not configured"
                   ? "SMS sign-in isn't configured yet."
                   : "Couldn't send the code.";
@@ -570,7 +570,7 @@ function LoginForm() {
       return;
     }
     if (!auth) {
-      setError("Phone sign-in isn't configured yet — add your Firebase keys.");
+      setError("Phone sign-in isn't configured yet. Add your Firebase keys.");
       return;
     }
     // The mobile-OTP 2FA flow (#42) passes the saved E.164 number directly so it
@@ -608,13 +608,13 @@ function LoginForm() {
       console.error("[admin phone OTP] sendCode failed:", err);
       const friendly =
         code === "auth/operation-not-allowed"
-          ? "Phone sign-in isn't enabled — turn on Authentication → Sign-in method → Phone in Firebase."
+          ? "Phone sign-in isn't enabled. Turn on Authentication → Sign-in method → Phone in Firebase."
           : code === "auth/invalid-app-credential" || code === "auth/captcha-check-failed"
-            ? "reCAPTCHA check failed for this domain — add localhost to Authorized domains."
+            ? "reCAPTCHA check failed for this domain. Add localhost to Authorized domains."
             : code === "auth/invalid-phone-number"
               ? "That mobile number looks invalid."
               : code === "auth/too-many-requests"
-                ? "Too many attempts — wait a few minutes and retry."
+                ? "Too many attempts. Wait a few minutes and retry."
                 : `Couldn't send the code${code ? ` (${code})` : ""}.`;
       setError(friendly);
       toast.error("Sign in failed", { description: friendly });
@@ -661,10 +661,10 @@ function LoginForm() {
           res.status === 403
             ? "This number isn't an authorised operator."
             : res.status === 401
-              ? "That code is incorrect or expired — request a fresh one."
+              ? "That code is incorrect or expired. Request a fresh one."
               : res.status >= 500
-                ? "Server couldn't verify the sign-in — please try again in a moment."
-                : "We couldn't verify your sign-in — request a fresh code and try again.";
+                ? "Server couldn't verify the sign-in. Please try again in a moment."
+                : "We couldn't verify your sign-in. Request a fresh code and try again.";
         setError(msg);
         toast.error("Sign in failed", { description: msg });
       } catch {
@@ -704,8 +704,8 @@ function LoginForm() {
         res.status === 403
           ? "This number isn't an authorised operator."
           : res.status >= 500
-            ? "Server couldn't verify the sign-in — please try again in a moment."
-            : "We couldn't verify your sign-in — request a fresh code and try again.";
+            ? "Server couldn't verify the sign-in. Please try again in a moment."
+            : "We couldn't verify your sign-in. Request a fresh code and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } catch (err) {
@@ -715,10 +715,10 @@ function LoginForm() {
       console.error("[admin phone sign-in] confirm failed:", code || err);
       const msg =
         code === "auth/invalid-verification-code"
-          ? "That code is incorrect — check it and re-enter."
+          ? "That code is incorrect. Check it and re-enter."
           : code === "auth/code-expired" || code === "auth/session-expired"
-            ? "Your code expired — request a new one."
-            : "Couldn't verify the code — request a fresh one and try again.";
+            ? "Your code expired. Request a new one."
+            : "Couldn't verify the code. Request a fresh one and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } finally {
@@ -1026,7 +1026,7 @@ function LoginForm() {
                               const { phone: real, restart } = await resolveMfaPhone();
                               if (real) return requestCode(true, real);
                               if (restart) return restartSignIn();
-                              setError("Couldn't resend — try another method.");
+                              setError("Couldn't resend. Try another method.");
                             })()
                           }
                           className="text-ng-forest transition-colors hover:text-ng-leaf disabled:cursor-not-allowed disabled:text-ng-ink-soft disabled:hover:text-ng-ink-soft cursor-pointer"

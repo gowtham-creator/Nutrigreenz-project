@@ -43,7 +43,7 @@ interface Payload {
 const SOURCE_COPY: Record<Source, { tag: string; hint: string; className: string }> = {
   lead: { tag: "Lead", hint: "The main product image above", className: "bg-ng-forest text-ng-paper" },
   operator: { tag: "Gallery", hint: "From the gallery field above", className: "bg-ng-leaf/18 text-ng-forest-deep" },
-  generated: { tag: "Generated", hint: "From the gallery manifest in code — not editable here", className: "bg-ng-clay/20 text-ng-clay-deep" },
+  generated: { tag: "Generated", hint: "From the gallery manifest in code, not editable here", className: "bg-ng-clay/20 text-ng-clay-deep" },
   nutrition: { tag: "Nutrition", hint: "Swaps with the pack size the shopper selects", className: "bg-ng-sage/60 text-ng-forest-deep" },
 };
 
@@ -200,8 +200,8 @@ export function PdpImagesPreview({
                 <div
                   title={
                     canReplace(s)
-                      ? `${s.label} — click to replace. Uploads are resized to the gallery's square canvas.`
-                      : `${s.label} — ${copy.hint}`
+                      ? `${s.label}. Click to replace. Uploads are resized to the gallery's square canvas.`
+                      : `${s.label}, ${copy.hint}`
                   }
                   className={cn(
                     "group relative aspect-square overflow-hidden rounded-xl border bg-ng-paper",

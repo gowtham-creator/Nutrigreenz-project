@@ -152,7 +152,7 @@ export async function PUT(request: Request): Promise<Response> {
         {
           ok: false,
           error: "totp-not-enrolled",
-          message: "Scan the QR and confirm a code first — turning this on without enrolling would lock the account out.",
+          message: "Scan the QR and confirm a code first. Turning this on without enrolling would lock the account out.",
         },
         { status: 409 },
       );

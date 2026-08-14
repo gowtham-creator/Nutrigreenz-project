@@ -36,11 +36,11 @@ export function AddressBook() {
         );
       } else if (result) {
         toast.info(
-          "No new address found on your Google profile — add one at myaccount.google.com → Personal info → Addresses, then try again.",
+          "No new address found on your Google profile. Add one at myaccount.google.com → Personal info → Addresses, then try again.",
         );
       } else {
         toast.info(
-          "Couldn't read your Google profile — approve the address permission in the popup and try again.",
+          "Couldn't read your Google profile. Approve the address permission in the popup and try again.",
         );
       }
     } finally {

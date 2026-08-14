@@ -23,7 +23,7 @@ const RELATED = [
     href: "/admin/referrals",
     icon: "users-group-rounded-bold",
     title: "Referrals",
-    detail: "Live referral ledger — who referred whom, and what was awarded.",
+    detail: "Live referral ledger: who referred whom, and what was awarded.",
   },
   {
     href: "/admin/config",
@@ -48,7 +48,7 @@ export default function AdminMarketing() {
           Marketing <em className="italic text-ng-clay font-display">desk</em>
         </span>
       }
-      subtitle="Promotions, redeemable coupons and storefront announcements — all live"
+      subtitle="Promotions, redeemable coupons and storefront announcements, all live"
       actions={
         <a
           href="#live-coupons"

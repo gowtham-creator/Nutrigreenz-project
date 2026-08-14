@@ -283,7 +283,7 @@ export function VariantModal({
 
   const addVariant = async () => {
     if (!draft.label.trim()) {
-      toast.error("Enter a size label, e.g. 1L");
+      toast.error("Enter a size label, e.g: 1L");
       return;
     }
     setBusy(true);
@@ -420,7 +420,7 @@ export function VariantModal({
                         disabled={busy}
                         onClick={() => void toggleActive(v)}
                         aria-label={v.isActive ? "Deactivate variant" : "Activate variant"}
-                        title={v.isActive ? "Active — click to hide" : "Inactive — click to show"}
+                        title={v.isActive ? "Active, click to hide" : "Inactive, click to show"}
                         className="text-ng-ink-muted hover:text-ng-forest transition-colors cursor-pointer disabled:opacity-50"
                       >
                         <Icon name={v.isActive ? "eye-bold" : "eye-closed-bold"} size={15} />

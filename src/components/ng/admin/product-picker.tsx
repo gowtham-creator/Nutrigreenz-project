@@ -179,7 +179,7 @@ export function ProductPicker({
 
           <p className="mt-2 text-[11.5px] text-ng-ink-muted">
             {value.length === 0
-              ? "No products selected — this coupon applies to every product."
+              ? "No products selected. This coupon applies to every product."
               : `${value.length} product${value.length === 1 ? "" : "s"} selected. The code only applies when the cart contains one of them.`}
           </p>
         </>

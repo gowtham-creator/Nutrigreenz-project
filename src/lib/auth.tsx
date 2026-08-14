@@ -26,7 +26,7 @@ import { runGoogleEnrich, type GoogleEnrichDetail } from "@/lib/google-enrich-cl
 import { otpProvider } from "@/lib/otp-provider";
 
 const NOT_CONFIGURED =
-  "Authentication isn't configured yet — add your Firebase keys to .env.local.";
+  "Authentication isn't configured yet. Add your Firebase keys to .env.local.";
 
 const ACCOUNT_KEY = "ng.account.v1";
 
@@ -302,7 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(
             res.status === 429
-              ? "Too many attempts — please wait a few minutes and try again."
+              ? "Too many attempts. Please wait a few minutes and try again."
               : data.error === "SMS OTP not configured"
                 ? "SMS sign-in isn't configured yet."
                 : "Couldn't send the code",

@@ -119,7 +119,7 @@ export function CaptainAllocationModal({
       });
       onClose();
     } catch {
-      toast.error("Not saved", { description: "Couldn't save the allocation — try again." });
+      toast.error("Not saved", { description: "Couldn't save the allocation. Try again." });
     } finally {
       setSaving(false);
     }
@@ -246,7 +246,7 @@ export function CaptainAllocationModal({
           <div className="flex shrink-0 items-center justify-between gap-3 border-t border-ng-line-soft bg-ng-paper px-6 py-4">
             <p className="text-[12px] text-ng-ink-muted">
               {selected.size === 0
-                ? "Nothing selected — this captain will sell nothing."
+                ? "Nothing selected. This captain will sell nothing."
                 : `${selected.size} SKU${selected.size === 1 ? "" : "s"} selected`}
             </p>
             <div className="flex items-center gap-2">

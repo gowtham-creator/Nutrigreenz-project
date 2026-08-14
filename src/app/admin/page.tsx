@@ -199,7 +199,7 @@ export default function AdminOverview() {
           Operator <em className="italic text-ng-clay font-display">overview</em>
         </span>
       }
-      subtitle="Live metrics from production — orders, revenue and fulfilment"
+      subtitle="Live metrics from production: orders, revenue and fulfilment"
       actions={
         <Link
           href="/admin/reports"

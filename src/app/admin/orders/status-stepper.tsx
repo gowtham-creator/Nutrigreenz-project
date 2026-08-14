@@ -60,7 +60,7 @@ export function StatusStepper({
       const message = err instanceof Error ? err.message : "Could not update status";
       toast.error(
         message === "not-forward"
-          ? "That move isn't allowed — status is forward-only."
+          ? "That move isn't allowed, status is forward-only."
           : "Couldn't update the order status. Try again.",
       );
     } finally {

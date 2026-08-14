@@ -60,7 +60,7 @@ export default function CommunityBundleInventory() {
 
             <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
               <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Your pickup</div>
-              <div className="font-display text-[16px] text-ng-forest-deep mt-2">14 Jubilee Hills Road No. 36</div>
+              <div className="font-display text-[16px] text-ng-forest-deep mt-2">14 Jubilee Hills Road No: 36</div>
               <div className="text-[12px] text-ng-ink-muted mt-1">23 May, 17:00–20:00</div>
             </div>
           </aside>

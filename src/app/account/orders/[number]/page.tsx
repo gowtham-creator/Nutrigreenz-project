@@ -124,7 +124,7 @@ export default function AccountOrderDetailPage({
               </p>
               <p className="mx-auto mt-1.5 max-w-sm text-[14px] text-ng-ink-muted">
                 {state === "unauth"
-                  ? "Your orders are tied to your account — sign in to see this one."
+                  ? "Your orders are tied to your account. Sign in to see this one."
                   : state === "missing"
                     ? "We couldn't find an order with that number on your account."
                     : "Something went wrong. Please try again in a moment."}

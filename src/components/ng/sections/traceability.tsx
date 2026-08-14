@@ -9,7 +9,7 @@ import { Reveal, Parallax, FloatIn, MagneticHover } from "../motion";
 
 const SAMPLE_LOT = {
   code: "ANT-24-051",
-  product: "Cold-Pressed Groundnut Oil — 1L",
+  product: "Cold-Pressed Groundnut Oil, 1L",
   farm: "Mallika & Subbaiah Farm, Anantapur",
   pressed: "2026-04-18",
   tested: "2026-04-21 · Hyderabad lab",
@@ -126,7 +126,7 @@ export function Traceability() {
               <div>
                 <div className="text-[11px] uppercase tracking-[0.2em] text-ng-leaf font-semibold">Trace receipt</div>
                 <div className="font-mono text-[24px] text-ng-cream mt-1">
-                  {revealed ? SAMPLE_LOT.code : "— — — — — —"}
+                  {revealed ? SAMPLE_LOT.code : ". , , ,: "}
                 </div>
               </div>
               <div className={`h-3 w-3 rounded-full transition-colors ${revealed ? "bg-ng-success animate-pulse" : "bg-ng-cream/20"}`} />

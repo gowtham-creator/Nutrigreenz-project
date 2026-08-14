@@ -184,7 +184,7 @@ export default function AdminAnalytics() {
           Product <em className="italic text-ng-clay font-display">&amp; customer</em> analytics
         </span>
       }
-      subtitle="Demand signals per product & how customers sign in — computed live from real data"
+      subtitle="Demand signals per product & how customers sign in. Computed live from real data"
       actions={
         <>
           <div className="hidden md:flex gap-1 bg-ng-paper border border-ng-line-soft rounded-full p-1">

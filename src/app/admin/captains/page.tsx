@@ -287,7 +287,7 @@ export default function AdminCaptains() {
           Captains <em className="italic text-ng-clay font-display">roster</em>
         </span>
       }
-      subtitle="Field-sales captains — their communities, commission, and today's stall sales"
+      subtitle="Field-sales captains: their communities, commission, and today's stall sales"
       actions={
         <>
           <button

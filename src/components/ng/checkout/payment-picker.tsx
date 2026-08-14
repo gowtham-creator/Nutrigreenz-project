@@ -113,7 +113,7 @@ export function PaymentPicker({
               ? "Checking availability…"
               : onlineAvailable
                 ? "You'll be taken to the secure bank page to complete the payment."
-                : "Temporarily unavailable — we're finishing our bank integration."}
+                : "Temporarily unavailable. We're finishing our bank integration."}
           </span>
         </span>
         {upiChosen ? (

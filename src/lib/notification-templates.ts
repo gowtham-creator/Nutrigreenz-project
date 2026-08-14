@@ -88,18 +88,18 @@ const WHATSAPP: Record<NotifyType, string> = {
   invoice:
     "🧾 *{brand}*\nYour invoice for order *{orderNumber}* ({total}) is ready.\nDownload: {invoiceUrl}",
   promotion:
-    "🎉 *{brand}* — {offerTitle}\nGet *{discount} off* with code *{offerCode}*.\nValid till {validTill}.\nShop now 👉 {ctaUrl}",
+    "🎉 *{brand}*. {offerTitle}\nGet *{discount} off* with code *{offerCode}*.\nValid till {validTill}.\nShop now 👉 {ctaUrl}",
   campaign:
-    "🌾 *{brand}* — {offerTitle}\n{discount} off this season on farm-fresh picks.\nShop now 👉 {ctaUrl}",
+    "🌾 *{brand}*. {offerTitle}\n{discount} off this season on farm-fresh picks.\nShop now 👉 {ctaUrl}",
   offer:
-    "✨ *{brand}* — New offer!\n{offerTitle}\nUse *{offerCode}* for *{discount} off*.\n👉 {ctaUrl}",
+    "✨ *{brand}*. New offer!\n{offerTitle}\nUse *{offerCode}* for *{discount} off*.\n👉 {ctaUrl}",
 };
 
 const EMAIL_SUBJECT: Record<NotifyType, string> = {
   orderPlaced: "Order {orderNumber} confirmed · {brand}",
   orderStatus: "Your order {orderNumber} is {status} · {brand}",
   invoice: "Invoice for order {orderNumber} · {brand}",
-  promotion: "{offerTitle} — {discount} off · {brand}",
+  promotion: "{offerTitle}. {discount} off · {brand}",
   campaign: "{offerTitle} · {brand}",
   offer: "New offer: {offerTitle} · {brand}",
 };

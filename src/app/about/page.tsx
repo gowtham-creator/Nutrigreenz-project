@@ -8,7 +8,7 @@ import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { IndiaFlag } from "@/components/ui/india-flag";
 
 export const metadata: Metadata = {
-  title: "Our story — Nutri Greenz",
+  title: "Our story · Nutri Greenz",
   description:
     "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
 };
@@ -36,13 +36,13 @@ const FOUNDERS = [
     name: "RamaKrishna Katakam",
     role: "Founder",
     initials: "RK",
-    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases — organic food plays a crucial role in helping us stay healthy.",
+    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases. Organic food plays a crucial role in helping us stay healthy.",
   },
   {
     name: "Surendra Madivada",
     role: "Founder · Natural & organic farming",
     initials: "SM",
-    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper, raising awareness about the crucial role of bees in pollination — guided by the spirit of “Jai Jawan, Jai Kisan”.",
+    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper, raising awareness about the crucial role of bees in pollination. Guided by the spirit of “Jai Jawan, Jai Kisan”.",
   },
 ];
 
@@ -74,7 +74,7 @@ export default function AboutPage() {
             Chemical-free food, <em className="italic text-ng-leaf">direct from the farmer.</em>
           </>
         }
-        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices — and to bring their honest, chemical-free harvest straight to your door."
+        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices, and to bring their honest, chemical-free harvest straight to your door."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild variant="primary" size="lg" className="!bg-ng-cream !text-ng-forest-deep hover:!bg-white">
@@ -96,7 +96,7 @@ export default function AboutPage() {
           </p>
           <p>
             {
-              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively — and today, we proudly present Nutri Greenz Farm Technologies Pvt. Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
+              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively, and today, we proudly present Nutri Greenz Farm Technologies Pvt. Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
             }
           </p>
         </Reveal>
@@ -107,7 +107,7 @@ export default function AboutPage() {
         className="bg-ng-sage/25"
         eyebrow="Our vision"
         heading="Preserve the soil, nourish the nation"
-        description="We aim to preserve soil for the benefit of future generations through chemical-free, sustainable farming practices alongside our fellow farmers — while delivering wholesome, nutritious food to our valued customers."
+        description="We aim to preserve soil for the benefit of future generations through chemical-free, sustainable farming practices alongside our fellow farmers. While delivering wholesome, nutritious food to our valued customers."
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {VISION_PILLARS.map((p, i) => (

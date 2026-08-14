@@ -6,9 +6,9 @@ import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
 
 export const metadata: Metadata = {
-  title: "FAQs — Nutri Greenz",
+  title: "FAQs · Nutri Greenz",
   description:
-    "Answers to common questions about Nutrigreenz — payments, wallet recharge and autopay, cashback offers and refunds.",
+    "Answers to common questions about Nutrigreenz. Payments, wallet recharge and autopay, cashback offers and refunds.",
 };
 
 interface QA {
@@ -38,8 +38,8 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
             <li>{"Credit card"}</li>
             <li>{"Debit card"}</li>
             <li>{"Net banking"}</li>
-            <li>{"Wallets — Paytm, Amazon Pay, PayZapp, Freecharge, PhonePe"}</li>
-            <li>{"UPI — Google Pay, BHIM"}</li>
+            <li>{"Wallets: Paytm, Amazon Pay, PayZapp, Freecharge, PhonePe"}</li>
+            <li>{"UPI: Google Pay, BHIM"}</li>
           </ul>
         ),
       },

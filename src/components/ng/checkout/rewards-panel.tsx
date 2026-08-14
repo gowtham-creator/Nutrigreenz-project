@@ -116,13 +116,13 @@ export function RewardsPanel({
       // re-validates, so the synthesized fields are presentational only.
       const coupon: Coupon = {
         code: result.code,
-        description: `Applied — you saved ${INR(discount)}`,
+        description: `Applied, you saved ${INR(discount)}`,
         type: "flat",
         value: discount,
         active: true,
       };
       onApplyCoupon(coupon, discount);
-      toast.success(`${result.code} applied — you saved ${INR(discount)}`);
+      toast.success(`${result.code} applied, you saved ${INR(discount)}`);
       setCode("");
       pendingVerifyRef.current = false;
     } finally {

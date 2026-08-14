@@ -120,7 +120,7 @@ export default function ReferralPage() {
     {
       n: "03",
       title: reward ? `You get ₹${reward} credit` : "You earn wallet credit",
-      body: "It lands in your harvest wallet once their first order is complete — redeemable on anything.",
+      body: "It lands in your harvest wallet once their first order is complete, redeemable on anything.",
       icon: "wallet-money-bold",
       block: "bg-ng-leaf/15 border-ng-leaf/30",
       num: "text-ng-forest",
@@ -128,7 +128,7 @@ export default function ReferralPage() {
     },
   ];
 
-  const shareText = `Try Nutri Greenz — farm-traceable pantry${friendGets ? `, ₹${friendGets} off your first order` : ""}: ${link}`;
+  const shareText = `Try Nutri Greenz, farm-traceable pantry${friendGets ? `, ₹${friendGets} off your first order` : ""}: ${link}`;
 
   return (
     <AccountShell active="referral">
@@ -349,7 +349,7 @@ export default function ReferralPage() {
               q="How long is my link valid?"
               a={
                 expiryDays > 0
-                  ? `Each invite is valid for ${expiryDays} days from the day it's issued. If your friend hasn't ordered by then, that invite closes — but you can always share your link again.`
+                  ? `Each invite is valid for ${expiryDays} days from the day it's issued. If your friend hasn't ordered by then, that invite closes, but you can always share your link again.`
                   : "Your link doesn't expire. Share it as often as you like."
               }
             />
@@ -364,7 +364,7 @@ export default function ReferralPage() {
               a={
                 t && t.maxPerMonth > 0
                   ? `Up to ${t.maxPerMonth} rewarded invites per month. There's no limit on how many people you share with.`
-                  : "No cap — invite as many friends as you like."
+                  : "No cap. Invite as many friends as you like."
               }
             />
             <Faq

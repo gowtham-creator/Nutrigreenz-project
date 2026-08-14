@@ -89,7 +89,7 @@ export async function sbiepayFetch(req: SbiepayRequest): Promise<SbiepayResponse
      */
     throw new Error(
       isLiveGateway()
-        ? "sbiepay-proxy-not-configured (live gateway — refusing to call from an unwhitelisted IP)"
+        ? "sbiepay-proxy-not-configured (live gateway. Refusing to call from an unwhitelisted IP)"
         : "sbiepay-proxy-not-configured",
     );
   }
@@ -204,20 +204,20 @@ export async function checkProxy(expectedIp?: string): Promise<{
 
     let error: string;
     if (/abort/i.test(raw) || code === "UND_ERR_CONNECT_TIMEOUT") {
-      error = `no response from ${host} within 12s — squid is not running, or the Lightsail firewall is not allowing inbound on its port`;
+      error = `no response from ${host} within 12s. Squid is not running, or the Lightsail firewall is not allowing inbound on its port`;
     } else if (code === "ECONNREFUSED") {
-      error = `${host} refused the connection — the instance is up but nothing is listening on that port`;
+      error = `${host} refused the connection. The instance is up but nothing is listening on that port`;
     } else if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
-      error = `${host} does not resolve — check the host in SBIEPAY_PROXY_URL`;
+      error = `${host} does not resolve. Check the host in SBIEPAY_PROXY_URL`;
     } else if (/\b407\b|authentication required|credentials/i.test(raw)) {
-      error = `the proxy rejected the credentials in SBIEPAY_PROXY_URL — re-run the install script to reissue the password`;
+      error = `the proxy rejected the credentials in SBIEPAY_PROXY_URL. Re-run the install script to reissue the password`;
     } else if (/\b403\b|forbidden|denied/i.test(raw)) {
       /*
        * squid answered, and said no. Its ACL allows only SBI domains, so this
        * means the request was for something else — which is the proxy doing its
        * job, not a fault.
        */
-      error = `the proxy is running but refused this destination — its ACL allows only SBI hosts`;
+      error = `the proxy is running but refused this destination. Its ACL allows only SBI hosts`;
     } else {
       error = raw ? `${raw}${code ? ` (${code})` : ""}` : "unreachable";
     }

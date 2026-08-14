@@ -151,7 +151,7 @@ export function PaymentGatewayPanel() {
         <SectionHeader
           icon="wallet-money-bold"
           title="Payment gateway"
-          caption="What the live server can actually see. Values are never shown — only whether each credential is present."
+          caption="What the live server can actually see. Values are never shown. Only whether each credential is present."
         />
 
         {failed ? (
@@ -179,7 +179,7 @@ export function PaymentGatewayPanel() {
                 <p className="text-[13.5px] font-semibold text-ng-forest-deep">
                   {ready
                     ? "Online payment is available"
-                    : "Online payment is off — checkout offers Cash on Delivery only"}
+                    : "Online payment is off. Checkout offers Cash on Delivery only"}
                 </p>
                 <p className="mt-0.5 text-[12px] text-ng-ink-muted">
                   Checkout offers: {status.checkoutOffers.join(", ").toUpperCase() || "nothing"}
@@ -242,7 +242,7 @@ export function PaymentGatewayPanel() {
                 >
                   {status.proxy.probe.ok
                     ? status.proxy.probe.matchesWhitelist === false
-                      ? `arrives from ${status.proxy.probe.ip} — NOT the whitelisted address`
+                      ? `arrives from ${status.proxy.probe.ip}. NOT the whitelisted address`
                       : `arrives from ${status.proxy.probe.ip} ✓`
                     : `proxy unreachable: ${status.proxy.probe.error}`}
                 </p>

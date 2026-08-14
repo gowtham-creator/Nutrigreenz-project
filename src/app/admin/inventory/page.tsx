@@ -413,7 +413,7 @@ export default function AdminInventory() {
                         type="button"
                         onClick={() => setVariantProduct(p)}
                         aria-label={`Manage stock via variants for ${p.name}`}
-                        title="Stock is managed per variant — open Variants to edit"
+                        title="Stock is managed per variant · open Variants to edit"
                         className="flex items-center gap-2 cursor-pointer text-left"
                       >
                         <StockMeter stock={eStock} threshold={LOW_STOCK_THRESHOLD} />

@@ -26,8 +26,8 @@ const ACTIVE_BUNDLES = [
 ];
 
 const HOW = [
-  { n: "01", t: "Join a pod near you", b: "Pods are run by a Nutrigreenz Captain — a vetted resident in your neighborhood who consolidates orders." },
-  { n: "02", t: "Order from your pod's inventory", b: "Each pod gets a dedicated lot — same lot, same quality, but 8–14% cheaper because of zero last-mile cost." },
+  { n: "01", t: "Join a pod near you", b: "Pods are run by a Nutrigreenz Captain. A vetted resident in your neighborhood who consolidates orders." },
+  { n: "02", t: "Order from your pod's inventory", b: "Each pod gets a dedicated lot. Same lot, same quality, but 8–14% cheaper because of zero last-mile cost." },
   { n: "03", t: "Pick up from the Captain's home", b: "On cycle close day, walk to the Captain's address. No delivery slot to chase. No box waste." },
 ];
 
@@ -38,7 +38,7 @@ export default function CommunityBundleIndex() {
         tone="forest"
         eyebrow="Community Bundle"
         title={<>Buy together. <em className="italic text-ng-clay">Pay less.</em> Waste nothing.</>}
-        description="A neighborhood pod is 12–32 members ordering from the same lot, picked up from a vetted Captain near you. Saves 8–14% — and eliminates the last-mile cardboard."
+        description="A neighborhood pod is 12–32 members ordering from the same lot, picked up from a vetted Captain near you. Saves 8–14%, and eliminates the last-mile cardboard."
       />
 
       <Section>

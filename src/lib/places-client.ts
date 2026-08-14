@@ -20,7 +20,7 @@ export const isPlacesConfigured = KEY.length > 0;
 
 export interface PlaceSuggestion {
   placeId: string;
-  /** Full human-readable suggestion, e.g. "Road No. 12, Banjara Hills, Hyderabad". */
+  /** Full human-readable suggestion, e.g. "Road No: 12, Banjara Hills, Hyderabad". */
   text: string;
 }
 

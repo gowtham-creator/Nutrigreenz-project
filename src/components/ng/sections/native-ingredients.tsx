@@ -59,14 +59,14 @@ const PANELS: Panel[] = [
     src: "/images/products/oils/gallery/groundnut-oil-lifestyle.webp",
     alt: "A bottle of cold-pressed groundnut oil beside raw groundnuts and whole spices",
     title: "Impurities out. Goodness in.",
-    body: "Wood-pressed in small batches, filtered by settling — never chemically stripped.",
+    body: "Wood-pressed in small batches, filtered by settling, never chemically stripped.",
     tone: "dark",
   },
   {
     src: "/images/farm/gir-farm.webp",
     alt: "A herd of Gir cows grazing at first light on a partner farm",
     title: "A2 milk from Gir cows, groundnut from Anantapur, and more",
-    body: "Named breeds, named villages, named farmers — on request, for every lot.",
+    body: "Named breeds, named villages, named farmers: on request, for every lot.",
     tone: "dark",
   },
 ];

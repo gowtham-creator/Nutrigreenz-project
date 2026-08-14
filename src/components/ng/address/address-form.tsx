@@ -314,7 +314,7 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
 
       <Input
         label="Road / Street"
-        placeholder="Road no. 12, Madhapur"
+        placeholder="Road no: 12, Madhapur"
         value={form.line2}
         onChange={(e) => set("line2", e.target.value)}
       />

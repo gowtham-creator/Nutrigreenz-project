@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 
 export const metadata: Metadata = {
-  title: "Attributions & licences — Nutri Greenz",
+  title: "Attributions & licences · Nutri Greenz",
   description:
     "Credits for the open-source icon sets and third-party marks used on nutrigreenz.farm, and the licences they are used under.",
 };
