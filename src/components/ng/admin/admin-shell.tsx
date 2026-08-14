@@ -382,11 +382,17 @@ export function AdminShell({
                 <AdminIdentity />
               </div>
             </div>
-            {/* Row 2 — page actions on their own row: right-aligned from sm up,
-                wrapping on small screens so they never overflow. Omitted when a
-                page passes no actions. */}
+            {/* Row 2 — page actions on their own row, centred, wrapping on small
+                screens so they never overflow. Omitted when a page passes no
+                actions.
+
+                The row measures as exactly centred (340px clear either side at
+                1440px), but reads right-heavy: five outline buttons followed by
+                one solid primary pulls the eye to the end. `[&>*:last-child]`
+                gives the primary a little air so the group reads as "utilities,
+                then the main action" rather than an unbalanced run of six. */}
             {actions ? (
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 [&>*:last-child]:sm:ml-2">
                 {actions}
               </div>
             ) : null}

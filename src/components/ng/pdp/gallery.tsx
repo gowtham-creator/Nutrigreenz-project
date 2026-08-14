@@ -403,7 +403,13 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             type="button"
             onClick={() => setZoomed(true)}
             aria-label="View larger"
-            className="absolute left-4 top-4 z-20 grid size-10 cursor-pointer place-items-center rounded-full bg-ng-paper/90 text-ng-forest shadow-[0_2px_10px_rgba(20,51,31,0.18)] backdrop-blur transition-transform hover:scale-105"
+            /* Top-RIGHT, not top-left. The badges — "Best seller", "50% OFF" —
+               are pinned left-5 top-5 at z-10, and this button sat at left-4
+               top-4 at z-20: same corner, higher layer, so it covered the very
+               badge a discounted product most needs to show. Opposite corner
+               removes the collision rather than juggling z-index, which would
+               only have put the badge over a control people are meant to press. */
+            className="absolute right-4 top-4 z-20 grid size-10 cursor-pointer place-items-center rounded-full bg-ng-paper/90 text-ng-forest shadow-[0_2px_10px_rgba(20,51,31,0.18)] backdrop-blur transition-transform hover:scale-105"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

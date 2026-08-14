@@ -1,5 +1,6 @@
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { FSSAI_LICENCE, FssaiMark } from "../fssai-mark";
+import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
 import { Reveal } from "../motion";
 
 /**
@@ -29,7 +30,7 @@ import { Reveal } from "../motion";
  * across the whole storefront rather than three.
  */
 
-const POINTS: { icon: UiIconName | "fssai"; title: string; sub: string }[] = [
+const points = (freeFrom: string): { icon: UiIconName | "fssai"; title: string; sub: string }[] => [
   {
     icon: "press",
     title: "Cold-pressed fresh",
@@ -43,7 +44,7 @@ const POINTS: { icon: UiIconName | "fssai"; title: string; sub: string }[] = [
   {
     icon: "delivery",
     title: "Free shipping",
-    sub: "On all orders over ₹599",
+    sub: `On all orders over ${freeFrom}`,
   },
   {
     /*
@@ -71,7 +72,9 @@ const POINTS: { icon: UiIconName | "fssai"; title: string; sub: string }[] = [
   },
 ];
 
-export function AssuranceStrip() {
+export async function AssuranceStrip() {
+  // Live from commerce_rules — see the note in @/lib/free-delivery.
+  const POINTS = points(await freeDeliveryThresholdLabel());
   return (
     <section aria-label="Why shop with Nutri Greenz" className="relative px-4 sm:px-6 md:px-8">
       <div className="mx-auto max-w-7xl">

@@ -1,4 +1,5 @@
 import { AccountShell } from "@/components/ng/account/account-shell";
+import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
 import { Icon } from "@/components/ui/icon";
 import { AddressBook } from "@/components/ng/address/address-book";
 
@@ -7,7 +8,8 @@ export const metadata = {
   description: "Manage your delivery addresses for faster, traceable checkout.",
 };
 
-export default function AddressesPage() {
+export default async function AddressesPage() {
+  const freeFrom = await freeDeliveryThresholdLabel();
   return (
     <AccountShell active="addresses">
       <div className="mb-8">
@@ -41,7 +43,7 @@ export default function AddressesPage() {
           <ul className="mt-4 space-y-2 text-[13px] text-ng-ink-muted">
             <li className="flex items-start gap-2">
               <Icon name="check-circle-bold" size={15} className="mt-0.5 text-ng-leaf" />
-              Free shipping on orders above ₹599
+              Free shipping on orders above {freeFrom}
             </li>
             <li className="flex items-start gap-2">
               <Icon name="check-circle-bold" size={15} className="mt-0.5 text-ng-leaf" />

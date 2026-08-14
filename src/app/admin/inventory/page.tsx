@@ -367,13 +367,13 @@ export default function AdminInventory() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[820px]">
-        <div className="grid grid-cols-[1.8fr_1.1fr_1fr_1.1fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+        <div className="grid grid-cols-[1.7fr_1fr_1fr_1fr_2fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
           <span>SKU</span>
           <span>Category</span>
           <span className="text-right">Price</span>
           <span>Stock level</span>
-          <span>Status</span>
+          <span className="text-center">Status</span>
           <span></span>
         </div>
 
@@ -393,7 +393,7 @@ export default function AdminInventory() {
               return (
                 <li
                   key={p.id}
-                  className="grid grid-cols-[1.8fr_1.1fr_1fr_1.1fr_1.4fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                  className="grid grid-cols-[1.7fr_1fr_1fr_1fr_2fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="truncate font-semibold text-ng-ink">{p.name}</span>
                   <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>
@@ -405,7 +405,7 @@ export default function AdminInventory() {
                         : `from ${formatPaise(p.variantMinPricePaise ?? 0)}`
                       : formatPaise(p.pricePaise)}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     {hasVariants ? (
                       // Stock is held per variant — surface the roll-up and send edits
                       // to the Variants manager rather than the (unused) base stock.
@@ -448,7 +448,7 @@ export default function AdminInventory() {
                       </button>
                     )}
                   </div>
-                  <span><Pill tone={STATUS_TONE[p.status]}>{p.status}</Pill></span>
+                  <span className="text-center"><Pill tone={STATUS_TONE[p.status]}>{p.status}</Pill></span>
                   <div className="flex items-center justify-end gap-2.5">
                     <button
                       type="button"
