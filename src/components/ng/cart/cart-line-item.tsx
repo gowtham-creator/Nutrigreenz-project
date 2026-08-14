@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { useCart } from "@/lib/cart";
 import type { CartItem } from "@/types/nutrigreenz";
 
@@ -47,7 +48,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
             </Link>
             {item.unit ? (
               <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-ng-sage/40 px-2 py-0.5 text-[11px] font-medium text-ng-forest">
-                <Icon name="leaf-bold" size={11} className="text-ng-leaf" />
+                <UiIcon name="leaf" size={12} className="text-ng-ink-muted" />
                 {item.unit}
               </p>
             ) : null}

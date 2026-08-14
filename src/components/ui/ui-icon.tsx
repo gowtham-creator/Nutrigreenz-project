@@ -36,6 +36,11 @@ const UI_ICONS = {
   delivery: "delivery",
   /* The shop hero's rating chip. */
   star: "star",
+  /* The oil cruet, for "cold-pressed" — the product itself rather than a
+     sprout gesturing at freshness. */
+  press: "press",
+  /* The produce mark on a product card's category line and in the cart. */
+  leaf: "leaf",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

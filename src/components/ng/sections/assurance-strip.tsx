@@ -1,76 +1,76 @@
-import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { Reveal } from "../motion";
 
 /**
- * AssuranceStrip — a slim USP / trust band that sits directly under the hero
- * banner (magazine-style). It fills what was an empty stretch of page with four
- * at-a-glance reasons to buy: freshness, purity, shipping and certification.
+ * AssuranceStrip — the four at-a-glance reasons to buy, under the hero.
  *
- * Hairline-divided cells (a 1px line bg showing through `gap-px`) keep it crisp
- * and premium without heavy borders.
+ * ── Why the discs went, and the tints with them ───────────────────────────
  *
- * Three of the four now use imported glyphs, because each says the specific
- * thing the generic Solar shape only gestured at: a sprout for freshness rather
- * than a plain leaf, a flask for lab testing rather than a shield, and a van
- * carrying its own FREE lettering rather than a parcel. The FSSAI cell keeps a
- * Solar tick — see the note on its entry below.
+ * Each mark sat in a 48px circle with its own tinted fill and matching ring:
+ * leaf-green behind freshness, forest behind the lab, clay behind shipping,
+ * bright green behind FSSAI. Four different coloured circles in one band meant
+ * the first thing the eye did was compare the circles, and hue carried no
+ * information — nothing about free shipping is gold rather than green. The
+ * marks are bare now, larger, and all one ink, so what varies between cells is
+ * only the drawing and the words.
+ *
+ * The band is also given room: 36px marks instead of 24, more vertical
+ * padding, and the type stepped up with it. It was reading as a strip of fine
+ * print between two much larger sections.
+ *
+ * ── Why these particular drawings ─────────────────────────────────────────
+ *
+ * Lucide stand-ins were doing the job before: a sprout for freshness, a
+ * conical flask, a van, a tick-badge. Three of those were generic shapes
+ * gesturing at the idea. A pressed-oil bottle IS the product being called
+ * fresh, and a certificate is what "licensed" means — the same Icons8 marks
+ * the trust band and shop hero use, so a shopper meets one icon language
+ * across the whole storefront rather than three.
  */
 
-const POINTS = [
+const POINTS: { icon: UiIconName; title: string; sub: string }[] = [
   {
-    app: "fresh" as BrandIconName,
-    tint: "text-ng-forest-soft",
-    bg: "bg-ng-leaf/18",
-    ring: "ring-ng-leaf/30",
+    icon: "press",
     title: "Cold-pressed fresh",
     sub: "Pressed within 7 days of dispatch",
   },
   {
-    app: "lab" as BrandIconName,
-    tint: "text-ng-forest",
-    bg: "bg-ng-forest/[0.08]",
-    ring: "ring-ng-forest/15",
+    icon: "flask",
     title: "Lab-tested purity",
     sub: "Every lot — zero adulterants",
   },
   {
-    app: "shipping" as BrandIconName,
-    tint: "text-ng-clay-deep",
-    bg: "bg-ng-clay/16",
-    ring: "ring-ng-clay/25",
+    icon: "delivery",
     title: "Free shipping",
     sub: "On all orders over ₹599",
   },
   {
     /*
-     * Stays a Solar tick. The FSSAI mark supplied was a Shutterstock preview,
-     * and the real mark may only be shown beside the 14-digit licence number,
-     * which is still a placeholder in the pack artwork.
+     * A certificate, not a tick-badge. The FSSAI mark supplied was a
+     * Shutterstock preview and cannot be published; the real mark may only be
+     * shown beside the 14-digit licence number, which is still a placeholder in
+     * the pack artwork. A generic certificate claims nothing that is not true.
      */
-    app: "verified" as BrandIconName,
-    tint: "text-ng-green-bright",
-    bg: "bg-ng-green-bright/14",
-    ring: "ring-ng-green-bright/28",
+    icon: "certificate",
     title: "FSSAI licensed",
     /*
      * Shows the actual licence number when NEXT_PUBLIC_FSSAI_LIC is set.
      *
-     * The sub-line used to read "ISO 22000 quality assured" under an FSSAI
-     * heading, which conflates two unrelated certifications — FSSAI is a
-     * statutory licence from the food authority, ISO 22000 is a voluntary
-     * management standard from a private auditor. Claiming one under the
-     * other's name is the kind of thing FSSAI's own labelling rules treat as
-     * misleading, and ISO 22000 already has its own badge two cells along.
+     * The sub-line once read "ISO 22000 quality assured" under an FSSAI
+     * heading, which conflates two unrelated things — FSSAI is a statutory
+     * licence from the food authority, ISO 22000 a voluntary management
+     * standard from a private auditor. Claiming one under the other's name is
+     * what FSSAI's own labelling rules treat as misleading.
      *
-     * The licence NUMBER is also what actually evidences the claim — far more
-     * than a logo, which anyone can paste. Until it is configured the cell
-     * simply says the category is licensed and claims nothing further.
+     * The licence NUMBER is also what actually evidences the claim, far more
+     * than a logo anyone can paste. Until it is configured this says only that
+     * the business is licensed, and claims nothing further.
      */
     sub: process.env.NEXT_PUBLIC_FSSAI_LIC
       ? `Lic. ${process.env.NEXT_PUBLIC_FSSAI_LIC}`
       : "Licensed food business",
   },
-] as const;
+];
 
 export function AssuranceStrip() {
   return (
@@ -81,18 +81,16 @@ export function AssuranceStrip() {
             {POINTS.map((p) => (
               <li
                 key={p.title}
-                className="flex items-center gap-3.5 bg-ng-paper px-5 py-5 transition-colors hover:bg-ng-cream/60 md:px-6 md:py-6"
+                className="flex items-center gap-4 bg-ng-paper px-6 py-7 transition-colors hover:bg-ng-cream/60 md:px-7 md:py-8"
               >
-                <span
-                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1 ring-inset ${p.bg} ${p.tint} ${p.ring}`}
-                >
-                  <BrandIcon name={p.app} size={24} weight="solid" />
-                </span>
+                <UiIcon name={p.icon} size={36} className="shrink-0 text-ng-forest-deep" />
                 <div className="min-w-0">
-                  <div className="font-display text-[15px] font-semibold leading-tight text-ng-forest-deep md:text-[16px]">
+                  <div className="font-display text-[16px] font-semibold leading-tight text-ng-forest-deep md:text-[17px]">
                     {p.title}
                   </div>
-                  <div className="mt-0.5 text-[13px] leading-snug text-ng-ink-muted sm:text-sm">{p.sub}</div>
+                  <div className="mt-1 text-[13.5px] leading-snug text-ng-ink-muted md:text-[14px]">
+                    {p.sub}
+                  </div>
                 </div>
               </li>
             ))}
