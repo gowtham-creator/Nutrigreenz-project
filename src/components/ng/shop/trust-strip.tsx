@@ -1,4 +1,5 @@
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
+import { FSSAI_LICENCE, FssaiMark } from "../fssai-mark";
 
 /**
  * ShopTrustStrip — the four storefront guarantees, between the hero and the
@@ -31,11 +32,13 @@ import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
  * away for a tidier row.
  */
 
-const PILLARS: { icon: UiIconName; title: string; note: string }[] = [
+const PILLARS: { icon: UiIconName | "fssai"; title: string; note: string }[] = [
   {
-    icon: "certificate",
+    /* The real regulator mark, drawn by <FssaiMark> so it cannot be shown
+       without the licence number beside it. */
+    icon: "fssai",
     title: "FSSAI certified",
-    note: "Lic. 10024051000987",
+    note: FSSAI_LICENCE ? `Lic. ${FSSAI_LICENCE}` : "Licensed food business",
   },
   {
     icon: "flask",
@@ -70,7 +73,14 @@ export function ShopTrustStrip() {
               i === 2 ? "sm:border-l-0 md:border-l" : "",
             ].join(" ")}
           >
-            <UiIcon name={p.icon} size={26} className="shrink-0 text-ng-forest" />
+            {p.icon === "fssai" ? (
+              /* showNumber={false}: the number is already the `note` line
+                 directly beneath, and printing it twice in one cell would be
+                 noise rather than compliance. */
+              <FssaiMark height={26} showNumber={false} className="shrink-0" />
+            ) : (
+              <UiIcon name={p.icon} size={26} className="shrink-0 text-ng-forest" />
+            )}
             <div className="min-w-0">
               <p className="text-[13.5px] font-semibold leading-tight text-ng-forest-deep">
                 {p.title}

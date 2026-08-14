@@ -1,4 +1,5 @@
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
+import { FSSAI_LICENCE, FssaiMark } from "../fssai-mark";
 import { Reveal } from "../motion";
 
 /**
@@ -28,7 +29,7 @@ import { Reveal } from "../motion";
  * across the whole storefront rather than three.
  */
 
-const POINTS: { icon: UiIconName; title: string; sub: string }[] = [
+const POINTS: { icon: UiIconName | "fssai"; title: string; sub: string }[] = [
   {
     icon: "press",
     title: "Cold-pressed fresh",
@@ -51,7 +52,7 @@ const POINTS: { icon: UiIconName; title: string; sub: string }[] = [
      * shown beside the 14-digit licence number, which is still a placeholder in
      * the pack artwork. A generic certificate claims nothing that is not true.
      */
-    icon: "certificate",
+    icon: "fssai",
     title: "FSSAI licensed",
     /*
      * Shows the actual licence number when NEXT_PUBLIC_FSSAI_LIC is set.
@@ -66,9 +67,7 @@ const POINTS: { icon: UiIconName; title: string; sub: string }[] = [
      * than a logo anyone can paste. Until it is configured this says only that
      * the business is licensed, and claims nothing further.
      */
-    sub: process.env.NEXT_PUBLIC_FSSAI_LIC
-      ? `Lic. ${process.env.NEXT_PUBLIC_FSSAI_LIC}`
-      : "Licensed food business",
+    sub: FSSAI_LICENCE ? `Lic. ${FSSAI_LICENCE}` : "Licensed food business",
   },
 ];
 
@@ -83,7 +82,11 @@ export function AssuranceStrip() {
                 key={p.title}
                 className="flex items-center gap-4 bg-ng-paper px-6 py-7 transition-colors hover:bg-ng-cream/60 md:px-7 md:py-8"
               >
-                <UiIcon name={p.icon} size={36} className="shrink-0 text-ng-forest-deep" />
+                {p.icon === "fssai" ? (
+                  <FssaiMark height={34} showNumber={false} className="shrink-0" />
+                ) : (
+                  <UiIcon name={p.icon} size={36} className="shrink-0 text-ng-forest-deep" />
+                )}
                 <div className="min-w-0">
                   <div className="font-display text-[16px] font-semibold leading-tight text-ng-forest-deep md:text-[17px]">
                     {p.title}
