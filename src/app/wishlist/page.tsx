@@ -21,7 +21,7 @@ export default function WishlistPage() {
     <AccountShell active="wishlist">
       <Reveal className="mb-8">
         <span className="ng-eyebrow inline-flex items-center gap-2">
-          <Icon name="heart-bold" size={14} />
+          <UiIcon name="wishlist" size={14} />
           Your account
         </span>
         <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
@@ -135,7 +135,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ng-line bg-ng-sage/20 px-6 py-16 text-center">
       <span className="mb-5 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-clay-deep shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-        <Icon name="heart-linear" size={30} />
+        <UiIcon name="wishlist" size={30} />
       </span>
       <h2 className="font-display text-[24px] leading-tight text-ng-forest-deep">
         Your wishlist is empty

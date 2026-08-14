@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
@@ -14,7 +15,7 @@ export function SearchBar({ value, onChange, placeholder = "Search the pantry…
   return (
     <div className={cn("relative", className)}>
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ng-ink-muted">
-        <Icon name="magnifer-linear" size={18} />
+        <UiIcon name="search" size={18} />
       </span>
       <input
         type="search"

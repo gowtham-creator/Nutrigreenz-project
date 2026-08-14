@@ -132,7 +132,7 @@ export function OrderSummary() {
           {/* MOV gating notice */}
           {!movMet ? (
             <p className="mt-4 flex items-start gap-2 rounded-xl border border-ng-amber/40 bg-ng-amber/10 px-3.5 py-3 text-[13px] leading-relaxed text-ng-soil">
-              <Icon name="cart-large-minimalistic-bold" size={16} className="mt-0.5 shrink-0 text-ng-clay-deep" />
+              <UiIcon name="bag" size={16} className="mt-0.5 shrink-0 text-ng-clay-deep" />
               <span>
                 Add{" "}
                 <span className="font-mono font-semibold tabular-nums">
