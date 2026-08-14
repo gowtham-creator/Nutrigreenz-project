@@ -134,7 +134,7 @@ export default function PressPage() {
         <div className="grid md:grid-cols-3 gap-5">
           {KIT.map((k, i) => (
             <Reveal key={k.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+              <div className="h-12 w-12 rounded-xl bg-ng-cream inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={k.icon} size={24} />
               </div>
               <h3 className="mt-5 font-display text-[19px] text-ng-forest-deep">{k.title}</h3>

@@ -268,7 +268,7 @@ export default function ProfilePage() {
         {/* Account details */}
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
               <Icon name="user-bold" size={20} />
             </span>
             <div>
@@ -361,7 +361,7 @@ export default function ProfilePage() {
         {/* Communication preferences */}
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
               <Icon name="bell-bold" size={20} />
             </span>
             <div>
@@ -415,7 +415,7 @@ export default function ProfilePage() {
         {/* Dietary preferences */}
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
               <Icon name="leaf-bold" size={20} />
             </span>
             <div>

@@ -178,7 +178,7 @@ export default function CaptainHome() {
               {duePickups.slice(1).map((p) => (
                 <Link key={p.id} href="/captain/pickups" className="block">
                   <CaptainCard className="flex items-center gap-3 cursor-pointer hover:border-ng-leaf transition-colors">
-                    <div className="size-10 rounded-xl bg-ng-sage/60 flex items-center justify-center shrink-0">
+                    <div className="size-10 rounded-xl bg-ng-cream flex items-center justify-center shrink-0">
                       <Icon name="box-bold" size={20} className="text-ng-forest" />
                     </div>
                     <div className="min-w-0 flex-1">

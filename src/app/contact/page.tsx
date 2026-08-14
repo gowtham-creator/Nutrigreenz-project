@@ -64,7 +64,7 @@ export default function ContactPage() {
                 href={c.href}
                 className="group block h-full rounded-2xl border border-ng-line-soft bg-ng-paper p-7 hover:border-ng-leaf hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+                <div className="h-12 w-12 rounded-xl bg-ng-cream inline-flex items-center justify-center text-ng-forest-deep">
                   <Icon name={c.icon} size={24} />
                 </div>
                 <h2 className="mt-5 text-[13px] uppercase tracking-wider text-ng-ink-muted">{c.title}</h2>

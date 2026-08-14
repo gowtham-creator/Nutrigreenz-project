@@ -81,7 +81,7 @@ export default function CareersPage() {
         <div className="grid sm:grid-cols-2 gap-5">
           {VALUES.map((v, i) => (
             <Reveal key={v.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+              <div className="h-12 w-12 rounded-xl bg-ng-cream inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={v.icon} size={24} />
               </div>
               <h3 className="mt-5 font-display text-[20px] text-ng-forest-deep">{v.title}</h3>

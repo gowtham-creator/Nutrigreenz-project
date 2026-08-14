@@ -24,7 +24,7 @@ export function CartEmpty() {
         />
         <div className="relative z-10 flex flex-col items-center">
           <FloatIn>
-            <div className="grid h-24 w-24 place-items-center rounded-full bg-ng-sage/50 text-ng-forest ring-8 ring-ng-sage/20">
+            <div className="grid h-24 w-24 place-items-center rounded-full bg-ng-cream text-ng-forest ring-8 ring-ng-sage/20">
               <CartIcon size={42} tone="dark" />
             </div>
           </FloatIn>

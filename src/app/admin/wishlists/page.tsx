@@ -131,7 +131,7 @@ export default function AdminWishlists() {
                   >
                     <span className="font-display text-[15px] text-ng-clay-deep tabular-nums">{i + 1}</span>
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ng-clay/10 text-ng-clay-deep">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ng-cream text-ng-clay-deep">
                         <Icon name="heart-bold" size={16} />
                       </span>
                       <div className="min-w-0">

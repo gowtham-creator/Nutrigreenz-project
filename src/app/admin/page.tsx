@@ -214,7 +214,7 @@ export default function AdminOverview() {
       {needAttention > 0 ? (
         <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-forest/[0.05] border border-ng-forest/15 px-5 py-3.5">
           {/* Neutral forest surface; the gold bell is the single gold accent. */}
-          <span className="size-8 rounded-full bg-ng-clay/20 flex items-center justify-center shrink-0">
+          <span className="size-8 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
             <Icon name="bell-bing-bold" size={17} className="text-ng-clay-deep" />
           </span>
           <p className="text-[13px] font-medium text-ng-ink">

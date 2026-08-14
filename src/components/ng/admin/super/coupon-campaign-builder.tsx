@@ -533,7 +533,7 @@ export function CouponCampaignBuilder() {
         {/* ---- Builder form ------------------------------------------------ */}
         <div className="rounded-2xl border border-ng-clay/25 bg-ng-clay/[0.04] p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-4">
-            <span className="grid place-items-center size-7 rounded-lg bg-ng-clay/15 text-ng-clay-deep ring-1 ring-ng-clay/25">
+            <span className="grid place-items-center size-7 rounded-lg bg-ng-cream text-ng-clay-deep ring-1 ring-ng-clay/25">
               <Icon name={isEditing ? "pen-2-bold" : "magic-stick-3-bold"} size={15} />
             </span>
             <span className="font-display text-[15px] text-ng-forest-deep">

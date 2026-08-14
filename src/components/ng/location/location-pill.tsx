@@ -65,7 +65,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
             className,
           )}
         >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest">
             <BrandIcon name="location" size={15} weight="solid" />
           </span>
           <span className="min-w-0 flex-1">
@@ -102,7 +102,7 @@ export function LocationPill({ className, variant = "pill" }: LocationPillProps)
           className,
         )}
       >
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-leaf/14 text-ng-forest">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest">
             <BrandIcon name="location" size={15} weight="solid" />
           </span>
         <span className="flex min-w-0 flex-col leading-tight">

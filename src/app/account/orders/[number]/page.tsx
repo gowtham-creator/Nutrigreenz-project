@@ -225,7 +225,7 @@ export default function AccountOrderDetailPage({
             {/* Timeline */}
             <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)]">
               <h2 className="mb-6 flex items-center gap-2.5 font-display text-[20px] text-ng-forest-deep">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                   <Icon name="routing-2-bold" size={16} />
                 </span>
                 Fulfilment progress
@@ -285,7 +285,7 @@ export default function AccountOrderDetailPage({
             {/* Items */}
             <section>
               <h2 className="mb-4 flex items-center gap-2.5 font-display text-[22px] text-ng-forest-deep">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                   <UiIcon name="bag" size={16} />
                 </span>
                 Items in this order

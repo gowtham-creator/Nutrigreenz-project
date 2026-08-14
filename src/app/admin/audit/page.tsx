@@ -675,7 +675,7 @@ export default function AdminAuditPage() {
           <FeedSkeleton />
         ) : errored && entries.length === 0 ? (
           <div className="py-14 text-center">
-            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-ng-terracotta/12 text-ng-terracotta">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-ng-cream text-ng-terracotta">
               <Icon name="danger-triangle-bold" size={22} />
             </div>
             <p className="text-[14px] font-semibold text-ng-forest-deep">Couldn&rsquo;t load the audit trail</p>

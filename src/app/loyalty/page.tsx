@@ -296,7 +296,7 @@ export default async function LoyaltyPage() {
                 </ul>
               ) : (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-sage/50 text-ng-forest">
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-cream text-ng-forest">
                     <Icon name="wallet-money-bold" size={24} />
                   </span>
                   <p className="max-w-xs text-[14px] leading-relaxed text-ng-ink-muted">

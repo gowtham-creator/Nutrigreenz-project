@@ -460,7 +460,7 @@ export function AdminsManagement() {
         {staffEmail ? (
           <li className={cn(GRID, "px-1 py-3 items-center text-[13px] border-b border-ng-line-soft")}>
             <span className="flex items-center gap-2 min-w-0">
-              <span className="grid place-items-center size-7 rounded-full bg-ng-clay/15 text-ng-clay-deep text-[11px] font-bold shrink-0">
+              <span className="grid place-items-center size-7 rounded-full bg-ng-cream text-ng-clay-deep text-[11px] font-bold shrink-0">
                 <Icon name="server-minimalistic-bold" size={14} />
               </span>
               <span className="font-semibold text-ng-ink truncate">Built-in</span>

@@ -129,7 +129,7 @@ export default function CaptainSettle() {
       <div className="grid grid-cols-2 gap-3">
         <CaptainCard className="h-full">
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-ng-soil/10 flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-ng-cream flex items-center justify-center">
               <Icon name="banknote-2-bold" size={18} className="text-ng-soil" />
             </div>
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Cash</span>
@@ -140,7 +140,7 @@ export default function CaptainSettle() {
         </CaptainCard>
         <CaptainCard className="h-full">
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-ng-leaf/15 flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-ng-cream flex items-center justify-center">
               <Icon name="smartphone-bold" size={18} className="text-ng-forest" />
             </div>
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">UPI</span>
@@ -196,7 +196,7 @@ export default function CaptainSettle() {
         {submitted ? (
           <CaptainHero className="p-4">
             <div className="flex items-center gap-3">
-              <div className="size-11 rounded-full bg-ng-leaf/20 flex items-center justify-center shrink-0">
+              <div className="size-11 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
                 <Icon name="check-circle-bold" size={26} className="text-ng-leaf" />
               </div>
               <div>

@@ -437,7 +437,7 @@ export default function CheckoutPage() {
         <Section className="!py-28">
           <Reveal className="mx-auto max-w-md">
             <div className="rounded-3xl border border-ng-line-soft bg-ng-paper px-6 py-14 text-center shadow-[var(--shadow-ng-card)]">
-              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ng-sage/40 text-ng-forest-deep">
+              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                 <Icon name="lock-keyhole-minimalistic-bold" size={28} />
               </span>
               <h1 className="mt-6 font-display text-[26px] text-ng-forest-deep">
@@ -476,7 +476,7 @@ export default function CheckoutPage() {
               />
               <div className="relative z-10 flex flex-col items-center">
                 <FloatIn>
-                  <span className="grid h-24 w-24 place-items-center rounded-full bg-ng-sage/40 text-ng-forest-deep ring-8 ring-ng-sage/20">
+                  <span className="grid h-24 w-24 place-items-center rounded-full bg-ng-cream text-ng-forest-deep ring-8 ring-ng-sage/20">
                     <Icon name="bag-smile-bold" size={42} />
                   </span>
                 </FloatIn>

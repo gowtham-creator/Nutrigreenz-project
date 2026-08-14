@@ -222,7 +222,7 @@ function AuthScreen() {
                   key={t.label}
                   className="flex flex-col items-center gap-2 rounded-2xl border border-ng-line-soft bg-ng-paper/70 px-2 py-3.5 text-center"
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest">
                     <Icon name={t.icon} size={16} />
                   </span>
                   <span className="text-[11px] font-medium leading-tight text-ng-ink-muted">{t.label}</span>
@@ -259,7 +259,7 @@ function AuthScreen() {
               <ul className="mt-10 max-w-sm space-y-6">
                 {PERKS.map((p) => (
                   <li key={p.title} className="flex gap-4">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-leaf/15 text-ng-leaf ring-1 ring-ng-leaf/30">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ng-cream text-ng-leaf ring-1 ring-ng-leaf/30">
                       <Icon name={p.icon} size={22} />
                     </div>
                     <div>

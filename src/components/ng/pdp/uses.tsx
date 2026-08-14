@@ -32,7 +32,7 @@ export function Uses({ intro, tips, icon = "leaf", image, theme }: UsesProps) {
               key={t.key}
               className="flex items-start gap-3 rounded-2xl border border-ng-line-soft bg-ng-paper p-4"
             >
-              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-forest">
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest">
                 <Icon name="chef-hat-bold" size={16} className="text-ng-leaf" />
               </span>
               <p className="text-[14px] leading-relaxed text-ng-ink">

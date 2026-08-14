@@ -46,7 +46,7 @@ export function OrderSummary() {
       <div className="overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-paper shadow-[var(--shadow-ng-float)]">
         {/* Header band */}
         <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-forest-deep px-6 py-5 sm:px-7">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-leaf/20 text-ng-leaf">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-leaf">
             <Icon name="bag-check-bold" size={18} />
           </span>
           <h2 className="font-display text-[20px] text-ng-cream">Order summary</h2>
@@ -223,7 +223,7 @@ export function OrderSummary() {
               },
             ].map((r) => (
               <li key={r.label} className="flex flex-col items-center gap-1.5">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-sage/40 text-ng-forest">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-forest">
                   <Icon name={r.icon} size={16} />
                 </span>
                 <span className="text-[11px] leading-tight text-ng-ink-muted">{r.label}</span>

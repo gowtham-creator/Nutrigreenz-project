@@ -68,7 +68,7 @@ export default function WholesalePage() {
         <div className="grid md:grid-cols-3 gap-5">
           {USE_CASES.map((u, i) => (
             <Reveal key={u.title} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="h-12 w-12 rounded-xl bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+              <div className="h-12 w-12 rounded-xl bg-ng-cream inline-flex items-center justify-center text-ng-forest-deep">
                 <Icon name={u.icon} size={24} />
               </div>
               <h3 className="mt-5 font-display text-[20px] text-ng-forest-deep leading-snug">{u.title}</h3>

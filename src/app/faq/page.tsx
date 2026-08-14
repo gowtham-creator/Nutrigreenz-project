@@ -179,7 +179,7 @@ export default function FaqPage() {
               <Reveal key={g.title} as="section" y={16}>
                 <div id={slug(g.title)} className="scroll-mt-28">
                   <h2 className="flex items-center gap-3 font-display text-[clamp(22px,3vw,30px)] text-ng-forest-deep tracking-tight">
-                    <span className="h-9 w-9 rounded-lg bg-ng-sage/50 inline-flex items-center justify-center text-ng-forest-deep">
+                    <span className="h-9 w-9 rounded-lg bg-ng-cream inline-flex items-center justify-center text-ng-forest-deep">
                       <Icon name={g.icon} size={19} />
                     </span>
                     {g.title}

@@ -204,7 +204,7 @@ export function RewardsPanel({
   return (
     <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">
       <div className="mb-5 flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-clay/25 text-ng-clay-deep">
+        <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-cream text-ng-clay-deep">
           <Icon name="ticket-bold" size={20} />
         </span>
         <div className="flex flex-col">
@@ -388,7 +388,7 @@ export function RewardsPanel({
           )}
         >
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-clay/30 text-ng-forest-deep">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
               <Icon name="medal-ribbon-star-bold" size={20} />
             </span>
             <div>

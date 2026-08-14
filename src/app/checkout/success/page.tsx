@@ -92,7 +92,7 @@ function SuccessContent() {
             </h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div className="flex gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-forest-deep">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                   <Icon name="clock-circle-bold" size={18} />
                 </span>
                 <div>
@@ -105,7 +105,7 @@ function SuccessContent() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-sage/50 text-ng-forest-deep">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                   <Icon name="map-point-bold" size={18} />
                 </span>
                 <div>

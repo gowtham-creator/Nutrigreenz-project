@@ -148,7 +148,7 @@ export default function AccountPage() {
         <Reveal as="section">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
                 <Icon name="box-bold" size={16} />
               </span>
               <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Recent orders</h2>
@@ -227,7 +227,7 @@ export default function AccountPage() {
         {/* Subscriptions */}
         <Reveal as="section">
           <div className="mb-5 flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-sage/60 text-ng-forest-deep">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
               <Icon name="refresh-bold" size={16} />
             </span>
             <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>

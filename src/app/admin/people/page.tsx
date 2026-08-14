@@ -26,7 +26,7 @@ export default function AdminPeople() {
       {/* Customers — the deduped canonical directory, on its own page. */}
       <Card title="Customers" className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="size-12 rounded-2xl bg-ng-sage/50 flex items-center justify-center shrink-0">
+          <div className="size-12 rounded-2xl bg-ng-cream flex items-center justify-center shrink-0">
             <Icon name="user-circle-bold" size={24} className="text-ng-forest" />
           </div>
           <div className="min-w-0 flex-1">
