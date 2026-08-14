@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Icon } from "@/components/ui/icon";
-import { BrandIcon, type BrandIconName } from "@/components/ui/brand-icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
@@ -48,21 +48,21 @@ export default async function ShopPage() {
 
         {/* At-a-glance proof chips */}
         <dl className="mt-8 flex flex-wrap gap-2.5">
+          {/* Same marks as the trust band below, for the same reason: a licence
+              looks like a certificate and a lot code is scanned off a QR
+              square. The Lucide footprints that stood for "traceable" asked the
+              reader to decode "trail" first. */}
           {([
-            { icon: "star-bold", label: `${avgRating} avg rating` },
-            { app: "lab" as const, label: "Lab-tested every lot" },
-            { app: "traceable" as const, label: "Traceable to the farm" },
-            { app: "shipping" as const, label: "Free delivery over ₹599" },
-          ] as ({ label: string } & ({ app: BrandIconName } | { icon: string }))[]).map((s) => (
+            { icon: "star" as const, label: `${avgRating} avg rating` },
+            { icon: "flask" as const, label: "Lab-tested every lot" },
+            { icon: "qr" as const, label: "Traceable to the farm" },
+            { icon: "delivery" as const, label: "Free delivery over ₹599" },
+          ] as { label: string; icon: UiIconName }[]).map((s) => (
             <div
               key={s.label}
               className="inline-flex items-center gap-2 rounded-full border border-ng-line-soft bg-ng-paper/70 px-3.5 py-1.5 text-[12px] font-medium text-ng-forest backdrop-blur-sm"
             >
-              {"app" in s ? (
-                <BrandIcon name={s.app} size={14} weight="solid" className="text-ng-clay" />
-              ) : (
-                <Icon name={s.icon} size={14} className="text-ng-clay" />
-              )}
+              <UiIcon name={s.icon} size={15} className="text-ng-clay-deep" />
               {s.label}
             </div>
           ))}

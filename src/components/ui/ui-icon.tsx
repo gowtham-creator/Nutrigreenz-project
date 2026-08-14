@@ -34,6 +34,8 @@ const UI_ICONS = {
   flask: "flask",
   qr: "qr",
   delivery: "delivery",
+  /* The shop hero's rating chip. */
+  star: "star",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;
