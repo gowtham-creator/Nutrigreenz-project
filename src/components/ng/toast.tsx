@@ -109,7 +109,15 @@ function Body({
         aria-hidden
         className={cn("mt-px grid size-8 shrink-0 place-items-center rounded-full", t.glyphBg, t.glyph)}
       >
-        <Icon name={t.icon} size={17} className={spinning ? "animate-spin" : undefined} />
+        {/* The tone map holds Solar names for most states and a UiIcon name for
+            the warning. Rendering everything through <Icon> meant "caution"
+            resolved to no Solar glyph at all and the warn toast showed an empty
+            disc. Pick the family by the name. */}
+        {t.icon === "caution" ? (
+          <UiIcon name="caution" size={17} />
+        ) : (
+          <Icon name={t.icon} size={17} className={spinning ? "animate-spin" : undefined} />
+        )}
       </span>
 
       <div className="min-w-0 flex-1 pt-0.5">

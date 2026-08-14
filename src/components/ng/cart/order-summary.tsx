@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
-import { UiIcon } from "@/components/ui/ui-icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { MagneticHover } from "@/components/ng/motion";
 import { useCart } from "@/lib/cart";
 import { useCommerceRules } from "@/lib/commerce";
@@ -65,12 +65,12 @@ export function OrderSummary() {
           >
             {qualifiesFreeDelivery ? (
               <div className="flex items-center gap-2 text-[14px] font-semibold text-ng-forest-deep">
-                <Icon name="delivery-bold" size={18} className="text-ng-leaf" />
+                <UiIcon name="delivery" size={18} className="text-ng-forest-deep" />
                 You&apos;ve unlocked free delivery
               </div>
             ) : (
               <div className="flex items-center gap-2 text-[14px] font-medium text-ng-forest-deep">
-                <Icon name="delivery-linear" size={18} className="text-ng-clay-deep" />
+                <UiIcon name="delivery" size={18} className="text-ng-forest-deep" />
                 <span>
                   Add{" "}
                   <span className="font-mono font-semibold tabular-nums">
@@ -215,17 +215,17 @@ export function OrderSummary() {
 
           {/* Reassurance row */}
           <ul className="mt-5 grid grid-cols-3 gap-2 border-t border-ng-line-soft pt-5 text-center">
-            {[
-              { icon: "lock" as const, label: "Secure payment" },
-              { icon: "qr" as const, label: "Lot-traceable" },
+            {([
+              { icon: "lock", label: "Secure payment" },
+              { icon: "qr", label: "Lot-traceable" },
               {
-                icon: "delivery-bold",
+                icon: "delivery",
                 label: `Free over ₹${freeDeliveryThreshold.toLocaleString("en-IN")}`,
               },
-            ].map((r) => (
+            ] as { icon: UiIconName; label: string }[]).map((r) => (
               <li key={r.label} className="flex flex-col items-center gap-1.5">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-forest">
-                  <Icon name={r.icon} size={16} />
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
+                  <UiIcon name={r.icon} size={16} />
                 </span>
                 <span className="text-[11px] leading-tight text-ng-ink-muted">{r.label}</span>
               </li>

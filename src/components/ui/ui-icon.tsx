@@ -50,6 +50,8 @@ const UI_ICONS = {
   lock: "lock",
   /* The "!" warning mark, everywhere a caution is raised. */
   caution: "caution",
+  /* Pack size — the unit line on a product card and the cart line item. */
+  weight: "weight",
 } as const;
 
 export type UiIconName = keyof typeof UI_ICONS;

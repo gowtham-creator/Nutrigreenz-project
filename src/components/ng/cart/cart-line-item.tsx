@@ -47,8 +47,18 @@ export function CartLineItem({ item }: { item: CartItem }) {
               {item.title}
             </Link>
             {item.unit ? (
-              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-ng-sage/40 px-2 py-0.5 text-[11px] font-medium text-ng-forest">
-                <UiIcon name="leaf" size={12} className="text-ng-ink-muted" />
+              /*
+                A pack size, so it takes the weight mark — a leaf said "natural",
+                which every line in this cart already is, and said nothing about
+                the 100g the line is actually stating.
+
+                The pill was sage/40 behind ng-forest text with a muted icon:
+                three low-contrast values stacked, and at 11px the icon had all
+                but disappeared into its own background. Cream ground, ink text
+                and ink mark now, with a hairline to hold the shape.
+              */
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-ng-cream px-2.5 py-1 text-[11px] font-medium text-ng-forest-deep ring-1 ring-ng-line-soft">
+                <UiIcon name="weight" size={12} className="text-ng-forest-deep" />
                 {item.unit}
               </p>
             ) : null}

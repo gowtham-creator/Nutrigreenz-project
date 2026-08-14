@@ -19,7 +19,7 @@ export function NoCancellationNotice({ className }: { className?: string }) {
       <UiIcon
         name="caution"
         size={20}
-        className="mt-0.5 shrink-0 text-ng-amber"
+        className="mt-0.5 shrink-0 text-ng-clay-deep"
       />
       <div>
         <p className="font-display text-[15px] text-ng-forest-deep">

@@ -172,7 +172,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         </Link>
         {product.unit ? (
           <p className="-mt-1 inline-flex items-center gap-1 font-mono text-[11px] tracking-tight text-ng-ink-soft">
-            <UiIcon name="leaf" size={12} className="text-ng-ink-muted" />
+            <UiIcon name="weight" size={12} className="text-ng-ink-muted" />
             {product.unit}
           </p>
         ) : null}
