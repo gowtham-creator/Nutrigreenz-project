@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertCategory, deleteCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -33,6 +34,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   try {
     const category = await upsertCategory({ id, name, sort, icon, imageUrl });
+    revalidateStorefront();
     return Response.json({ ok: true, category });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -53,5 +55,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   const { id } = await ctx.params;
   await deleteCategory(id);
+  revalidateStorefront();
   return Response.json({ ok: true });
 }

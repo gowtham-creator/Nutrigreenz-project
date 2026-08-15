@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listVariants, createVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** GET — list a product's variants (`?productId=`). */
 export async function GET(request: Request): Promise<Response> {
@@ -15,6 +16,7 @@ export async function GET(request: Request): Promise<Response> {
   if (!productId) return Response.json({ ok: false, error: "missing-product" }, { status: 400 });
 
   const variants = await listVariants(productId);
+  revalidateStorefront();
   return Response.json({ ok: true, variants });
 }
 
@@ -59,6 +61,7 @@ export async function POST(request: Request): Promise<Response> {
       sort: Math.round(Number(body.sort) || 0),
       imageUrl: body.imageUrl != null && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null,
     });
+    revalidateStorefront();
     return Response.json({ ok: true, variant });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

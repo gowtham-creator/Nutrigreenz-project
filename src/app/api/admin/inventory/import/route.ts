@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { importProductsCsv, type ProductCsvRow } from "@/lib/catalog";
 import { parseCsv } from "@/lib/csv";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** A single previewed row plus any validation note. */
 interface PreviewRow extends ProductCsvRow {
@@ -97,6 +98,7 @@ export async function POST(request: Request): Promise<Response> {
   const valid = preview.filter((r) => r.valid);
 
   if (!body.commit) {
+    revalidateStorefront();
     return Response.json({
       ok: true,
       committed: false,
@@ -118,5 +120,6 @@ export async function POST(request: Request): Promise<Response> {
       description: r.description,
     })),
   );
+  revalidateStorefront();
   return Response.json({ ok: true, committed: true, ...result });
 }

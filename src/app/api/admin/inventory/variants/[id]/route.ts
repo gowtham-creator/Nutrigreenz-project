@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateVariant, deleteVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -42,6 +43,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   try {
     const variant = await updateVariant(id, patch);
     if (!variant) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+    revalidateStorefront();
     return Response.json({ ok: true, variant });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -60,5 +62,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
   await deleteVariant(id);
+  revalidateStorefront();
   return Response.json({ ok: true });
 }

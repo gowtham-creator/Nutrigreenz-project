@@ -2,6 +2,7 @@ import { isSignedInAdmin } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { setVariantStock } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,5 +27,6 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
 
   const variant = await setVariantStock(id, stock, reserved);
   if (!variant) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  revalidateStorefront();
   return Response.json({ ok: true, variant });
 }

@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, updateProduct, deleteProduct, type ProductStatus } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,7 @@ export async function GET(_request: Request, ctx: Ctx): Promise<Response> {
   const { id } = await ctx.params;
   const product = await getProduct(id);
   if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  revalidateStorefront();
   return Response.json({ ok: true, product });
 }
 
@@ -62,6 +64,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   try {
     const product = await updateProduct(id, patch);
     if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+    revalidateStorefront();
     return Response.json({ ok: true, product });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -80,5 +83,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
   await deleteProduct(id);
+  revalidateStorefront();
   return Response.json({ ok: true });
 }

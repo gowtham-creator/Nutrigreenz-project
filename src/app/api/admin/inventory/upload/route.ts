@@ -14,6 +14,7 @@ import { isSignedInAdmin } from "../guard";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import sharp from "sharp";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 export const runtime = "nodejs";
 
@@ -120,5 +121,6 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(key);
+  revalidateStorefront();
   return Response.json({ ok: true, url: data.publicUrl });
 }

@@ -2,6 +2,7 @@ import { isSignedInAdmin } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { setStock, adjustStock } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,6 +27,7 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
 
   const product = await setStock(id, stock, reserved);
   if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  revalidateStorefront();
   return Response.json({ ok: true, product });
 }
 
@@ -49,5 +51,6 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   const product = await adjustStock(id, delta);
   if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  revalidateStorefront();
   return Response.json({ ok: true, product });
 }

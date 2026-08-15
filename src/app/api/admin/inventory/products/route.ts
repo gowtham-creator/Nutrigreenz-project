@@ -8,6 +8,7 @@ import {
   type ProductFilter,
 } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 const STATUSES: readonly ProductStatus[] = ["active", "draft", "archived"];
 
@@ -22,6 +23,7 @@ export async function GET(request: Request): Promise<Response> {
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
+    revalidateStorefront();
     return Response.json({ ok: true, products: [], total: 0, page: 1, pageSize: 50 });
   }
 
@@ -61,6 +63,8 @@ export async function GET(request: Request): Promise<Response> {
       variantStock: stock,
     };
   });
+
+  revalidateStorefront();
 
   return Response.json({ ok: true, ...result, products });
 }
@@ -104,6 +108,7 @@ export async function POST(request: Request): Promise<Response> {
       status: asStatus(body.status) ?? "active",
       stock,
     });
+    revalidateStorefront();
     return Response.json({ ok: true, product });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

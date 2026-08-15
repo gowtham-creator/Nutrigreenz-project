@@ -2,6 +2,7 @@ import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** GET — list all categories. */
 export async function GET(): Promise<Response> {
@@ -10,6 +11,7 @@ export async function GET(): Promise<Response> {
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: true, categories: [] });
   const categories = await listCategories();
+  revalidateStorefront();
   return Response.json({ ok: true, categories });
 }
 
@@ -40,6 +42,7 @@ export async function POST(request: Request): Promise<Response> {
   const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : undefined;
   try {
     const category = await upsertCategory({ name, sort, icon, imageUrl });
+    revalidateStorefront();
     return Response.json({ ok: true, category });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";
