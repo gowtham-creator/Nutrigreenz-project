@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto_Slab, Lora, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { VisitBeacon } from "@/components/ng/visit-beacon";
@@ -12,20 +12,35 @@ import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { AddressProvider } from "@/lib/addresses";
 
-const robotoSlab = Roboto_Slab({
-  variable: "--font-roboto-slab",
+/*
+ * Display + serif — Fraunces.
+ *
+ * Replaces Roboto Slab, which was the brand voice on every heading of the site
+ * and was the wrong face for it twice over. Roboto Slab is a slab serif built
+ * for screen UI legibility at small sizes: even stroke weight, blunt
+ * rectangular serifs, no modulation. Set at 40–58px on a hero it has nothing to
+ * say — it reads as a system font enlarged, which is what "template" looks
+ * like. It is also the one family a premium type brief rules out on sight.
+ *
+ * Fraunces is a variable old-style serif with real stroke contrast and an
+ * optical-size axis, so a 12px eyebrow and a 58px hero are drawn as genuinely
+ * different cuts rather than one outline scaled. That is the whole difference
+ * between type that was chosen and type that was picked. It is also the
+ * register premium food brands actually use — warm, slightly bookish,
+ * hand-made rather than corporate, which is the claim this catalogue makes.
+ *
+ * `--font-lora` resolves here too, so the wordmark and pull-quotes follow the
+ * same voice and one webfont family leaves the bundle entirely: four families
+ * become three.
+ */
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const lora = Lora({
-  variable: "--font-lora",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  axes: ["SOFT", "WONK", "opsz"],
   style: ["normal", "italic"],
   display: "swap",
 });
+
 
 // Body sans — Hanken Grotesk: a sturdier, warmer humanist grotesque that reads
 // more solid than the previous geometric sans and pairs with the slab-serif
@@ -56,7 +71,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${robotoSlab.variable} ${lora.variable} ${hanken.variable} ${jetbrains.variable}`}
+      className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
         <AuthProvider>

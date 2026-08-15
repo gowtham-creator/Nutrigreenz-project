@@ -7,8 +7,8 @@
 @theme inline {
   /* Fonts */
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
-  --font-serif: var(--font-lora), Lora, Georgia, serif;
+  --font-display: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-serif: var(--font-fraunces), "Fraunces", Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Nutrigreenz palette — exposed to Tailwind as ng-* utility colors */
@@ -16,6 +16,9 @@
   --color-ng-forest-deep: var(--ng-forest-deep);
   --color-ng-forest-soft: var(--ng-forest-soft);
   --color-ng-leaf: var(--ng-leaf);
+  --color-ng-leaf-ink: var(--ng-leaf-ink);
+  --color-ng-leaf-light: var(--ng-leaf-light);
+  --color-ng-sage-ink: var(--ng-sage-ink);
   --color-ng-leaf-soft: var(--ng-leaf-soft);
   --color-ng-sage: var(--ng-sage);
   --color-ng-cream: var(--ng-cream);
@@ -52,15 +55,37 @@
   /* Font stacks — declared on :root (not only in @theme inline) so the
      base-layer var(--font-*) references resolve to the next/font families. */
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-roboto-slab), "Roboto Slab", Georgia, serif;
-  --font-serif: var(--font-lora), Lora, Georgia, serif;
+  --font-display: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-serif: var(--font-fraunces), "Fraunces", Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Nutri Greenz brand — Figma source-of-truth palette */
   --ng-forest: #14331F;          /* primary dark green */
   --ng-forest-deep: #0A1F12;     /* darkest */
   --ng-forest-soft: #1F4D2E;     /* medium green */
-  --ng-leaf: #66BF73;            /* primary accent green */
+  --ng-leaf: #66BF73;            /* primary accent green — DECORATIVE (2.0:1 on cream) */
+
+  /*
+   * ── Ink and light grades ──────────────────────────────────────────────
+   *
+   * Audited across the palette: of seven accents, exactly ONE (--ng-forest)
+   * could carry text on the cream and paper that make up most of the product.
+   * leaf was 2.01:1 on cream, sage 1.59, amber 1.93, clay 2.91 — and clay
+   * failed on the dark surfaces too, at 4.21:1 on forest. So the brand's own
+   * accent colours could not be used for a label, a chart bar or an icon
+   * anywhere, which is why every one of those had to be quietly swapped for
+   * forest-deep as it came up.
+   *
+   * The fix is not a different mid-tone; a single value cannot clear 4.5:1
+   * against both #FAFAF5 and #0A1F12. Each hue gets a pair instead:
+   *   *-ink   → for light surfaces (cream, paper)  — AA at body size
+   *   *-light → for dark surfaces (forest, deep)   — AA at body size
+   * The mid-tone stays exactly as it is, for fills and decoration, where it
+   * was always the right value.
+   */
+  --ng-leaf-ink:   #2A7134;      /* 5.32:1 cream · 5.71:1 paper */
+  --ng-leaf-light: #9BD9A4;      /* 8.44:1 forest · 10.56:1 deep */
+  --ng-sage-ink:   #55705A;      /* 4.84:1 cream · 5.21:1 paper */
   --ng-leaf-soft: #B2C7B2;       /* pale sage-green */
   --ng-sage: #B2C7B2;            /* soft sage */
   --ng-green-bright: #4CAF50;    /* bright / success green */

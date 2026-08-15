@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
+import { AdminStagger, AdminStaggerItem } from "@/components/ng/admin/admin-motion";
 import { Icon } from "@/components/ui/icon";
 import { BellIcon } from "@/components/ui/bell-icon";
 import { DonutChart, HBars, Pipeline, type VizTone } from "@/components/ng/admin/viz";
@@ -229,28 +230,38 @@ export default function AdminOverview() {
       ) : null}
 
       {/* ── KPI tiles (shared StatTile primitive) ────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <StatTile
-          label="Revenue"
-          value={report ? rupees(report.revenuePaise) : "—"}
-          delta={report ? `${rupees(report.paidRevenuePaise)} settled` : undefined}
-        />
-        <StatTile
-          label="Orders"
-          value={report ? orderCount.toLocaleString("en-IN") : "—"}
-          delta={report ? `${paidOrders.toLocaleString("en-IN")} paid` : undefined}
-        />
-        <StatTile
-          label="Avg order value"
-          value={report ? rupees(report.aovPaise) : "—"}
-          delta={report ? `${report.unitsSold.toLocaleString("en-IN")} units sold` : undefined}
-        />
-        <StatTile
-          label="New customers"
-          value={report ? report.newCustomers.toLocaleString("en-IN") : "—"}
-          delta="in this period"
-        />
-      </div>
+      {/* Staggered so the eye is led across the row in reading order rather
+          than four tiles landing at once. Entry only — see AdminStagger. */}
+      <AdminStagger className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <AdminStaggerItem>
+          <StatTile
+            label="Revenue"
+            value={report ? rupees(report.revenuePaise) : "—"}
+            delta={report ? `${rupees(report.paidRevenuePaise)} settled` : undefined}
+          />
+        </AdminStaggerItem>
+        <AdminStaggerItem>
+          <StatTile
+            label="Orders"
+            value={report ? orderCount.toLocaleString("en-IN") : "—"}
+            delta={report ? `${paidOrders.toLocaleString("en-IN")} paid` : undefined}
+          />
+        </AdminStaggerItem>
+        <AdminStaggerItem>
+          <StatTile
+            label="Avg order value"
+            value={report ? rupees(report.aovPaise) : "—"}
+            delta={report ? `${report.unitsSold.toLocaleString("en-IN")} units sold` : undefined}
+          />
+        </AdminStaggerItem>
+        <AdminStaggerItem>
+          <StatTile
+            label="New customers"
+            value={report ? report.newCustomers.toLocaleString("en-IN") : "—"}
+            delta="in this period"
+          />
+        </AdminStaggerItem>
+      </AdminStagger>
 
       {/* ── pipeline + payment mix ───────────────────────────────────────── */}
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 mb-6">

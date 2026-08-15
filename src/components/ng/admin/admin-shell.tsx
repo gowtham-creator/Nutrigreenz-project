@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "../logo";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon, UI_ICON_NAMES, type UiIconName } from "@/components/ui/ui-icon";
+import { CountUp } from "@/components/ng/admin/count-up";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
@@ -449,8 +450,11 @@ export function StatTile({
         </div>
         {/* tabular-nums so a column of tiles keeps its digits on a shared grid
             and the numbers stop shifting as they update. */}
+        {/* Tweened, so a figure that changes under a live refresh is SEEN to
+            change. The dashboards poll and update in place without a loading
+            state — motion is the only signal left that a number moved. */}
         <div className="mt-3 font-display text-[36px] leading-[0.95] tracking-[-0.02em] tabular-nums text-ng-forest-deep">
-          {value}
+          <CountUp value={value} />
         </div>
         {delta ? (
           <div className={cn("mt-auto pt-3 text-[12px] font-semibold tabular-nums", trendColor)}>
