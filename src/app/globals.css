@@ -536,6 +536,67 @@
   --ng-ink-muted: #3C4A40;   /* secondary text — strong (~8.7:1 on paper) */
   --ng-ink-soft: #5A6358;    /* tertiary / meta — clearly readable (~6.3:1) */
   --ng-line: #DEDED4;        /* slightly firmer borders for data tables */
+
+  /* ── Operator surface palette ──────────────────────────────────────────
+     The console had exactly two surfaces: `--ng-cream` behind everything and
+     `--ng-paper` for every card, separated by a 1px border doing all the work
+     of telling them apart. Flat, and it meant a card inside a card inside a
+     table had no way to read as nested.
+
+     Three tones instead, each a real step apart, so depth comes from the
+     surfaces themselves and a border becomes a refinement rather than the only
+     signal:
+       ground — the desk the cards sit on
+       shell  — the outer tray of a nested card (see .ng-surface)
+       core   — the face of the card itself                                  */
+  --ng-admin-ground: #EFEBDC;
+  --ng-admin-shell:  #E2DCC7;
+  --ng-admin-core:   #FCFBF6;
+
+  /* Ambient, not directional. A dark offset drop shadow under a cream card
+     reads as grime; these are wide, low-opacity and tinted with the forest ink
+     already in the palette, so a card looks lifted rather than dirty. */
+  --shadow-admin-rest:  0 1px 1px rgba(20,51,31,.03), 0 4px 12px rgba(20,51,31,.045);
+  --shadow-admin-lift:  0 2px 4px rgba(20,51,31,.04), 0 14px 32px rgba(20,51,31,.09);
+}
+
+/* ── The nested surface ("double bezel") ─────────────────────────────────
+   An outer tray holding an inner face, with the inner radius computed from the
+   outer so the curves stay concentric — the detail that separates a machined
+   object from two rounded rectangles that happen to be near each other.
+
+   The inner highlight is a 1px inset white line along the top edge only. On a
+   warm ground that reads as light catching a raised edge; a full inset ring
+   would read as a second border.                                            */
+.ng-surface {
+  background: var(--ng-admin-shell);
+  border-radius: 1.25rem;
+  padding: 0.3125rem;
+  /* A hairline on the tray itself. Without it the shell reads as a shadow
+     artefact rather than a deliberate second surface, because a 5px band of a
+     near-neighbour tone is easy to mistake for a soft edge. */
+  box-shadow:
+    inset 0 0 0 1px rgba(20,51,31,.07),
+    var(--shadow-admin-rest);
+  transition: box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.ng-surface > .ng-surface-core {
+  background: var(--ng-admin-core);
+  /* outer radius − padding, so the curves are concentric */
+  border-radius: calc(1.25rem - 0.3125rem);
+  /* A hairline to seat the face in the tray, plus a highlight along the top
+     edge only — light catching a raised lip. A full ring would read as a
+     second border. */
+  box-shadow:
+    0 0 0 1px rgba(20,51,31,.05),
+    inset 0 1px 0 rgba(255,255,255,.95);
+  height: 100%;
+}
+/* Interactive cards only. A static panel that lifts on hover is noise. */
+.ng-surface-interactive:hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(20,51,31,.07),
+    var(--shadow-admin-lift);
 }
 /* Tighter, denser eyebrows inside admin (the wide 0.18em reads loose at
    the small sizes used on dashboards). */

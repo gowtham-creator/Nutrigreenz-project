@@ -338,7 +338,7 @@ export function AdminShell({
   );
 
   return (
-    <div className="min-h-screen bg-ng-cream text-ng-ink flex">
+    <div className="flex min-h-screen bg-[var(--ng-admin-ground)] text-ng-ink">
       {/* Sidebar — sticky rail on lg+, hidden below (opens as a drawer instead) */}
       <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-ng-forest-deep text-ng-cream/80 sticky top-0 h-screen overflow-y-auto">
         <SidebarContent navItems={navItems} isSuper={isSuper} active={active} />
@@ -376,7 +376,7 @@ export function AdminShell({
 
       {/* Main */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 bg-ng-cream/85 backdrop-blur border-b border-ng-line-soft">
+        <header className="sticky top-0 z-10 border-b border-ng-line-soft/70 bg-[color-mix(in_srgb,var(--ng-admin-ground)_86%,transparent)] backdrop-blur-xl">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             {/* Row 1 — heading (left) + operator identity, which is always pinned
                 to the top-right corner instead of being lumped in with the page
@@ -392,8 +392,8 @@ export function AdminShell({
                   <Icon name="hamburger-menu-bold" size={22} />
                 </button>
                 <div className="min-w-0">
-                  <h1 className="font-display text-[24px] text-ng-forest-deep leading-tight tracking-[-0.01em]">{title}</h1>
-                  {subtitle ? <p className="font-sans text-[13px] font-medium text-ng-ink-soft mt-1.5">{subtitle}</p> : null}
+                  <h1 className="font-display text-[25px] leading-[1.15] tracking-[-0.02em] text-ng-forest-deep">{title}</h1>
+                  {subtitle ? <p className="mt-1.5 font-sans text-[13px] font-medium leading-snug text-ng-ink-soft">{subtitle}</p> : null}
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3">
@@ -439,14 +439,25 @@ export function StatTile({
     trend === "up" ? "text-ng-success" : trend === "down" ? "text-ng-terracotta" : "text-ng-ink-soft";
   const trendArrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
   return (
-    <div className="flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">{label}</div>
-      <div className="font-display text-[34px] text-ng-forest-deep leading-none mt-3">{value}</div>
-      {delta ? (
-        <div className={cn("text-[12px] mt-auto pt-3 font-semibold", trendColor)}>
-          {trendArrow} {delta}
+    <div className="ng-surface h-full">
+      <div className="ng-surface-core flex h-full flex-col p-5">
+        {/* Label sits QUIETER than before and the number louder. A KPI tile has
+            one job — the figure — and the old 11px label at the same ink weight
+            as the value made the eye choose between them. */}
+        <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ng-ink-soft">
+          {label}
         </div>
-      ) : null}
+        {/* tabular-nums so a column of tiles keeps its digits on a shared grid
+            and the numbers stop shifting as they update. */}
+        <div className="mt-3 font-display text-[36px] leading-[0.95] tracking-[-0.02em] tabular-nums text-ng-forest-deep">
+          {value}
+        </div>
+        {delta ? (
+          <div className={cn("mt-auto pt-3 text-[12px] font-semibold tabular-nums", trendColor)}>
+            {trendArrow} {delta}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -462,28 +473,53 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
-  // Edge-to-edge cards opt out of the section's own padding via `!p-0` so their
+  // Edge-to-edge cards opt out of the card's inner padding via `!p-0` so their
   // table rows can run flush to the rounded border (each row supplies its own
   // px-*). In that case the title header must carry its OWN px/pt so the first
   // letter is never clipped by `overflow-hidden`, and the children must stay
-  // unpadded. Plain cards keep their original `p-6` look — the header sits flush
-  // inside that padding (no extra px/pt), so nothing double-pads.
+  // unpadded. Plain cards keep their `p-6` look.
   const edgeToEdge = /(^|\s)!p-0(\s|$)/.test(className ?? "");
+  /*
+   * The class list is split between the two surfaces.
+   *
+   * `className` used to land on a single element that was both the card's
+   * outer edge and its inner padding box. Now those are two elements, and the
+   * distinction matters: a caller passing `mb-6` means "space below this card",
+   * which belongs on the outer shell, while one passing `py-16` (an empty
+   * state) or `!p-0` (a flush table) means "space around my content", which
+   * belongs on the inner face.
+   *
+   * Sending everything to the shell would inflate the bezel itself — a 64px
+   * tray around a 6px face — so padding and text-alignment are routed inward
+   * and everything else stays out.
+   */
+  const parts = (className ?? "").split(/\s+/).filter(Boolean);
+  const toCore = (c: string) => /^!?(p|px|py|pt|pb|pl|pr)-/.test(c) || /^text-(center|left|right)$/.test(c);
+  const shellClass = parts.filter((c) => !toCore(c)).join(" ");
+  const coreClass = parts.filter(toCore).join(" ");
   const hasHeader = Boolean(title || action);
   return (
-    <section className={cn("flex flex-col h-full rounded-2xl bg-ng-paper border border-ng-line-soft p-6", className)}>
-      {hasHeader && (
-        <header
-          className={cn(
-            "flex items-center justify-between gap-4 mb-5",
-            edgeToEdge && "px-6 pt-6",
-          )}
-        >
-          {title ? <h2 className="font-display text-[18px] text-ng-forest-deep">{title}</h2> : <span />}
-          {action}
-        </header>
-      )}
-      {children}
+    <section className={cn("ng-surface h-full", shellClass)}>
+      <div className={cn("ng-surface-core flex h-full flex-col", edgeToEdge ? "overflow-hidden" : "p-6", coreClass)}>
+        {hasHeader && (
+          <header
+            className={cn(
+              "flex items-center justify-between gap-4 mb-5",
+              edgeToEdge && "px-6 pt-6",
+            )}
+          >
+            {title ? (
+              <h2 className="font-display text-[18px] tracking-[-0.01em] text-ng-forest-deep">
+                {title}
+              </h2>
+            ) : (
+              <span />
+            )}
+            {action}
+          </header>
+        )}
+        {children}
+      </div>
     </section>
   );
 }
