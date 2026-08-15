@@ -120,7 +120,7 @@ function AdminIdentity() {
         aria-expanded={open}
         className="flex items-center gap-2.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-ng-line-soft transition-colors cursor-pointer"
       >
-        <span className="size-9 rounded-full overflow-hidden bg-ng-forest-deep text-ng-cream flex items-center justify-center font-display text-[14px]">
+        <span className="size-9 rounded-full overflow-hidden bg-[var(--ng-chrome-deep)] text-ng-cream flex items-center justify-center font-display text-[14px]">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -181,13 +181,28 @@ function AdminIdentity() {
             <UiIcon name="customer" size={16} className="text-ng-ink-muted" />
             Profile
           </Link>
-          <Link
+          {/*
+            Opens in a new tab, like every other admin console.
+
+            An operator clicks this to CHECK something — how a price reads,
+            whether a product went live — and then carries on working. Same-tab
+            navigation threw away the queue, the filters and the scroll position
+            to answer a five-second question, and made the click feel dead while
+            the storefront's first paint arrived.
+
+            A plain <a> rather than <Link>: this leaves the admin entirely, so
+            there is no client-side route to prefetch or transition, and Link
+            would only add work for a navigation the browser handles natively.
+          */}
+          <a
             href="/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-sans font-medium text-ng-ink hover:bg-ng-line-soft transition-colors"
           >
             <BrandIcon name="store" weight="solid" size={16} className="text-ng-ink-muted" />
             View store
-          </Link>
+          </a>
           <button
             type="button"
             role="menuitem"
@@ -222,9 +237,22 @@ function SidebarContent({
   return (
     <>
       <div className="p-6">
-        <Link href="/" onClick={onNavigate} className="flex items-center gap-2.5 mb-1">
-          <Logo variant="mark" tone="white" className="h-9" />
-          <span className="font-display text-[17px] text-ng-cream">Nutri Greenz</span>
+        {/*
+          The real horizontal lockup, not the mark beside re-typed text.
+
+          This previously set "Nutri Greenz" in the display face next to the
+          mark, which is not the wordmark: the actual one is all caps, drawn
+          with its own letterforms, and carries the "Born in Soil, built for
+          tomorrow" line. Setting a brand name in whatever serif is to hand
+          produces something that reads as the logo at a glance and is wrong on
+          inspection — the one place that is least acceptable is the operator's
+          own console, which is where staff learn what the mark looks like.
+
+          Width-constrained rather than height-constrained so the lockup fits
+          the 240px rail with its padding at any height the asset happens to be.
+        */}
+        <Link href="/" onClick={onNavigate} className="mb-1 block">
+          <Logo variant="full" tone="white" className="h-auto w-[168px]" />
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
@@ -258,8 +286,8 @@ function SidebarContent({
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans font-semibold text-[13.5px] tracking-[0.01em] transition-colors mb-0.5",
                 isActive
-                  ? "bg-ng-cream/12 text-ng-cream"
-                  : "text-ng-cream/80 hover:bg-ng-cream/5 hover:text-ng-cream",
+                  ? "bg-[var(--rail-active)] text-[var(--rail-ink)]"
+                  : "text-[var(--rail-ink-dim)] hover:bg-[var(--rail-hover)] hover:text-[var(--rail-ink)]",
               )}
             >
               {/* The nav mixes Solar names with the supplied Icons8 marks, so
@@ -342,7 +370,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-[var(--ng-admin-ground)] text-ng-ink">
       {/* Sidebar — sticky rail on lg+, hidden below (opens as a drawer instead) */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-ng-forest-deep text-ng-cream/80 sticky top-0 h-screen overflow-y-auto">
+      <aside className="ng-rail hidden lg:flex flex-col w-60 shrink-0 bg-[var(--ng-chrome-deep)] text-[var(--rail-ink-dim)] sticky top-0 h-screen overflow-y-auto">
         <SidebarContent navItems={navItems} isSuper={isSuper} active={active} />
       </aside>
 
@@ -353,9 +381,9 @@ export function AdminShell({
             type="button"
             aria-label="Close menu"
             onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 bg-ng-forest-deep/40 backdrop-blur-sm cursor-pointer"
+            className="absolute inset-0 bg-[color-mix(in_srgb,var(--ng-chrome-deep)_55%,transparent)] backdrop-blur-sm cursor-pointer"
           />
-          <aside className="absolute inset-y-0 left-0 flex flex-col w-60 max-w-[82vw] bg-ng-forest-deep text-ng-cream/80 overflow-y-auto shadow-[0_0_48px_rgba(0,0,0,0.35)]">
+          <aside className="ng-rail absolute inset-y-0 left-0 flex flex-col w-60 max-w-[82vw] bg-[var(--ng-chrome-deep)] text-[var(--rail-ink-dim)] overflow-y-auto shadow-[0_0_48px_rgba(0,0,0,0.35)]">
             <div className="flex justify-end px-3 pt-3">
               <button
                 type="button"

@@ -155,6 +155,21 @@
    */
   --ng-control-edge: #6E7D71;
 
+  /*
+   * Chrome that stays dark in BOTH themes: the admin sidebar, the drawer, the
+   * identity avatar, modal scrims.
+   *
+   * `--ng-forest-deep` cannot serve here. It is inverted to a light value in
+   * dark mode so that the 494 `text-ng-forest-deep` headings stay legible —
+   * which also flipped every BACKGROUND painted with it. The sidebar turned
+   * into a cream panel floating in a dark console, with the cream knockout logo
+   * nearly invisible on top of it.
+   *
+   * Splitting the roles is the fix: one token for ink that must invert, one
+   * for surfaces that must not.
+   */
+  --ng-chrome-deep: #14331F;
+
   /* Shadcn-bridged base tokens */
   --background: var(--ng-paper);
   --foreground: var(--ng-ink);
@@ -707,6 +722,9 @@
   --ng-on-forest:   #0F241A;     /* 11.77:1 */
   --ng-on-ink:      #0F241A;     /*  8.25:1 */
   --ng-control-edge: #6B7E6F;    /* 3.80:1 on the dark shell */
+  /* Deeper than the console ground (#0E1A12) so the rail still reads as a
+     distinct plane rather than merging into the page. */
+  --ng-chrome-deep: #0A140E;
 
   --ng-forest:      #D3DED2;
   --ng-forest-soft: #9BD9A4;
@@ -726,6 +744,46 @@
 }
 
 /* The inner highlight is a WHITE lip on cream and would glare on dark. */
+/*
+ * The sidebar rail opts OUT of the dark inversion.
+ *
+ * The rail is dark green in the light theme and stays dark in the dark theme —
+ * it is brand chrome, not a reading surface, and a cream panel floating beside
+ * a dark console looked like a rendering fault.
+ *
+ * Because it does not flip, neither may its ink. `--ng-cream` is inverted to
+ * #16241A globally so that `bg-ng-cream` panels darken; the rail paints its
+ * LABELS with the same token, so the nav dropped to 1.16:1 — present, unreadable.
+ *
+ * Restoring the light values on this scope fixes every descendant at once:
+ * `text-ng-cream`, `bg-ng-cream/12` and the rest keep resolving exactly as they
+ * do in the light theme, with no component needing to know a theme exists.
+ */
+.ng-rail {
+  --ng-cream: #F5F2E0;
+  --ng-cream-deep: #ECE7D2;
+  --ng-forest-deep: #0A1F12;
+  --ng-line-soft: rgba(245, 242, 224, 0.14);
+
+  /*
+   * The rail names its own ink instead of using `text-ng-cream/80`.
+   *
+   * Tailwind's opacity modifier compiles to a color-mix against the THEME
+   * token, which is inverted to #16241A in dark. The plain utility resolved
+   * correctly against the overrides above, but the /80 form did not, leaving
+   * the inactive nav labels at 1.09:1 while the active one sat at 16.67:1 --
+   * the failure looked like a hover bug rather than a colour bug.
+   *
+   * Declared unconditionally, not only in dark, because these are the values
+   * the light theme already produced: the rail is dark in BOTH themes, so its
+   * ink never had a reason to vary.
+   */
+  --rail-ink: #F5F2E0;
+  --rail-ink-dim: rgba(245, 242, 224, 0.82);
+  --rail-hover: rgba(245, 242, 224, 0.06);
+  --rail-active: rgba(245, 242, 224, 0.13);
+}
+
 .ng-admin[data-theme="dark"] .ng-surface > .ng-surface-core {
   box-shadow:
     0 0 0 1px rgba(255,255,255,.06),
