@@ -211,8 +211,12 @@ function ConfigContent() {
       {/* Distinguished command-center hero with live KPI strip. */}
       <CommandCenterHero operator={operator} kpis={kpis} />
 
-      {/* Sticky in-page section nav. */}
-      <div className="sticky top-[68px] z-[1] bg-ng-cream/85 backdrop-blur -mx-8 px-8 py-3 mb-7 border-b border-ng-line-soft">
+      {/* Sticky in-page section nav.
+
+          The full-bleed negative margin tracks the main container's padding,
+          which steps 4 -> 6 -> 8. A flat -mx-8 overhangs by 8px on tablet and
+          scrolls the whole console sideways. */}
+      <div className="sticky top-[68px] z-[1] bg-ng-cream/85 backdrop-blur -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-3 mb-7 border-b border-ng-line-soft">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] uppercase tracking-[0.14em] text-ng-ink-muted font-mono font-semibold mr-1 hidden sm:inline">
             Jump to

@@ -4,6 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * `ng-dark:` — a custom variant for the admin's scoped dark theme.
+ *
+ * Tailwind's built-in `dark:` keys on a class or media query at the document
+ * root. This theme is scoped to `.ng-admin[data-theme="dark"]` on purpose (the
+ * storefront never goes dark), so the built-in variant cannot express it. This
+ * one can, and reads the same at a call site.
+ */
+@custom-variant ng-dark (&:where(.ng-admin[data-theme="dark"] *));
+
+
 @theme inline {
   /* Fonts */
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
@@ -110,6 +121,39 @@
   --ng-danger: #C74D33;          /* error */
   --ng-success: #4CAF50;         /* success */
   --ng-blue: #2962A3;            /* info */
+
+  /*
+   * Readable ink for text sitting ON a chart tone.
+   *
+   * The pipeline bars and other filled shapes used a hardcoded `text-white`,
+   * which only ever worked on the dark tones: the count on an amber bar
+   * measured 2.17:1 and on a light-green one 2.27:1, and in dark mode the
+   * "Delivered" bar reached 1.39:1 — white on near-white.
+   *
+   * Each tone therefore names its own foreground, chosen as the better of
+   * white and #0F241A. Every pairing clears 4.5:1. They are variables rather
+   * than a lookup table in TS because two of them have to change when the
+   * console goes dark (forest and ink invert), and the palette is the right
+   * place for that to happen.
+   */
+  --ng-on-forest:     #FFFFFF;   /* 13.79:1 */
+  --ng-on-leaf:       #0F241A;   /*  7.20:1 */
+  --ng-on-clay:       #0F241A;   /*  4.98:1 */
+  --ng-on-terracotta: #FFFFFF;   /*  4.63:1 */
+  --ng-on-blue:       #FFFFFF;   /*  6.23:1 */
+  --ng-on-amber:      #0F241A;   /*  7.51:1 */
+  --ng-on-ink:        #FFFFFF;   /*  9.35:1 */
+
+  /*
+   * Edge for a standalone icon control (the theme toggle).
+   *
+   * WCAG 1.4.11 asks for 3:1 between a UI component's boundary and its
+   * background. The toggle inherited the decorative hairline used on cards,
+   * which measures 1.13:1 against the console ground — technically present,
+   * effectively invisible, and the reason the control could not be found. This
+   * one measures 3.64:1 while still reading as a hairline rather than a box.
+   */
+  --ng-control-edge: #6E7D71;
 
   /* Shadcn-bridged base tokens */
   --background: var(--ng-paper);
@@ -618,6 +662,81 @@
   height: 100%;
 }
 /* Interactive cards only. A static panel that lifts on hover is noise. */
+/* ----------------------------------------------------------------
+   Admin dark theme.
+
+   Scoped to `.ng-admin[data-theme="dark"]`, so it applies to the operator
+   console ONLY. The storefront stays cream in both themes on purpose: that is
+   brand surface, photographed against a warm ground, and a dark storefront
+   would be a different product. The console is a tool, and a tool should suit
+   the room it is used in — several operators work evenings.
+
+   Not an inversion. The surfaces keep the forest hue rather than going neutral
+   grey, so the console still reads as the same product, and every pair below is
+   measured rather than eyeballed: body ink 12.66:1 on the card face, muted
+   7.60:1, tertiary 5.20:1, and each status pill above 7.7:1.
+   ---------------------------------------------------------------- */
+.ng-admin[data-theme="dark"] {
+  /* Surfaces: same ground → shell → core relationship as the light set. */
+  --ng-admin-ground: #0E1A12;
+  --ng-admin-shell:  #152218;
+  --ng-admin-core:   #1B2A1F;
+
+  /* Card interiors that reference the storefront tokens directly. */
+  --ng-paper:      #1B2A1F;
+  --ng-cream:      #16241A;
+  --ng-cream-deep: #101C14;
+  --ng-white:      #1B2A1F;
+
+  /* Ink inverts; the ramp keeps its three steps. */
+  --ng-ink:        #E8EDE6;
+  --ng-ink-muted:  #AEBCB0;
+  --ng-ink-soft:   #8C9C90;
+
+  /* Borders lighten INTO the surface rather than darkening away from it —
+     a darker line on a dark ground is invisible. */
+  --ng-line:       #2C3B31;
+  --ng-line-soft:  #24302A;
+
+  /* Headings sat on `--ng-forest-deep`, which is now near the background.
+     Point the forest tokens at legible tints so `text-ng-forest-deep`
+     keeps working at every existing call site without touching one of them. */
+  --ng-forest-deep: #E8EDE6;
+  /* Forest and ink invert in dark, so their on-colours invert with them; the
+     other five tones keep the same value in both themes. */
+  --ng-on-forest:   #0F241A;     /* 11.77:1 */
+  --ng-on-ink:      #0F241A;     /*  8.25:1 */
+  --ng-control-edge: #6B7E6F;    /* 3.80:1 on the dark shell */
+
+  --ng-forest:      #D3DED2;
+  --ng-forest-soft: #9BD9A4;
+
+  /* Accents already have light grades from the palette work; reuse them so
+     `text-ng-clay`/`text-ng-leaf` stay readable without per-site overrides. */
+  --ng-clay:  #D8AE5E;
+  --ng-leaf:  #9BD9A4;
+  --ng-sage:  #3A4A3E;
+
+  /* Shadow is how a light surface reads as lifted. On a dark one it does
+     nothing — the lift has to come from the surface being LIGHTER than its
+     ground, so the drop is reduced to a contact edge and a top highlight
+     carries the rest. */
+  --shadow-admin-rest: 0 1px 2px rgba(0,0,0,.35);
+  --shadow-admin-lift: 0 4px 18px rgba(0,0,0,.45);
+}
+
+/* The inner highlight is a WHITE lip on cream and would glare on dark. */
+.ng-admin[data-theme="dark"] .ng-surface > .ng-surface-core {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+.ng-admin[data-theme="dark"] .ng-surface {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.05),
+    var(--shadow-admin-rest);
+}
+
 .ng-surface-interactive:hover {
   box-shadow:
     inset 0 0 0 1px rgba(20,51,31,.07),

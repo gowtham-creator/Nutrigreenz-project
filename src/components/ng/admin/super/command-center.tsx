@@ -71,9 +71,13 @@ export function CommandCenterHero({
   kpis: Kpi[];
 }) {
   return (
-    // Break out of <main>'s px-8 so the band reads as a full-width header,
+    // Break out of <main>'s padding so the band reads as a full-width header,
     // then re-pad inside. Forest→deep gradient with a faint gold top hairline.
-    <header className="-mx-8 -mt-8 mb-7">
+    //
+    // The horizontal bleed tracks that padding, which steps 4 -> 6 -> 8; a flat
+    // -mx-8 overhangs by 8px on tablet and scrolls the console sideways. The
+    // vertical one does not step, because `main` keeps py-8 at every width.
+    <header className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-7">
       <div className="relative overflow-hidden bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep text-ng-cream">
         {/* Single gold top hairline (the one permitted gold accent besides the
             crown); the depth glow is neutral cream so gold stays rare. */}

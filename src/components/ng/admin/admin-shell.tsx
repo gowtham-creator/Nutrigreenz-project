@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionCountdown } from "@/components/ng/admin/session-timer";
+import { AnimatedThemeToggle } from "@/components/ui/animated-theme-toggle";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { fetchAdminMe } from "@/lib/admin-me-client";
@@ -397,9 +398,12 @@ export function AdminShell({
                   {subtitle ? <p className="mt-1.5 font-sans text-[13px] font-medium leading-snug text-ng-ink-soft">{subtitle}</p> : null}
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
-                {/* Left of the identity: the live session countdown. */}
-                <SessionCountdown className="hidden sm:inline-flex" />
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                {/* Left of the identity: the live session countdown. Hidden on
+                    phones, where the header has room for the identity and one
+                    control and the clock is the more sacrificial of the two. */}
+                <SessionCountdown className="hidden md:inline-flex" />
+                <AnimatedThemeToggle />
                 <AdminIdentity />
               </div>
             </div>
@@ -503,8 +507,23 @@ export function Card({
   const coreClass = parts.filter(toCore).join(" ");
   const hasHeader = Boolean(title || action);
   return (
-    <section className={cn("ng-surface h-full", shellClass)}>
-      <div className={cn("ng-surface-core flex h-full flex-col", edgeToEdge ? "overflow-hidden" : "p-6", coreClass)}>
+    /*
+     * `min-w-0` on both surfaces, and it is load-bearing rather than tidy.
+     *
+     * A grid or flex item defaults to `min-width: auto`, meaning it refuses to
+     * shrink below its content's intrinsic minimum. Several cards wrap a wide
+     * table in `overflow-x-auto` around a `min-w-[720px]` rail — the scroller
+     * is meant to absorb that width. It cannot: the 720px floor propagates up
+     * through the card and forces the whole grid column open, so at tablet
+     * widths the console itself scrolled sideways instead of the table.
+     *
+     * `min-w-0` removes that floor, which is what lets the inner scroller do
+     * the job it was added for. It belongs on the component rather than on each
+     * call site because it is true of every card: a card should never push its
+     * container wider than the container is.
+     */
+    <section className={cn("ng-surface h-full min-w-0", shellClass)}>
+      <div className={cn("ng-surface-core flex h-full min-w-0 flex-col", edgeToEdge ? "overflow-hidden" : "p-6", coreClass)}>
         {hasHeader && (
           <header
             className={cn(
@@ -556,16 +575,28 @@ export function Pill({
   tone?: "neutral" | "success" | "warn" | "danger" | "info" | "progress" | "transit";
   children: ReactNode;
 }) {
+  /*
+   * Each tone carries a dark counterpart, because the light pills are pale
+   * grounds with dark ink — on a dark console those invert into seven glowing
+   * lozenges, the brightest thing on the screen, for information that is not
+   * the most important thing on it. The dark set keeps the same hue and the
+   * same relationship (tinted ground, legible ink of the same family) with the
+   * values swapped: deep ground, light ink. Every pair measured above 7.7:1.
+   *
+   * Written as `dark:` variants rather than CSS variables so both palettes stay
+   * visible in one place; a reader comparing "what is placed in light vs dark"
+   * should not have to open another file.
+   */
   const map: Record<string, string> = {
-    neutral: "bg-[#EDEDE6] text-[#4A5249]",
-    success: "bg-[#D9EFD9] text-[#1B5E20]",
-    warn: "bg-[#FDF0D5] text-[#8A6420]",
-    danger: "bg-[#FBE0DB] text-[#9B2C15]",
-    info: "bg-[#DCE8F5] text-[#1F4E85]",
+    neutral: "bg-[#EDEDE6] text-[#4A5249] ng-dark:bg-[#232821] ng-dark:text-[#B4BDB2]",
+    success: "bg-[#D9EFD9] text-[#1B5E20] ng-dark:bg-[#13301A] ng-dark:text-[#9BD9A4]",
+    warn: "bg-[#FDF0D5] text-[#8A6420] ng-dark:bg-[#3A2E12] ng-dark:text-[#F0D091]",
+    danger: "bg-[#FBE0DB] text-[#9B2C15] ng-dark:bg-[#3A1810] ng-dark:text-[#F0A48D]",
+    info: "bg-[#DCE8F5] text-[#1F4E85] ng-dark:bg-[#16283F] ng-dark:text-[#A8CBF0]",
     /* Packed — between acknowledged and moving. */
-    progress: "bg-[#E7E2F3] text-[#4A3B7A]",
+    progress: "bg-[#E7E2F3] text-[#4A3B7A] ng-dark:bg-[#241E3A] ng-dark:text-[#C3B8EC]",
     /* Shipped — on its way, not yet arrived. */
-    transit: "bg-[#D7EDE8] text-[#1C5F52]",
+    transit: "bg-[#D7EDE8] text-[#1C5F52] ng-dark:bg-[#0F2E28] ng-dark:text-[#8FD9C8]",
   };
   return (
     <span className={cn("inline-block px-2.5 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold", map[tone])}>

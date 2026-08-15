@@ -24,6 +24,23 @@ import { cn } from "@/lib/utils";
 /** Palette tokens usable as SVG stroke/fill via CSS custom props. */
 export type VizTone = "forest" | "leaf" | "clay" | "terracotta" | "blue" | "amber" | "ink";
 
+/**
+ * Ink to use for text drawn ON a filled tone.
+ *
+ * Not a constant: each tone names a variable whose value flips with the admin
+ * theme, because forest and ink invert when the console goes dark. See the
+ * `--ng-on-*` block in globals.css for the measured contrast of each pairing.
+ */
+const TONE_ON: Record<VizTone, string> = {
+  forest: "var(--ng-on-forest)",
+  leaf: "var(--ng-on-leaf)",
+  clay: "var(--ng-on-clay)",
+  terracotta: "var(--ng-on-terracotta)",
+  blue: "var(--ng-on-blue)",
+  amber: "var(--ng-on-amber)",
+  ink: "var(--ng-on-ink)",
+};
+
 const TONE_STROKE: Record<VizTone, string> = {
   forest: "var(--ng-forest)",
   leaf: "var(--ng-leaf)",
@@ -505,7 +522,19 @@ export function DonutChart({
   }, []);
 
   return (
-    <div className={cn("flex items-center gap-6", className)}>
+    /*
+     * Wraps rather than squeezes.
+     *
+     * The ring is `shrink-0` at a fixed size, so in a narrow card the legend was
+     * the only thing left to give: it collapsed to 18px and its counts spilled
+     * out past the card and widened the whole console at tablet widths.
+     *
+     * `flex-wrap` plus a 180px basis on the list means the legend drops BELOW
+     * the ring once it cannot hold its own width, which is the layout it wants
+     * anyway in a narrow column. No breakpoint is involved, so it responds to
+     * the space the card actually has rather than to the size of the window.
+     */
+    <div className={cn("flex flex-wrap items-center gap-6", className)}>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ng-line-soft)" strokeWidth={thickness} />
@@ -545,7 +574,7 @@ export function DonutChart({
           </div>
         )}
       </div>
-      <ul className="min-w-0 space-y-1.5">
+      <ul className="min-w-0 flex-1 basis-[180px] space-y-1.5">
         {segments.map((s, i) => {
           const empty = s.value === 0;
           return (
@@ -569,9 +598,14 @@ export function DonutChart({
                   opacity: empty ? 0.35 : 1,
                 }}
               />
+              {/* `min-w-0` is what makes the neighbouring `truncate` work at
+                  all. A flex item will not shrink below its content's intrinsic
+                  width by default, so the label kept its full length, pushed the
+                  count and percentage past the card, and widened the console
+                  instead of ellipsing. */}
               <span
                 className={cn(
-                  "truncate font-medium",
+                  "min-w-0 truncate font-medium",
                   empty ? "text-ng-ink-soft" : "text-ng-ink-muted",
                 )}
               >
@@ -723,7 +757,14 @@ export function Pipeline({
                 className="h-full rounded-lg flex items-center justify-end pr-2.5 transition-all"
                 style={{ width: `${Math.max(8, pct)}%`, background: TONE_STROKE[s.tone] }}
               >
-                <span className="font-mono text-[11.5px] font-bold text-white tabular-nums">{s.value}</span>
+                <span
+                  className="font-mono text-[11.5px] font-bold tabular-nums"
+                  /* Was `text-white`, which failed on every light tone —
+                     2.17:1 on amber, and 1.39:1 on the pale bar in dark. */
+                  style={{ color: TONE_ON[s.tone] }}
+                >
+                  {s.value}
+                </span>
               </div>
             </div>
           </div>
