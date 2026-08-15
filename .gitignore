@@ -101,3 +101,6 @@ scripts/download-anveshan-assets.mjs
 *-tmp/
 .firecrawl/
 .gallery-cache/
+
+# Local caches from tooling (keyed by absolute mtime, machine-specific)
+graphify-out/
