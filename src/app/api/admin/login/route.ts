@@ -24,12 +24,11 @@ import {
   recordLoginFailure,
   recordLoginSuccess,
 } from "@/lib/admin-login-guard";
+import { isSuperAdminAddress, superAdminEmail } from "@/lib/admin-identity";
 
 /** Session lifetime: 12 hours (seconds). */
 // 30-min idle session, slid on activity via /api/admin/heartbeat.
 
-/** Default operator email if `ADMIN_EMAIL` is not configured. */
-const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.farm";
 
 const encoder = new TextEncoder();
 
@@ -120,7 +119,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   // --- Super Admin: existing ADMIN_* credentials (always available) ---
-  const superEmail = process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
+  const superEmail = superAdminEmail();
   const superPasscode = process.env.ADMIN_PASSCODE;
 
   // --- Staff Admin: optional STAFF_ADMIN_* credentials (both must be set) ---
@@ -132,7 +131,10 @@ export async function POST(request: Request): Promise<Response> {
 
   // Try super admin first. Guard on a configured passcode (fail closed).
   if (superPasscode) {
-    const emailOk = inputEmail === superEmail.trim().toLowerCase();
+    // Any accepted spelling signs in; the session below is issued under the
+    // canonical address, so the security row and the audit trail stay on one
+    // key regardless of which one was typed.
+    const emailOk = isSuperAdminAddress(inputEmail);
     const passOk = timingSafeEqual(passcode, superPasscode);
     if (emailOk && passOk) {
       normalizedEmail = superEmail;

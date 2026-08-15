@@ -10,6 +10,7 @@
  * in env, not a database. Unknown numbers fail closed (null).
  */
 import type { AdminRole } from "@/lib/admin-session";
+import { superAdminEmail } from "@/lib/admin-identity";
 
 /** Normalise to E.164-ish: keep a leading "+", strip every other non-digit. */
 export function normalizePhone(raw: string): string {
@@ -24,8 +25,6 @@ export function normalizePhone(raw: string): string {
  * not an authorised operator. Comparison is on the normalised form so
  * "+91 98765 43210" matches "+919876543210".
  */
-/** Default super-admin email — mirrors `/api/admin/login`. */
-const DEFAULT_ADMIN_EMAIL = "admin@nutrigreenz.farm";
 
 /**
  * Resolve a verified phone number to its operator identity (role + canonical
@@ -42,7 +41,7 @@ export function operatorForPhone(
 
   const superPhone = process.env.ADMIN_PHONE;
   if (superPhone && normalizePhone(superPhone) === p) {
-    return { role: "superadmin", email: process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL };
+    return { role: "superadmin", email: superAdminEmail() };
   }
 
   const staffPhone = process.env.STAFF_ADMIN_PHONE;

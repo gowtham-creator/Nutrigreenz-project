@@ -10,6 +10,7 @@ import "server-only";
 import { createHash, randomInt } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { isTotpConfigured } from "@/lib/totp";
+import { isSuperAdminAddress, superAdminAddresses } from "@/lib/admin-identity";
 
 export interface AdminFactors {
   emailOtp: boolean;
@@ -33,13 +34,40 @@ function norm(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/**
+ * Every address this lookup should try, most specific first.
+ *
+ * For the super admin the row may still be filed under a previous address: the
+ * table is keyed by email, and the identity was renamed. Falling back through
+ * the aliases is what keeps an enrolled authenticator working across that
+ * rename, instead of silently reporting "no factors" and dropping a live
+ * super-admin account to a single factor.
+ *
+ * Any other admin resolves to just their own address.
+ */
+function lookupAddresses(email: string): string[] {
+  const primary = norm(email);
+  if (!isSuperAdminAddress(primary)) return [primary];
+  return [primary, ...superAdminAddresses().filter((a) => a !== primary)];
+}
+
 /** Read an admin's saved factor settings, or all-disabled defaults. */
 export async function getAdminFactors(email: string): Promise<AdminFactors> {
-  const { data } = await supabaseAdmin()
-    .from("admin_security")
-    .select("email_otp_enabled, phone_otp_enabled, totp_enabled, otp_email, otp_phone")
-    .eq("email", norm(email))
-    .maybeSingle();
+  let data: {
+    email_otp_enabled?: unknown;
+    phone_otp_enabled?: unknown;
+    totp_enabled?: unknown;
+    otp_email?: string | null;
+    otp_phone?: string | null;
+  } | null = null;
+  for (const address of lookupAddresses(email)) {
+    const res = await supabaseAdmin()
+      .from("admin_security")
+      .select("email_otp_enabled, phone_otp_enabled, totp_enabled, otp_email, otp_phone")
+      .eq("email", address)
+      .maybeSingle();
+    if (res.data) { data = res.data; break; }
+  }
   if (!data) return { ...DEFAULT_FACTORS };
   return {
     emailOtp: Boolean(data.email_otp_enabled),
@@ -52,12 +80,18 @@ export async function getAdminFactors(email: string): Promise<AdminFactors> {
 
 /** Whether a settings row exists yet for this admin (drives back-compat). */
 export async function hasSecurityRow(email: string): Promise<boolean> {
-  const { data } = await supabaseAdmin()
-    .from("admin_security")
-    .select("email")
-    .eq("email", norm(email))
-    .maybeSingle();
-  return Boolean(data);
+  // Same alias fallback as `getAdminFactors`. This drives the enrol prompt, so
+  // reading only the canonical address would nag an operator who is already
+  // enrolled under a previous one.
+  for (const address of lookupAddresses(email)) {
+    const { data } = await supabaseAdmin()
+      .from("admin_security")
+      .select("email")
+      .eq("email", address)
+      .maybeSingle();
+    if (data) return true;
+  }
+  return false;
 }
 
 interface FactorPatch {
@@ -208,19 +242,28 @@ export async function getTotpEnrollment(email: string): Promise<TotpEnrollment> 
 
 /** The admin's OWN base32 TOTP secret, or null (used at login to verify). */
 export async function getTotpSecret(email: string): Promise<string | null> {
-  const { data } = await supabaseAdmin()
-    .from("admin_security")
-    .select("totp_secret")
-    .eq("email", norm(email))
-    .maybeSingle();
-  return (data?.totp_secret as string | null) ?? null;
+  // Alias fallback, as above. This one decides whether a code verifies at all,
+  // so missing a row filed under a previous address would lock the operator out
+  // of their own authenticator rather than merely under-reporting it.
+  for (const address of lookupAddresses(email)) {
+    const { data } = await supabaseAdmin()
+      .from("admin_security")
+      .select("totp_secret")
+      .eq("email", address)
+      .maybeSingle();
+    const secret = (data?.totp_secret as string | null) ?? null;
+    if (secret) return secret;
+  }
+  return null;
 }
 
 /** The env-configured super-admin owns the shared ADMIN_TOTP_SECRET; no other
  *  admin is gated/enrolled against it — they each get their own per-admin secret. */
 export function isEnvTotpAdmin(email: string): boolean {
-  const envAdmin = (process.env.ADMIN_EMAIL || "admin@nutrigreenz.farm").trim().toLowerCase();
-  return norm(email) === envAdmin;
+  // Matches on any accepted address, not just the canonical one: the shared
+  // secret belongs to the identity, and an operator who signed in through an
+  // alias is the same person holding the same authenticator.
+  return isSuperAdminAddress(email);
 }
 
 /** The secret to verify this admin's TOTP against at sign-in: their own enrolled

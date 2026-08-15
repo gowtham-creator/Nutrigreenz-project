@@ -12,6 +12,7 @@ import { getAdminByEmail } from "@/lib/admins";
 import { createAdminResetToken } from "@/lib/admin-password-reset";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { checkResetAllowed, recordResetRequest } from "@/lib/admin-login-guard";
+import { adminMailbox } from "@/lib/admin-identity";
 
 // supabase-admin + PBKDF2/HMAC via Web Crypto need the Node runtime.
 export const runtime = "nodejs";
@@ -89,12 +90,14 @@ export async function POST(request: Request): Promise<Response> {
           const link = `${SITE}/admin/reset?token=${encodeURIComponent(token)}`;
           if (isEmailConfigured()) {
             await sendEmail({
-              to: email,
+              // The token is minted for `email`; only the envelope is
+              // redirected, so the reset still resets the account that asked.
+              to: adminMailbox(email),
               subject: "Reset your Nutri Greenz admin password",
               html: resetEmailHtml(link),
             });
           } else {
-            console.info(`[admin/forgot] email not configured. Reset link for ${email}: ${link}`);
+            console.info(`[admin/forgot] email not configured. Reset link for ${email} (delivers to ${adminMailbox(email)}): ${link}`);
           }
         }
       }

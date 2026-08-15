@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-security";
 import { isTotpConfigured } from "@/lib/totp";
 import { isEmailConfigured } from "@/lib/email";
+import { adminMailbox } from "@/lib/admin-identity";
 
 /** Authenticate the request as a signed-in super-admin, or null. */
 async function requireSuperAdmin(): Promise<string | null> {
@@ -27,6 +28,17 @@ export async function GET(): Promise<Response> {
   // match real login behaviour: an env-configured authenticator gates sign-in
   // until the super-admin turns it off (which then writes a row, below).
   if (!(await hasSecurityRow(email)) && isTotpConfigured()) factors.totp = true;
+
+  /*
+   * Report where a code would ACTUALLY land, not where the account lives.
+   *
+   * While the domain has no mailbox, super-admin codes are redirected to a
+   * working address. The console used to name the account address, which would
+   * have left the operator watching an inbox that can never receive anything
+   * and concluding the feature was broken. This is the one place the
+   * redirection has to be visible.
+   */
+  factors.otpEmail = factors.otpEmail || adminMailbox(email);
   const enrollment = await getTotpEnrollment(email);
   return Response.json({
     ok: true,
@@ -109,7 +121,12 @@ export async function PUT(request: Request): Promise<Response> {
     // has no mailbox behind it and codes were deliberately pointed elsewhere.
     if (body.emailOtp && typeof body.otpEmail !== "string") {
       const current = await getAdminFactors(email);
-      if (!current.otpEmail) patch.otpEmail = email;
+      // Seed the DELIVERABLE address, not the account address. Storing the
+      // latter would write `cubixso@nutrigreenz.farm` — which has no mailbox —
+      // as an explicit destination, and an explicit destination outranks the
+      // override at send time. Turning the factor on would then switch off the
+      // only thing making its codes arrive.
+      if (!current.otpEmail) patch.otpEmail = adminMailbox(email);
     }
   }
 
@@ -159,5 +176,7 @@ export async function PUT(request: Request): Promise<Response> {
     }
     throw err;
   }
-  return Response.json({ ok: true, factors: await getAdminFactors(email) });
+  const saved = await getAdminFactors(email);
+  saved.otpEmail = saved.otpEmail || adminMailbox(email);
+  return Response.json({ ok: true, factors: saved });
 }
