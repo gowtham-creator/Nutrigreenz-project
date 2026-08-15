@@ -134,8 +134,8 @@ export default function SitemapPage() {
           <ul className="mt-4 grid md:grid-cols-2 gap-3 text-[14px] text-ng-ink-muted">
             <li>• Customer storefront is rendered statically via Next.js App Router + ISR for product pages.</li>
             <li>• Admin portal lives behind RBAC; only ops + finance + content roles can sign in.</li>
-            <li>• Captain PWA is installable on Android — used by 12 pickup staff across the south.</li>
-            <li>• Community bundle is gated by member code — co-located households unlock 12-15% off list.</li>
+            <li>• Captain PWA is installable on Android. Used by 12 pickup staff across the south.</li>
+            <li>• Community bundle is gated by member code. Co-located households unlock 12-15% off list.</li>
           </ul>
         </div>
       </Section>

@@ -165,7 +165,7 @@ export default function CaptainIntake() {
         </div>
         <p className="text-[12px] leading-snug text-ng-ink-muted">
           On online signup, this mobile{" "}
-          <span className="font-semibold text-ng-forest-deep">auto-links &amp; imports</span> stall purchases — marking
+          <span className="font-semibold text-ng-forest-deep">auto-links &amp; imports</span> stall purchases. Marking
           the customer “Onboarded”.
         </p>
       </div>

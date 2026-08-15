@@ -723,7 +723,7 @@ export default function AdminAuditPage() {
 
         <p className="mt-5 flex items-center gap-1.5 border-t border-ng-line-soft pt-4 text-[11.5px] font-medium text-ng-ink-soft">
           <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-          Live trail — refreshes automatically every 20 seconds and when you return to this tab.
+          Live trail. Refreshes automatically every 20 seconds and when you return to this tab.
         </p>
       </Card>
     </AdminShell>

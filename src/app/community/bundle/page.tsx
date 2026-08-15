@@ -83,8 +83,8 @@ export default function CommunityBundleIndex() {
             </p>
             <ul className="mt-5 space-y-2.5 text-[13px] text-ng-ink-muted">
               <li className="flex gap-2"><span className="text-ng-forest">✓</span>10% commission on every pod cycle</li>
-              <li className="flex gap-2"><span className="text-ng-forest">✓</span>PWA tool — manage from your phone</li>
-              <li className="flex gap-2"><span className="text-ng-forest">✓</span>No upfront cost — we deliver inventory</li>
+              <li className="flex gap-2"><span className="text-ng-forest">✓</span>PWA tool. Manage from your phone</li>
+              <li className="flex gap-2"><span className="text-ng-forest">✓</span>No upfront cost, we deliver inventory</li>
               <li className="flex gap-2"><span className="text-ng-forest">✓</span>Train 1-on-1 with our community lead</li>
             </ul>
             <Link href="/auth?role=captain" className="block mt-6 text-center rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-6 py-3 text-[14px] hover:bg-ng-forest transition-colors">

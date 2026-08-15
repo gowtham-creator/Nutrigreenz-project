@@ -117,7 +117,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         <p className="flex items-start gap-1.5 text-[11.5px] font-medium text-ng-ink-soft max-w-xl">
           <Icon name="info-circle-bold" size={14} className="text-ng-clay-deep mt-px" />
           <span>
-            Informational only — no re-pricing or auto-merging. The client decides individual vs bundled packing;
+            Informational only. No re-pricing or auto-merging. The client decides individual vs bundled packing;
             each order keeps its own value &amp; status.
           </span>
         </p>

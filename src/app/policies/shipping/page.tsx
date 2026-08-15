@@ -28,7 +28,7 @@ export default function ShippingPolicyPage() {
               <p>
                 Enter your pincode in the location bar at the top of the site to confirm we serve
                 your area. If we don&rsquo;t reach you yet, leave your pincode and we&rsquo;ll notify
-                you the day we go live there — we expand neighbourhood by neighbourhood so the
+                you the day we go live there. We expand neighbourhood by neighbourhood so the
                 cold-chain stays short.
               </p>
             </>
@@ -62,7 +62,7 @@ export default function ShippingPolicyPage() {
             <>
               <p>
                 <strong>Delivery is free on every order of ₹599 or more.</strong> Below that, a flat
-                delivery fee is shown transparently at checkout before you pay — never a surprise on
+                delivery fee is shown transparently at checkout before you pay. Never a surprise on
                 the doorstep.
               </p>
               <p>

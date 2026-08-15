@@ -582,7 +582,7 @@ export function AdminsManagement() {
 
       <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
         <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-        Passwords are stored hashed — a reset reveals the new one only once, so copy it before dismissing.
+        Passwords are stored hashed. A reset reveals the new one only once, so copy it before dismissing.
       </p>
 
       {open ? <AddInviteAdminModal onClose={() => setOpen(false)} onInvite={handleInvite} /> : null}

@@ -57,7 +57,7 @@ export default function AttributionsPage() {
                 (CC BY 4.0).
               </p>
               <p>
-                We use them as published — the shapes are unaltered. They are recoloured to match
+                We use them as published. The shapes are unaltered. They are recoloured to match
                 this site&rsquo;s palette and rendered at various sizes, and only the icons this site
                 actually uses are bundled rather than the full set.
               </p>
@@ -120,7 +120,7 @@ export default function AttributionsPage() {
               </p>
               <p>
                 The public-domain dedication covers the drawings, not the brands. Each mark remains
-                the trade mark of its owner — Visa, Mastercard, UPI, PhonePe, Paytm and the rest — and
+                the trade mark of its owner. Visa, Mastercard, UPI, PhonePe, Paytm and the rest, and
                 is shown here only to indicate which payment methods we accept and where you can find
                 us. It does not imply any endorsement of Nutri Greenz by those companies.
               </p>

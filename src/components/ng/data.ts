@@ -26,16 +26,17 @@ import type {
  * number sitting in a constant is a number that goes stale the first time
  * somebody publishes a product.
  *
- * `rice` ships one product that is still a draft, so /shop/rice is currently
- * empty. It is listed because the range is announced and the product is
- * imminent — but that is exactly why the sitemap no longer reads this array: a
- * category we want in the navigation is not automatically one we want indexed.
+ * `rice` is deliberately absent. It exists in the database, but its only
+ * product is still a draft, and `getStorefrontCatalog` returns only categories
+ * with at least one ACTIVE product, so /shop/rice calls notFound(). Listing it
+ * anywhere advertises a guaranteed 404. It returns the moment Sona Masoori is
+ * published, with no code change: this array is the offline sample, and the
+ * live catalogue drives the real navigation.
  */
 export const CATEGORIES: Category[] = [
   { id: "oils", slug: "oils", title: "Cold-Pressed Oils", icon: "oil", productCount: 6 },
   { id: "honey", slug: "honey", title: "Honey", icon: "honey", productCount: 4 },
   { id: "ghee", slug: "ghee", title: "Ghee", icon: "ghee", productCount: 4 },
-  { id: "rice", slug: "rice", title: "Rice", icon: "grain", productCount: 0 },
 ];
 
 export const PRODUCTS: ProductCard[] = [

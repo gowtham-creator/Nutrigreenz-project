@@ -187,7 +187,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2.5 rounded-2xl border border-ng-line bg-ng-cream/60 px-4 py-3.5 text-[14px] font-medium text-ng-ink">
             <Icon name="bag-cross-bold" size={20} className="shrink-0 text-ng-clay" />
-            Currently sold out — we&apos;re restocking from the farm soon.
+            Currently sold out. We&apos;re restocking from the farm soon.
           </div>
           <Button disabled size="lg" fullWidth>
             <BrandIcon name="cart" size={18} weight="solid" />

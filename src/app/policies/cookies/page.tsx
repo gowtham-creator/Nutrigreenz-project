@@ -57,8 +57,8 @@ export default function CookiePolicyPage() {
             <>
               <p>
                 You can clear or block cookies and local storage from your browser settings at any
-                time. Note that disabling essential storage will stop core features — such as staying
-                signed in or keeping items in your cart — from working.
+                time. Note that disabling essential storage will stop core features. Such as staying
+                signed in or keeping items in your cart, from working.
               </p>
               <p>
                 For how this fits into the wider picture of the data we hold, see our{" "}

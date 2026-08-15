@@ -13,7 +13,20 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, hint, error, prefix, suffix, id, ...rest }, ref) => {
-    const inputId = id ?? React.useId();
+    /*
+     * `React.useId()` is called UNCONDITIONALLY.
+     *
+     * This was `id ?? React.useId()`, which short-circuits: the hook only ran
+     * when no `id` was passed. Any component that renders an Input sometimes
+     * with an id and sometimes without changes its hook order between renders,
+     * and React throws "rendered fewer hooks than expected" and unmounts the
+     * tree. Checkout, auth and the admin forms all use this component.
+     *
+     * The generated id is discarded when a caller supplies one. A wasted string
+     * is the entire cost of not crashing.
+     */
+    const generatedId = React.useId();
+    const inputId = id ?? generatedId;
     return (
       <div className="flex flex-col gap-1.5">
         {label ? (

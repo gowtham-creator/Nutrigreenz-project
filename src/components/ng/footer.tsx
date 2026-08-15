@@ -18,10 +18,6 @@ const NAV_GROUPS = [
       { label: "Cold-Pressed Oils", href: "/shop/oils" },
       { label: "Ghee", href: "/shop/ghee" },
       { label: "Honey", href: "/shop/honey" },
-      /* Rice's only product is still a draft, so this lands on an empty
-         category until it is published. Listed anyway, deliberately — the range
-         is announced. It is kept out of the sitemap for the same reason. */
-      { label: "Rice", href: "/shop/rice" },
     ],
   },
   {

@@ -205,7 +205,7 @@ function AuthScreen() {
             {!configured ? (
               <p className="mt-5 text-center text-[12px] leading-relaxed text-ng-ink-soft">
                 <Icon name="info-circle-linear" size={13} className="mr-1 -mt-0.5" />
-                Demo mode — add Firebase keys to <code className="text-ng-forest">.env.local</code> to enable live OTP &amp; Google sign-in.
+                Demo mode. Add Firebase keys to <code className="text-ng-forest">.env.local</code> to enable live OTP &amp; Google sign-in.
               </p>
             ) : (
               <p className="mt-5 text-center text-[12px] leading-relaxed text-ng-ink-soft">

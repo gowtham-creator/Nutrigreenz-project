@@ -90,7 +90,7 @@ export default function PressPage() {
           <p>
             <strong className="text-ng-ink font-semibold">Nutri Greenz</strong> is a farm-to-table
             food brand based in Hyderabad. Since 2019 it has sourced directly from a network of 42
-            partner farms and co-operatives across five Indian states — cold-pressed oils, A2 ghee, raw
+            partner farms and co-operatives across five Indian states. Cold-pressed oils, A2 ghee, raw
             honey, millets, stone-ground flours and seasonal produce.
           </p>
           <p>
