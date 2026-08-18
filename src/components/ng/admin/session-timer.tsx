@@ -170,6 +170,80 @@ function pad(n: number): string {
 }
 
 /**
+ * A live analog clock face showing the time REMAINING, not the time of day.
+ *
+ * Beside a countdown, the wall clock would be the less useful of the two
+ * readings — the operator can see the wall clock on their own machine. What
+ * they cannot see at a glance is how much session is left, so the hands encode
+ * that: the short hand carries minutes over a 60-minute face, the long hand
+ * carries seconds. Both wind anticlockwise back to twelve as the session
+ * drains, and both stand straight up at 00:00.
+ *
+ * The long hand moves every second, which is the point — a static clock glyph
+ * beside a changing number reads as decoration, and this one is the reason you
+ * can tell at a glance that the session is still being counted.
+ *
+ * Drawn rather than taken from the icon set because no icon set ships a clock
+ * whose hands you can drive. `currentColor` throughout, so it turns terracotta
+ * with the rest of the pill when the session is nearly out.
+ */
+function ClockFace({ mins, secs }: { mins: number; secs: number }) {
+  /*
+   * One hand, not two — and that is the whole design.
+   *
+   * The obvious build is an hour hand and a minute hand. At 13px it fails: any
+   * two strokes drawn from a shared centre line up roughly opposite twice an
+   * hour, and two opposed strokes through a circle read as ⊖ or ⊘ — a minus
+   * sign, or the universal "prohibited" mark. Beside a session timer that says
+   * precisely the wrong thing, and no amount of length or weight difference
+   * fixes it, because the failure is geometric rather than visual. Both were
+   * built and compared at size before this was settled.
+   *
+   * So the minutes move to the RIM as a depleting arc, and only the seconds
+   * hand is drawn. Nothing can ever form a bar, the glyph reads as a clock at
+   * every value, and the arc says something the digits do not: how much of the
+   * session is gone, without having to know how long it started at.
+   */
+  const secondAngle = (secs / 60) * 360;
+
+  const R = 8.4;
+  const CIRC = 2 * Math.PI * R;
+  // Fraction of the current hour still to run. Wraps with the minutes so a
+  // longer session simply starts the rim full again rather than overflowing.
+  const remaining = ((mins % 60) * 60 + secs) / 3600;
+
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="shrink-0"
+      aria-hidden
+    >
+      {/* The dial: a full ring at low opacity, so the glyph still reads as a
+          clock once the arc above it has drained away to nothing. */}
+      <circle cx="12" cy="12" r={R} stroke="currentColor" strokeWidth="1.6" opacity="0.3" />
+      {/* Minutes, as a rim arc that empties clockwise from twelve. */}
+      <circle
+        cx="12" cy="12" r={R}
+        stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
+        strokeDasharray={CIRC}
+        strokeDashoffset={CIRC * (1 - remaining)}
+        transform="rotate(-90 12 12)"
+      />
+      {/* Seconds — the part that visibly ticks. */}
+      <line
+        x1="12" y1="12" x2="12" y2="6.9"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+        transform={`rotate(${secondAngle} 12 12)`}
+      />
+      <circle cx="12" cy="12" r="1.05" fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
  * The countdown itself, for the portal header.
  *
  * Renders nothing until there is a real deadline to show, so it never displays
@@ -198,7 +272,16 @@ export function SessionCountdown({ className }: { className?: string }) {
          and `aria-live` is deliberately absent for the same reason. */
       title="This session ends at 00:00 and cannot be extended. Sign in again to continue."
     >
-      <UiIcon name="caution" size={12} className={warning ? "" : "opacity-0"} aria-hidden />
+      {/* The clock reads normally; the caution mark takes over once the session
+          is nearly out, because at that point the message is "act now" rather
+          than "here is the remaining time". This slot previously held an
+          `opacity-0` caution icon purely to reserve the space — the clock now
+          does that job while actually saying something. */}
+      {warning ? (
+        <UiIcon name="caution" size={12} aria-hidden />
+      ) : (
+        <ClockFace mins={mins} secs={secs} />
+      )}
       <span className="sr-only">Time left in this session:</span>
       <span className="font-mono text-[12px] font-semibold tabular-nums leading-none">
         {pad(mins)}:{pad(secs)}

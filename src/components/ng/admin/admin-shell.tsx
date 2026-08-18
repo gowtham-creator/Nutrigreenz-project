@@ -120,7 +120,7 @@ function AdminIdentity() {
         aria-expanded={open}
         className="flex items-center gap-2.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-ng-line-soft transition-colors cursor-pointer"
       >
-        <span className="size-9 rounded-full overflow-hidden bg-[var(--ng-chrome-deep)] text-ng-cream flex items-center justify-center font-display text-[14px]">
+        <span className="ng-on-dark size-9 rounded-full overflow-hidden bg-[var(--ng-chrome-deep)] text-ng-cream flex items-center justify-center font-display text-[14px]">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -313,7 +313,9 @@ function SidebarContent({
         })}
       </nav>
       <div className="mt-auto p-4">
-        <div className="rounded-2xl bg-ng-cream/5 border border-ng-cream/10 p-4 text-[12px] font-medium text-ng-cream/75">
+        {/* Sits on the permanently dark rail, so it opts out of the inversion
+            too. Its `/75` and `/5` opacity forms measured 1.08:1 before. */}
+        <div className="ng-on-dark rounded-2xl bg-ng-cream/5 border border-ng-cream/10 p-4 text-[12px] font-medium text-ng-cream/75">
           <div className="text-ng-clay font-bold text-[12.5px] mb-1">Need a hand?</div>
           Slack #admin-portal · runbook link in handbook
         </div>

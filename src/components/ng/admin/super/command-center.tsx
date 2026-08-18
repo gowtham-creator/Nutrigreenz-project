@@ -78,7 +78,10 @@ export function CommandCenterHero({
     // -mx-8 overhangs by 8px on tablet and scrolls the console sideways. The
     // vertical one does not step, because `main` keeps py-8 at every width.
     <header className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-7">
-      <div className="relative overflow-hidden bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep text-ng-cream">
+      {/* `ng-on-dark` opts this band out of the dark-theme inversion. It is a
+          forest gradient in BOTH themes, so its cream ink must stay cream —
+          without it every label here measured 1.11-1.16:1. */}
+      <div className="ng-on-dark relative overflow-hidden bg-gradient-to-br from-ng-forest via-ng-forest-deep to-ng-forest-deep text-ng-cream">
         {/* Single gold top hairline (the one permitted gold accent besides the
             crown); the depth glow is neutral cream so gold stays rare. */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ng-clay/70 to-transparent" />

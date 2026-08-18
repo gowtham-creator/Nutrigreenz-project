@@ -605,6 +605,12 @@
   .ng-eyebrow {
     color: #7A5717; /* darker gold — clears WCAG AA (~5:1) on cream */
   }
+  /* The same gold measures 2.29:1 on the dark console ground, so the dark
+     console takes the lighter one. Kept in this layer, not outside it, or it
+     would beat the `text-*` utilities every call site relies on. */
+  .ng-admin[data-theme="dark"] .ng-eyebrow {
+    color: var(--ng-eyebrow-ink);
+  }
 }
 
 /* ----------------------------------------------------------------
@@ -726,6 +732,19 @@
      distinct plane rather than merging into the page. */
   --ng-chrome-deep: #0A140E;
 
+  /*
+   * Accent inks re-tuned for a dark ground.
+   *
+   * These three are "dark accent on a light tint" colours. In the light theme
+   * that is exactly right; in dark the tint darkens beneath them while the ink
+   * stays put, so each one collapsed. Measured on the surfaces they actually
+   * land on: the clay pill ground (#373E28), the card face (#1B2A1F) and the
+   * console ground (#0E1A12).
+   */
+  --ng-clay-deep:  #E2BE79;   /* was 2.81-3.92:1 -> 6.31 on the pill, 8.50 on card */
+  --ng-terracotta: #E08069;   /* was 3.25:1 -> 5.34 on card */
+  --ng-eyebrow-ink: #D8B24A;  /* was 2.29:1 -> 8.84 on ground */
+
   --ng-forest:      #D3DED2;
   --ng-forest-soft: #9BD9A4;
 
@@ -759,11 +778,35 @@
  * `text-ng-cream`, `bg-ng-cream/12` and the rest keep resolving exactly as they
  * do in the light theme, with no component needing to know a theme exists.
  */
-.ng-rail {
+.ng-rail,
+.ng-on-dark {
   --ng-cream: #F5F2E0;
   --ng-cream-deep: #ECE7D2;
   --ng-forest-deep: #0A1F12;
   --ng-line-soft: rgba(245, 242, 224, 0.14);
+
+  /*
+   * The SAME values under Tailwind's `--color-*` alias, and that duplication is
+   * the point.
+   *
+   * `text-ng-cream` resolves `var(--ng-cream)` and honoured the override above.
+   * `text-ng-cream/75` does not: the opacity modifier compiles to a color-mix
+   * against `var(--color-ng-cream)`, which still held the inverted value. That
+   * is why the config hero and the sidebar help card measured 1.08-1.16:1 while
+   * the plain-utility text beside them was fine.
+   *
+   * Overriding both aliases fixes every descendant at once, whichever form the
+   * markup happens to use.
+   */
+  --color-ng-cream: #F5F2E0;
+  --color-ng-cream-deep: #ECE7D2;
+  --color-ng-forest-deep: #0A1F12;
+
+  /* `--ng-forest` too: the config hero paints `from-ng-forest via-ng-forest-deep`,
+     and with only the -deep end pinned the gradient START stayed inverted — so
+     the band rendered cream-to-dark with cream text over the cream end. */
+  --ng-forest: #14331F;
+  --color-ng-forest: #14331F;
 
   /*
    * The rail names its own ink instead of using `text-ng-cream/80`.
