@@ -449,6 +449,48 @@
 /* Operator login — frosted liquid-glass auth card. Scoped to .login-card so no
    other surface changes: translucent paper over the moving forest gradient,
    layered depth shadow + a soft inner top highlight for the glass edge. */
+/*
+ * Dark counterpart for the sign-in surfaces.
+ *
+ * `.login-card` painted a hardcoded cream gradient, so it ignored the theme
+ * entirely: in dark the card stayed cream while every token ON it inverted to
+ * light, leaving cream text on a cream card. The heading, the field labels,
+ * "Forgot password?" and the footer note were all effectively invisible.
+ *
+ * The card is glass, so it darkens rather than turning flat black — the
+ * gradient behind it still reads through, which is the whole point of the
+ * treatment.
+ */
+.ng-admin[data-theme="dark"] .login-card {
+  background:
+    linear-gradient(180deg, rgba(27, 42, 31, 0.90) 0%, rgba(21, 34, 24, 0.86) 100%);
+  border: 1px solid rgba(245, 242, 224, 0.14);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(245, 242, 224, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30);
+}
+
+/*
+ * The panel behind it is dimmed too. At full strength the forest gradient and
+ * its leaf glows are the brightest thing on a dark screen — the background
+ * out-shouting the form it exists to sit behind. Same hues, lower value.
+ */
+.ng-admin[data-theme="dark"] .login-gradient {
+  background: linear-gradient(135deg, #060F09, #102718 46%, #17381F 74%, #0A1B10);
+  background-size: 240% 240%;
+}
+.ng-admin[data-theme="dark"] .login-glow {
+  opacity: 0.45;
+}
+/* The photograph is a luminosity blend, so on a darker ground it LIGHTENS —
+   the left panel stayed noticeably brighter than the form beside it, and the
+   two halves of one screen read as two different screens. */
+.ng-admin[data-theme="dark"] .login-photo {
+  opacity: 0.075;
+}
+
 .login-card {
   background:
     linear-gradient(180deg, rgba(250, 248, 240, 0.92) 0%, rgba(244, 241, 228, 0.84) 100%);

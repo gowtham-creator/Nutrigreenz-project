@@ -762,7 +762,7 @@ function LoginForm() {
         <aside className="login-gradient relative overflow-hidden lg:w-[44%] flex flex-col justify-between p-8 lg:p-12">
           <div
             aria-hidden
-            className="absolute inset-0 opacity-[0.16] mix-blend-luminosity"
+            className="login-photo absolute inset-0 opacity-[0.16] mix-blend-luminosity"
             style={{
               backgroundImage: "url(/images/admin/forest-panel.webp)",
               backgroundSize: "cover",
