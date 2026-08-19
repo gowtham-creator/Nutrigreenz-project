@@ -141,7 +141,10 @@ export default function AdminResetPage() {
           />
         ))}
         <div className="relative z-10 w-full max-w-sm rounded-3xl bg-ng-paper/[0.94] p-7 shadow-[var(--shadow-ng-modal)] backdrop-blur-md sm:p-8">
-          <div className="size-12 rounded-full bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
+          {/* `ng-on-dark` keeps this disc dark in BOTH themes. Without it the disc
+                inverts to near-white while the leaf glyph on it stays light green —
+                1.38:1, a lock nobody can see. Pinned, it is 10.56:1. */}
+            <div className="ng-on-dark size-12 rounded-full bg-ng-forest-deep text-ng-leaf flex items-center justify-center mb-6">
             <BrandIcon name="key" weight="solid" size={24} />
           </div>
 

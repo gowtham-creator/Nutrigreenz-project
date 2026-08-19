@@ -77,7 +77,7 @@ function AccessRequired() {
   return (
     <AdminShell active="/admin/config" title="Super Admin">
       <div className="max-w-md mx-auto text-center py-20">
-        <span className="relative inline-flex size-16 items-center justify-center rounded-2xl bg-ng-forest-deep ring-1 ring-ng-clay/40 mb-5 shadow-[0_8px_24px_rgba(31,77,46,0.18)]">
+        <span className="ng-on-dark relative inline-flex size-16 items-center justify-center rounded-2xl bg-ng-forest-deep ring-1 ring-ng-clay/40 mb-5 shadow-[0_8px_24px_rgba(31,77,46,0.18)]">
           <Icon name="lock-keyhole-minimalistic-bold" size={28} className="text-ng-clay" />
         </span>
         <h2 className="font-display text-[22px] text-ng-forest-deep">Super Admin access required</h2>
