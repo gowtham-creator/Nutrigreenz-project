@@ -18,6 +18,9 @@ import { cn } from "@/lib/utils";
 
 const UI_ICONS = {
   search: "search",
+  /* Supplied for the Reports surfaces. Solar's `chart-2` was a bare line
+     chart; this one is a chart ON a document, which is what a report is. */
+  reports: "reports",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

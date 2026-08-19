@@ -19,6 +19,7 @@ import { AdminStagger, AdminStaggerItem } from "@/components/ng/admin/admin-moti
 import { Icon } from "@/components/ui/icon";
 import { BellIcon } from "@/components/ui/bell-icon";
 import { DonutChart, HBars, Pipeline, type VizTone } from "@/components/ng/admin/viz";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /* ── API shapes (JSON only — no server modules imported client-side) ─────── */
 type OrderStatus = "placed" | "confirmed" | "packed" | "shipped" | "delivered";
@@ -207,7 +208,7 @@ export default function AdminOverview() {
           href="/admin/reports"
           className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
         >
-          <Icon name="chart-2-bold" size={15} />
+          <UiIcon name="reports" size={15} />
           Open reports
         </Link>
       }
