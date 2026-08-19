@@ -109,7 +109,7 @@ export default function AdminWishlists() {
           <>
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-            <div className="grid grid-cols-[0.4fr_2.6fr_0.9fr_1.6fr_1fr_0.9fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+            <div className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,2.6fr)_minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
               <span>#</span>
               <span>Product</span>
               <span className="text-right">Savers</span>
@@ -127,7 +127,7 @@ export default function AdminWishlists() {
                 return (
                   <li
                     key={p.slug}
-                    className="grid grid-cols-[0.4fr_2.6fr_0.9fr_1.6fr_1fr_0.9fr] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                    className="grid grid-cols-[minmax(0,0.4fr)_minmax(0,2.6fr)_minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                   >
                     <span className="font-display text-[15px] text-ng-clay-deep tabular-nums">{i + 1}</span>
                     <div className="flex items-center gap-3 min-w-0">

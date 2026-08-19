@@ -261,8 +261,8 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
         title="Directory"
         action={
           <label className="relative flex items-center">
-            <Icon
-              name="magnifer-bold"
+            <UiIcon
+              name="search"
               size={15}
               className="absolute left-3 text-ng-ink-muted pointer-events-none"
             />
@@ -278,7 +278,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
       >
         <div className="overflow-x-auto">
           <div className="min-w-[820px]">
-        <div className="grid grid-cols-[2fr_1.8fr_1.2fr_1.3fr_0.8fr_1fr_0.5fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.5fr)] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Name</span>
           <span>Email</span>
           <span>Phone</span>
@@ -293,7 +293,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             {Array.from({ length: 5 }).map((_, i) => (
               <li
                 key={i}
-                className="grid grid-cols-[2fr_1.8fr_1.2fr_1.3fr_0.8fr_1fr_0.5fr] gap-4 px-6 py-4 items-center border-b border-ng-line-soft last:border-0"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.5fr)] gap-4 px-6 py-4 items-center border-b border-ng-line-soft last:border-0"
               >
                 <div className="flex items-center gap-3">
                   <div className="size-9 rounded-full bg-ng-line-soft animate-pulse shrink-0" />
@@ -342,7 +342,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             {customers.map((c) => (
               <li
                 key={c.id}
-                className="grid grid-cols-[2fr_1.8fr_1.2fr_1.3fr_0.8fr_1fr_0.5fr] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                className="grid grid-cols-[minmax(0,2fr)_minmax(0,1.8fr)_minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.5fr)] gap-4 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="size-9 rounded-full bg-ng-sage text-ng-forest-deep flex items-center justify-center font-display text-[14px] shrink-0">

@@ -273,7 +273,7 @@ function ConfigContent() {
         className="!p-0 overflow-hidden mb-6"
       >
         <div id="shipping" className="scroll-mt-32" />
-        <div className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+        <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>City</span>
           <span>PIN range</span>
           <span>SLA</span>
@@ -284,7 +284,7 @@ function ConfigContent() {
           {ZONES.map((z) => (
             <li
               key={`${z.city}-${z.pin}`}
-              className="grid grid-cols-[1.4fr_1.6fr_1fr_1.4fr_0.8fr] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
+              className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
             >
               <span className="font-semibold text-ng-ink">{z.city}</span>
               <span className="font-mono font-medium text-[11.5px] text-ng-ink-muted tabular-nums">{z.pin}</span>

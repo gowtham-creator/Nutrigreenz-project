@@ -264,7 +264,7 @@ export default function AdminOverview() {
       </AdminStagger>
 
       {/* ── pipeline + payment mix ───────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6 mb-6">
+      <div className="grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-6 mb-6">
         <Card title="Order pipeline" action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Queue →</Link>}>
           <Pipeline stages={pipeline} />
           <div className="mt-5 pt-4 border-t border-ng-line-soft grid grid-cols-3 gap-3 text-center">
@@ -293,7 +293,7 @@ export default function AdminOverview() {
       </div>
 
       {/* ── recent orders + top products ─────────────────────────────────── */}
-      <div className="grid lg:grid-cols-[1.7fr_1fr] gap-6">
+      <div className="grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-6">
         <Card
           title="Recent orders"
           action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Open queue →</Link>}
@@ -301,7 +301,7 @@ export default function AdminOverview() {
         >
           <div className="overflow-x-auto">
             <div className="min-w-[720px]">
-          <div className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold border-b border-ng-line-soft">
+          <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,0.5fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.7fr)] gap-3 px-6 py-3 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold border-b border-ng-line-soft">
             <span>Order</span>
             <span>Customer</span>
             <span className="text-right">Items</span>
@@ -318,7 +318,7 @@ export default function AdminOverview() {
               {recent.map((o) => (
                 <li
                   key={o.id}
-                  className="grid grid-cols-[1.1fr_1.3fr_0.5fr_0.8fr_1fr_0.7fr] gap-3 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                  className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,0.5fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,0.7fr)] gap-3 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="font-mono text-[12px] font-semibold text-ng-forest-deep truncate">{o.orderNumber}</span>
                   <span className="truncate font-semibold text-ng-ink">{customerName(o)}</span>

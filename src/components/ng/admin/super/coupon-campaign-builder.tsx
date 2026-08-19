@@ -703,7 +703,7 @@ export function CouponCampaignBuilder() {
               <AppIcon name="message" size={15} className="text-ng-clay-deep" />
               <span className="text-[12.5px] font-semibold text-ng-ink-muted">Send campaign</span>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)] gap-4 items-start">
               <div className="flex flex-col gap-3">
                 {/*
                  * Channels are a per-customer decision, not a global one: each
@@ -883,7 +883,7 @@ export function CouponCampaignBuilder() {
               {campaigns.length} live · {redeemedCount} redeemed
             </span>
           </div>
-          <div className="grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+          <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
             <span>Code</span>
             <span>Targeting</span>
             <span className="text-right">Value</span>
@@ -911,7 +911,7 @@ export function CouponCampaignBuilder() {
                 <li
                   key={c.id}
                   className={cn(
-                    "grid grid-cols-[1.1fr_1.7fr_0.9fr_1fr_0.7fr_auto] gap-3 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 rounded-lg transition-colors",
+                    "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] gap-3 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 rounded-lg transition-colors",
                     selected && "bg-ng-clay/[0.06]",
                   )}
                 >

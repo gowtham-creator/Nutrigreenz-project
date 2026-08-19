@@ -381,7 +381,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
               </div>
             ) : (
               <div className="rounded-2xl border border-ng-line-soft overflow-hidden">
-                <div className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+                <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)] gap-3 px-4 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                   <span>Code</span>
                   <span className="text-right">Redeemed</span>
                   <span className="text-right">Discount given</span>
@@ -390,7 +390,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                   {report.couponUsage.map((c) => (
                     <li
                       key={c.code}
-                      className="grid grid-cols-[1.4fr_0.8fr_1fr] gap-3 px-4 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                      className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)] gap-3 px-4 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                     >
                       <span className="font-mono text-[13px] font-semibold text-ng-ink truncate">{c.code}</span>
                       <span className="font-mono text-[13px] tabular-nums font-medium text-ng-ink-muted text-right">{c.orders}</span>

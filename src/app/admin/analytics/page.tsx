@@ -325,7 +325,7 @@ export default function AdminAnalytics() {
             ) : (
               <div className="overflow-x-auto">
                 <div className="min-w-[720px]">
-                  <div className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+                  <div className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-3 px-6 py-2.5 bg-ng-cream border-b border-ng-line-soft text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold">
                     <SortHead label="Product" k="name" sort={sort} onSort={toggleSort} />
                     <SortHead label="Category" k="categoryName" sort={sort} onSort={toggleSort} />
                     <SortHead label="Units" k="unitsSold" sort={sort} onSort={toggleSort} align="right" />
@@ -337,7 +337,7 @@ export default function AdminAnalytics() {
                     {sortedProducts.map((p) => (
                       <li
                         key={p.productId}
-                        className="grid grid-cols-[1.7fr_1fr_0.7fr_1fr_0.8fr_0.8fr] gap-3 px-6 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                        className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-3 px-6 py-3 items-center text-[13.5px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                       >
                         <span className="font-semibold text-ng-ink truncate">{p.name}</span>
                         <span className="text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>

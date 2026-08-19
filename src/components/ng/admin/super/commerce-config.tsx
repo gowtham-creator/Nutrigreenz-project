@@ -336,7 +336,7 @@ function RulesCard({
                   {draft.shippingSlabs.map((slab, idx) => (
                     <li
                       key={idx}
-                      className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
+                      className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
                     >
                       <NumberField
                         label="Cart up to"
@@ -486,7 +486,7 @@ function SlotsCard({
           {slots.map((slot) => (
             <li
               key={slot.id}
-              className="grid grid-cols-1 lg:grid-cols-[1.4fr_1.4fr_0.7fr_auto_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
+              className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,0.7fr)_auto_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
             >
               <TextField
                 label="Label"
@@ -713,7 +713,7 @@ function AreasCard({
       ) : null}
 
       {/* Add a single area */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-xl border border-dashed border-ng-line bg-ng-paper/60 p-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-end rounded-xl border border-dashed border-ng-line bg-ng-paper/60 p-3 mb-4">
         <TextField label="Pincode" value={newPin} onChange={setNewPin} placeholder="500081" />
         <TextField label="Area" value={newArea} onChange={setNewArea} placeholder="Madhapur" />
         <TextField
@@ -744,7 +744,7 @@ function AreasCard({
           {areas.map((area) => (
             <li
               key={area.id}
-              className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.1fr_1.1fr_auto_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
+              className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_auto_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
             >
               <TextField
                 label="Pincode"

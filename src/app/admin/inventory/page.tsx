@@ -356,7 +356,7 @@ export default function AdminInventory() {
             ))}
           </select>
           <div className="relative w-full sm:ml-auto sm:w-auto">
-            <Icon name="magnifer-linear" size={15} className="text-ng-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <UiIcon name="search" size={15} className="text-ng-ink-soft absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -368,7 +368,7 @@ export default function AdminInventory() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[820px]">
-        <div className="grid grid-cols-[1.7fr_1fr_1fr_1fr_2fr_0.8fr_0.9fr] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+        <div className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,0.9fr)] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
           <span>SKU</span>
           <span>Category</span>
@@ -394,7 +394,7 @@ export default function AdminInventory() {
               return (
                 <li
                   key={p.id}
-                  className="grid grid-cols-[1.7fr_1fr_1fr_1fr_2fr_0.8fr_0.9fr] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                  className="grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_minmax(0,0.8fr)_minmax(0,0.9fr)] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="truncate font-semibold text-ng-ink">{p.name}</span>
                   <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>

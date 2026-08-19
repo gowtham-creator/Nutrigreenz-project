@@ -46,7 +46,7 @@ interface CaptainDetailResponse {
 /** API codes the modal surfaces inline — these must NOT also fire a toast. */
 const INLINE_ERRORS = new Set(["name_required", "invalid_phone", "invalid_commission", "phone_taken"]);
 
-const GRID = "grid-cols-[1.7fr_1fr_1.6fr_0.7fr_1fr_0.8fr_0.7fr_0.5fr]";
+const GRID = "grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.5fr)]";
 
 /** INTEGER PAISE → the admin's INR string (rupee-rounded, en-IN grouped). */
 function inr(paise: number): string {
@@ -319,8 +319,8 @@ export default function AdminCaptains() {
         title="Roster"
         action={
           <label className="relative flex items-center">
-            <Icon
-              name="magnifer-bold"
+            <UiIcon
+              name="search"
               size={15}
               className="absolute left-3 text-ng-ink-muted pointer-events-none"
             />

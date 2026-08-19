@@ -651,8 +651,8 @@ export default function AdminAuditPage() {
         </div>
 
         <div className="relative flex-1 md:max-w-xs">
-          <Icon
-            name="magnifer-bold"
+          <UiIcon
+            name="search"
             size={15}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ng-ink-soft"
           />

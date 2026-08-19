@@ -63,7 +63,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         </div>
       </header>
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Customer rows */}
         <div className="px-6 py-5 lg:border-r border-ng-line-soft">
           <div className="text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">

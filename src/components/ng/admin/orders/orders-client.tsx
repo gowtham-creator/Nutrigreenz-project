@@ -33,7 +33,7 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   ...ORDER_STATUS_FLOW.map((s) => ({ key: s, label: STATUS_LABEL[s] })),
 ];
 
-const COLS = "grid grid-cols-[1.1fr_1.8fr_0.6fr_0.9fr_1fr_1fr_0.6fr] gap-4";
+const COLS = "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.8fr)_minmax(0,0.6fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] gap-4";
 
 export function OrdersClient({ initialData }: { initialData: OrdersInitialData | null }) {
   const [orders, setOrders] = useState<Order[]>(initialData?.orders ?? []);

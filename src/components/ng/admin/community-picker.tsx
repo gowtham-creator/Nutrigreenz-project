@@ -10,6 +10,7 @@ import {
   newSessionToken,
   type PlaceSuggestion,
 } from "@/lib/places-client";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /**
  * Search-and-assign picker for gated communities.
@@ -135,7 +136,7 @@ export function CommunityPicker({
       {/* Search */}
       <div className="relative">
         <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ng-ink-soft">
-          <Icon name="magnifer-linear" size={16} />
+          <UiIcon name="search" size={16} />
         </span>
         <input
           value={query}

@@ -59,7 +59,10 @@ export function BellIcon({
       width={size}
       height={size}
       unoptimized /* Next's optimiser would flatten this to a single frame. */
-      className={cn("inline-block shrink-0", className)}
+      /* `ng-bell-anim` is the hook the dark console uses to invert this (see
+         globals.css). Flat black art cannot take `currentColor`, so on a dark
+         ground it rendered black-on-near-black — present and invisible. */
+      className={cn("ng-bell-anim inline-block shrink-0", className)}
       style={{ width: size, height: size }}
     />
   );

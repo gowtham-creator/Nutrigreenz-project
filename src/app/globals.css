@@ -491,6 +491,21 @@
   opacity: 0.075;
 }
 
+/*
+ * The animated bell is a WebP of flat black art with a real alpha channel, so
+ * unlike every other mark it cannot tint from `currentColor` — that is the
+ * trade made for genuine frame animation. On the dark console it was black on
+ * near-black: present, and completely invisible.
+ *
+ * Inverting works precisely BECAUSE the art is pure black on transparent:
+ * `invert()` maps the ink to white and leaves alpha untouched, so the
+ * anti-aliased edge survives exactly as drawn. The brightness trim takes it off
+ * pure white and onto the console's ink value.
+ */
+.ng-admin[data-theme="dark"] .ng-bell-anim {
+  filter: invert(1) brightness(0.93);
+}
+
 .login-card {
   background:
     linear-gradient(180deg, rgba(250, 248, 240, 0.92) 0%, rgba(244, 241, 228, 0.84) 100%);

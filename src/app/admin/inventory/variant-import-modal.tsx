@@ -173,7 +173,7 @@ export function VariantImportModal({
                 <span className="text-ng-ink-muted">· {preview.total} rows total</span>
               </div>
               <div className="rounded-xl border border-ng-line-soft overflow-hidden max-h-72 overflow-y-auto">
-                <div className="grid grid-cols-[1.6fr_1.4fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2.5 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold sticky top-0">
+                <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-2 px-4 py-2.5 bg-ng-cream text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold sticky top-0">
                   <span>SKU</span>
                   <span>Product</span>
                   <span>Label</span>
@@ -184,7 +184,7 @@ export function VariantImportModal({
                   {preview.rows.map((r) => (
                     <li
                       key={r.line}
-                      className={`grid grid-cols-[1.6fr_1.4fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2 items-center text-[12.5px] border-b border-ng-line-soft last:border-0 ${
+                      className={`grid grid-cols-[minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-2 px-4 py-2 items-center text-[12.5px] border-b border-ng-line-soft last:border-0 ${
                         r.valid ? "" : "bg-ng-terracotta/5"
                       }`}
                     >

@@ -566,7 +566,7 @@ export function PromotionsPanel() {
           </button>
 
           {/* Copy + discount */}
-          <div className="mb-4 grid gap-3 sm:grid-cols-[2fr_1fr]">
+          <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <Input
               label="Title"
               placeholder="Diwali festive sale"

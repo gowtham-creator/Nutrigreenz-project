@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 interface PickerProduct {
   id: string;
@@ -105,7 +106,7 @@ export function ProductPicker({
         <>
           <div className="relative mb-2">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ng-ink-soft">
-              <Icon name="magnifer-linear" size={15} />
+              <UiIcon name="search" size={15} />
             </span>
             <input
               value={query}

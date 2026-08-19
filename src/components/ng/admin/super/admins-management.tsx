@@ -118,7 +118,7 @@ function humanizeLastActive(iso: string | null): string {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-const GRID = "grid grid-cols-[1.2fr_1.6fr_0.8fr_0.8fr_0.9fr_1.2fr] gap-3";
+const GRID = "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3";
 
 /** Copy text to the clipboard with a small confirmation toast. */
 async function copyText(value: string, what: string) {

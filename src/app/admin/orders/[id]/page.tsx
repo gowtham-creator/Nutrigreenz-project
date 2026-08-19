@@ -146,7 +146,7 @@ export default function AdminOrderDetail({
       subtitle={`${customerLabel(order)} · placed ${formatDateTime(order.placedAt)}`}
       actions={backAction}
     >
-      <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
         {/* Main column */}
         <div className="space-y-6 min-w-0">
           {/* Status pipeline + forward-only action */}

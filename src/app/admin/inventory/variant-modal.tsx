@@ -343,7 +343,7 @@ export function VariantModal({
 
         <div className="px-6 py-5">
           {/* Header row */}
-          <div className="grid grid-cols-[1.5fr_1.4fr_0.9fr_0.9fr_1.2fr] gap-3 px-1 pb-2 text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3 px-1 pb-2 text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
             <span>Variant</span>
             <span>SKU</span>
             <span>Price (₹)</span>
@@ -364,7 +364,7 @@ export function VariantModal({
                 return (
                   <li
                     key={v.id}
-                    className={`grid grid-cols-[1.5fr_1.4fr_0.9fr_0.9fr_1.2fr] gap-3 items-center rounded-xl border border-ng-line-soft px-3 py-2.5 ${
+                    className={`grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3 items-center rounded-xl border border-ng-line-soft px-3 py-2.5 ${
                       v.isActive ? "" : "opacity-60"
                     }`}
                   >

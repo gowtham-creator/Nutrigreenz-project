@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 interface VariantRow {
   id: string;
@@ -178,7 +179,7 @@ export function CaptainAllocationModal({
               <>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ng-ink-soft">
-                    <Icon name="magnifer-linear" size={15} />
+                    <UiIcon name="search" size={15} />
                   </span>
                   <input
                     value={query}

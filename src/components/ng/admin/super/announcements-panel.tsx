@@ -176,7 +176,7 @@ export function AnnouncementsPanel() {
       </div>
 
       {/* Create / edit form */}
-      <div className="mb-6 grid gap-3 rounded-2xl border border-ng-line-soft bg-ng-sage/20 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+      <div className="mb-6 grid gap-3 rounded-2xl border border-ng-line-soft bg-ng-sage/20 p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
         <Input
           label="Announcement"
           placeholder="Free shipping on orders over ₹599 · Across India"
