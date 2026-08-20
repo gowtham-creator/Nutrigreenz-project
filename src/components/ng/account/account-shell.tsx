@@ -4,6 +4,7 @@ import { PageShell } from "../page-shell";
 import { AccountIdentity, SignOutButton } from "./account-identity";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 
 type AccountSection =
   | "overview"
@@ -14,14 +15,20 @@ type AccountSection =
   | "referral"
   | "profile";
 
-const NAV: { key: AccountSection; href: string; label: string; icon: string }[] = [
-  { key: "overview", href: "/account", label: "Overview", icon: "widget-5-bold" },
-  { key: "orders", href: "/account/orders", label: "Orders", icon: "box-bold" },
-  { key: "wishlist", href: "/wishlist", label: "Wishlist", icon: "heart-bold" },
-  { key: "addresses", href: "/account/addresses", label: "Addresses", icon: "map-point-bold" },
-  { key: "loyalty", href: "/loyalty", label: "Loyalty", icon: "wallet-money-bold" },
-  { key: "referral", href: "/referral", label: "Refer & earn", icon: "users-group-rounded-bold" },
-  { key: "profile", href: "/account/profile", label: "Profile", icon: "user-bold" },
+/*
+ * Every row now draws a SUPPLIED mark rather than a Solar stand-in, so the
+ * account nav matches the rest of the product. Wishlist and Profile already
+ * had marks in the set (`wishlist`, `customer`); the other five were traced
+ * from the files supplied for exactly these rows.
+ */
+const NAV: { key: AccountSection; href: string; label: string; icon: UiIconName }[] = [
+  { key: "overview", href: "/account", label: "Overview", icon: "overview" },
+  { key: "orders", href: "/account/orders", label: "Orders", icon: "ordersBox" },
+  { key: "wishlist", href: "/wishlist", label: "Wishlist", icon: "wishlist" },
+  { key: "addresses", href: "/account/addresses", label: "Addresses", icon: "location" },
+  { key: "loyalty", href: "/loyalty", label: "Loyalty", icon: "wallet" },
+  { key: "referral", href: "/referral", label: "Refer & earn", icon: "refer" },
+  { key: "profile", href: "/account/profile", label: "Profile", icon: "customer" },
 ];
 
 /**
@@ -65,7 +72,7 @@ export function AccountShell({
                         : "text-ng-ink-muted hover:bg-ng-sage/50 hover:text-ng-ink hover:translate-x-0.5",
                     )}
                   >
-                    <Icon
+                    <UiIcon
                       name={n.icon}
                       size={18}
                       className={cn(

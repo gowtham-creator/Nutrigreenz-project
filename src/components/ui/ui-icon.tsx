@@ -30,6 +30,12 @@ const UI_ICONS = {
      drawing, so as a mask at chip size it thinned out to grey beside the
      solid marks next to it. This is the supplied glyph, traced to vector. */
   groundnut: "groundnut",
+  /* Customer account nav — supplied glyph set. */
+  overview: "overview",
+  ordersBox: "orders-box",
+  wallet: "wallet",
+  refer: "refer",
+  location: "location",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific
