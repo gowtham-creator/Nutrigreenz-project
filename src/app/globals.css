@@ -506,6 +506,36 @@
   filter: invert(1) brightness(0.93);
 }
 
+/*
+ * Chrome's autofill highlight.
+ *
+ * Chrome paints its own pale-blue background on an autofilled input and will
+ * not let `background-color` override it — so on the dark sign-in the saved
+ * email and passcode rendered as light-blue slabs with black text inside a
+ * dark field. It is a UA style, not a token problem.
+ *
+ * `box-shadow: inset` is the one property Chrome does honour underneath the
+ * autofill layer, so a 1000px inset shadow repaints the field, and
+ * `-webkit-text-fill-color` handles the ink. The absurd transition delay is
+ * the standard trick to stop the yellow flash on first fill.
+ *
+ * Written against tokens, so it is correct in BOTH themes rather than being a
+ * dark-mode patch that breaks light.
+ */
+.ng-admin input:-webkit-autofill,
+.ng-admin input:-webkit-autofill:hover,
+.ng-admin input:-webkit-autofill:focus,
+.ng-admin input:-webkit-autofill:active,
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus {
+  box-shadow: inset 0 0 0 1000px var(--ng-paper) !important;
+  -webkit-text-fill-color: var(--ng-ink) !important;
+  caret-color: var(--ng-ink);
+  border-radius: inherit;
+  transition: background-color 100000s ease-in-out 0s;
+}
+
 .login-card {
   background:
     linear-gradient(180deg, rgba(250, 248, 240, 0.92) 0%, rgba(244, 241, 228, 0.84) 100%);
