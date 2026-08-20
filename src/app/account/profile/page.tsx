@@ -12,6 +12,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"] as const;
 
@@ -225,7 +226,7 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ng-paper text-ng-forest ring-1 ring-ng-leaf/30">
-                <Icon name="lock-keyhole-minimalistic-bold" size={18} />
+                <UiIcon name="password" size={18} />
               </span>
               <div>
                 <div className="text-[15px] font-medium text-ng-forest-deep">Sign in to manage your profile</div>
@@ -246,7 +247,7 @@ export default function ProfilePage() {
             <div aria-hidden className="absolute -bottom-24 -left-12 h-56 w-56 rounded-full bg-ng-forest-soft/50 blur-3xl" />
             <div className="relative">
               <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-leaf">
-                <Icon name="user-bold" size={14} />
+                <UiIcon name="profile" size={14} />
                 Your account
               </span>
               <h1 className="mt-2.5 max-w-xl font-display text-[clamp(30px,4vw,44px)] leading-[1.05]">
@@ -258,7 +259,7 @@ export default function ProfilePage() {
               </p>
               {hasVerifiedPhone ? (
                 <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-ng-cream/10 px-3 py-1.5 text-[12px] font-medium text-ng-cream ring-1 ring-ng-cream/15 backdrop-blur-sm">
-                  <Icon name="verified-check-bold" size={14} className="text-ng-green-bright" />
+                  <UiIcon name="verified" size={14} className="text-ng-green-bright" />
                   Mobile verified · {displayPhone}
                 </span>
               ) : null}
@@ -270,7 +271,7 @@ export default function ProfilePage() {
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-              <Icon name="user-bold" size={20} />
+              <UiIcon name="profile" size={20} />
             </span>
             <div>
               <h2 className="font-display text-[22px] leading-none text-ng-forest-deep">Account details</h2>
@@ -284,7 +285,7 @@ export default function ProfilePage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your full name"
-              prefix={<Icon name="user-linear" size={18} />}
+              prefix={<UiIcon name="profile" size={18} />}
             />
 
             <Input
@@ -311,7 +312,7 @@ export default function ProfilePage() {
                 <span className="flex-1 text-[15px] font-mono text-ng-ink">{displayPhone}</span>
                 {hasVerifiedPhone ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-forest">
-                    <Icon name="verified-check-bold" size={13} className="text-ng-green-bright" />
+                    <UiIcon name="verified" size={13} className="text-ng-green-bright" />
                     Verified
                   </span>
                 ) : null}
@@ -417,7 +418,7 @@ export default function ProfilePage() {
         <section className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)] md:p-8">
           <div className="mb-6 flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-              <Icon name="leaf-bold" size={20} />
+              <UiIcon name="leaf" size={20} />
             </span>
             <div>
               <h2 className="font-display text-[22px] leading-none text-ng-forest-deep">Dietary preferences</h2>
@@ -441,7 +442,7 @@ export default function ProfilePage() {
                       : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-leaf hover:bg-ng-sage/40",
                   )}
                 >
-                  {on ? <Icon name="check-circle-bold" size={15} className="text-ng-cream" /> : null}
+                  {on ? <UiIcon name="verified" size={15} className="text-ng-cream" /> : null}
                   {d}
                 </button>
               );
