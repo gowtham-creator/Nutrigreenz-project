@@ -38,18 +38,24 @@ import { useAdminTheme } from "@/lib/admin-theme";
  * transition, so the icon still swaps and the control still reports its state.
  */
 export function AnimatedThemeToggle({ className }: { className?: string }) {
-  const { resolved, toggle } = useAdminTheme();
+  const { choice, resolved, toggle, label } = useAdminTheme();
   const isDark = resolved === "dark";
+  /*
+   * `system` needs to be visibly distinct from a pinned choice, or the third
+   * state is invisible and the control looks like it has two. The sun/moon
+   * still shows what is ON SCREEN; a small dot marks that the console is
+   * following the device rather than holding a choice of its own.
+   */
+  const following = choice === "system";
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      /* The icon alone carries the meaning, so it needs a pressed state that a
-         screen reader can read. */
-      aria-pressed={isDark}
-      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      /* The label states the CURRENT mode rather than the next one, because
+         with three states "switch to X" no longer describes the control. */
+      aria-label={label}
+      title={`${label} — tap to change`}
       /*
        * The border is `--ng-control-edge`, not the card hairline this started
        * with. That hairline measured 1.13:1 against the console ground — below
@@ -58,7 +64,7 @@ export function AnimatedThemeToggle({ className }: { className?: string }) {
        * 3.64:1 in light and 3.80:1 in dark.
        */
       className={cn(
-        "inline-grid size-9 shrink-0 place-items-center rounded-full",
+        "relative inline-grid size-9 shrink-0 place-items-center rounded-full",
         "border border-[var(--ng-control-edge)] bg-ng-paper text-ng-forest-deep",
         "transition-colors duration-200 hover:bg-ng-cream",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ng-admin-ground)]",
@@ -66,6 +72,15 @@ export function AnimatedThemeToggle({ className }: { className?: string }) {
       )}
     >
       <SolarSwitch isDark={isDark} />
+      {following ? (
+        <span
+          aria-hidden
+          /* Marks "following the device" so the third state is visible at a
+             glance. Sits on the rim rather than over the glyph, so it never
+             competes with the sun/moon it is annotating. */
+          className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-ng-leaf ring-2 ring-[var(--ng-admin-ground)]"
+        />
+      ) : null}
     </button>
   );
 }

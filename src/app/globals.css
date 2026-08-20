@@ -522,6 +522,17 @@
  * Written against tokens, so it is correct in BOTH themes rather than being a
  * dark-mode patch that breaks light.
  */
+/*
+ * The reCAPTCHA badge is injected by Google and sits fixed against the right
+ * edge. It must stay VISIBLE — their terms require either the badge or an
+ * equivalent attribution — so this does not hide it; it only stops the element
+ * being able to extend the page sideways.
+ */
+.grecaptcha-badge {
+  max-width: 100vw;
+  overflow: hidden;
+}
+
 .ng-admin input:-webkit-autofill,
 .ng-admin input:-webkit-autofill:hover,
 .ng-admin input:-webkit-autofill:focus,

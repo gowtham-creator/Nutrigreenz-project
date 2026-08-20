@@ -755,7 +755,12 @@ function LoginForm() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
+      {/* `overflow-x-clip`, not `hidden`: nothing on this screen is meant to be
+          reachable sideways, and Google injects the reCAPTCHA badge as a fixed
+          element pinned to the right edge, which was letting the page scroll
+          horizontally in production. `clip` stops that without creating a
+          scroll container, so it cannot break the sticky/fixed children. */}
+      <div className="min-h-screen overflow-x-clip bg-ng-cream text-ng-ink flex flex-col lg:flex-row">
         {/* Brand panel — moving forest gradient + floating glows + rising
             particles (NXT-style motion, Nutri Greenz palette); the forest photo
             remains as a faint texture layer underneath. */}

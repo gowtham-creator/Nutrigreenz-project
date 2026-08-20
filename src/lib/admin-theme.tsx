@@ -130,11 +130,38 @@ export function useAdminTheme() {
     recompute();
   }, []);
 
+  /*
+   * Three states in the cycle, not two — and `system` has to be one of them.
+   *
+   * This previously flipped between light and dark only. That meant the first
+   * tap on any device wrote an explicit choice to localStorage and the console
+   * stopped following the OS there PERMANENTLY, with no way back: a Mac set to
+   * switch at sunset, and an iPad on auto, both froze on whatever had been
+   * tapped weeks earlier. The theme looked broken across devices because the
+   * default state had become unreachable.
+   *
+   * The order is chosen so the first tap always CHANGES something. Going
+   * system -> "whatever the OS already is" would look like a dead control, so
+   * the cycle leaves `system` for the opposite of what is currently on screen:
+   *
+   *   OS dark:   system -> light -> dark  -> system
+   *   OS light:  system -> dark  -> light -> system
+   */
   const toggle = useCallback(() => {
-    setChoice(resolved === "dark" ? "light" : "dark");
-  }, [resolved, setChoice]);
+    const osDark = prefersDark();
+    const firstStop: ResolvedTheme = osDark ? "light" : "dark";
+    if (choice === "system") return setChoice(firstStop);
+    if (choice === firstStop) return setChoice(osDark ? "dark" : "light");
+    return setChoice("system");
+  }, [choice, setChoice]);
 
-  return { choice, resolved, setChoice, toggle };
+  /** Human-readable current mode, for the control's label and tooltip. */
+  const label =
+    choice === "system"
+      ? `Following your device theme (${resolved})`
+      : `Theme pinned to ${choice}`;
+
+  return { choice, resolved, setChoice, toggle, label };
 }
 
 /**
@@ -156,10 +183,25 @@ export function AdminThemeScript() {
 }
 
 /**
- * Kept as a no-op wrapper so the layout reads as a normal provider tree. The
- * store above is module-level and needs no React context — but a bare
- * `{children}` at that call site would look like a mistake.
+ * Owns the OS-follow subscription for the whole console.
+ *
+ * This used to be a no-op passthrough, on the reasoning that the store is
+ * module-level and needs no context. That was wrong in one specific and
+ * user-visible way: `subscribe()` — which installs the
+ * `prefers-color-scheme` listener — only runs while some component is
+ * actually calling `useAdminTheme`. The only caller was the toggle, and the
+ * toggle lives in the admin header.
+ *
+ * So on the sign-in, forgot and reset screens there was NO listener at all.
+ * The pre-paint script set the right theme on load, and then the page stopped
+ * tracking the device: a Mac flipping to dark at sunset, or an iPad on auto,
+ * left the console frozen on whatever it had been at page load. It looked
+ * exactly like "the theme does not sync with my devices".
+ *
+ * Subscribing here means the listener exists wherever the provider is mounted,
+ * which is the entire admin layout, whether or not a toggle is on screen.
  */
 export function AdminThemeProvider({ children }: { children: ReactNode }) {
+  useAdminTheme();
   return <>{children}</>;
 }

@@ -51,7 +51,7 @@ const ACTIVITY_LABELS: Record<string, { label: string; icon: string }> = {
   "admin.photo_remove": { label: "Removed your photo", icon: "camera-bold" },
   "admin.create": { label: "Added an admin", icon: "customer" },
   "admin.update": { label: "Updated an admin", icon: "pen-2-bold" },
-  "admin.reset_password": { label: "Reset an admin’s password", icon: "key-minimalistic-bold" },
+  "admin.reset_password": { label: "Reset an admin’s password", icon: "lock" },
   "admin.delete": { label: "Removed an admin", icon: "customer" },
   "coupon.create": { label: "Created a coupon", icon: "speaker-bold" },
   "coupon.update": { label: "Updated a coupon", icon: "speaker-bold" },
@@ -638,7 +638,7 @@ export default function AdminProfilePage() {
                 onClick={sendReset}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-cream transition-colors cursor-pointer"
               >
-                <Icon name="key-minimalistic-bold" size={14} className="text-ng-clay-deep" />
+                <UiIcon name="lock" size={14} className="text-ng-clay-deep" />
                 Send reset link
               </button>
             </div>
@@ -650,7 +650,7 @@ export default function AdminProfilePage() {
               <span className="block text-[13.5px] font-semibold text-ng-ink">Sign-in methods</span>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-success/12 text-ng-success font-semibold px-3 py-1.5 text-[12px]">
-                  <Icon name="key-minimalistic-bold" size={14} />
+                  <UiIcon name="lock" size={14} />
                   Password · enabled
                 </span>
                 <button
