@@ -19,6 +19,7 @@ import {
   fetchCaptainPickups,
 } from "@/components/ng/captain/captain-store";
 import type { CaptainPickup } from "@/types/nutrigreenz";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /** Captain's daily capture target — the "mission" the dashboard tracks toward. */
 const DAILY_GOAL = 15;
@@ -73,7 +74,7 @@ export default function CaptainHome() {
       <CaptainHero className="p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
-            <Icon name="target-bold" size={12} />
+            <UiIcon name="target" size={12} />
             Daily mission
           </div>
           <span className="text-[11px] text-ng-cream/55">Goal · {DAILY_GOAL}</span>

@@ -15,6 +15,7 @@ import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-sh
 import { Icon } from "@/components/ui/icon";
 import type { WishlistReport } from "@/lib/wishlist-store";
 import { downloadCsv, type CsvRow } from "@/components/ng/admin/reports/csv";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /** Integer paise → a whole-rupee "₹1,234" string. */
 const INR = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
@@ -132,7 +133,7 @@ export default function AdminWishlists() {
                     <span className="font-display text-[15px] text-ng-clay-deep tabular-nums">{i + 1}</span>
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ng-cream text-ng-clay-deep">
-                        <Icon name="heart-bold" size={16} />
+                        <UiIcon name="wishlist" size={16} />
                       </span>
                       <div className="min-w-0">
                         <div className="font-semibold truncate text-ng-ink">{p.title}</div>

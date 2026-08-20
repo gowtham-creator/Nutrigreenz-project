@@ -620,7 +620,7 @@ export default function AdminProfilePage() {
           <Card
             title={
               <span className="inline-flex items-center gap-2">
-                <Icon name="lock-keyhole-minimalistic-bold" size={18} className="text-ng-forest" />
+                <UiIcon name="lock" size={18} className="text-ng-forest" />
                 Security
               </span>
             }
@@ -672,7 +672,7 @@ export default function AdminProfilePage() {
                 <div className="mb-1.5 flex items-center gap-2">
                   <span className="text-[13.5px] font-semibold text-ng-ink">Two-factor sign-in</span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 text-ng-forest font-bold px-2 py-0.5 text-[9.5px] uppercase tracking-wider">
-                    <Icon name="shield-check-bold" size={10} />
+                    <UiIcon name="verified" size={10} />
                     Recommended
                   </span>
                 </div>
@@ -726,7 +726,7 @@ export default function AdminProfilePage() {
               </div>
             ) : (
               <div className="flex items-center gap-1.5 py-2 text-[12px] font-medium text-ng-ink-soft">
-                <Icon name="shield-keyhole-bold" size={14} className="text-ng-ink-soft" />
+                <UiIcon name="lock" size={14} className="text-ng-ink-soft" />
                 Two-factor sign-in is managed by your Super Admin.
               </div>
             )}

@@ -14,6 +14,7 @@ import {
   SegToggle,
 } from "@/components/ng/admin/super/controls";
 import { ProductPicker } from "@/components/ng/admin/product-picker";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /**
  * Super Admin · Coupon campaign builder (§3.5.2).
@@ -636,7 +637,7 @@ export function CouponCampaignBuilder() {
           {/* ---- Targeting modes (5) -------------------------------------- */}
           <div className="mt-5 pt-5 border-t border-ng-clay/20">
             <div className="flex items-center gap-2 mb-3">
-              <Icon name="target-bold" size={15} className="text-ng-clay-deep" />
+              <UiIcon name="target" size={15} className="text-ng-clay-deep" />
               <span className="text-[12.5px] font-semibold text-ng-ink-muted">Targeting</span>
               <span className="text-[11.5px] font-medium text-ng-ink-soft">— who receives this campaign</span>
             </div>
