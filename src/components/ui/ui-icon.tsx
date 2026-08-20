@@ -23,6 +23,13 @@ const UI_ICONS = {
   reports: "reports",
   /* Supplied mark for campaign targeting / goals. */
   target: "target",
+  /* Honey. The file shipped with the supplied set but was never registered,
+     so `name="bee"` resolved to nothing wherever it was used. */
+  bee: "bee",
+  /* Cold-pressed oils. The produce PNG in app-icon.tsx is a thin-line
+     drawing, so as a mask at chip size it thinned out to grey beside the
+     solid marks next to it. This is the supplied glyph, traced to vector. */
+  groundnut: "groundnut",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

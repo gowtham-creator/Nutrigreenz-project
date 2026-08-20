@@ -3,13 +3,36 @@
 import Link from "next/link";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { AppIcon, type AppIconName } from "@/components/ui/app-icon";
+import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { CartIcon } from "@/components/ng/cart-icon";
 import { FloatIn, Reveal } from "@/components/ng/motion";
 
-const PICKS: { icon: string; label: string }[] = [
-  { icon: "bottle-bold", label: "Cold-pressed oils" },
-  { icon: "jar-of-pills-bold", label: "A2 ghee" },
-  { icon: "bag-smile-bold", label: "Raw honey" },
+/*
+ * The supplied product marks, not Solar stand-ins.
+ *
+ * These were `bottle`, `jar-of-pills` and `bag-smile` — a generic bottle, a
+ * PILL jar, and a shopping bag, for oil, ghee and honey. The pill jar in
+ * particular read as medicine on a food shop.
+ *
+ * `oil` and `honey` are the marks drawn for exactly these products (see
+ * app-icon.tsx: no general library carries a cold-pressed oil bottle or a
+ * honey jar, which is why they live there). Ghee has no supplied mark yet, so
+ * it borrows the honey jar's vessel rather than a pill bottle — closest true
+ * shape until a ghee mark exists.
+ */
+type Pick =
+  | { kind: "app"; icon: AppIconName; label: string }
+  | { kind: "ui"; icon: UiIconName; label: string };
+
+const PICKS: Pick[] = [
+  { kind: "ui", icon: "groundnut", label: "Cold-pressed oils" },
+  { kind: "app", icon: "honey", label: "A2 ghee" },
+  /* Honey takes the BEE, not a second jar. The jar is the right vessel for
+     ghee, but running two identical jars side by side made the row read as a
+     rendering fault. The bee is also what the homepage honey rail already
+     uses, so the two surfaces now agree. */
+  { kind: "ui", icon: "bee", label: "Raw honey" },
 ];
 
 /** Empty-bag state with a shop CTA. */
@@ -42,7 +65,15 @@ export function CartEmpty() {
                 key={p.label}
                 className="inline-flex items-center gap-1.5 rounded-full border border-ng-line-soft bg-ng-cream/50 px-3 py-1.5 text-[12px] font-medium text-ng-forest"
               >
-                <Icon name={p.icon} size={14} className="text-ng-leaf" />
+                {/* Footer green (--ng-forest-deep), not the light leaf: the pale
+                    green read as decoration rather than as a mark. 16px because
+                    the produce marks are drawn illustrations — at 14 their thin
+                    strokes thin out and the mark looks washed beside the text. */}
+                {p.kind === "app" ? (
+                  <AppIcon name={p.icon} size={16} className="text-ng-forest-deep" />
+                ) : (
+                  <UiIcon name={p.icon} size={16} className="text-ng-forest-deep" />
+                )}
                 {p.label}
               </span>
             ))}
