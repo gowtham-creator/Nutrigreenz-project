@@ -15,6 +15,7 @@ import { BrandIcon } from "@/components/ui/brand-icon";
 import { getAdminEmail, getAdminRole, signOutAdmin, type AdminRole } from "@/lib/admin-auth";
 import { readCachedPhoto, writeCachedPhoto } from "@/lib/admin-photo-cache";
 import { DEFAULT_ADMIN_PERMISSIONS, type PermissionKey } from "@/lib/admin-permissions";
+import { ADMIN_VERSION_LABEL } from "@/lib/app-version";
 
 // Each nav item carries its permission `key` (see admin-permissions.ts). The nav
 // is filtered by the signed-in admin's EFFECTIVE grants; `superadminOnly` is an
@@ -255,7 +256,7 @@ function SidebarContent({
           <Logo variant="full" tone="white" className="h-auto w-[168px]" />
         </Link>
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">Admin · v0.4.1</span>
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-ng-clay font-mono">{ADMIN_VERSION_LABEL}</span>
           {/* Inverted for the dark sidebar. A translucent gold chip on forest
               resolved to #2C3418 with clay text at 3.98:1 — a dark badge on a
               dark ground, which cannot separate however the ink is tuned. A

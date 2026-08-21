@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "./button";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
+import { FSSAI_LICENCE } from "@/components/ng/fssai-mark";
 
 const SOCIALS = [
   { name: "instagram", icon: "simple-icons:instagram", label: "Instagram" },
@@ -221,6 +222,33 @@ export function Footer() {
             <li><Link href="/sitemap" className="inline-flex min-h-[44px] items-center hover:text-ng-cream">Sitemap</Link></li>
           </ul>
         </div>
+
+        {/*
+          Statutory strip.
+
+          A "confidential" notice would be wrong on a public storefront — there
+          is nothing confidential about a page anyone can load, and the claim
+          reads as boilerplate. What a food e-commerce business in India is
+          actually required to surface is different, and more useful:
+
+            · FSSAI licence number, for any food business (FSS Act 2006).
+            · Legal name and registered office, plus a customer-care route —
+              Consumer Protection (E-Commerce) Rules 2020, r.4(3).
+            · Whether displayed prices include tax.
+
+          The mark is asserted with ™ and NOT ®. Using ® on a mark that is not
+          on the register is an offence under s.107 of the Trade Marks Act 1999,
+          so ™ is the correct symbol until the certificate exists.
+        */}
+        <p className="mt-5 border-t border-ng-cream/12 pt-4 text-[11.5px] leading-relaxed text-ng-cream/55">
+          Nutri Greenz™ and the leaf device are trademarks of Nutri Greenz Farm
+          Technologies Pvt. Ltd. · FSSAI Lic. {FSSAI_LICENCE} · All prices are
+          inclusive of GST · Registered office: HITEC City, Hyderabad, Telangana
+          500072 · Grievance and customer care:{" "}
+          <a href="mailto:care@nutrigreenz.in" className="underline underline-offset-2 hover:text-ng-cream">
+            care@nutrigreenz.in
+          </a>
+        </p>
       </div>
     </footer>
   );

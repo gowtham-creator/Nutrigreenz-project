@@ -150,6 +150,12 @@ export default function FaqPage() {
           </>
         }
         description="Everything you need to know about payments, your wallet and autopay, cashback offers and refunds. Can't find it here? Our team is a message away."
+        /* A help centre is not a product surface, so the background is stationery
+           rather than photography: faint botanical outlines of the things we
+           actually sell — groundnut, sesame, wheat, a bee — drawn at watermark
+           strength on cream. The art keeps its left half empty, which is where
+           the headline and body copy sit. */
+        image="/images/faq/help-hero.webp"
       />
 
       <Section>
