@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /**
  * /referral — the customer's real Refer & Earn standing.
@@ -213,7 +214,7 @@ export default function ReferralPage() {
                   href={`mailto:?subject=${encodeURIComponent("Try Nutri Greenz")}&body=${encodeURIComponent(shareText)}`}
                   className="inline-flex items-center gap-2 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2.5 text-[13px] hover:bg-ng-clay/25 transition-colors"
                 >
-                  <AppIcon name="email" size={15} />
+                  <UiIcon name="email" size={15} />
                   Email
                 </a>
                 <a

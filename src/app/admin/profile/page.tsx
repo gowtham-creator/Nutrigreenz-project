@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Toggle, SaveBar } from "@/components/ng/admin/super/controls";
 import { Input } from "@/components/ng/input";
 import { getAdminEmail, getAdminRole, type AdminRole } from "@/lib/admin-auth";
@@ -569,7 +568,7 @@ export default function AdminProfilePage() {
               <div className="min-w-0 flex-1">
                 <h3 className="font-display text-[20px] text-ng-forest-deep leading-tight truncate">{name || "—"}</h3>
                 <div className="mt-1 flex items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
-                  <AppIcon name="email" size={14} className="text-ng-ink-soft shrink-0" />
+                  <UiIcon name="email" size={14} className="text-ng-ink-soft shrink-0" />
                   <span className="font-mono truncate">{email ?? "admin"}</span>
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">

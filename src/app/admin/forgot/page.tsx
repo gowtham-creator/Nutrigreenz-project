@@ -7,9 +7,9 @@ import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
-import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ADMIN_VERSION_LABEL } from "@/lib/app-version";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /**
  * /admin/forgot — operator password recovery.
@@ -154,12 +154,12 @@ export default function AdminForgotPage() {
               placeholder="you@nutrigreenz.farm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              prefix={<AppIcon name="email" size={18} />}
+              prefix={<UiIcon name="email" size={18} />}
               error={error ?? undefined}
             />
 
             <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-              <AppIcon name="email" size={18} />
+              <UiIcon name="email" size={18} />
               {submitting ? "Sending…" : "Send reset link"}
             </Button>
           </form>

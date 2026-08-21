@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Pill } from "@/components/ng/admin/admin-shell";
 import { getAdminEmail } from "@/lib/admin-auth";
 import { Button } from "@/components/ng/button";
@@ -956,7 +955,7 @@ function AddInviteAdminModal({
             placeholder="name@nutrigreenz.farm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            prefix={<AppIcon name="email" size={18} />}
+            prefix={<UiIcon name="email" size={18} />}
             error={errors.email ?? undefined}
           />
           <Input
@@ -1043,7 +1042,7 @@ function AddInviteAdminModal({
             Cancel
           </Button>
           <Button variant="primary" type="button" onClick={handleInvite} disabled={submitting || mobileTaken}>
-            <AppIcon name="email" size={16} />
+            <UiIcon name="email" size={16} />
             {submitting ? "Adding…" : "Send invite"}
           </Button>
         </div>

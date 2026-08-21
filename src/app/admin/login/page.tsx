@@ -22,6 +22,7 @@ import { Icon } from "@/components/ui/icon";
 import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ADMIN_VERSION_LABEL } from "@/lib/app-version";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 type Method = "passcode" | "phone";
 
@@ -947,7 +948,7 @@ function LoginForm() {
                       </div>
                       <SpringPress className="mt-1">
                         <Button type="submit" fullWidth disabled={submitting}>
-                          <AppIcon name="email" size={18} />
+                          <UiIcon name="email" size={18} />
                           {submitting ? "Verifying…" : "Verify & sign in"}
                         </Button>
                       </SpringPress>
@@ -1065,7 +1066,7 @@ function LoginForm() {
                           placeholder="you@nutrigreenz.farm"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          prefix={<AppIcon name="email" size={18} />}
+                          prefix={<UiIcon name="email" size={18} />}
                           error={error ?? undefined}
                         />
                       </TactileField>
