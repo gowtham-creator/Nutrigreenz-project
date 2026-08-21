@@ -1,0 +1,239 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!--
+  A2 Gir Cow Ghee — full pack artwork, four faces.
+
+  Modelled on how an Indian dairy pack actually divides its information, which
+  is what the Sid's Farm reference shows: the FRONT sells, the RIGHT carries the
+  statutory panel, the LID carries the batch stamp, and the LEFT carries the
+  brand owner and the story. Splitting it that way is not decoration — the
+  Legal Metrology and FSS labelling rules require the declarations to be legible
+  on a single face, so cramming them onto the back is what makes packs unreadable.
+
+  Built in HTML rather than generated, deliberately: an image model cannot set a
+  nutrition table or a licence number accurately, and those are exactly the
+  parts a regulator reads. Render with branding/render-4panel.mjs.
+-->
+<style>
+  :root{
+    --forest:#14331F; --forest-deep:#0A1F12; --forest-soft:#1F4D2E;
+    --cream:#F0E9D9; --cream-deep:#ECE7D2; --paper:#FAFAF5;
+    --gold:#B79A46; --brass:#9A7B3C; --ink:#243026; --ink-soft:#5C6A60;
+    --veg:#2E9B37;
+    --display:"Fraunces",Georgia,serif; --sans:"Hanken Grotesk",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DED8C6;padding:44px;font-family:var(--sans);color:var(--ink)}
+  .sheet{max-width:1500px;margin:0 auto}
+  .head{text-align:center;margin-bottom:34px}
+  .head .kk{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass)}
+  .head h1{font-family:var(--display);font-size:30px;color:var(--forest);margin-top:9px}
+  .head p{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:7px}
+
+  .row{display:flex;gap:26px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .panel{width:330px}
+  .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);text-align:center;margin-bottom:9px}
+  .face{
+    width:330px;height:420px;background:var(--cream);border-radius:16px;position:relative;
+    overflow:hidden;padding:20px 18px;
+    box-shadow:0 2px 0 rgba(255,255,255,.6) inset,0 14px 30px rgba(10,31,18,.16);
+  }
+  .foot{position:absolute;left:0;right:0;bottom:0;height:26px;background:var(--brass);
+    display:grid;place-items:center;font-family:var(--display);font-style:italic;font-size:10.5px;color:var(--cream)}
+
+  /* front */
+  .crest{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .crest img{height:44px}
+  .rule{display:flex;align-items:center;gap:7px;color:var(--brass);font-family:var(--mono);
+    font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;margin-top:5px}
+  .rule::before,.rule::after{content:"";height:1px;width:34px;background:linear-gradient(90deg,transparent,var(--brass))}
+  .pname{font-family:var(--display);font-size:33px;line-height:1.02;color:var(--forest);text-align:center;margin-top:15px;letter-spacing:-.015em}
+  .psub{font-family:var(--display);font-style:italic;font-size:14px;color:var(--brass);text-align:center;margin-top:7px}
+  .pdesc{font-size:10.5px;line-height:1.5;color:var(--ink-soft);text-align:center;margin-top:11px;padding:0 6px}
+  .claims{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:13px}
+  .claims span{font-family:var(--mono);font-size:7.5px;letter-spacing:.05em;text-transform:uppercase;
+    padding:4px 8px;border-radius:999px;border:1px solid rgba(20,51,31,.22);color:var(--forest-soft)}
+  .fbot{position:absolute;left:18px;right:18px;bottom:44px;display:flex;justify-content:space-between;align-items:flex-end}
+  .origin b{display:block;font-family:var(--display);font-size:12px;color:var(--forest)}
+  .origin i{font-style:normal;font-size:9px;color:var(--ink-soft)}
+  .netq{text-align:right}
+  .netq .v{font-family:var(--display);font-size:20px;color:var(--forest)}
+  .netq .l{font-family:var(--mono);font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .veg{position:absolute;top:18px;right:18px;width:17px;height:17px;border:1.6px solid var(--veg);
+    border-radius:3px;display:grid;place-items:center;background:#fff}
+  .veg::after{content:"";width:8px;height:8px;border-radius:999px;background:var(--veg)}
+
+  /* statutory */
+  h4{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:5px}
+  .blk{margin-bottom:11px}
+  .blk p{font-size:9.5px;line-height:1.45;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:8.5px}
+  th{font-family:var(--mono);font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+    text-align:right;padding:3px 0;border-bottom:1px solid rgba(20,51,31,.18)}
+  th:first-child{text-align:left}
+  td{padding:2.5px 0;border-bottom:1px solid rgba(20,51,31,.08);text-align:right}
+  td:first-child{text-align:left;color:var(--ink-soft)}
+  td.b{font-weight:700;color:var(--forest)}
+  .fss{display:flex;align-items:center;gap:7px;border:1px solid rgba(20,51,31,.25);border-radius:8px;padding:5px 8px}
+  .fss .m{width:19px;height:19px;border-radius:999px;background:var(--forest);color:var(--cream);
+    display:grid;place-items:center;font-family:var(--display);font-size:10px}
+  .fss .t{font-family:var(--mono);font-size:7.5px;line-height:1.3;color:var(--forest)}
+  .bars{display:flex;gap:1.1px;align-items:flex-end;height:34px;margin-top:7px}
+  .bars i{display:block;background:var(--forest-deep)}
+  .bnum{font-family:var(--mono);font-size:8px;letter-spacing:.22em;color:var(--forest);margin-top:3px}
+
+  /* lid */
+  .lidwrap{width:330px;height:420px;display:grid;place-items:center}
+  .lid{width:296px;height:296px;border-radius:999px;
+    background:conic-gradient(from 210deg,#C9A94E,#EBD79A 18%,#B08F3C 38%,#E4CE8C 58%,#AD8B38 78%,#D8BE72);
+    display:grid;place-items:center;box-shadow:0 16px 34px rgba(10,31,18,.28)}
+  .disc{width:232px;height:232px;border-radius:999px;background:var(--cream);position:relative;
+    display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.2) inset}
+  .arc{position:absolute;inset:0}
+  .stamp{font-family:var(--mono);font-size:8.5px;line-height:1.75;color:#3A3A3A;text-align:center;transform:rotate(-7deg)}
+  .stamp b{font-weight:700}
+
+  /* story */
+  .story{font-size:9.5px;line-height:1.55;color:var(--ink)}
+  .qr{width:62px;height:62px;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:1px}
+  .qr i{background:var(--forest-deep)}
+  .qr i.o{background:transparent}
+  .certs{font-family:var(--mono);font-size:7px;letter-spacing:.08em;color:var(--ink-soft);line-height:1.6;text-transform:uppercase}
+  .wake{position:absolute;right:9px;top:74px;writing-mode:vertical-rl;font-family:var(--display);
+    font-style:italic;font-size:11px;color:var(--brass)}
+</style></head>
+<body>
+<div class="sheet">
+  <div class="head">
+    <div class="kk">Pack artwork · four faces</div>
+    <h1>A2 Gir Cow Ghee · 500 ml amber glass</h1>
+    <p>FRONT · RIGHT (statutory) · LID · LEFT (brand owner &amp; story)</p>
+  </div>
+
+  <div class="row">
+    <!-- FRONT -->
+    <div class="panel">
+      <div class="cap">Front</div>
+      <div class="face">
+        <span class="veg"></span>
+        <div class="crest">
+          <img src="assets/logo-stacked-light.png" style="filter:invert(18%) sepia(18%) saturate(1200%) hue-rotate(80deg)">
+          <div class="rule">A2 · Bilona-churned</div>
+        </div>
+        <div class="pname">Gir Cow Ghee</div>
+        <div class="psub">Hand-churned from cultured curd</div>
+        <p class="pdesc">Slow bilona method: curd churned to butter, then simmered
+          to a golden, grainy ghee. From a single A2 Gir herd.</p>
+        <div class="claims">
+          <span>A2 beta-casein</span><span>Bilona</span><span>Grass-fed</span><span>Single-herd</span>
+        </div>
+        <div class="fbot">
+          <div class="origin"><b>Junagadh</b><i>Gujarat · 18-cow Gir herd</i></div>
+          <div class="netq"><div class="v">500 ml</div><div class="l">Net volume</div></div>
+        </div>
+        <div class="foot">Born in Soil, built for tomorrow</div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel">
+      <div class="cap">Right · statutory</div>
+      <div class="face" style="padding:17px 15px">
+        <div class="blk"><h4>Ingredients</h4>
+          <p>100% A2 cow-milk ghee (clarified butter) from grass-fed Gir cows.
+             No colour, no preservatives.</p></div>
+        <div class="blk"><h4>Allergen</h4>
+          <p><b>Contains milk.</b> Naturally lactose- and casein-light after clarification.</p></div>
+        <div class="blk"><h4>Nutrition — per 100 g</h4>
+          <table>
+            <tr><th>Particulars</th><th>Value</th></tr>
+            <tr><td>Energy</td><td class="b">900 kcal</td></tr>
+            <tr><td>Total fat</td><td class="b">100 g</td></tr>
+            <tr><td>&nbsp;&nbsp;Saturated</td><td>62 g</td></tr>
+            <tr><td>&nbsp;&nbsp;MUFA</td><td>28 g</td></tr>
+            <tr><td>Trans fat</td><td>0 g</td></tr>
+            <tr><td>Cholesterol</td><td>256 mg</td></tr>
+            <tr><td>Vitamin A</td><td>3300 IU</td></tr>
+          </table></div>
+        <div class="blk"><h4>Storage &amp; use</h4>
+          <p>No refrigeration needed. Use a clean, dry spoon.</p></div>
+        <!-- Reserves the height of the pinned licence/barcode block below, so the
+             flowing copy can never run underneath it. -->
+        <div style="height:104px"></div>
+        <div style="position:absolute;left:15px;right:15px;bottom:42px">
+          <div class="fss"><span class="m">F</span>
+            <span class="t">FSSAI Lic. No.<br><b>10822005000123</b></span></div>
+          <div class="bars" id="bars"></div>
+          <div class="bnum">8 901234 567890</div>
+        </div>
+        <div class="foot">M.R.P. ₹1700 · incl. all taxes · ₹3.40/ml</div>
+      </div>
+    </div>
+
+    <!-- LID -->
+    <div class="panel">
+      <div class="cap">Lid · batch stamp</div>
+      <div class="lidwrap">
+        <div class="lid"><div class="disc">
+          <svg class="arc" viewBox="0 0 232 232">
+            <defs>
+              <path id="t" d="M 26 116 A 90 90 0 0 1 206 116"/>
+              <path id="bm" d="M 206 116 A 90 90 0 0 1 26 116"/>
+            </defs>
+            <text font-family="Fraunces,Georgia,serif" font-size="17" fill="#14331F" letter-spacing="1.6">
+              <textPath href="#t" startOffset="50%" text-anchor="middle">NUTRI GREENZ</textPath></text>
+            <text font-family="Fraunces,Georgia,serif" font-size="14" fill="#14331F" letter-spacing="1.4">
+              <textPath href="#bm" startOffset="50%" text-anchor="middle">A2 GIR COW GHEE</textPath></text>
+          </svg>
+          <div class="stamp">
+            MRP.RS.1700/-<br>
+            B.NO.<b>NG-JUN26-03B</b><br>
+            MFD.06/2026 EXP.06/2027
+          </div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- LEFT -->
+    <div class="panel">
+      <div class="cap">Left · brand owner &amp; story</div>
+      <div class="face" style="padding:17px 15px">
+        <div class="wake">Born in soil</div>
+        <div class="blk" style="max-width:200px"><h4>Marketed &amp; packed by</h4>
+          <p><b>Nutri Greenz Farm Technologies Pvt. Ltd.</b><br>
+             HITEC City, Hyderabad,<br>Telangana 500072<br>
+             <span style="font-family:var(--mono);font-size:8px">care@nutrigreenz.in</span></p></div>
+        <div style="display:flex;gap:11px;align-items:flex-start;margin-bottom:11px">
+          <div class="qr" id="qr"></div>
+          <p style="font-size:8px;line-height:1.45;color:var(--ink-soft);max-width:118px">
+            <b style="color:var(--forest)">Manufacturing address</b><br>
+            Scan and match the first letter of the batch number to know where it was made.</p>
+        </div>
+        <div class="blk" style="border:1px solid rgba(20,51,31,.22);border-radius:8px;padding:9px 10px">
+          <h4>Purity you can trust</h4>
+          <p class="story">Every lot is churned from cultured curd, never cream, and
+            tested before it is filled. No colour, no preservatives, nothing added
+            to make it keep. Visit <b>nutrigreenz.farm</b> to trace this batch to
+            the herd it came from.</p></div>
+        <div style="position:absolute;left:15px;right:15px;bottom:42px">
+          <div class="certs">An FSSAI-licensed facility<br>Lab-tested every lot · Single-herd traceable</div>
+        </div>
+        <div class="foot">Born in Soil, built for tomorrow</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // Barcode: deterministic bar widths so the artwork is stable between renders.
+  const bars=document.getElementById('bars');
+  const seq=[2,1,3,1,2,3,1,1,2,4,1,2,1,3,2,1,4,1,2,2,3,1,1,2,3,2,1,3,1,2,2,1,3,1,2,4,1,2,1,3];
+  seq.forEach((w,i)=>{const b=document.createElement('i');b.style.width=w+'px';
+    b.style.height=(i%7===0?34:29)+'px';bars.appendChild(b);});
+  // QR: fixed pattern with the three finder squares, purely representational.
+  const qr=document.getElementById('qr');
+  const on=new Set([0,1,2,6,7,8,9,11,15,17,18,20,22,24,26,27,29,31,33,35,36,38,40,42,44,
+    45,47,49,51,53,54,55,56,60,61,62,63,65,67,69,71,72,74,76,78,80]);
+  for(let i=0;i<81;i++){const d=document.createElement('i');if(!on.has(i))d.className='o';qr.appendChild(d);}
+</script>
+</body></html>
