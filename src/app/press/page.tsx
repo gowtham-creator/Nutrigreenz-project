@@ -50,6 +50,7 @@ export default function PressPage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/press/press-hero.webp"
         tone="forest"
         eyebrow="Press & media"
         title={

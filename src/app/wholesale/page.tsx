@@ -46,6 +46,7 @@ export default function WholesalePage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/wholesale/wholesale-hero.webp"
         eyebrow="Bulk & corporate"
         title={
           <>

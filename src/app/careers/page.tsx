@@ -67,6 +67,7 @@ export default function CareersPage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/careers/careers-hero.webp"
         eyebrow="Careers"
         title={
           <>

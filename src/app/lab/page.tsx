@@ -30,6 +30,7 @@ export default function LabPage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/lab/lab-hero.webp"
         tone="forest"
         eyebrow="The Nutrigreenz lab desk"
         title={<>Every batch. <em className="italic text-ng-clay">Three labs.</em> One verdict.</>}

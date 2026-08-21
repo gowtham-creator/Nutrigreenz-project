@@ -46,6 +46,7 @@ export default function ContactPage() {
   return (
     <PageShell>
       <PageHero
+        image="/images/contact/contact-hero.webp"
         eyebrow="Contact"
         title={
           <>

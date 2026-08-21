@@ -48,6 +48,7 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
   return (
     <PageShell>
       <PageHero
+        image="/images/traceability/traceability-hero.webp"
         tone="forest"
         eyebrow="Traceability is the product"
         title={<>Type a code. <em className="italic text-ng-leaf">See the farm.</em></>}
