@@ -30,7 +30,7 @@ const NAV: NavItem[] = [
   { href: "/admin/inventory", label: "Catalog", icon: "catalog", key: "catalog" },
   // Editorial content surfaces — the storefront Journal + Farms directories.
   { href: "/admin/journal", label: "Journal", icon: "notebook-bold", key: "journal" },
-  { href: "/admin/farms", label: "Farms", icon: "leaf-bold", key: "farms" },
+  { href: "/admin/farms", label: "Farms", icon: "farmhouse", key: "farms" },
   { href: "/admin/orders", label: "Orders", icon: "clipboard-list-bold", key: "orders" },
   { href: "/admin/marketing", label: "Marketing", icon: "speaker-bold", key: "marketing", superadminOnly: true },
   // Reporting & analytics (Phase 8) — visible to both admin and superadmin.
