@@ -237,7 +237,7 @@ export function JournalModal({
             onClick={() => onSave(draft)}
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Icon name="diskette-bold" size={15} />
+            <Icon name="save" size={15} />
             {saving ? "Saving…" : article ? "Save changes" : "Create article"}
           </button>
         </footer>

@@ -155,7 +155,7 @@ export function LiveCouponsPanel() {
         </span>
         <div>
           <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Live coupons</h2>
-          <p className="text-[13px] text-ng-ink-muted">Real codes customers can redeem at checkout — validated server-side.</p>
+          <p className="text-[13px] text-ng-ink-muted">Real codes customers can redeem at checkout, validated server-side.</p>
         </div>
       </div>
 
@@ -237,7 +237,7 @@ export function LiveCouponsPanel() {
       {loading ? (
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">Loading coupons…</p>
       ) : coupons.length === 0 ? (
-        <p className="py-6 text-center text-[14px] text-ng-ink-muted">No coupons yet — create your first above.</p>
+        <p className="py-6 text-center text-[14px] text-ng-ink-muted">No coupons yet. Create your first above.</p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-ng-line-soft">
           <table className="w-full text-left text-[13px]">

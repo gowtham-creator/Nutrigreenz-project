@@ -114,7 +114,7 @@ export default function WholesalePage() {
         <Reveal className="rounded-3xl bg-ng-forest text-ng-cream p-10 md:p-14 text-center">
           <h2 className="font-display text-[clamp(26px,4vw,42px)] leading-tight">Let&rsquo;s talk volume</h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-ng-cream/75">
-            Tell us what you need and we&rsquo;ll come back with availability and pricing — usually
+            Tell us what you need and we&rsquo;ll come back with availability and pricing. Usually
             within one business day.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">

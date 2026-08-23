@@ -97,7 +97,7 @@ export function ProductPicker({
 
       {failed ? (
         <p className="rounded-xl border border-ng-danger/40 bg-ng-danger/5 px-3 py-2.5 text-[12.5px] text-ng-danger">
-          Couldn&rsquo;t load the catalogue. Reload before saving — otherwise this coupon
+          Couldn&rsquo;t load the catalogue. Reload before saving. Otherwise this coupon
           would be saved with no products targeted.
         </p>
       ) : products === null ? (

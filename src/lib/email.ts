@@ -192,11 +192,11 @@ export function otpEmailHtml(code: string, expiryMinutes = 10): string {
           <td style="padding:0 0 6px;border-top:1px solid ${LINE}">
             <p style="margin:22px 0 0;font-size:13px;line-height:1.7;color:${MUTED}">
               <strong style="color:${INK}">Didn't try to sign in?</strong> Someone has your password.
-              Ignore this code — it's useless on its own — then change the password and tell
+              Ignore this code. It's useless on its own. Then change the password and tell
               <a href="mailto:${SUPPORT_EMAIL}" style="color:${GREEN}">${SUPPORT_EMAIL}</a>.
             </p>
             <p style="margin:12px 0 0;font-size:13px;line-height:1.7;color:${MUTED}">
-              Nobody at Nutri Greenz will ever ask you for this code — not by phone, not by email,
+              Nobody at Nutri Greenz will ever ask you for this code. Not by phone, not by email,
               not on WhatsApp.
             </p>
           </td>

@@ -341,7 +341,7 @@ export function PaymentGatewayPanel() {
                     </button>
                   </div>
                   <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
-                    Creates orders in SBI&rsquo;s sandbox only — nothing is written here,
+                    Creates orders in SBI&rsquo;s sandbox only. Nothing is written here,
                     and no money moves. One per way the bank might read the expiry
                     field, since the documentation contradicts its own validator.
                     Open each link: the one that loads a real payment page rather

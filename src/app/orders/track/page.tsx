@@ -71,7 +71,7 @@ export default function TrackOrderPage() {
             <div className="rounded-2xl bg-ng-forest-deep p-6 text-ng-cream">
               <div className="text-[11px] uppercase tracking-wider text-ng-clay">Need help</div>
               <p className="mt-1 font-display text-[18px] leading-tight">
-                Reach our care team — most replies under 2 hours.
+                Reach our care team. Most replies under 2 hours.
               </p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <Link

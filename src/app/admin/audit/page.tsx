@@ -75,7 +75,7 @@ interface ActionMeta {
 
 const ACTION_META: Record<string, ActionMeta> = {
   // Authentication
-  "admin.signin": { group: "signin", kind: "Sign-in", icon: "login-3-bold", tone: "clay" },
+  "admin.signin": { group: "signin", kind: "Sign-in", icon: "signin", tone: "clay" },
   // Admin-user management (Super Admin)
   "admin.create": { group: "admins", kind: "Admin", icon: "user-plus-bold", tone: "forest" },
   "admin.update": { group: "admins", kind: "Admin", icon: "pen-2-bold", tone: "forest" },

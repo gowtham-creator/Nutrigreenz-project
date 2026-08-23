@@ -242,7 +242,7 @@ export function SaveBar({
             dirty && "shadow-[0_4px_14px_rgba(31,77,46,0.25)]",
           )}
         >
-          <Icon name="diskette-bold" size={14} />
+          <Icon name="save" size={14} />
           Save{dirty ? " changes" : ""}
         </button>
       </div>

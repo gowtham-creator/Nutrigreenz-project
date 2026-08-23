@@ -199,7 +199,7 @@ export default function AboutPage() {
         <Reveal className="rounded-3xl bg-ng-forest text-ng-cream p-10 md:p-14 text-center">
           <h2 className="font-display text-[clamp(26px,4vw,42px)] leading-tight">Taste the difference honesty makes</h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-ng-cream/75">
-            Stock your pantry with chemical-free produce sourced directly from farmers — delivered
+            Stock your pantry with chemical-free produce sourced directly from farmers. Delivered
             fresh across Hyderabad.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">

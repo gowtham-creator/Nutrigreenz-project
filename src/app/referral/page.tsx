@@ -158,7 +158,7 @@ export default function ReferralPage() {
                 Your referral link
               </span>
               <h2 className="font-display text-[clamp(26px,3.4vw,36px)] mt-3 leading-tight">
-                Share this — it&rsquo;s the most useful thing you&rsquo;ll send today.
+                Share this. It&rsquo;s the most useful thing you&rsquo;ll send today.
               </h2>
 
               <div className="mt-7 space-y-4">
@@ -334,7 +334,7 @@ export default function ReferralPage() {
                 <UiIcon name="customers" size={24} />
               </span>
               <p className="max-w-sm text-[14px] leading-relaxed text-ng-ink-muted">
-                No invites yet. Share your link above — friends who join with it will appear here, and
+                No invites yet. Share your link above. Friends who join with it will appear here, and
                 your credit lands once their first order completes.
               </p>
             </div>

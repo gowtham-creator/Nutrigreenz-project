@@ -364,7 +364,7 @@ function RulesCard({
                   ))}
                   {draft.shippingSlabs.length === 0 ? (
                     <li className="text-[12px] font-medium text-ng-ink-soft py-1">
-                      No slabs yet — add one above.
+                      No slabs yet, add one above.
                     </li>
                   ) : null}
                 </ul>
@@ -521,7 +521,7 @@ function SlotsCard({
                   aria-label={`Save slot ${slot.label}`}
                   className="h-11 px-3.5 rounded-xl bg-ng-forest-deep text-ng-cream hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <Icon name="diskette-bold" size={16} />
+                  <Icon name="save" size={16} />
                 </button>
                 <button
                   type="button"
@@ -537,7 +537,7 @@ function SlotsCard({
           ))}
           {slots.length === 0 ? (
             <li className="text-[12px] font-medium text-ng-ink-soft py-2">
-              No delivery slots — add one above.
+              No delivery slots, add one above.
             </li>
           ) : null}
         </ul>
@@ -679,7 +679,7 @@ function AreasCard({
       {showImport ? (
         <div className="mb-5 rounded-xl border border-ng-line-soft bg-ng-cream/50 p-4">
           <label className="block text-[12.5px] font-semibold text-ng-ink-muted mb-1.5">
-            Paste CSV — columns: pincode, area, community (header optional)
+            Paste CSV: columns: pincode, area, community (header optional)
           </label>
           <textarea
             value={csv}
@@ -737,7 +737,7 @@ function AreasCard({
         <p className="text-[12.5px] font-medium text-ng-ink-soft py-2">Loading areas…</p>
       ) : areas.length === 0 ? (
         <p className="text-[12.5px] font-medium text-ng-ink-soft py-2">
-          No serviceable areas configured — every pincode is currently treated as deliverable.
+          No serviceable areas configured. Every pincode is currently treated as deliverable.
         </p>
       ) : (
         <ul className="space-y-2.5">
@@ -778,7 +778,7 @@ function AreasCard({
                   aria-label={`Save area ${area.pincode}`}
                   className="h-11 px-3.5 rounded-xl bg-ng-forest-deep text-ng-cream hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <Icon name="diskette-bold" size={16} />
+                  <Icon name="save" size={16} />
                 </button>
                 <button
                   type="button"

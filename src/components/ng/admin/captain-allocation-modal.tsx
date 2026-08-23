@@ -170,7 +170,7 @@ export function CaptainAllocationModal({
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
             {failed ? (
               <p className="rounded-xl border border-ng-danger/40 bg-ng-danger/5 px-3 py-2.5 text-[12.5px] text-ng-danger">
-                Couldn&rsquo;t load the catalogue. Close and reopen — saving now would clear
+                Couldn&rsquo;t load the catalogue. Close and reopen. Saving now would clear
                 this captain&rsquo;s existing allocation.
               </p>
             ) : variants === null ? (
@@ -264,7 +264,7 @@ export function CaptainAllocationModal({
                 onClick={() => void save()}
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-ng-forest-deep px-4 py-2 text-[12.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon name="diskette-bold" size={15} />
+                <Icon name="save" size={15} />
                 {saving ? "Saving…" : "Save allocation"}
               </button>
             </div>

@@ -123,7 +123,7 @@ export function Footer() {
               Born in soil. Built for tomorrow.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-ng-cream/70">
-              No middlemen, no mystery — just harvest news, seasonal recipes from our
+              No middlemen, no mystery. Just harvest news, seasonal recipes from our
               partner kitchens, and the occasional member-only offer.
             </p>
 

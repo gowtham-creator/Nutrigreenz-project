@@ -77,7 +77,7 @@ type LogKind = "auth" | "create" | "update" | "remove";
 
 /** Visual treatment per activity kind, reusing the existing log styling. */
 const LOG_META: Record<LogKind, { icon: string; label: string; cls: string }> = {
-  auth: { icon: "login-3-bold", label: "Sign-in", cls: "bg-ng-clay/15 text-ng-clay-deep" },
+  auth: { icon: "signin", label: "Sign-in", cls: "bg-ng-clay/15 text-ng-clay-deep" },
   create: { icon: "user-plus-bold", label: "Admin", cls: "bg-ng-forest/12 text-ng-forest" },
   update: { icon: "settings", label: "Admin", cls: "bg-ng-forest/12 text-ng-forest" },
   remove: { icon: "trash-bin-trash-bold", label: "Admin", cls: "bg-ng-clay/15 text-ng-clay-deep" },

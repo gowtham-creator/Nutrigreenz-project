@@ -17,9 +17,9 @@ import { JOURNAL as STATIC_JOURNAL, FARMS as STATIC_FARMS } from "@/components/n
  * the sample articles). Used to seed the DB and as the fallback body so a
  * static-sourced article looks identical to a DB-sourced one.
  */
-export const DEFAULT_ARTICLE_BODY_HTML = `<p>There is a faster version of almost every food we sell, and ghee is no exception — a modern creamery can take milk to finished fat in a matter of hours. We take five days. The slow pace of bilona — three days of churning, two days of resting — is not a marketing line; it's a chemical reality that nothing in modern dairy technology has been able to shortcut.</p>
+export const DEFAULT_ARTICLE_BODY_HTML = `<p>There is a faster version of almost every food we sell, and ghee is no exception. A modern creamery can take milk to finished fat in a matter of hours. We take five days. The slow pace of bilona. Three days of churning, two days of resting. Is not a marketing line; it's a chemical reality that nothing in modern dairy technology has been able to shortcut.</p>
 <h2>The science underneath the slowness</h2>
-<p>When milk is cultured at low temperature for 48 hours, the lactic-acid bacteria break down lactose more thoroughly. The resulting curd, churned by hand at the right rhythm, releases butter with a fundamentally different fatty-acid profile — shorter-chain triglycerides, more conjugated linoleic acid, and a richer aromatic compound bouquet.</p>
+<p>When milk is cultured at low temperature for 48 hours, the lactic-acid bacteria break down lactose more thoroughly. The resulting curd, churned by hand at the right rhythm, releases butter with a fundamentally different fatty-acid profile. Shorter-chain triglycerides, more conjugated linoleic acid, and a richer aromatic compound bouquet.</p>
 <blockquote>"I learned from my grandmother. The butter tells you when it's done. You don't tell it."<footer>— Hetal Pateel, Junagadh</footer></blockquote>
 <h2>Why we will not industrialise this</h2>
 <p>Several large dairies have asked us about white-labeling our ghee using continuous-flow centrifuge methods. We've politely declined. The yield is higher, the cost-per-jar is lower, but the result is not the same product. We'd rather sell fewer jars of the real thing than more jars of something we couldn't stand behind.</p>

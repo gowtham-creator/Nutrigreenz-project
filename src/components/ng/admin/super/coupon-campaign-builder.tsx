@@ -803,7 +803,7 @@ export function CouponCampaignBuilder() {
                 onClick={() => void save()}
                 className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer shadow-[0_4px_14px_rgba(31,77,46,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon name={isEditing ? "diskette-bold" : "rocket-2-bold"} size={14} />
+                <Icon name={isEditing ? "save" : "rocket-2-bold"} size={14} />
                 {saving ? "Saving…" : isEditing ? "Save changes" : "Create campaign"}
               </button>
             </div>
@@ -867,7 +867,7 @@ export function CouponCampaignBuilder() {
                * came back empty; the truth is that there is nothing to measure.
                */
               <p className="rounded-xl border border-ng-line-soft bg-ng-paper px-3.5 py-3 text-[12.5px] text-ng-ink-muted">
-                Not yet redeemed — no performance to report.
+                Not yet redeemed. No performance to report.
               </p>
             )}
           </div>
@@ -895,7 +895,7 @@ export function CouponCampaignBuilder() {
           {loadFailed ? (
             <p className="rounded-xl border border-ng-danger/40 bg-ng-danger/5 px-3.5 py-3 text-[12.5px] text-ng-danger">
               Couldn&rsquo;t load coupons. This is a connection failure, not an empty
-              list — reload before creating a code, or you may duplicate one.
+              list. Reload before creating a code, or you may duplicate one.
             </p>
           ) : loading ? (
             <p className="px-1 py-3 text-[12.5px] text-ng-ink-muted">Loading campaigns…</p>

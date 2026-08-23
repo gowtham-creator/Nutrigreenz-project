@@ -38,7 +38,7 @@ export function VisitorPlaces({
             Where visitors come from
           </h3>
           <p className="mt-1 text-[13px] leading-snug text-ng-ink-muted">
-            Counted by place, never by person — no address or account is involved.
+            Counted by place, never by person. No address or account is involved.
           </p>
         </div>
         <span className="shrink-0 rounded-full bg-ng-ink/[0.07] px-2.5 py-1 text-[13px] font-semibold text-ng-forest-deep">

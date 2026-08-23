@@ -57,6 +57,9 @@ const UI_ICONS = {
   macos: "macos",
   android: "android",
   windows: "windows",
+  status: "status",
+  signin: "signin",
+  save: "save",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

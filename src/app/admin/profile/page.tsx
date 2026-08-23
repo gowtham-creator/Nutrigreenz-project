@@ -44,7 +44,7 @@ interface ActivityItem {
 
 /** Friendly label + Solar icon for a known activity action code (fallback: humanised). */
 const ACTIVITY_LABELS: Record<string, { label: string; icon: string }> = {
-  "admin.signin": { label: "Signed in", icon: "login-3-bold" },
+  "admin.signin": { label: "Signed in", icon: "signin" },
   "admin.profile_update": { label: "Updated your profile", icon: "customer" },
   "admin.photo_update": { label: "Changed your photo", icon: "camera-bold" },
   "admin.photo_remove": { label: "Removed your photo", icon: "camera-bold" },
@@ -710,7 +710,7 @@ export default function AdminProfilePage() {
                   </span>
                 </div>
                 <p className="mb-2 text-[11.5px] font-medium text-ng-ink-soft">
-                  Turn on any of these — after your password you’ll complete{" "}
+                  Turn on any of these. After your password you’ll complete{" "}
                   <span className="font-semibold text-ng-ink-muted">any one</span> at sign-in.
                 </p>
 
@@ -781,7 +781,10 @@ export default function AdminProfilePage() {
               <ul>
                 <li className="flex items-center gap-3 py-2.5">
                   <span className="grid place-items-center size-9 rounded-xl bg-ng-cream text-ng-forest shrink-0">
-                    <UiIcon name={device.icon} size={17} />
+                    {/* 20, not 17: the macOS mark is the Happy Mac face and its
+                        features close up below about 19px. The chip is 36px, so
+                        the room was already there. */}
+                    <UiIcon name={device.icon} size={20} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] font-semibold text-ng-ink truncate">{device.label}</div>
@@ -795,7 +798,7 @@ export default function AdminProfilePage() {
               <p className="mt-1 text-[11.5px] font-medium leading-relaxed text-ng-ink-soft">
                 Only this device is shown. Signing in from other devices is not
                 tracked yet, so use <b>Sign out everywhere</b> if you suspect
-                another session — it revokes every token, on every device.
+                another session. It revokes every token, on every device.
               </p>
             </div>
           </Card>
@@ -807,9 +810,9 @@ export default function AdminProfilePage() {
             <dl className="space-y-3.5">
               {[
                 { k: "Role", icon: isSuper ? "admin" : "lock", v: roleLabel(role) },
-                { k: "Status", icon: "check-circle-bold", v: "Active" },
-                { k: "Member since", icon: "calendar-minimalistic-bold", v: formatMemberSince(createdAt) },
-                { k: "Last sign-in", icon: "clock-circle-bold", v: formatLastSignIn(lastLoginAt) },
+                { k: "Status", icon: "status", v: "Active" },
+                { k: "Member since", icon: "customer", v: formatMemberSince(createdAt) },
+                { k: "Last sign-in", icon: "signin", v: formatLastSignIn(lastLoginAt) },
               ].map((row) => (
                 <div key={row.k} className="flex items-center justify-between gap-3">
                   <dt className="inline-flex items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">

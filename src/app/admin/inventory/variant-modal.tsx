@@ -412,7 +412,7 @@ export function VariantModal({
                         onClick={() => void saveRow(v)}
                         className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer disabled:opacity-50"
                       >
-                        <Icon name="diskette-bold" size={13} />
+                        <Icon name="save" size={13} />
                         Save
                       </button>
                       <button

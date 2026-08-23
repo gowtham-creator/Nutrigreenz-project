@@ -811,7 +811,7 @@ function LoginForm() {
           </div>
 
           <p className="relative z-10 w-fit rounded-full bg-ng-paper/75 px-3.5 py-1.5 font-mono text-[11.5px] font-medium text-ng-forest backdrop-blur-md">
-            Secured area — activity may be monitored.
+            Secured area. Activity may be monitored.
           </p>
         </aside>
 

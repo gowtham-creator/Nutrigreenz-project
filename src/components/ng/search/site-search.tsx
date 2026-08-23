@@ -390,7 +390,7 @@ export function SiteSearch({ className }: { className?: string }) {
                         Nothing matched “{q}”
                       </p>
                       <p className="mt-1.5 text-[13px] text-ng-ink-muted">
-                        Try a category instead — oils, ghee or honey.
+                        Try a category instead. Oils, ghee or honey.
                       </p>
                     </div>
                   ) : (

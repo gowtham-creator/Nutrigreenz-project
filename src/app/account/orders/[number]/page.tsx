@@ -213,8 +213,7 @@ export default function AccountOrderDetailPage({
             <div>
               <p className="font-display text-[14.5px] text-ng-forest-deep">Payment pending</p>
               <p className="mt-0.5 leading-relaxed text-ng-ink-muted">
-                Your order is placed and being prepared. We&apos;ll confirm payment shortly —
-                no action is needed from you right now.
+                Your order is placed and being prepared. We&apos;ll confirm payment shortly. No action is needed from you right now.
               </p>
             </div>
           </div>

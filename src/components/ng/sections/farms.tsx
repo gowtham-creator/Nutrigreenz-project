@@ -92,7 +92,7 @@ export function Farms() {
                 </div>
 
                 <div className="mt-auto pt-5 border-t border-ng-line-soft flex items-center justify-between">
-                  <span className="text-[13px] text-ng-ink-soft">— {farm.farmerName}</span>
+                  <span className="text-[13px] text-ng-ink-soft">{farm.farmerName}</span>
                   <Link
                     href={`/farms/${farm.id}`}
                     className="text-[13px] font-medium text-ng-forest hover:text-ng-leaf transition-colors"

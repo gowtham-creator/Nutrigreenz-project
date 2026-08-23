@@ -116,7 +116,7 @@ export function ShopByCategory({ categories, products, className }: Props) {
       eyebrow="Shop the harvest"
       heading={
         <>
-          One step closer to your kitchen — <em className="italic text-ng-leaf">pick a category.</em>
+          One step closer to your kitchen. <em className="italic text-ng-leaf">pick a category.</em>
         </>
       }
       description="Browse every harvest by category. Tap a tab to see its freshest picks, then add to your bag right here."

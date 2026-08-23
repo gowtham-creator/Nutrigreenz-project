@@ -139,7 +139,7 @@ function FailedContent() {
             <p className="mt-6 border-t border-ng-line-soft pt-4 text-[12.5px] leading-relaxed text-ng-ink-soft">
               Your order is only placed once payment is confirmed. If your bank
               shows a charge for an order that was not placed, it is an
-              authorisation hold and your bank releases it — normally within 5
+              authorisation hold and your bank releases it. Normally within 5
               working days. Contact us with your bank reference and we will chase
               it for you.
             </p>

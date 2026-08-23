@@ -141,7 +141,7 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
               {/* Tests grid */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-[20px] text-ng-forest-deep">Lab report — all twelve panels</h3>
+                  <h3 className="font-display text-[20px] text-ng-forest-deep">Lab report, all twelve panels</h3>
                   <span className="text-[12px] text-ng-ink-soft">Tested by Hyderabad Analytics Lab · NABL-accredited</span>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">

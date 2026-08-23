@@ -80,7 +80,7 @@ export function OfferBanner() {
                 </h2>
 
                 <p className="mt-3 text-[15px] leading-relaxed text-ng-cream/80 md:text-[16px]">
-                  Cold-pressed oils, bilona ghee, raw honey &amp; stone-ground staples — pressed
+                  Cold-pressed oils, bilona ghee, raw honey &amp; stone-ground staples. Pressed
                   fresh and lab-tested. Stock the pantry while the sale lasts.
                 </p>
 

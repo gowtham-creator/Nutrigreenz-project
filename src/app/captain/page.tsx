@@ -93,7 +93,7 @@ export default function CaptainHome() {
                   target.
                 </>
               ) : (
-                <span className="font-display text-ng-cream text-[16px]">Target smashed — keep going.</span>
+                <span className="font-display text-ng-cream text-[16px]">Target smashed, keep going.</span>
               )}
             </div>
             <div className="mt-2.5 h-1.5 w-full rounded-full bg-ng-cream/12 overflow-hidden">

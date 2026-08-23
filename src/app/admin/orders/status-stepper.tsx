@@ -144,7 +144,7 @@ export function StatusStepper({
           <div className="flex items-center gap-2.5 text-ng-success">
             <Icon name="check-circle-bold" size={20} />
             <span className="text-[13px] font-semibold">
-              Order delivered — fulfilment complete.
+              Order delivered, fulfilment complete.
             </span>
           </div>
         )}

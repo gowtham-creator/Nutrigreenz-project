@@ -485,7 +485,7 @@ export function PromotionsPanel() {
           <div>
             <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Promotions</h2>
             <p className="text-[13px] text-ng-ink-muted">
-              Occasion &amp; seasonal sales — banner, discount, targeting &amp; schedule, applied live to catalogue prices.
+              Occasion &amp; seasonal sales. Banner, discount, targeting &amp; schedule, applied live to catalogue prices.
             </p>
           </div>
         </div>
@@ -722,7 +722,7 @@ export function PromotionsPanel() {
               <div>
                 <div className="text-[13px] font-semibold text-ng-ink">Auto-month</div>
                 <div className="max-w-[38ch] text-[11.5px] leading-snug text-ng-ink-soft">
-                  Fills the current month name into the title — pairs with the “End of Month” banner.
+                  Fills the current month name into the title. Pairs with the “End of Month” banner.
                 </div>
               </div>
             </div>
@@ -764,7 +764,7 @@ export function PromotionsPanel() {
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">Loading promotions…</p>
       ) : promotions.length === 0 ? (
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">
-          No promotions yet — create your first with “New promotion”.
+          No promotions yet. Create your first with “New promotion”.
         </p>
       ) : (
         <ul className="divide-y divide-ng-line-soft overflow-hidden rounded-2xl border border-ng-line-soft">

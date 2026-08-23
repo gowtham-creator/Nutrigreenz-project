@@ -168,7 +168,7 @@ export function PdpImagesPreview({
         <div>
           <p className="text-[13px] font-semibold text-ng-forest-deep">On the product page</p>
           <p className="mt-0.5 text-[11px] leading-snug text-ng-ink-muted">
-            Every slide the shopper will swipe, in order — including ones this form does not control.
+            Every slide the shopper will swipe, in order. Including ones this form does not control.
           </p>
         </div>
         {data ? (

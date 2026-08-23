@@ -170,7 +170,7 @@ export function AnnouncementsPanel() {
             Top-bar announcements
           </h2>
           <p className="text-[13px] text-ng-ink-muted">
-            Evergreen lines that scroll in the marquee after any live sale — edit without a deploy.
+            Evergreen lines that scroll in the marquee after any live sale. Edit without a deploy.
           </p>
         </div>
       </div>
@@ -234,7 +234,7 @@ export function AnnouncementsPanel() {
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">Loading announcements…</p>
       ) : rows.length === 0 ? (
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">
-          No announcements yet — add your first line above.
+          No announcements yet. Add your first line above.
         </p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-ng-line-soft">

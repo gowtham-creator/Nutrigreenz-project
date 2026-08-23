@@ -33,7 +33,7 @@ export default function AdminPeople() {
           <div className="min-w-0 flex-1">
             <p className="font-display text-[15px] text-ng-forest-deep">Deduped customer directory</p>
             <p className="text-[12.5px] font-medium text-ng-ink-muted mt-0.5 leading-relaxed">
-              One canonical row per real person — Google and phone sign-ins folded into a single
+              One canonical row per real person. Google and phone sign-ins folded into a single
               customer, with linked providers, mobile, email and saved addresses.
             </p>
           </div>

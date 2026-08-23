@@ -421,7 +421,7 @@ export default function ProfilePage() {
             </span>
             <div>
               <h2 className="font-display text-[22px] leading-none text-ng-forest-deep">Dietary preferences</h2>
-              <p className="mt-1 text-[13px] text-ng-ink-soft">Optional — helps us tailor recipes and picks for you.</p>
+              <p className="mt-1 text-[13px] text-ng-ink-soft">Optional. Helps us tailor recipes and picks for you.</p>
             </div>
           </div>
 
@@ -467,7 +467,7 @@ export default function ProfilePage() {
             size="lg"
             disabled={saving || !isAuthed || !loaded}
           >
-            <Icon name={saving ? "refresh-bold" : "diskette-bold"} size={18} className={saving ? "animate-spin" : undefined} />
+            <Icon name={saving ? "refresh-bold" : "save"} size={18} className={saving ? "animate-spin" : undefined} />
             {saving ? "Saving\u2026" : "Save changes"}
           </Button>
         </div>

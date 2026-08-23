@@ -446,7 +446,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
               <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
               <p className="text-[15px] leading-relaxed text-ng-ink">
-                Every batch is traceable to a named partner farm and screened by an independent lab before it ships — so what
+                Every batch is traceable to a named partner farm and screened by an independent lab before it ships, so what
                 reaches your kitchen is exactly what left the field, with nothing hidden in between.
               </p>
             </Reveal>

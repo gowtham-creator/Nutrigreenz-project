@@ -212,7 +212,7 @@ function CredentialsPanel({
       </div>
       <div className="flex items-center justify-between gap-2 mt-3">
         <p className="text-[11.5px] font-medium text-ng-ink-soft">
-          Shown once — copy and share it now. It can’t be retrieved again.
+          Shown once. Copy and share it now. It can’t be retrieved again.
         </p>
         <Button
           variant="secondary"
@@ -453,7 +453,7 @@ export function AdminsManagement() {
       <ul>
         {admins.length === 0 && !staffEmail ? (
           <li className="px-1 py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
-            No admins yet — click “Add admin” to create one.
+            No admins yet. Click “Add admin” to create one.
           </li>
         ) : null}
 
@@ -1268,7 +1268,7 @@ function EditAdminModal({
             Cancel
           </Button>
           <Button variant="primary" type="button" onClick={handleSave} disabled={submitting}>
-            <Icon name="diskette-bold" size={16} />
+            <Icon name="save" size={16} />
             {submitting ? "Saving…" : "Save changes"}
           </Button>
         </div>

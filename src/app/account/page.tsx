@@ -109,7 +109,7 @@ export default function AccountPage() {
                 Your harvest, <em className="italic text-ng-leaf">at a glance.</em>
               </h1>
               <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ng-cream/70">
-                Track deliveries, manage subscriptions and watch your wallet grow — all in one place.
+                Track deliveries, manage subscriptions and watch your wallet grow. All in one place.
               </p>
 
               <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">
@@ -166,7 +166,7 @@ export default function AccountPage() {
               </span>
               <p className="font-display text-[19px] text-ng-forest-deep">No orders yet</p>
               <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] text-ng-ink-muted">
-                Your first harvest is one tap away — fresh oils, ghee, honey and more.
+                Your first harvest is one tap away. Fresh oils, ghee, honey and more.
               </p>
               <Button variant="primary" className="mt-5" asChild>
                 <Link href="/shop">Start shopping</Link>
@@ -238,7 +238,7 @@ export default function AccountPage() {
             </span>
             <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
             <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
-              Subscribe to your staples and never run out — set it once and we deliver on schedule.
+              Subscribe to your staples and never run out. Set it once and we deliver on schedule.
             </p>
           </div>
         </Reveal>

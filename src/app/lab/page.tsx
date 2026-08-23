@@ -48,7 +48,7 @@ export default function LabPage() {
               </h2>
             </div>
             <p className="text-[15px] text-ng-ink-muted max-w-md">
-              These limits are tighter than FSSAI minimums. We've built our own reference library after eight years of testing — anything outside the band gets rejected.
+              These limits are tighter than FSSAI minimums. We've built our own reference library after eight years of testing. Anything outside the band gets rejected.
             </p>
           </div>
 

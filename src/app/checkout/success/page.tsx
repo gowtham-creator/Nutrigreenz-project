@@ -155,7 +155,7 @@ function SuccessContent() {
                 loyalty points will be credited after delivery
               </p>
               <p className="mt-1 text-[13px] leading-relaxed text-ng-ink-muted">
-                Points land in your wallet once your order is delivered — redeem
+                Points land in your wallet once your order is delivered. Redeem
                 them on a future order (10 points = ₹1).
               </p>
             </div>

@@ -83,7 +83,7 @@ export default function AdminWishlists() {
           disabled={!report || report.topProducts.length === 0}
           className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Icon name="diskette-bold" size={15} className="text-ng-forest" />
+          <Icon name="save" size={15} className="text-ng-forest" />
           Export CSV
         </button>
       }

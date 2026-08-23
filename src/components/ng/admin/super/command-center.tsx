@@ -108,7 +108,7 @@ export function CommandCenterHero({
                 <span className="text-ng-cream/90">Control Center</span>
               </h1>
               <p className="font-sans text-[13px] font-medium text-ng-cream/85 mt-2 max-w-xl">
-                Global settings that drive the live storefront — cart, checkout,
+                Global settings that drive the live storefront. Cart, checkout,
                 loyalty &amp; growth levers.
               </p>
               <div className="mt-3.5 flex items-center gap-2 text-[11.5px] font-medium text-ng-cream/85">

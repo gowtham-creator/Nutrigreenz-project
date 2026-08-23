@@ -27,7 +27,7 @@ function resetEmailHtml(link: string): string {
         <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#4a6b52;font-weight:700">Nutri Greenz · Admin</div>
         <h1 style="font-size:22px;color:#14532d;margin:14px 0 8px">Reset your admin password</h1>
         <p style="font-size:14px;line-height:1.6;color:#55625a;margin:0 0 22px">
-          We received a request to reset the passcode for your operator account. This link expires in 30 minutes and can be used only once. If you didn't request it, you can safely ignore this email — nothing will change.
+          We received a request to reset the passcode for your operator account. This link expires in 30 minutes and can be used only once. If you didn't request it, you can safely ignore this email, nothing will change.
         </p>
         <a href="${link}" style="display:inline-block;background:#14532d;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 24px;border-radius:999px">Choose a new password</a>
         <p style="font-size:12px;line-height:1.6;color:#8a948c;margin:22px 0 0;word-break:break-all">
