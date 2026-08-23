@@ -214,8 +214,8 @@ function ClockFace({ mins, secs }: { mins: number; secs: number }) {
 
   return (
     <svg
-      width="13"
-      height="13"
+      width="15"
+      height="15"
       viewBox="0 0 24 24"
       fill="none"
       className="shrink-0"
@@ -223,22 +223,22 @@ function ClockFace({ mins, secs }: { mins: number; secs: number }) {
     >
       {/* The dial: a full ring at low opacity, so the glyph still reads as a
           clock once the arc above it has drained away to nothing. */}
-      <circle cx="12" cy="12" r={R} stroke="currentColor" strokeWidth="1.6" opacity="0.3" />
+      <circle cx="12" cy="12" r={R} stroke="currentColor" strokeWidth="1.5" opacity="0.22" />
       {/* Minutes, as a rim arc that empties clockwise from twelve. */}
       <circle
         cx="12" cy="12" r={R}
-        stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
+        stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
         strokeDasharray={CIRC}
         strokeDashoffset={CIRC * (1 - remaining)}
         transform="rotate(-90 12 12)"
       />
       {/* Seconds — the part that visibly ticks. */}
       <line
-        x1="12" y1="12" x2="12" y2="6.9"
-        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+        x1="12" y1="12" x2="12" y2="5.9"
+        stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"
         transform={`rotate(${secondAngle} 12 12)`}
       />
-      <circle cx="12" cy="12" r="1.05" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.3" fill="currentColor" />
     </svg>
   );
 }
