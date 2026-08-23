@@ -326,7 +326,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
         ) : customers.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="size-14 rounded-full bg-ng-cream flex items-center justify-center mx-auto">
-              <Icon name="users-group-rounded-bold" size={26} className="text-ng-forest" />
+              <UiIcon name="customers" size={26} className="text-ng-forest" />
             </div>
             <p className="mt-4 text-[15px] font-display text-ng-forest-deep">
               {query ? "No customers match that search" : "No customers yet"}

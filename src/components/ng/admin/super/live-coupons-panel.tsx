@@ -276,7 +276,7 @@ export function LiveCouponsPanel() {
                           className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/20 px-2 py-0.5 text-[10px] font-semibold text-ng-forest-deep"
                           title={`Valid only in communities: ${c.communities.join(", ")}`}
                         >
-                          <Icon name="users-group-rounded-bold" size={10} />
+                          <UiIcon name="customers" size={10} />
                           {c.communities.length === 1
                             ? c.communities[0]
                             : `${c.communities.length} communities`}

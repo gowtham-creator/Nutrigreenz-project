@@ -70,7 +70,7 @@ function describeActivity(
   const label =
     known?.label ??
     item.action.replace(/[._-]+/g, " ").replace(/^\w/, (c) => c.toUpperCase());
-  const icon = known?.icon ?? "tuning-2-bold";
+  const icon = known?.icon ?? "settings";
   // Hide the target when it is just the operator themselves (sign-ins, own
   // profile/photo edits); show it when it names something else (a coupon, an
   // admin they managed, etc.).

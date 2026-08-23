@@ -120,7 +120,7 @@ export default function CaptainSettle() {
 
       {/* ===== Day summary ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
-        <CaptainStat icon="users-group-rounded-bold" label="Customers" value={stats.count} />
+        <CaptainStat icon="customers" label="Customers" value={stats.count} />
         <CaptainStat icon="bag-smile-bold" label="Stall GMV" value={`₹${stats.gmv.toLocaleString("en-IN")}`} />
         <CaptainStat icon="tag-price-bold" label="Avg ticket" value={`₹${avgTicket.toLocaleString("en-IN")}`} />
       </div>

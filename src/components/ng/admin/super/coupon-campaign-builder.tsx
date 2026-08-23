@@ -89,7 +89,7 @@ const TARGET_MODES: {
   {
     value: "global",
     label: "All customers",
-    icon: "users-group-rounded-bold",
+    icon: "customers",
     hint: "Broadcast to the entire registered base.",
     selectorLabel: "",
     placeholder: "",
@@ -842,7 +842,7 @@ export function CouponCampaignBuilder() {
                     value={tracked.perf.redemptions.toLocaleString("en-IN")}
                   />
                   <TrackTile
-                    icon="users-group-rounded-bold"
+                    icon="customers"
                     label="Customers"
                     value={tracked.perf.customers.toLocaleString("en-IN")}
                   />

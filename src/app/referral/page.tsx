@@ -331,7 +331,7 @@ export default function ReferralPage() {
           ) : (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-cream text-ng-forest">
-                <Icon name="users-group-rounded-bold" size={24} />
+                <UiIcon name="customers" size={24} />
               </span>
               <p className="max-w-sm text-[14px] leading-relaxed text-ng-ink-muted">
                 No invites yet. Share your link above — friends who join with it will appear here, and

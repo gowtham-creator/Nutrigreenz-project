@@ -48,6 +48,8 @@ const UI_ICONS = {
   /* The brand cart glyph. It shipped as a vector for CartIcon but was never
      registered here, so `name="cart"` could not be used anywhere else. */
   cart: "cart",
+  /* Config / settings, wherever the app talks about configuration. */
+  settings: "settings",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

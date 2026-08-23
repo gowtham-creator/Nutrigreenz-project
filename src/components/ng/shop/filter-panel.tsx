@@ -46,7 +46,7 @@ export function FilterPanel({
     <div className={cn("space-y-7", className)}>
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-2 font-display text-[20px] text-ng-forest-deep">
-          <Icon name="tuning-2-bold" size={18} className="text-ng-clay" />
+          <Icon name="settings" size={18} className="text-ng-clay" />
           Refine
         </h3>
         {onReset ? (

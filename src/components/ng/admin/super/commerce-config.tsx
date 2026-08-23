@@ -218,7 +218,7 @@ function RulesCard({
   return (
     <Card>
       <SectionHeader
-        icon="settings-bold"
+        icon="settings"
         tone="forest"
         title="Commerce rules"
         caption="Order minimum, free-delivery threshold, shipping model & tax. The live storefront economics."

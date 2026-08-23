@@ -610,7 +610,7 @@ export default function AdminAuditPage() {
           className="inline-flex rounded-xl border border-ng-line-soft bg-ng-cream/40 p-0.5"
         >
           {[
-            { on: false, label: "Everyone", icon: "users-group-rounded-bold" },
+            { on: false, label: "Everyone", icon: "customers" },
             { on: true, label: "Mine only", icon: "customer" },
           ].map((opt) => (
             <button

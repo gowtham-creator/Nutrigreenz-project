@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 const VALUES = [
   { icon: "leaf-bold", title: "Soil before slogans", body: "We&rsquo;d rather show the lab report than write a clever tagline. Substance wins here." },
-  { icon: "users-group-rounded-bold", title: "Farmers are partners", body: "Our growers aren&rsquo;t a line item. Fair, long-term relationships shape every decision we make." },
+  { icon: "customers", title: "Farmers are partners", body: "Our growers aren&rsquo;t a line item. Fair, long-term relationships shape every decision we make." },
   { icon: "test-tube-bold", title: "Earn trust daily", body: "Traceability is hard work, every lot, every day. We sweat the details so customers don&rsquo;t have to." },
   { icon: "bolt-bold", title: "Small team, real ownership", body: "You&rsquo;ll own outcomes, not tickets. Ideas matter more than hierarchy." },
 ];

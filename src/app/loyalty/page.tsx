@@ -6,6 +6,7 @@ import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getLoyaltyConfig, loyaltyBalance, listLoyaltyLedger } from "@/lib/rewards";
 import { getReferralConfig } from "@/lib/referrals";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 /**
  * /loyalty — the customer's real Harvest Credit wallet.
@@ -53,7 +54,7 @@ function describeEntry(reason: string, orderId: string | null): { note: string; 
     return { note: orderId ? "Earned on an order" : "Points earned", icon: "box-bold" };
   }
   if (reason === "order_redeem") return { note: "Redeemed at checkout", icon: "tag-price-bold" };
-  return { note: "Adjustment", icon: "users-group-rounded-bold" };
+  return { note: "Adjustment", icon: "customers" };
 }
 
 const fmtDate = (iso: string) =>
@@ -324,8 +325,8 @@ export default async function LoyaltyPage() {
                 </li>
                 {referralReward !== null ? (
                   <li className="flex gap-3">
-                    <Icon
-                      name="users-group-rounded-bold"
+                    <UiIcon
+                      name="customers"
                       size={20}
                       className="mt-0.5 shrink-0 text-ng-forest"
                     />

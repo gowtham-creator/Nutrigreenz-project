@@ -426,7 +426,7 @@ export function AdminsManagement() {
     <div className="mt-6 pt-5 border-t border-ng-line-soft">
       <div className="flex items-center justify-between gap-3 mb-3">
         <span className="text-[13px] font-semibold text-ng-ink flex items-center gap-2">
-          <Icon name="users-group-rounded-bold" size={16} className="text-ng-forest" />
+          <UiIcon name="customers" size={16} className="text-ng-forest" />
           Admin users
         </span>
         <Button variant="gold" size="sm" onClick={() => setOpen(true)}>

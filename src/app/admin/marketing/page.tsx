@@ -21,13 +21,13 @@ import { AnnouncementsPanel } from "@/components/ng/admin/super/announcements-pa
 const RELATED = [
   {
     href: "/admin/referrals",
-    icon: "users-group-rounded-bold",
+    icon: "customers",
     title: "Referrals",
     detail: "Live referral ledger: who referred whom, and what was awarded.",
   },
   {
     href: "/admin/config",
-    icon: "settings-bold",
+    icon: "settings",
     title: "Loyalty & referral settings",
     detail: "Earn rate, redeem value, guardrails and referral rewards.",
   },

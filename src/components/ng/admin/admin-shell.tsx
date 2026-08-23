@@ -38,17 +38,17 @@ const NAV: NavItem[] = [
   // Product & customer analytics (demand signals + sign-in mix) — both roles.
   { href: "/admin/analytics", label: "Analytics", icon: "analytics", key: "analytics" },
   // DEDUPED canonical customer directory (one row per real person).
-  { href: "/admin/referrals", label: "Referrals", icon: "users-group-rounded-bold", key: "referrals" },
-  { href: "/admin/customers", label: "Customers", icon: "customer", key: "customers" },
+  { href: "/admin/referrals", label: "Referrals", icon: "customers", key: "referrals" },
+  { href: "/admin/customers", label: "Customers", icon: "customers", key: "customers" },
   // Field-sales captains — roster, community stalls, commissions and settlements.
   { href: "/admin/captains", label: "Captains", icon: "captain", key: "captains" },
-  { href: "/admin/people", label: "People", icon: "users-group-rounded-bold", key: "people", superadminOnly: true },
+  { href: "/admin/people", label: "People", icon: "customers", key: "people", superadminOnly: true },
   // Customer-saved products (wishlist demand signal) — both roles can view.
   { href: "/admin/wishlists", label: "Wishlists", icon: "wishlist", key: "wishlists" },
   // Audit log — the completed-action trail for the whole team. Both roles.
   { href: "/admin/audit", label: "Audit log", icon: "audit", key: "audit" },
   // Super Admin control center — gated below; only superadmins see this item.
-  { href: "/admin/config", label: "Config", icon: "settings-bold", key: "config", superadminOnly: true },
+  { href: "/admin/config", label: "Config", icon: "settings", key: "config", superadminOnly: true },
 ];
 
 /** Human-friendly label for an admin role, shown under the identity chip. */

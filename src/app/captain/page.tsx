@@ -209,7 +209,7 @@ export default function CaptainHome() {
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
         <CaptainEmpty
-          icon="users-group-rounded-bold"
+          icon="customers"
           title="No captures yet today"
           hint="Tap “Capture a customer” to log your first stall sale."
         />

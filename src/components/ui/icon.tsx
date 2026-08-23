@@ -3,6 +3,7 @@
 import { Icon as Iconify, addCollection } from "@iconify/react";
 import { cn } from "@/lib/utils";
 import iconSubset from "./icon-subset.json";
+import { UiIcon, UI_ICON_NAMES, type UiIconName } from "@/components/ui/ui-icon";
 
 /**
  * App icon — Solar icon set via Iconify, served OFFLINE.
@@ -39,6 +40,23 @@ export interface IconProps {
  * App icon. Usage: <Icon name="bag-4-bold" /> renders `solar:bag-4-bold`.
  */
 export function Icon({ name, size = 20, className, label }: IconProps) {
+  /*
+   * A supplied mark wins, wherever the name arrives from.
+   *
+   * Most icons are passed as DATA — `icon: "customers"` on a nav row, a
+   * permission, a stat tile — and rendered by some component further down that
+   * only knew about Solar. So swapping the data to a supplied name blanked the
+   * icon silently: the name resolved to no Solar glyph and Iconify rendered
+   * nothing. That failure has now happened four times in this project, each
+   * time fixed at one call site while the next one waited.
+   *
+   * Resolving it here fixes the class instead. `Icon` is the single funnel every
+   * string-prop path already goes through, so a supplied name works from
+   * anywhere without each consumer having to know which family it belongs to.
+   */
+  if (UI_ICON_NAMES.has(name)) {
+    return <UiIcon name={name as UiIconName} size={size} className={className} label={label} />;
+  }
   const icon = name.includes(":") ? name : `solar:${name}`;
   return (
     <Iconify
