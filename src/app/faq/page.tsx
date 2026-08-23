@@ -98,7 +98,7 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
   },
   {
     title: "Cashback & offers",
-    icon: "star-bold",
+    icon: "star",
     items: [
       {
         q: "When will the cashback be credited?",

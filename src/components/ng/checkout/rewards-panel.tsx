@@ -389,7 +389,7 @@ export function RewardsPanel({
         >
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-              <Icon name="medal-ribbon-star-bold" size={20} />
+              <Icon name="star" size={20} />
             </span>
             <div>
               <div className="font-display text-[15px] text-ng-forest-deep">

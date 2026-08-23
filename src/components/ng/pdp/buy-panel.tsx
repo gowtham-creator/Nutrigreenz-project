@@ -158,7 +158,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       {/* Coins earn banner */}
       <div className="flex items-center gap-3 rounded-xl border border-ng-clay/35 bg-ng-clay/[0.07] px-3.5 py-2.5">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-clay-deep">
-          <Icon name="medal-ribbons-star-bold" size={18} />
+          <Icon name="star" size={18} />
         </span>
         <p className="text-[13px] text-ng-soil">
           Buy now &amp; earn <span className="font-semibold text-ng-forest-deep">{coins} Harvest Coins</span> — redeem on your next order.

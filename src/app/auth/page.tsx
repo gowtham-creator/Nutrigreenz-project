@@ -27,7 +27,7 @@ function GoogleIcon() {
 const PERKS = [
   { icon: "shield-check-bold", title: "Lab-tested, every lot", body: "Scan the code on any pack to see its harvest, farm and purity report." },
   { icon: "wallet-money-bold", title: "5% back on every order", body: "Loyalty credit you can redeem on anything in the pantry." },
-  { icon: "crown-star-bold", title: "First dibs on harvests", body: "Limited-batch lots ship to members 48 hours before the public." },
+  { icon: "star", title: "First dibs on harvests", body: "Limited-batch lots ship to members 48 hours before the public." },
 ];
 
 // Condensed value props for the mobile form field, where the forest brand panel
@@ -274,7 +274,7 @@ function AuthScreen() {
             <div className="glass-dark max-w-md rounded-3xl p-6">
               <div className="flex items-center gap-1 text-ng-leaf">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Icon key={i} name="star-bold" size={15} />
+                  <Icon key={i} name="star" size={15} />
                 ))}
               </div>
               <blockquote className="mt-3 font-display text-[19px] italic leading-snug text-ng-cream/95">

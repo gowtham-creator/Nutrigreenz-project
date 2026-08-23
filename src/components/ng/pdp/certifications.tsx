@@ -22,7 +22,7 @@ export function Certifications() {
      */
     { icon: "shield-check-bold", label: "FSSAI", sub: "Licensed" },
     { icon: "verified-check-bold", label: "ISO 22000", sub: "Food safety" },
-    { icon: "medal-star-bold", label: "GMP", sub: "Good mfg." },
+    { icon: "star", label: "GMP", sub: "Good mfg." },
     { icon: "checklist-minimalistic-bold", label: "HACCP", sub: "Hazard control" },
     { app: "lab" as const, label: "Lab-tested", sub: "Every lot" },
   ];

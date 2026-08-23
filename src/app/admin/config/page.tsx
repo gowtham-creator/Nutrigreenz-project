@@ -175,7 +175,7 @@ function ConfigContent() {
       value: kpiData ? (freeShipping ? "Free" : INR(kpiData.shippingFlatPaise / 100)) : "—",
     },
     {
-      icon: "star-bold",
+      icon: "star",
       label: "Points ratio",
       value: kpiData ? `${kpiData.earnPointsPerRupee} pt/₹` : "—",
       accent: true,
@@ -396,7 +396,7 @@ function LoyaltySection() {
     <PrimarySection id="loyalty">
       <Card>
         <SectionHeader
-          icon="star-bold"
+          icon="star"
           tone="clay"
           title="Loyalty programme"
           caption="Earn & redemption ratios, floors and caps. Drives points on orders and checkout redemption."

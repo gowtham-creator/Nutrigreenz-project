@@ -145,7 +145,7 @@ function SuccessContent() {
           {/* Loyalty credit note */}
           <StaggerItem className="flex gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-5">
             <Icon
-              name="medal-ribbon-star-bold"
+              name="star"
               size={22}
               className="mt-0.5 shrink-0 text-ng-forest"
             />

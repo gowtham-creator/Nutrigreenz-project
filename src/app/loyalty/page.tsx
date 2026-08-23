@@ -43,7 +43,7 @@ const TIERS = [
     ceil: Number.POSITIVE_INFINITY,
     range: "₹15,000+ / yr",
     rate: "8% back",
-    icon: "crown-bold",
+    icon: "star",
     perks: ["Free express shipping", "Reserved limited-batch lots", "Annual farm visit invite", "Direct line to founders"],
   },
 ];
@@ -140,7 +140,7 @@ export default async function LoyaltyPage() {
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/25 px-3 py-1.5 text-[12px] font-semibold text-ng-clay">
-                  <Icon name="medal-ribbon-star-bold" size={14} />
+                  <Icon name="star" size={14} />
                   {tier.name} member · {tier.rate}
                 </span>
                 <span className="text-[13px] text-ng-cream/65">
@@ -188,7 +188,7 @@ export default async function LoyaltyPage() {
           </StaggerItem>
           <StaggerItem className="h-full">
             <Tile
-              icon="medal-ribbon-star-bold"
+              icon="star"
               big={tier.name}
               small={`Current tier · ${tier.rate}`}
               tone="clay"

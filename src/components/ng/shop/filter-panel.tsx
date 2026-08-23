@@ -209,7 +209,7 @@ export function FilterPanel({
                     : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-leaf",
                 )}
               >
-                <Icon name="star-bold" size={12} className={active ? "text-ng-clay" : "text-ng-clay"} />
+                <Icon name="star" size={12} className={active ? "text-ng-clay" : "text-ng-clay"} />
                 {r}+
               </button>
             );
