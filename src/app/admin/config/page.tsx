@@ -24,6 +24,7 @@ import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
 import { LOYALTY_CONFIG, type LoyaltyConfig } from "@/lib/loyalty-config";
 import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
 import { adminGet, invalidateAdminGet } from "@/lib/admin-get";
+import { WhenVisible } from "@/components/ng/admin/when-visible";
 
 /* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
@@ -258,11 +259,22 @@ function ConfigContent() {
         <span className="h-px flex-1 bg-ng-line-soft" />
       </div>
 
-      <PaymentGatewayPanel />
+      {/* Secondary panels mount when scrolled to, not on page load. Each one
+          fetches from its own effect, so deferring the mount defers the request.
+          The wrapper holds the sub-nav anchor while the panel is absent. */}
+      <WhenVisible minHeight={340}>
+        <PaymentGatewayPanel />
+      </WhenVisible>
 
-      <CouponCampaignBuilder />
+      <WhenVisible anchorId="coupons" minHeight={420}>
+        <CouponCampaignBuilder />
+      </WhenVisible>
+
       <FeatureTogglesSection />
-      <RolesAndLogs />
+
+      <WhenVisible anchorId="access" minHeight={380}>
+        <RolesAndLogs />
+      </WhenVisible>
 
       {/* Read-only reference: shipping zones + payment methods */}
       <Card
@@ -344,9 +356,11 @@ function LoyaltySection() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/admin/config/loyalty", { cache: "no-store" });
-        const data = (await res.json()) as { ok?: boolean; config?: LoyaltyConfig };
-        if (!cancelled && res.ok && data.ok !== false && data.config) {
+        // Shares the read with the KPI strip above, which wants the same row.
+        const data = await adminGet<{ ok?: boolean; config?: LoyaltyConfig }>(
+          "/api/admin/config/loyalty",
+        );
+        if (!cancelled && data && data.ok !== false && data.config) {
           setSaved(data.config);
           setDraft(data.config);
         }
@@ -500,9 +514,10 @@ function FeatureTogglesSection() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/admin/config/features", { cache: "no-store" });
-        const data = (await res.json()) as { ok?: boolean; flags?: FeatureFlag[] };
-        if (!cancelled && res.ok && data.ok !== false && data.flags) {
+        const data = await adminGet<{ ok?: boolean; flags?: FeatureFlag[] }>(
+          "/api/admin/config/features",
+        );
+        if (!cancelled && data && data.ok !== false && data.flags) {
           setFlags(data.flags);
         }
       } catch {
