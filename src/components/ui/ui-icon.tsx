@@ -52,6 +52,11 @@ const UI_ICONS = {
   settings: "settings",
   /* Coupons and vouchers. Not price tags — see the note in the commit. */
   coupon: "coupon",
+  /* Platform marks for the session list. */
+  iphone: "iphone",
+  macos: "macos",
+  android: "android",
+  windows: "windows",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

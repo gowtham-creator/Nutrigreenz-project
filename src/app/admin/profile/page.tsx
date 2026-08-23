@@ -115,13 +115,50 @@ function relativeTime(iso: string): string {
   return new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-const SESSIONS: { device: string; place: string; when: string; current: boolean; icon: string }[] = [
-  { device: "This device · Chrome on macOS", place: "Hyderabad, IN", when: "Active now", current: true, icon: "monitor-bold" },
-  { device: "Safari on iPhone", place: "Hyderabad, IN", when: "2 days ago", current: false, icon: "smartphone-bold" },
-];
+/**
+ * The device you are signed in on, read from the browser.
+ *
+ * This list previously held two HARDCODED rows — including a "Safari on iPhone,
+ * 2 days ago" that no one had ever signed in from. Invented sessions are bad
+ * anywhere; on a security panel they are actively harmful, because the whole
+ * point of the panel is to let an operator spot a session they do not
+ * recognise. A fabricated row trains them to ignore exactly that.
+ *
+ * So it shows the CURRENT device only, detected rather than assumed. Listing
+ * other devices needs sessions recorded server-side, which does not exist yet —
+ * see the note under the list.
+ */
+type DeviceInfo = { label: string; icon: UiIconName };
+
+function detectDevice(): DeviceInfo {
+  if (typeof navigator === "undefined") return { label: "This device", icon: "windows" };
+  const ua = navigator.userAgent;
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\//.test(ua)
+      ? "Opera"
+      : /Chrome\//.test(ua) && !/Chromium/.test(ua)
+        ? "Chrome"
+        : /Firefox\//.test(ua)
+          ? "Firefox"
+          : /Safari\//.test(ua)
+            ? "Safari"
+            : "Browser";
+  // iPadOS reports as Macintosh, so a touch-capable "Mac" is really an iPad.
+  const isIpad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (/iPhone/.test(ua)) return { label: `${browser} on iPhone`, icon: "iphone" };
+  if (isIpad) return { label: `${browser} on iPad`, icon: "iphone" };
+  if (/Android/.test(ua)) return { label: `${browser} on Android`, icon: "android" };
+  if (/Macintosh|Mac OS X/.test(ua)) return { label: `${browser} on macOS`, icon: "macos" };
+  if (/Windows/.test(ua)) return { label: `${browser} on Windows`, icon: "windows" };
+  return { label: browser, icon: "windows" };
+}
 
 export default function AdminProfilePage() {
   const [email, setEmail] = useState<string | null>(null);
+  /* Held in state, not read during render: `navigator` does not exist on the
+     server pass, and reading it inline would be a hydration mismatch. */
+  const [device, setDevice] = useState<DeviceInfo>({ label: "This device", icon: "windows" });
   const [role, setRole] = useState<AdminRole | null>(null);
 
   // Editable identity (seeded from the email once known) + a saved snapshot
@@ -164,6 +201,7 @@ export default function AdminProfilePage() {
   useEffect(() => {
     const e = getAdminEmail();
     const r = getAdminRole();
+    setDevice(detectDevice());
     setEmail(e);
     setRole(r);
     const guess = e
@@ -741,23 +779,24 @@ export default function AdminProfilePage() {
                 </button>
               </div>
               <ul>
-                {SESSIONS.map((s, i) => (
-                  <li key={i} className="flex items-center gap-3 py-2.5 border-b border-ng-line-soft last:border-0">
-                    <span className="grid place-items-center size-9 rounded-xl bg-ng-cream text-ng-forest shrink-0">
-                      <Icon name={s.icon} size={17} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-semibold text-ng-ink truncate">{s.device}</div>
-                      <div className="text-[11.5px] font-medium text-ng-ink-soft">{s.place}</div>
-                    </div>
-                    {s.current ? (
-                      <Pill tone="success">This device</Pill>
-                    ) : (
-                      <span className="text-[11.5px] font-medium text-ng-ink-soft shrink-0">{s.when}</span>
-                    )}
-                  </li>
-                ))}
+                <li className="flex items-center gap-3 py-2.5">
+                  <span className="grid place-items-center size-9 rounded-xl bg-ng-cream text-ng-forest shrink-0">
+                    <UiIcon name={device.icon} size={17} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-ng-ink truncate">{device.label}</div>
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft">Signed in now</div>
+                  </div>
+                  <Pill tone="success">This device</Pill>
+                </li>
               </ul>
+              {/* Says plainly that other devices are not listed yet, rather than
+                  implying this is the complete picture. */}
+              <p className="mt-1 text-[11.5px] font-medium leading-relaxed text-ng-ink-soft">
+                Only this device is shown. Signing in from other devices is not
+                tracked yet, so use <b>Sign out everywhere</b> if you suspect
+                another session — it revokes every token, on every device.
+              </p>
             </div>
           </Card>
         </div>
