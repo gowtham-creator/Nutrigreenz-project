@@ -288,7 +288,7 @@ function CaptainLoginForm() {
             <div className="flex items-center gap-2.5">
               <Logo variant="full" tone="white" className="!h-[26px]" priority />
               <span className="inline-flex items-center gap-1 rounded-md bg-ng-leaf/15 ring-1 ring-ng-leaf/35 px-2 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.18em] text-ng-leaf">
-                <Icon name="shield-star-bold" size={11} className="text-ng-leaf" />
+                <UiIcon name="captain" size={11} className="text-ng-leaf" />
                 Captain
               </span>
             </div>
@@ -323,7 +323,7 @@ function CaptainLoginForm() {
                     className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
                   />
                   {/^[6-9]\d{9}$/.test(phone) ? (
-                    <Icon name="check-circle-bold" size={18} className="text-ng-success" />
+                    <UiIcon name="verified" size={18} className="text-ng-success" />
                   ) : null}
                 </div>
                 <span className="block text-[11px] text-ng-ink-soft mt-1">Registered captain numbers only.</span>
@@ -345,7 +345,7 @@ function CaptainLoginForm() {
               </div>
               {error ? <p className="text-[11.5px] text-ng-danger">{error}</p> : null}
               <button type="submit" disabled={submitting} className={leafCta}>
-                <Icon name="shield-keyhole-bold" size={18} />
+                <UiIcon name="lock" size={18} />
                 {submitting ? "Verifying…" : "Verify & open stall"}
               </button>
               <div className="flex items-center justify-between text-[12px] font-semibold">
@@ -376,7 +376,7 @@ function CaptainLoginForm() {
           <div id="captain-recaptcha" />
 
           <div className="mt-8 flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">
-            <Icon name="shield-keyhole-bold" size={13} />
+            <UiIcon name="lock" size={13} />
             Authorised captains only
           </div>
         </main>

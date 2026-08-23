@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Logo } from "@/components/ng/logo";
 import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-store";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 const TABS = [
   { href: "/captain", label: "Today", icon: "home-smile-bold", iconLine: "home-smile-linear" },
@@ -53,7 +54,7 @@ export function CaptainShell({
             <div className="flex items-center gap-2.5">
               <Logo variant="full" tone="white" className="!h-[26px]" priority />
               <span className="inline-flex items-center gap-1 rounded-md bg-ng-leaf/15 ring-1 ring-ng-leaf/35 px-2 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.18em] text-ng-leaf">
-                <Icon name="shield-star-bold" size={11} className="text-ng-leaf" />
+                <UiIcon name="captain" size={11} className="text-ng-leaf" />
                 Captain
               </span>
 
@@ -80,7 +81,7 @@ export function CaptainShell({
             {/* Row 2 — one grouped context strip (identity + shift), no scattered pills */}
             <div className="mt-3.5 rounded-2xl bg-ng-forest-soft/30 ring-1 ring-ng-leaf/12 divide-y divide-ng-leaf/10">
               <div className="flex items-center gap-2 px-3 py-2">
-                <Icon name="map-point-bold" size={14} className="text-ng-leaf shrink-0" />
+                <UiIcon name="location" size={14} className="text-ng-leaf shrink-0" />
                 <span className="font-semibold text-ng-cream truncate text-[12px]">{captain?.name ?? ""}</span>
                 <span className="text-ng-cream/30">·</span>
                 <span className="truncate text-[12px] text-ng-cream/70">{captain?.area ?? ""}</span>
@@ -90,7 +91,7 @@ export function CaptainShell({
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-2">
-                <Icon name="routing-2-bold" size={14} className="text-ng-leaf shrink-0" />
+                <UiIcon name="delivery" size={14} className="text-ng-leaf shrink-0" />
                 <span className="text-[11.5px] text-ng-cream/55 shrink-0">Today · {today}</span>
                 <span className="text-ng-cream/25">·</span>
                 <span className="text-[11.5px] font-semibold text-ng-cream truncate">{captain?.stall ?? ""}</span>

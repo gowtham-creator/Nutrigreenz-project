@@ -195,7 +195,7 @@ export default function CaptainIntake() {
               autoComplete="tel-national"
               className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
             />
-            {mobileValid ? <Icon name="check-circle-bold" size={18} className="text-ng-success" /> : null}
+            {mobileValid ? <UiIcon name="verified" size={18} className="text-ng-success" /> : null}
           </div>
           {touched && !mobileValid ? <FieldError>Enter a valid 10-digit mobile.</FieldError> : null}
         </Field>
@@ -227,7 +227,7 @@ export default function CaptainIntake() {
         action={
           cartCount > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/20 text-ng-forest font-bold px-2.5 py-1 text-[11.5px]">
-              <Icon name="cart-large-2-bold" size={14} />
+              <UiIcon name="cart" size={14} />
               {cartCount} item{cartCount > 1 ? "s" : ""}
             </span>
           ) : undefined
@@ -419,7 +419,7 @@ export default function CaptainIntake() {
               disabled={!canSubmit}
               className="flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold px-5 py-3 text-[14px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf active:scale-[0.98] shadow-[0_8px_20px_-8px_rgba(102,191,115,0.8)]"
             >
-              <Icon name="user-plus-bold" size={18} />
+              <UiIcon name="customers" size={18} />
               Capture
             </button>
           </div>

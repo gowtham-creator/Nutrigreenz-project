@@ -23,7 +23,7 @@ import { ADMIN_VERSION_LABEL } from "@/lib/app-version";
 type NavItem = { href: string; label: string; icon: string; key: PermissionKey; superadminOnly?: boolean };
 
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: "widget-5-bold", key: "overview" },
+  { href: "/admin", label: "Overview", icon: "overview", key: "overview" },
   // Catalog is the single product surface — it maps onto the real inventory
   // admin (products, pricing, stock, variants). The old mock catalog route now
   // redirects here, so there is no separate "Inventory" nav item.

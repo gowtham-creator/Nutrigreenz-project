@@ -45,6 +45,9 @@ const UI_ICONS = {
   /* Supplied mail glyph. Was a 60px raster in app-icon.tsx, so it softened
      wherever it was drawn above ~30px. */
   email: "email",
+  /* The brand cart glyph. It shipped as a vector for CartIcon but was never
+     registered here, so `name="cart"` could not be used anywhere else. */
+  cart: "cart",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

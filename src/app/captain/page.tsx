@@ -120,7 +120,7 @@ export default function CaptainHome() {
           href="/captain/intake"
           className="group mt-4 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3.5 text-[14.5px] cursor-pointer hover:bg-ng-green-bright transition-colors shadow-[0_10px_24px_-8px_rgba(102,191,115,0.7)]"
         >
-          <Icon name="user-plus-bold" size={18} />
+          <UiIcon name="customers" size={18} />
           Capture a customer
           <Icon
             name="arrow-right-linear"
@@ -156,7 +156,7 @@ export default function CaptainHome() {
             <div className="relative overflow-hidden rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-4 cursor-pointer hover:border-ng-leaf transition-colors">
               <div className="flex items-center gap-3">
                 <div className="size-11 rounded-xl bg-ng-forest ring-1 ring-ng-leaf/30 flex items-center justify-center shrink-0">
-                  <Icon name="map-point-wave-bold" size={22} className="text-ng-leaf" />
+                  <UiIcon name="location" size={22} className="text-ng-leaf" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function CaptainHome() {
                 <Link key={p.id} href="/captain/pickups" className="block">
                   <CaptainCard className="flex items-center gap-3 cursor-pointer hover:border-ng-leaf transition-colors">
                     <div className="size-10 rounded-xl bg-ng-cream flex items-center justify-center shrink-0">
-                      <Icon name="box-bold" size={20} className="text-ng-forest" />
+                      <UiIcon name="ordersBox" size={20} className="text-ng-forest" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-[14px] text-ng-forest-deep truncate">{p.community}</div>

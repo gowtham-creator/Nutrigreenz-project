@@ -17,6 +17,7 @@ import {
   submitSettlement,
   type CaptainSettlementView,
 } from "@/components/ng/captain/captain-store";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 export default function CaptainSettle() {
   const { stats, todayCustomers, captain } = useCaptain();
@@ -73,7 +74,7 @@ export default function CaptainSettle() {
       <CaptainHero className="p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ng-leaf-soft">
-            <Icon name="wallet-money-bold" size={15} />
+            <UiIcon name="wallet" size={15} />
             Reconciled today
           </div>
           <span
@@ -130,7 +131,7 @@ export default function CaptainSettle() {
         <CaptainCard className="h-full">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-lg bg-ng-cream flex items-center justify-center">
-              <Icon name="banknote-2-bold" size={18} className="text-ng-soil" />
+              <UiIcon name="wallet" size={18} className="text-ng-soil" />
             </div>
             <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Cash</span>
           </div>
@@ -197,7 +198,7 @@ export default function CaptainSettle() {
           <CaptainHero className="p-4">
             <div className="flex items-center gap-3">
               <div className="size-11 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
-                <Icon name="check-circle-bold" size={26} className="text-ng-leaf" />
+                <UiIcon name="verified" size={26} className="text-ng-leaf" />
               </div>
               <div>
                 <div className="font-display text-[15px]">Settlement submitted</div>
