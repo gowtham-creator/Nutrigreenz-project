@@ -652,14 +652,10 @@ export default function AdminProfilePage() {
                   <UiIcon name="lock" size={14} />
                   Password · enabled
                 </span>
-                <button
-                  type="button"
-                  onClick={() => toast.message("Connect Google", { description: "Operator Google sign-in isn’t enabled. Use your email and password, or phone sign-in." })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink-muted font-semibold px-3 py-1.5 text-[12px] hover:bg-ng-cream transition-colors cursor-pointer"
-                >
-                  <Icon name="global-bold" size={14} className="text-ng-ink-soft" />
-                  Google · connect
-                </button>
+                {/* The "Google · connect" chip was removed. It offered a sign-in
+                    method operators do not have: pressing it only raised a toast
+                    saying so. A control that exists solely to explain that it does
+                    nothing is worse than no control. */}
               </div>
             </div>
 
@@ -824,7 +820,7 @@ export default function AdminProfilePage() {
         {/* ---- Footer note ---------------------------------------------- */}
         <p className="lg:col-span-3 text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5">
           <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-          Your profile details and recent activity are live. Google sign-in and multi-device session controls are still being wired up.
+          Your profile details and recent activity are live. Multi-device session controls are still being wired up.
         </p>
       </div>
     </AdminShell>
