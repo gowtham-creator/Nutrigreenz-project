@@ -23,6 +23,7 @@ import { ReferralConfigSection } from "@/components/ng/admin/super/referral-conf
 import { RolesAndLogs } from "@/components/ng/admin/super/roles-and-logs";
 import { LOYALTY_CONFIG, type LoyaltyConfig } from "@/lib/loyalty-config";
 import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
+import { adminGet, invalidateAdminGet } from "@/lib/admin-get";
 
 /* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
@@ -121,15 +122,17 @@ function ConfigContent() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const getJson = async <T,>(url: string): Promise<T | null> => {
-        try {
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) return null;
-          return (await res.json()) as T;
-        } catch {
-          return null;
-        }
-      };
+      /*
+       * Delegates to the shared reader instead of fetching directly.
+       *
+       * Identical contract — parsed body, or null on failure — so no call site
+       * below changes. What changes is that these four reads now JOIN the
+       * requests the panels mounted alongside this page are already making,
+       * rather than issuing their own. Measured on one open of this page:
+       * `config/commerce` was read four times, `slots` four, `loyalty` four,
+       * coupons three.
+       */
+      const getJson = <T,>(url: string): Promise<T | null> => adminGet<T>(url);
       const [commerce, loyalty, couponsRes, slotsRes] = await Promise.all([
         getJson<{ rules?: { minOrderPaise?: number; freeDeliveryThresholdPaise?: number; shippingType?: string; shippingFlatPaise?: number } }>(
           "/api/admin/config/commerce",
@@ -361,6 +364,7 @@ function LoyaltySection() {
   async function save() {
     setSaving(true);
     try {
+      invalidateAdminGet("/api/admin/config/");
       const res = await fetch("/api/admin/config/loyalty", {
         method: "PUT",
         headers: { "content-type": "application/json" },
@@ -519,6 +523,7 @@ function FeatureTogglesSection() {
     // Optimistic flip; revert on failure.
     setFlags((fs) => fs.map((f) => (f.key === key ? { ...f, enabled: next } : f)));
     try {
+      invalidateAdminGet("/api/admin/config/");
       const res = await fetch("/api/admin/config/features", {
         method: "PUT",
         headers: { "content-type": "application/json" },

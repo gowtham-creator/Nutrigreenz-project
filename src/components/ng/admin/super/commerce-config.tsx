@@ -7,6 +7,7 @@ import { UiIcon } from "@/components/ui/ui-icon";
 import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { SectionHeader, PrimarySection } from "@/components/ng/admin/super/command-center";
 import { NumberField, Toggle, SegToggle, TextField, SaveBar } from "@/components/ng/admin/super/controls";
+import { adminGet, invalidateAdminGet } from "@/lib/admin-get";
 
 /**
  * Super Admin · Commerce Rules (Phase B — DB-backed).
@@ -77,14 +78,22 @@ const toPaise = (rupeeValue: number) => Math.max(0, Math.round(rupeeValue * 100)
 
 /* ── fetch helpers ────────────────────────────────────────────────────── */
 
+/*
+ * Reads through the shared loader so this panel joins the request the config
+ * page and its sibling panels are already making, instead of issuing a third.
+ *
+ * The THROWING contract is kept deliberately: callers here rely on a rejected
+ * promise to show their error state, so this must not quietly return null the
+ * way `adminGet` does on its own.
+ */
 async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: "no-store" });
-  const data = (await res.json()) as T & { ok?: boolean; error?: string };
-  if (!res.ok || data.ok === false) throw new Error(data.error || "request-failed");
+  const data = await adminGet<T & { ok?: boolean; error?: string }>(url);
+  if (!data || data.ok === false) throw new Error(data?.error || "request-failed");
   return data;
 }
 
 async function sendJson<T>(url: string, method: string, body: unknown): Promise<T> {
+  invalidateAdminGet("/api/admin/config/");
   const res = await fetch(url, {
     method,
     headers: { "content-type": "application/json" },
