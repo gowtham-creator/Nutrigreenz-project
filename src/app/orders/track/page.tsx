@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 const SEE = [
-  { icon: "scooter-bold", text: "Real-time delivery progress with carrier ETA" },
+  { icon: "delivery", text: "Real-time delivery progress with carrier ETA" },
   { icon: "qr-code-bold", text: "Lot codes for every item in the order" },
   { icon: "phone-bold", text: "Driver contact in the final-mile window" },
   { icon: "shield-check-bold", text: "One-tap report-issue if something's off" },

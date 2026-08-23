@@ -42,7 +42,7 @@ const points = (freeFrom: string): { icon: UiIconName | "fssai"; title: string; 
     sub: "Every lot, zero adulterants",
   },
   {
-    icon: "delivery",
+    icon: "shipping",
     title: "Free shipping",
     sub: `On all orders over ${freeFrom}`,
   },

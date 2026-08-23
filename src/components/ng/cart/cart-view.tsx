@@ -19,7 +19,7 @@ export function CartView() {
   const trust: { icon: UiIconName; label: string }[] = [
     { icon: "lock" as const, label: "Secure payment" },
     { icon: "qr" as const, label: "Lot-traceable" },
-    { icon: "delivery" as const, label: `Free delivery over ${freeDeliveryLabel}` },
+    { icon: "shipping" as const, label: `Free delivery over ${freeDeliveryLabel}` },
   ];
 
   if (items.length === 0) {

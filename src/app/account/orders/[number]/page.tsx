@@ -34,7 +34,7 @@ const FLOW: { status: OrderStatus; label: string; icon: string }[] = [
   { status: "placed", label: "Order placed", icon: "cart-check-bold" },
   { status: "confirmed", label: "Confirmed", icon: "verified-check-bold" },
   { status: "packed", label: "Packed at warehouse", icon: "box-bold" },
-  { status: "shipped", label: "Shipped", icon: "delivery-bold" },
+  { status: "shipped", label: "Shipped", icon: "delivery" },
   { status: "delivered", label: "Delivered", icon: "verified-check-bold" },
 ];
 
@@ -209,7 +209,7 @@ export default function AccountOrderDetailPage({
 
         {order.paymentStatus === "pending" ? (
           <div className="flex items-start gap-3 rounded-2xl border border-ng-amber/40 bg-ng-amber/10 p-4 text-[13px]">
-            <Icon name="clock-circle-bold" size={18} className="mt-0.5 shrink-0 text-ng-amber" />
+            <UiIcon name="deliveryTime" size={18} className="mt-0.5 shrink-0 text-ng-amber" />
             <div>
               <p className="font-display text-[14.5px] text-ng-forest-deep">Payment pending</p>
               <p className="mt-0.5 leading-relaxed text-ng-ink-muted">
@@ -359,7 +359,7 @@ export default function AccountOrderDetailPage({
               </div>
               {slotLabel ? (
                 <p className="mt-3 flex items-center gap-2 border-t border-ng-line-soft pt-3 text-[12px] text-ng-ink-muted">
-                  <Icon name="clock-circle-bold" size={14} className="text-ng-forest" />
+                  <UiIcon name="deliveryTime" size={14} className="text-ng-forest" />
                   Slot · {slotLabel}
                 </p>
               ) : null}

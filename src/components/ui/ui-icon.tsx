@@ -60,6 +60,13 @@ const UI_ICONS = {
   status: "status",
   signin: "signin",
   save: "save",
+  /* Delivery slot / delivery time. A clock ON a van — distinct from plain
+     `delivery`, and NOT the same idea as a bare clock, which this app also
+     uses for "pending", opening hours and "full-time". */
+  deliveryTime: "delivery-time",
+  /* Free-shipping claims. Parcels ON a van — the shipping OFFER, as distinct
+     from `delivery` (the vehicle) used for the "Shipped" order status. */
+  shipping: "shipping",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific

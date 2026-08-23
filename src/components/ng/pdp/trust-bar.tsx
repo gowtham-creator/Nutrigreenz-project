@@ -32,7 +32,7 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
    * the same weight as its neighbours.
    */
   const items: ({ label: string; sub: string } & ({ app: BrandIconName } | { icon: string }))[] = [
-    { icon: "delivery-linear", label: "Free shipping", sub: `On orders over ${freeOver}` },
+    { icon: "shipping", label: "Free shipping", sub: `On orders over ${freeOver}` },
     { icon: "headphones-round-sound-linear", label: "360° customer support", sub: "Real people, here to help" },
     { app: "lab", label: `${checks}+ quality checks`, sub: "On every single lot" },
     { app: "verified", label: "100% authentic", sub: "Farm-fresh, never adulterated" },

@@ -93,7 +93,7 @@ function SuccessContent() {
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div className="flex gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-                  <Icon name="clock-circle-bold" size={18} />
+                  <UiIcon name="deliveryTime" size={18} />
                 </span>
                 <div>
                   <p className="text-[12px] uppercase tracking-wider text-ng-ink-soft">

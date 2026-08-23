@@ -58,7 +58,7 @@ export default async function ShopPage() {
             { icon: "star" as const, label: `${avgRating} avg rating` },
             { icon: "flask" as const, label: "Lab-tested every lot" },
             { icon: "qr" as const, label: "Traceable to the farm" },
-            { icon: "delivery" as const, label: `Free delivery over ${freeFrom}` },
+            { icon: "shipping" as const, label: `Free delivery over ${freeFrom}` },
           ] as { label: string; icon: UiIconName }[]).map((s) => (
             <div
               key={s.label}

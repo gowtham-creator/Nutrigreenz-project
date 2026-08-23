@@ -165,7 +165,7 @@ function ConfigContent() {
       accent: true,
     },
     {
-      icon: "delivery-bold",
+      icon: "delivery",
       label: "Free delivery ≥",
       value: kpiData ? INR(kpiData.freeDeliveryThresholdPaise / 100) : "—",
     },
@@ -186,7 +186,7 @@ function ConfigContent() {
       value: kpiData ? String(kpiData.activeCoupons) : "—",
     },
     {
-      icon: "clock-circle-bold",
+      icon: "deliveryTime",
       label: "Delivery slots",
       value: kpiData ? String(kpiData.slotCount) : "—",
     },

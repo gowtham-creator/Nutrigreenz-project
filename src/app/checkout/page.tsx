@@ -44,7 +44,7 @@ import { saveReceipt } from "@/components/ng/checkout/order-receipt";
 
 const CHECKOUT_STEPS = [
   { label: "Address", icon: "map-point-bold" },
-  { label: "Slot", icon: "clock-circle-bold" },
+  { label: "Slot", icon: "deliveryTime" },
   { label: "Rewards", icon: "coupon" },
   { label: "Payment", icon: "wallet-money-bold" },
   { label: "Review", icon: "shield-check-bold" },

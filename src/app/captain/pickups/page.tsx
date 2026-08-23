@@ -212,7 +212,7 @@ export default function CaptainPickups() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-[12px] text-ng-ink-muted mt-1.5">
-                        <Icon name="clock-circle-bold" size={13} className="text-ng-ink-soft" />
+                        <UiIcon name="deliveryTime" size={13} className="text-ng-ink-soft" />
                         {formatPickupWhen(p.dueAt)}
                       </div>
                       <div className="text-[11.5px] text-ng-ink-soft font-mono mt-1">#{p.id.slice(0, 8)}</div>

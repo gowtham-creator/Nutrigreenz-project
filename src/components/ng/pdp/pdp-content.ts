@@ -629,7 +629,7 @@ const FRUITS: PdpCategoryContent = {
     cards: [
       { icon: "sun-bold", title: "Tree-ripened", body: "Left to mature on the plant for true flavour.", points: ["Natural sugars develop fully", "No artificial ripening"] },
       { icon: "leaf-bold", title: "No carbide, no wax", body: "Ripened naturally, never chemically gassed.", points: ["No calcium carbide", "No cosmetic wax coating"] },
-      { icon: "delivery-bold", title: "Picked to order", body: "Harvested close to dispatch, not cold-stored for weeks.", points: ["Shorter farm-to-door time", "Named partner orchards"] },
+      { icon: "delivery", title: "Picked to order", body: "Harvested close to dispatch, not cold-stored for weeks.", points: ["Shorter farm-to-door time", "Named partner orchards"] },
     ],
   },
   uses: {

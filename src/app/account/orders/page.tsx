@@ -105,8 +105,8 @@ export default function AccountOrdersPage() {
             <div className="mt-6 grid grid-cols-3 items-stretch gap-3 sm:max-w-md">
               {[
                 { icon: "box-bold", n: orders.length, l: "Orders" },
-                { icon: "delivery-bold", n: deliveredCount, l: "Delivered" },
-                { icon: "scooter-bold", n: orders.length - deliveredCount, l: "In progress" },
+                { icon: "delivery", n: deliveredCount, l: "Delivered" },
+                { icon: "delivery", n: orders.length - deliveredCount, l: "In progress" },
               ].map((s) => (
                 <div
                   key={s.l}

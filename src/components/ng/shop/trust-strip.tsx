@@ -52,7 +52,7 @@ const pillars = (freeFrom: string): { icon: UiIconName | "fssai"; title: string;
     note: "Scan back to the farm",
   },
   {
-    icon: "delivery",
+    icon: "shipping",
     title: `Free delivery ${freeFrom}+`,
     note: "Cold-chain where needed",
   },
