@@ -7,6 +7,7 @@ import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
+import { fetchAdminCoupons, invalidateAdminCoupons } from "@/lib/admin-coupons-client";
 
 /**
  * LiveCouponsPanel — the REAL coupon manager backed by the `coupons` table
@@ -69,12 +70,13 @@ export function LiveCouponsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/marketing/coupons", { cache: "no-store" });
-      if (!res.ok) {
+      // Shared loader: this panel and the campaign builder mount together and
+      // both want this list, so they join one request instead of racing.
+      const json = (await fetchAdminCoupons()) as { coupons?: CouponRow[] } | null;
+      if (!json) {
         setCoupons([]);
         return;
       }
-      const json = (await res.json()) as { coupons?: CouponRow[] };
       setCoupons(json.coupons ?? []);
     } catch {
       setCoupons([]);
@@ -111,6 +113,7 @@ export function LiveCouponsPanel() {
 
     setSaving(true);
     try {
+      invalidateAdminCoupons();
       const res = await fetch("/api/admin/marketing/coupons", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -131,6 +134,7 @@ export function LiveCouponsPanel() {
 
   async function setActive(c: CouponRow, active: boolean) {
     try {
+      invalidateAdminCoupons();
       const res = await fetch(`/api/admin/marketing/coupons/${c.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },

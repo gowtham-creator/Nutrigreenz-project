@@ -15,6 +15,7 @@ import {
 } from "@/components/ng/admin/super/controls";
 import { ProductPicker } from "@/components/ng/admin/product-picker";
 import { UiIcon } from "@/components/ui/ui-icon";
+import { fetchAdminCoupons } from "@/lib/admin-coupons-client";
 
 /**
  * Super Admin · Coupon campaign builder (§3.5.2).
@@ -250,12 +251,13 @@ export function CouponCampaignBuilder() {
     let alive = true;
     void (async () => {
       try {
-        const [couponsRes, perfRes] = await Promise.all([
-          fetch("/api/admin/marketing/coupons", { cache: "no-store" }),
+        const [couponsJson, perfRes] = await Promise.all([
+          // Shared with the live-coupons panel mounted alongside this one.
+          fetchAdminCoupons(),
           fetch("/api/admin/marketing/coupons/performance", { cache: "no-store" }),
         ]);
-        if (!couponsRes.ok) throw new Error("coupons");
-        const { coupons = [] } = (await couponsRes.json()) as { coupons?: LiveCoupon[] };
+        if (!couponsJson) throw new Error("coupons");
+        const { coupons = [] } = couponsJson as { coupons?: LiveCoupon[] };
 
         // Performance is best-effort: the coupon list is still worth showing
         // without it, and every figure it feeds degrades to "not yet redeemed".
