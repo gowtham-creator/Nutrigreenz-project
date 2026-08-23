@@ -205,7 +205,7 @@ export function RewardsPanel({
     <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">
       <div className="mb-5 flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-cream text-ng-clay-deep">
-          <Icon name="ticket-bold" size={20} />
+          <Icon name="coupon" size={20} />
         </span>
         <div className="flex flex-col">
           <span className="ng-eyebrow text-ng-forest/70">Step 3</span>
@@ -220,7 +220,7 @@ export function RewardsPanel({
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-ng-leaf bg-ng-sage/30 p-4">
           <div className="flex items-center gap-3">
             <Icon
-              name="ticket-bold"
+              name="coupon"
               size={20}
               className="text-ng-forest"
             />
@@ -304,7 +304,7 @@ export function RewardsPanel({
                       className="group flex w-full items-center gap-3 rounded-2xl border border-dashed border-ng-leaf bg-ng-sage/15 p-3.5 text-left transition-colors hover:bg-ng-sage/35 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ng-paper text-ng-forest">
-                        <Icon name="ticket-bold" size={17} />
+                        <Icon name="coupon" size={17} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block font-mono text-[13px] font-bold text-ng-forest-deep">
@@ -344,7 +344,7 @@ export function RewardsPanel({
                     className="flex items-center gap-3 rounded-2xl border border-dashed border-ng-line bg-ng-cream/40 p-3.5"
                   >
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ng-paper text-ng-ink-soft">
-                      <Icon name="ticket-bold" size={17} />
+                      <Icon name="coupon" size={17} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-mono text-[13px] font-bold text-ng-ink-muted">

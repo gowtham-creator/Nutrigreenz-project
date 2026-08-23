@@ -181,7 +181,7 @@ function ConfigContent() {
       accent: true,
     },
     {
-      icon: "ticket-sale-bold",
+      icon: "coupon",
       label: "Active coupons",
       value: kpiData ? String(kpiData.activeCoupons) : "—",
     },

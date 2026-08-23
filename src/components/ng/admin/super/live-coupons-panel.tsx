@@ -151,7 +151,7 @@ export function LiveCouponsPanel() {
     <section id="live-coupons" className="mb-6 scroll-mt-32 rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)]">
       <div className="mb-5 flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-forest/10 text-ng-forest">
-          <Icon name="ticket-bold" size={20} />
+          <Icon name="coupon" size={20} />
         </span>
         <div>
           <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Live coupons</h2>

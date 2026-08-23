@@ -508,7 +508,7 @@ export function CouponCampaignBuilder() {
     <section id="coupons" className="mb-6 scroll-mt-32">
       <Card>
         <SectionHeader
-          icon="ticket-sale-bold"
+          icon="coupon"
           tone="clay"
           title="Coupon campaign builder"
           caption="Create a targeted coupon and review how each code has actually performed."
@@ -837,7 +837,7 @@ export function CouponCampaignBuilder() {
               <>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
                   <TrackTile
-                    icon="ticket-bold"
+                    icon="coupon"
                     label="Redeemed"
                     value={tracked.perf.redemptions.toLocaleString("en-IN")}
                   />

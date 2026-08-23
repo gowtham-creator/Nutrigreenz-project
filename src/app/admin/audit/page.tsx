@@ -91,10 +91,10 @@ const ACTION_META: Record<string, ActionMeta> = {
   "announcement.update": { group: "announcements", kind: "Announcement", icon: "bell-bold", tone: "forest" },
   "announcement.delete": { group: "announcements", kind: "Announcement", icon: "bell-bold", tone: "terracotta" },
   // Marketing · coupons
-  "coupon.create": { group: "coupons", kind: "Coupon", icon: "ticket-sale-bold", tone: "forest" },
-  "coupon.update": { group: "coupons", kind: "Coupon", icon: "ticket-sale-bold", tone: "forest" },
-  "coupon.delete": { group: "coupons", kind: "Coupon", icon: "ticket-sale-bold", tone: "terracotta" },
-  "coupon.deactivate": { group: "coupons", kind: "Coupon", icon: "ticket-sale-bold", tone: "clay" },
+  "coupon.create": { group: "coupons", kind: "Coupon", icon: "coupon", tone: "forest" },
+  "coupon.update": { group: "coupons", kind: "Coupon", icon: "coupon", tone: "forest" },
+  "coupon.delete": { group: "coupons", kind: "Coupon", icon: "coupon", tone: "terracotta" },
+  "coupon.deactivate": { group: "coupons", kind: "Coupon", icon: "coupon", tone: "clay" },
   // Marketing · promotions
   "promotion.create": { group: "promotions", kind: "Promotion", icon: "tag-price-bold", tone: "forest" },
   "promotion.update": { group: "promotions", kind: "Promotion", icon: "tag-price-bold", tone: "forest" },

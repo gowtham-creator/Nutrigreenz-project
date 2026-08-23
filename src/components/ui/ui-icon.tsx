@@ -50,6 +50,8 @@ const UI_ICONS = {
   cart: "cart",
   /* Config / settings, wherever the app talks about configuration. */
   settings: "settings",
+  /* Coupons and vouchers. Not price tags — see the note in the commit. */
+  coupon: "coupon",
   bag: "bag",
   /* The vision row on /about. Solar had a leaf for soil, a globe for farming
      and a shield-tick for customers — three generic marks for three specific
