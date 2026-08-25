@@ -76,10 +76,22 @@ export function PaymentPicker({
     };
   }, []);
 
-  // Default to COD once we know UPI isn't on offer, so the customer isn't left
-  // with nothing selected and a disabled Place order button.
+  /*
+   * Fall back to COD once we know UPI isn't on offer.
+   *
+   * The `!selected` guard this replaces only covered a FRESH checkout. Checkout
+   * restores its draft from localStorage, so a returning customer arrived with
+   * `selected` already set to UPI from a visit when it was offered — the guard
+   * saw a selection, did nothing, and the UPI card rendered disabled while
+   * remaining the chosen method. Place order then posted `upi` for a gateway
+   * that isn't there, which is how NG-26-1005 … 1008 came to exist.
+   *
+   * Disabling a control is not the same as clearing what it selected, so this
+   * now also displaces a stale UPI choice.
+   */
   useEffect(() => {
-    if (onlineAvailable === false && !selected) onSelect(COD_SELECTION);
+    if (onlineAvailable !== false) return;
+    if (!selected || selected.category === "upi") onSelect(COD_SELECTION);
   }, [onlineAvailable, selected, onSelect]);
 
   const upiChosen = selected?.category === "upi";

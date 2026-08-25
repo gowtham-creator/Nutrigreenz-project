@@ -119,6 +119,31 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
+  /*
+   * Refuse an online order the gateway cannot actually take.
+   *
+   * This is the bug behind NG-26-1005 … 1008: the checkout draft is persisted to
+   * localStorage, so a UPI selection made while the picker still offered it was
+   * restored on a later visit even though `availableMethods()` had narrowed to
+   * COD. The picker rendered UPI disabled but kept it SELECTED, checkout posted
+   * `paymentMethod: "upi"`, and this route accepted it on the strength of the
+   * string alone. `beginPayment` then returned null (no gateway), leaving an
+   * order that was real enough to appear in the admin list and trigger an
+   * order-placed email, yet could never be paid — an order nobody placed on
+   * purpose and nobody could complete.
+   *
+   * Rejecting rather than quietly downgrading to COD is deliberate: switching a
+   * customer from "pay now" to "pay the rider in cash" without asking changes
+   * the terms of the sale. A 400 lets checkout re-prompt with what is on offer.
+   */
+  const wantsUpi = b.paymentMethod === "upi";
+  if (wantsUpi && !isOnlinePaymentAvailable()) {
+    return Response.json(
+      { ok: false, error: "payment-unavailable", method: "upi" },
+      { status: 400 },
+    );
+  }
+
   try {
     const order = await createOrder({
       customerId: session.customerId,
@@ -128,8 +153,9 @@ export async function POST(request: Request): Promise<Response> {
       couponCode: str(b.couponCode),
       loyaltyPoints: requestedPoints,
       // Only "upi" or "cod" are accepted; anything else falls back to cod, so a
-      // tampered body can never select a method that skips collection.
-      paymentMethod: b.paymentMethod === "upi" ? "upi" : "cod",
+      // tampered body can never select a method that skips collection. By this
+      // point `upi` has also been confirmed payable — see the guard above.
+      paymentMethod: wantsUpi ? "upi" : "cod",
       addressSnapshot:
         typeof b.addressSnapshot === "object" && b.addressSnapshot !== null
           ? (b.addressSnapshot as Record<string, unknown>)
