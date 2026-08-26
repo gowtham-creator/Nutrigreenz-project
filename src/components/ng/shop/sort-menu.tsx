@@ -5,6 +5,22 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { SORT_OPTIONS, type SortKey } from "./types";
 
+/**
+ * The glyph for what each sort DOES, so the menu is scannable by shape.
+ *
+ * Every name here is one already rendering elsewhere in the app (or in the
+ * local UI registry) rather than a plausible-looking Solar name — an icon that
+ * does not resolve fails silently to an empty box, which is worse than the
+ * plain list this replaces.
+ */
+const SORT_ICONS: Record<SortKey, string> = {
+  featured: "medal-ribbon-star-bold",
+  "price-asc": "alt-arrow-up-linear",
+  "price-desc": "alt-arrow-down-linear",
+  rating: "star",
+  newest: "calendar-minimalistic-bold",
+};
+
 interface SortMenuProps {
   value: SortKey;
   onChange: (value: SortKey) => void;
@@ -48,28 +64,58 @@ export function SortMenu({ value, onChange, className }: SortMenuProps) {
       {open ? (
         <ul
           role="listbox"
-          className="absolute right-0 z-40 mt-2 w-56 overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-paper py-1.5 shadow-[0_12px_40px_rgba(31,77,46,0.16)]"
+          className="absolute right-0 z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-paper p-1.5 shadow-[0_12px_40px_rgba(31,77,46,0.16)]"
         >
-          {SORT_OPTIONS.map((o) => (
-            <li key={o.key}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={o.key === value}
-                onClick={() => {
-                  onChange(o.key);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center justify-between px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-ng-sage",
-                  o.key === value ? "font-semibold text-ng-forest" : "text-ng-ink-muted",
-                )}
-              >
-                {o.label}
-                {o.key === value ? <Icon name="check-circle-bold" size={16} className="text-ng-leaf" /> : null}
-              </button>
-            </li>
-          ))}
+          {/* A quiet header, so the list reads as a set of choices rather than
+              as five unrelated links. */}
+          <li
+            className="px-3.5 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ng-ink-soft"
+            aria-hidden
+          >
+            Sort by
+          </li>
+          {SORT_OPTIONS.map((o) => {
+            const active = o.key === value;
+            return (
+              <li key={o.key}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    onChange(o.key);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "group flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] transition-colors",
+                    active
+                      ? "bg-ng-forest text-ng-cream"
+                      : "text-ng-ink hover:bg-ng-sage/60",
+                  )}
+                >
+                  {/*
+                    Each option carries the glyph for what it DOES, so the list
+                    is scannable by shape before it is read. Previously every
+                    row was identical text, which is why the menu felt generic
+                    and why "low to high" versus "high to low" needed reading
+                    rather than glancing.
+                  */}
+                  <Icon
+                    name={SORT_ICONS[o.key]}
+                    size={15}
+                    className={cn(
+                      "shrink-0 transition-colors",
+                      active ? "text-ng-cream" : "text-ng-clay",
+                    )}
+                  />
+                  <span className={cn("flex-1", active && "font-semibold")}>{o.label}</span>
+                  {active ? (
+                    <Icon name="check-circle-bold" size={15} className="shrink-0 text-ng-cream" />
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </div>

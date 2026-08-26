@@ -84,7 +84,14 @@ export function Header() {
               </Link>
               {item.mega && openMega === item.label ? (
                 <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3">
-                  <div className="bg-ng-paper border border-ng-line rounded-2xl shadow-[var(--shadow-ng-float)] p-6 w-[680px] grid grid-cols-2 gap-x-8 gap-y-3">
+                  {/* One column, not two.
+                      Three categories in a 2-up grid left the fourth cell
+                      empty, so the panel read as a wide rectangle with a hole
+                      in it. Stacked, the panel is only as big as its contents
+                      and the eye travels straight down the list. Width is set
+                      so the longest description ("Groundnut, sesame, …") wraps
+                      to two lines rather than running long. */}
+                  <div className="bg-ng-paper border border-ng-line rounded-2xl shadow-[var(--shadow-ng-float)] p-2.5 w-[310px] flex flex-col gap-0.5">
                     {item.mega.map((m) => (
                       <Link
                         key={m.label}

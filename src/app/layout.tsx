@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { VisitBeacon } from "@/components/ng/visit-beacon";
 import { AuthProvider } from "@/lib/auth";
 import { LinkPhonePrompt } from "@/components/ng/account/link-phone-prompt";
+import { NavigationProgress } from "@/components/ng/navigation-progress";
 import { CommerceProvider } from "@/lib/commerce";
 import { LoyaltyConfigProvider } from "@/lib/loyalty-config";
 import { LocationProvider } from "@/lib/location";
@@ -83,6 +84,10 @@ export default function RootLayout({
                     <AddressProvider>
                       {children}
                       <LinkPhonePrompt />
+                      {/* Outside the page tree on purpose: it must survive the
+                          navigation it is reporting on, so it cannot live in
+                          anything that unmounts when the route changes. */}
+                      <NavigationProgress />
                     </AddressProvider>
                   </WishlistProvider>
                 </CartProvider>

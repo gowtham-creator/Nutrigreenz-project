@@ -42,6 +42,18 @@ export function FilterPanel({
     });
   };
 
+  /*
+   * Thumb positions as percentages, for the filled span between them.
+   * `span` is guarded because bounds.min === bounds.max whenever the catalogue
+   * has a single price (or one product), which would otherwise divide by zero
+   * and put the fill at NaN%.
+   */
+  const span = Math.max(1, bounds.max - bounds.min);
+  const pct = (v: number) =>
+    Math.min(100, Math.max(0, ((v - bounds.min) / span) * 100));
+  const minPct = pct(filters.priceMin);
+  const maxPct = pct(filters.priceMax);
+
   return (
     <div className={cn("space-y-7", className)}>
       <div className="flex items-center justify-between">
@@ -53,7 +65,12 @@ export function FilterPanel({
           <button
             type="button"
             onClick={onReset}
-            className="text-[12px] font-medium text-ng-leaf hover:text-ng-forest transition-colors"
+            /* Was `text-ng-leaf` at weight 500: a mid-green on cream, around
+               2.3:1, which fails WCAG AA for body text and read as disabled.
+               Ink at semibold gives it the contrast and weight of a control
+               that can actually be pressed, with the underline on hover
+               marking it as the destructive-ish action it is. */
+            className="rounded-md px-1.5 py-0.5 text-[12px] font-semibold text-ng-ink underline-offset-4 transition-colors hover:text-ng-forest hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest"
           >
             Reset
           </button>
@@ -127,32 +144,56 @@ export function FilterPanel({
         <legend className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">
           Price range
         </legend>
-        <div className="flex items-center justify-between text-[13px] text-ng-ink">
-          <span>₹{filters.priceMin.toLocaleString()}</span>
-          <span>₹{filters.priceMax.toLocaleString()}</span>
+        {/* The two values, shown as chips so they read as the current
+            selection rather than as the fixed bounds of the scale. */}
+        <div className="flex items-center justify-between gap-3 text-[13px]">
+          <span className="rounded-lg bg-ng-sage/40 px-2.5 py-1 font-semibold tabular-nums text-ng-forest-deep">
+            ₹{filters.priceMin.toLocaleString("en-IN")}
+          </span>
+          <span className="h-px flex-1 bg-ng-line" aria-hidden />
+          <span className="rounded-lg bg-ng-sage/40 px-2.5 py-1 font-semibold tabular-nums text-ng-forest-deep">
+            ₹{filters.priceMax.toLocaleString("en-IN")}
+          </span>
         </div>
-        <input
-          type="range"
-          min={bounds.min}
-          max={bounds.max}
-          value={filters.priceMin}
-          aria-label="Minimum price"
-          onChange={(e) =>
-            onChange({ ...filters, priceMin: Math.min(Number(e.target.value), filters.priceMax) })
-          }
-          className="w-full touch-manipulation accent-ng-forest max-lg:h-6 max-lg:[&::-webkit-slider-thumb]:h-5 max-lg:[&::-webkit-slider-thumb]:w-5 max-lg:[&::-moz-range-thumb]:h-5 max-lg:[&::-moz-range-thumb]:w-5"
-        />
-        <input
-          type="range"
-          min={bounds.min}
-          max={bounds.max}
-          value={filters.priceMax}
-          aria-label="Maximum price"
-          onChange={(e) =>
-            onChange({ ...filters, priceMax: Math.max(Number(e.target.value), filters.priceMin) })
-          }
-          className="w-full touch-manipulation accent-ng-forest max-lg:h-6 max-lg:[&::-webkit-slider-thumb]:h-5 max-lg:[&::-webkit-slider-thumb]:w-5 max-lg:[&::-moz-range-thumb]:h-5 max-lg:[&::-moz-range-thumb]:w-5"
-        />
+
+        {/*
+          One track, two thumbs.
+          The inputs are transparent and stacked over the track we draw below,
+          because there is no two-thumb range control in HTML. See `.ng-range`
+          in globals.css for why the thumbs need `pointer-events: auto` while
+          the inputs themselves are `none`.
+        */}
+        <div className="relative h-6 select-none">
+          {/* Unselected track */}
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-ng-line" />
+          {/* Selected span, so the chosen range is legible at a glance */}
+          <div
+            className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-ng-forest"
+            style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }}
+          />
+          <input
+            type="range"
+            min={bounds.min}
+            max={bounds.max}
+            value={filters.priceMin}
+            aria-label="Minimum price"
+            onChange={(e) =>
+              onChange({ ...filters, priceMin: Math.min(Number(e.target.value), filters.priceMax) })
+            }
+            className="ng-range absolute inset-0 h-full w-full touch-manipulation"
+          />
+          <input
+            type="range"
+            min={bounds.min}
+            max={bounds.max}
+            value={filters.priceMax}
+            aria-label="Maximum price"
+            onChange={(e) =>
+              onChange({ ...filters, priceMax: Math.max(Number(e.target.value), filters.priceMin) })
+            }
+            className="ng-range absolute inset-0 h-full w-full touch-manipulation"
+          />
+        </div>
         {/* Numeric fallback for precise bounds on touch — sliders alone are hard
             to set exactly on a phone. Hidden on desktop where the sidebar is shown. */}
         <div className="grid grid-cols-2 gap-3 lg:hidden">

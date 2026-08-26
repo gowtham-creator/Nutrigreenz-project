@@ -1061,3 +1061,117 @@
 @media (prefers-reduced-motion: reduce) {
   .ng-toast-progress { animation: none; opacity: 0; }
 }
+
+/* ── Navigation progress ──────────────────────────────────────────────────
+ *
+ * The busy cursor while an App Router navigation is in flight. Set on <html>
+ * by <NavigationProgress>, and `!important` on descendants because nearly
+ * every interactive element in the app sets its own cursor — without it the
+ * pointer reverts to a hand the moment it is over the link just clicked,
+ * which is exactly where it is.
+ */
+html[data-navigating],
+html[data-navigating] * {
+  cursor: progress !important;
+}
+
+/*
+ * Reduced motion: keep the SIGNAL, drop the animation. The spinner is a
+ * 28-frame loop, so it is replaced by a static dot rather than removed
+ * entirely — a customer who cannot see spinning still needs to know the page
+ * is opening, and the busy cursor above continues to do its job.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ng-nav-spinner {
+    animation: none;
+    /* Freeze the animated image: rendering it at 1px and scaling up would blur,
+       so instead hide it and show a plain dot in its place. */
+    visibility: hidden;
+    position: relative;
+  }
+  .ng-nav-spinner::after {
+    content: "";
+    visibility: visible;
+    position: absolute;
+    inset: 25%;
+    border-radius: 9999px;
+    background: var(--ng-forest);
+  }
+}
+
+/* ── Dual-range price slider ──────────────────────────────────────────────
+ *
+ * Two <input type="range"> elements stacked on ONE track, which is the only
+ * way to build a two-thumb range with native inputs (there is no such control
+ * in HTML). Previously the two inputs were block siblings, so they rendered as
+ * two separate sliders on two separate rows and read as a broken control.
+ *
+ * The inputs are transparent and absolutely positioned over a track we draw
+ * ourselves. `pointer-events: none` on the input with `auto` on the thumb is
+ * what lets BOTH thumbs stay grabbable: without it the upper input would
+ * swallow every click across the whole width and the lower thumb could never
+ * be picked up.
+ */
+.ng-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.ng-range:focus { outline: none; }
+
+.ng-range::-webkit-slider-runnable-track {
+  background: transparent;
+  border: none;
+  height: 100%;
+}
+.ng-range::-moz-range-track {
+  background: transparent;
+  border: none;
+  height: 100%;
+}
+
+.ng-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  background: var(--ng-forest);
+  border: 2px solid var(--ng-paper);
+  box-shadow: 0 1px 4px rgba(20, 51, 31, 0.35);
+  cursor: grab;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.ng-range::-moz-range-thumb {
+  pointer-events: auto;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  background: var(--ng-forest);
+  border: 2px solid var(--ng-paper);
+  box-shadow: 0 1px 4px rgba(20, 51, 31, 0.35);
+  cursor: grab;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.ng-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+.ng-range::-moz-range-thumb:hover { transform: scale(1.12); }
+.ng-range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.06); }
+.ng-range:active::-moz-range-thumb { cursor: grabbing; transform: scale(1.06); }
+
+/* Keyboard focus must be visible on the THUMB, not the invisible input box. */
+.ng-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--ng-paper), 0 0 0 5px var(--ng-forest);
+}
+.ng-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--ng-paper), 0 0 0 5px var(--ng-forest);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-range::-webkit-slider-thumb,
+  .ng-range::-moz-range-thumb { transition: none; }
+  .ng-range::-webkit-slider-thumb:hover,
+  .ng-range::-moz-range-thumb:hover { transform: none; }
+}
