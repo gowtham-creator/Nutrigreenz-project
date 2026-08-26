@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ng/button";
-import { useLocation, lookupArea } from "@/lib/location";
+import { useLocation } from "@/lib/location";
+import {
+  hasOnboardedLocation,
+  markLocationOnboarded,
+} from "@/lib/location-onboarding-flag";
 import { cn } from "@/lib/utils";
-
-const ONBOARDED_KEY = "ng-loc-onboarded";
 
 /**
  * First-visit, non-blocking location prompt (Zepto/Swiggy style). Shown once
@@ -15,7 +17,8 @@ const ONBOARDED_KEY = "ng-loc-onboarded";
  * never auto-open again — the LocationPill remains tappable for later changes.
  */
 export function LocationOnboarding() {
-  const { zone, setZone, requestBrowserLocation, isServiceable } = useLocation();
+  const { zone, setZone, requestBrowserLocation, isValidPincode, resolvePincode, hydrated } =
+    useLocation();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"choose" | "pincode">("choose");
@@ -25,33 +28,30 @@ export function LocationOnboarding() {
 
   useEffect(() => setMounted(true), []);
 
-  // Decide whether to auto-show, once, after hydration.
+  /*
+   * Decide whether to auto-show — but only ONCE THE STORED ZONE HAS LOADED.
+   *
+   * The previous version ran on mount with `if (onboarded || zone) return`, and
+   * the `zone` half never fired: `LocationProvider` reads localStorage inside
+   * its own effect, and React runs child effects before parent effects, so
+   * `zone` was unconditionally null here. The guard rested entirely on the
+   * onboarded flag, which the change-location sheet never set. Result: a
+   * customer who had already picked a location got prompted again.
+   *
+   * Gating on `hydrated` makes the `zone` check meaningful, and `decided`
+   * ensures we still evaluate exactly once rather than on every zone change.
+   */
+  const decided = useRef(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    let onboarded = false;
-    try {
-      onboarded = window.localStorage.getItem(ONBOARDED_KEY) === "1";
-    } catch {
-      onboarded = true; // storage blocked → don't nag
-    }
-    // If a zone is already chosen, treat as onboarded.
-    if (onboarded || zone) return;
+    if (!hydrated || decided.current) return;
+    decided.current = true;
+    if (hasOnboardedLocation() || zone) return;
     const t = window.setTimeout(() => setOpen(true), 600);
     return () => window.clearTimeout(t);
-    // run once on mount; intentionally not reacting to later zone changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function markOnboarded() {
-    try {
-      window.localStorage.setItem(ONBOARDED_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-  }
+  }, [hydrated, zone]);
 
   function dismiss() {
-    markOnboarded();
+    markLocationOnboarded();
     setOpen(false);
   }
 
@@ -68,7 +68,6 @@ export function LocationOnboarding() {
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   async function handleDetect() {
@@ -87,13 +86,35 @@ export function LocationOnboarding() {
 
   const trimmed = pincode.trim();
   const complete = trimmed.length === 6;
-  const serviceable = complete && isServiceable(trimmed);
+  const validPin = complete && isValidPincode(trimmed);
 
-  function handlePinSubmit(e: React.FormEvent) {
+  /*
+   * Resolve on completion, and accept the pincode whether or not we deliver
+   * there. Previously the submit was gated on serviceability, so a customer
+   * outside Hyderabad could not get past this modal at all. Now we record where
+   * they are and let the storefront tell them honestly what it can deliver.
+   */
+  const [resolving, setResolving] = useState(false);
+  async function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!serviceable) return;
-    setZone({ area: lookupArea(trimmed), pincode: trimmed, city: "Hyderabad" });
-    dismiss();
+    if (!validPin || resolving) return;
+    setResolving(true);
+    setError(null);
+    try {
+      const hit = await resolvePincode(trimmed);
+      if (!hit) {
+        setError("That doesn't look like an Indian pincode.");
+        return;
+      }
+      setZone({
+        area: hit.area,
+        pincode: hit.pincode,
+        city: hit.district || hit.state,
+      });
+      dismiss();
+    } finally {
+      setResolving(false);
+    }
   }
 
   if (!mounted || !open) return null;
@@ -180,9 +201,9 @@ export function LocationOnboarding() {
                 className={cn(
                   "flex items-center gap-2 h-12 px-4 rounded-xl bg-ng-paper border border-ng-line transition-all duration-200",
                   "focus-within:border-ng-forest focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)]",
-                  complete && !serviceable &&
+                  complete && !validPin &&
                     "border-ng-danger focus-within:border-ng-danger focus-within:shadow-[0_0_0_3px_rgba(178,58,46,0.18)]",
-                  serviceable && "border-ng-leaf",
+                  validPin && "border-ng-leaf",
                 )}
               >
                 <Icon name="map-point-bold" size={18} className="text-ng-ink-soft" />
@@ -199,17 +220,25 @@ export function LocationOnboarding() {
                   aria-label="Delivery pincode"
                   className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
                 />
-                {serviceable ? <Icon name="check-circle-bold" size={20} className="text-ng-leaf" /> : null}
+                {validPin ? <Icon name="check-circle-bold" size={20} className="text-ng-leaf" /> : null}
               </div>
-              {complete && !serviceable ? (
+              {/* The message is about the PINCODE being real, not about whether
+                  we deliver there. Coverage is reported after we resolve it, so
+                  a customer outside our delivery area still gets in and sees
+                  their actual location rather than a dead form. */}
+              {error ? (
+                <p className="text-[12px] text-ng-danger">{error}</p>
+              ) : complete && !validPin ? (
                 <p className="text-[12px] text-ng-danger">
-                  Not serviceable yet. We&apos;re expanding across Hyderabad soon.
+                  That doesn&apos;t look like an Indian pincode.
                 </p>
               ) : (
-                <p className="text-[12px] text-ng-ink-soft">Currently serving Hyderabad only.</p>
+                <p className="text-[12px] text-ng-ink-soft">
+                  Enter any Indian pincode. We&apos;ll tell you what we can deliver there.
+                </p>
               )}
-              <Button type="submit" fullWidth size="lg" disabled={!serviceable}>
-                Confirm location
+              <Button type="submit" fullWidth size="lg" disabled={!validPin || resolving}>
+                {resolving ? "Checking…" : "Confirm location"}
               </Button>
               <button
                 type="button"

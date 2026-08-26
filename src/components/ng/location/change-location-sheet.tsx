@@ -22,7 +22,8 @@ const PIN_RE = /^\d{0,6}$/;
  * Renders as a bottom sheet on mobile and a centred modal on desktop.
  */
 export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps) {
-  const { setZone, requestBrowserLocation, isServiceable, serviceablePincodes } = useLocation();
+  const { setZone, requestBrowserLocation, isValidPincode, resolvePincode, serviceablePincodes } =
+    useLocation();
   const [mounted, setMounted] = useState(false);
   const [pincode, setPincode] = useState("");
   const [detecting, setDetecting] = useState(false);
@@ -54,8 +55,11 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
 
   const trimmed = pincode.trim();
   const pinComplete = trimmed.length === 6;
-  const pinServiceable = pinComplete && isServiceable(trimmed);
-  const pinFeedback: "ok" | "no" | null = pinComplete ? (pinServiceable ? "ok" : "no") : null;
+  const pinValid = pinComplete && isValidPincode(trimmed);
+  // Feedback is now about the pincode being REAL, not about coverage — see the
+  // note in `india-pincodes.ts` on why those two answers had to be separated.
+  const pinFeedback: "ok" | "no" | null = pinComplete ? (pinValid ? "ok" : "no") : null;
+  const [resolving, setResolving] = useState(false);
 
   const popular = useMemo(
     () => serviceablePincodes.map((p) => ({ pincode: p, area: lookupArea(p) })),
@@ -80,10 +84,21 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
     }
   }
 
-  function handlePinSubmit(e: React.FormEvent) {
+  async function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!pinServiceable) return;
-    commit({ area: lookupArea(trimmed), pincode: trimmed, city: "Hyderabad" });
+    if (!pinValid || resolving) return;
+    setResolving(true);
+    setDetectError(null);
+    try {
+      const hit = await resolvePincode(trimmed);
+      if (!hit) {
+        setDetectError("That doesn't look like an Indian pincode.");
+        return;
+      }
+      commit({ area: hit.area, pincode: hit.pincode, city: hit.district || hit.state });
+    } finally {
+      setResolving(false);
+    }
   }
 
   if (!mounted || !open) return null;
@@ -187,20 +202,29 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
               {pinFeedback === "ok" ? (
                 <Icon name="check-circle-bold" size={20} className="text-ng-leaf" />
               ) : null}
-              <Button type="submit" size="md" disabled={!pinServiceable} className="-mr-2">
-                Apply
+              <Button
+                type="submit"
+                size="md"
+                disabled={!pinValid || resolving}
+                className="-mr-2"
+              >
+                {resolving ? "…" : "Apply"}
               </Button>
             </div>
-            {pinFeedback === "ok" ? (
-              <p className="text-[12px] text-ng-forest">
-                Great news — we deliver to {lookupArea(trimmed)} ({trimmed}).
-              </p>
+            {/* Deliberately does NOT promise delivery. `pinFeedback` now means
+                "this is a real Indian pincode", and claiming coverage here
+                would promise delivery to all ~19,000 of them. Coverage is
+                resolved on Apply and shown by the pill. */}
+            {detectError ? (
+              <p className="text-[12px] text-ng-danger">{detectError}</p>
             ) : pinFeedback === "no" ? (
               <p className="text-[12px] text-ng-danger">
-                Not serviceable yet. We&apos;re expanding across Hyderabad soon.
+                That doesn&apos;t look like an Indian pincode.
               </p>
             ) : (
-              <p className="text-[12px] text-ng-ink-soft">Currently serving Hyderabad only.</p>
+              <p className="text-[12px] text-ng-ink-soft">
+                Enter any Indian pincode to see what we can deliver there.
+              </p>
             )}
           </form>
 
