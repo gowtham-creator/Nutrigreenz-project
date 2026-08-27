@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CardGallery } from "./card-gallery";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Badge } from "./badge";
@@ -113,20 +114,14 @@ export function ProductCard({ product, variant = "default", className }: Props) 
     >
       <Link href={href} className="block">
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ng-cream to-ng-cream-deep">
-          {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.title}
-              fill
-              quality={90}
-              sizes="(max-width: 640px) 60vw, (max-width: 1280px) 33vw, 22vw"
-              className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.07]"
-            />
-          ) : (
-            <div className="ng-img-fallback h-full w-full text-2xl">
-              {product.title.slice(0, 2)}
-            </div>
-          )}
+          {/* Cycles this product's PDP gallery while hovered. Falls back to the
+              single image when there is nothing else to show, so the one-image
+              products behave exactly as before. */}
+          <CardGallery
+            image={product.image}
+            gallery={product.gallery}
+            alt={product.title}
+          />
           {/* Soft top sheen + bottom vignette for depth */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ng-forest-deep/10 via-transparent to-ng-paper/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
