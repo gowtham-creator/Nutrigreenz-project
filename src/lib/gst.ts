@@ -4,22 +4,41 @@ import type { OrderWithDetail } from "@/lib/orders";
 /**
  * GST breakdown for an order.
  *
- * Catalogue prices are GST-INCLUSIVE at a flat 18%, so the taxable value is
+ * Catalogue prices are GST-INCLUSIVE at a flat 5%, so the taxable value is
  * back-computed from what the customer actually pays rather than added on top:
  *
- *     taxable = payable / 1.18      gst = payable - taxable
+ *     taxable = payable / 1.05      gst = payable - taxable
  *
- * Split 9% CGST + 9% SGST when the delivery state matches the seller's
- * (Telangana), and a single 18% IGST line otherwise — an inter-state supply is
+ * Split 2.5% CGST + 2.5% SGST when the delivery state matches the seller's
+ * (Telangana), and a single 5% IGST line otherwise. An inter-state supply is
  * IGST by law, and printing CGST/SGST on it would make the invoice wrong.
  *
  * Shared deliberately: the email and the PDF must never disagree about tax. All
  * figures are integer paise, with the split rounded so the two halves always sum
  * back to the total exactly.
+ *
+ * ── On changing this rate ─────────────────────────────────────────────────
+ *
+ * Because pricing is INCLUSIVE, the rate does not change what the customer
+ * pays. It changes how that payment is split between taxable value and tax:
+ * lowering it moves money from the tax line into the taxable value. On a ₹720
+ * order, 18% yields ₹610.17 + ₹109.83 tax; 5% yields ₹685.71 + ₹34.29. The
+ * customer is charged ₹720 either way.
+ *
+ * It is therefore NOT a way to reprice the catalogue, and changing it applies
+ * to invoices generated from now on — previously issued invoices keep whatever
+ * rate they were computed and sent with.
  */
 
-/** Flat rate across the catalogue, as confirmed by the client. */
-export const GST_RATE_PERCENT = 18;
+/**
+ * Flat rate across the catalogue.
+ *
+ * The half-rate below is derived rather than written out, so CGST + SGST can
+ * never drift from the headline rate. At 5% the halves are 2.5% each, which is
+ * fractional — `halfRatePercent` is consumed for display only, while the actual
+ * money split works in integer paise (see `gstFor`), so no rounding is lost.
+ */
+export const GST_RATE_PERCENT = 5;
 const HALF_RATE = GST_RATE_PERCENT / 2;
 
 /** The seller's registered state — supplies within it are CGST + SGST. */
