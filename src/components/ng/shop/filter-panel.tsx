@@ -258,29 +258,25 @@ export function FilterPanel({
         </div>
       </fieldset>
 
-      {/* In stock */}
-      <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-ng-line-soft bg-ng-paper px-4 py-3">
-        <span className="text-[13px] font-medium text-ng-ink">In stock only</span>
-        <span
-          className={cn(
-            "relative h-6 w-11 rounded-full transition-colors",
-            filters.inStockOnly ? "bg-ng-forest" : "bg-ng-line",
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-0.5 h-5 w-5 rounded-full bg-ng-paper shadow-sm transition-transform",
-              filters.inStockOnly ? "translate-x-[22px]" : "translate-x-0.5",
-            )}
-          />
-        </span>
-        <input
-          type="checkbox"
-          className="sr-only"
-          checked={filters.inStockOnly}
-          onChange={(e) => onChange({ ...filters, inStockOnly: e.target.checked })}
-        />
-      </label>
+      {/*
+        The "In stock only" toggle lived here and has been removed.
+
+        It filtered nothing: all 74 active variants are in stock, the lowest at
+        47 units, so flipping it never changed the result. A control that
+        visibly does nothing is worse than no control — it teaches customers
+        the filters are broken and they stop trusting the ones that work.
+
+        Sorting replaces it. `product-listing.tsx` sinks out-of-stock products
+        to the bottom automatically, which delivers the only real benefit the
+        toggle had (available things first) without a control anyone has to
+        find and operate — and it works for the majority who never open the
+        filter panel at all.
+
+        Out-of-stock items stay VISIBLE, badged "Sold out" by
+        `storefront-catalog.ts`. For a farm brand that badge is a positive
+        signal (small batch, seasonal) and it surfaces demand worth knowing
+        about; hiding those products would throw both away.
+      */}
     </div>
   );
 }

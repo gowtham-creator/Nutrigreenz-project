@@ -90,7 +90,6 @@ export function ProductListing({
     priceMin: bounds.min,
     priceMax: bounds.max,
     minRating: 0,
-    inStockOnly: false,
   };
 
   /*
@@ -127,7 +126,6 @@ export function ProductListing({
       if (filters.tags.length && !p.tags?.some((t) => filters.tags.includes(t))) return false;
       if (p.price < filters.priceMin || p.price > filters.priceMax) return false;
       if (filters.minRating && p.rating < filters.minRating) return false;
-      if (filters.inStockOnly && !isInStock(p)) return false;
       return true;
     });
 
@@ -149,6 +147,23 @@ export function ProductListing({
       default:
         break; // featured = catalog order
     }
+
+    /*
+     * Sink sold-out products to the bottom, whatever the chosen sort.
+     *
+     * This replaces the "In stock only" toggle. It gives the customer the one
+     * thing that filter was actually for — things they can buy, first — without
+     * a control they have to find and operate, and it applies to the majority
+     * who never open the filter panel.
+     *
+     * Applied AFTER the sort rather than folded into each comparator, so
+     * availability is a partition and the chosen sort still orders freely
+     * within each half. A stable sort keeps that intact: Array.prototype.sort
+     * has been required to be stable since ES2019, so equal-availability pairs
+     * hold the order the switch above gave them.
+     */
+    list.sort((a, b) => Number(isInStock(b)) - Number(isInStock(a)));
+
     return list;
   }, [pool, search, filters, sort]);
 
@@ -174,7 +189,6 @@ export function ProductListing({
   const hasActiveFilters =
     filters.tags.length > 0 ||
     filters.minRating > 0 ||
-    filters.inStockOnly ||
     Boolean(search) ||
     filters.priceMin > bounds.min ||
     filters.priceMax < bounds.max;

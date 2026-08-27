@@ -49,7 +49,6 @@ export interface ShopFilters {
   priceMin: number;
   priceMax: number;
   minRating: number;
-  inStockOnly: boolean;
 }
 
 export type { ProductCardType };
