@@ -29,8 +29,19 @@ import { cn } from "@/lib/utils";
  * trying to read it.
  */
 
-/** Long enough to actually look at a frame, short enough to see several. */
-const FRAME_MS = 850;
+/**
+ * Dwell per frame.
+ *
+ * 850ms was the first attempt and read as a flicker: the eye needs roughly a
+ * second to actually take in a new image, so anything faster shows motion
+ * without conveying content. At 1.5s a seven-frame set takes ten seconds to
+ * loop, which is far longer than anyone hovers — and that is fine. The point
+ * is that whatever the customer DOES see, they see properly.
+ */
+const FRAME_MS = 1500;
+
+/** Crossfade length. Long enough to read as a dissolve rather than a cut. */
+const FADE_MS = 650;
 
 export function CardGallery({
   image,
@@ -100,7 +111,16 @@ export function CardGallery({
 
   return (
     <div
-      className="absolute inset-0"
+      /*
+       * The hover zoom lives on this wrapper, not on each frame.
+       *
+       * Scaling every image individually meant each crossfade restarted its own
+       * transform, so the zoom stuttered every time the frame changed. Scaling
+       * the container once keeps the push-in continuous underneath, and lets
+       * the frames dissolve independently on top — which is what makes the
+       * sequence read as one moving image rather than a slideshow.
+       */
+      className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
       onMouseEnter={start}
       onMouseLeave={reset}
       /* Keyboard users tab to the card's link rather than pointing at it, so
@@ -119,11 +139,26 @@ export function CardGallery({
             fill
             quality={90}
             sizes={sizes}
+            /*
+             * `contain`, not `cover`.
+             *
+             * These galleries mix three aspect ratios in a square card: the
+             * lifestyle tiles are 1600x894 (1.79), the hero and comparison
+             * tiles 1400x1400, and every product jar 1200x1490 (0.81). Under
+             * `cover` the square box cropped roughly 44% off each side of the
+             * wide tiles and 19% off the top and bottom of every jar — lids and
+             * labels cut away, which is what made them unreadable.
+             *
+             * `contain` letterboxes onto the card's cream ground instead, so
+             * whatever the photographer framed is what the customer sees. The
+             * inset keeps the artwork off the card's rounded corners.
+             */
             className={cn(
-              "object-cover transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.07]",
+              "object-contain p-2",
               i === index ? "opacity-100" : "opacity-0",
               className,
             )}
+            style={{ transition: `opacity ${FADE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` }}
           />
         ) : null,
       )}
