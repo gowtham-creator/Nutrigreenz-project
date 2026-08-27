@@ -15,8 +15,11 @@ import { SORT_OPTIONS, type SortKey } from "./types";
  */
 const SORT_ICONS: Record<SortKey, string> = {
   featured: "medal-ribbon-star-bold",
-  "price-asc": "alt-arrow-up-linear",
-  "price-desc": "alt-arrow-down-linear",
+  // The two price options are the only rows where DIRECTION is the whole
+  // meaning, so they take the weightier disc arrows; the rest keep the lighter
+  // Solar glyphs, which is what stops the menu turning into a row of discs.
+  "price-asc": "arrowUpDisc",
+  "price-desc": "arrowDownDisc",
   rating: "star",
   newest: "calendar-minimalistic-bold",
 };

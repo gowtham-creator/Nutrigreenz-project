@@ -60,6 +60,14 @@ const UI_ICONS = {
   status: "status",
   signin: "signin",
   save: "save",
+  /* Direction chevrons set in a filled disc, for the price sort options.
+     The disc is the point: at 15px beside text, a bare chevron reads as
+     decoration, while a filled disc carries enough weight to be seen as the
+     thing that distinguishes "low to high" from "high to low" at a glance.
+     Use these where a direction IS the meaning — not for ordinary chrome like
+     dropdown carets or pagination, where the lighter Solar arrows belong. */
+  arrowUpDisc: "arrow-up-disc",
+  arrowDownDisc: "arrow-down-disc",
   /* Delivery slot / delivery time. A clock ON a van — distinct from plain
      `delivery`, and NOT the same idea as a bare clock, which this app also
      uses for "pending", opening hours and "full-time". */
