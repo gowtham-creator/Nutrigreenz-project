@@ -40,8 +40,16 @@ import { cn } from "@/lib/utils";
  */
 const FRAME_MS = 1500;
 
-/** Crossfade length. Long enough to read as a dissolve rather than a cut. */
-const FADE_MS = 650;
+/**
+ * Slide length.
+ *
+ * Paired with the easing below: fast out of the gate, long settle. That
+ * asymmetry is what makes a moving object read as having weight rather than
+ * being linearly dragged, and it is most of the difference between "animated"
+ * and "natural".
+ */
+const SLIDE_MS = 720;
+const SLIDE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export function CardGallery({
   image,
@@ -70,6 +78,8 @@ export function CardGallery({
   const canCycle = frames.length > 1;
 
   const [index, setIndex] = useState(0);
+  /** Suppresses the slide for one frame, so the return to frame 0 is instant. */
+  const [snap, setSnap] = useState(false);
   // Which frames have ever been shown; only these get mounted.
   const [warmed, setWarmed] = useState<Set<number>>(() => new Set([0]));
   const timer = useRef<number | null>(null);
@@ -87,10 +97,35 @@ export function CardGallery({
     // asked for less of it should get the static card.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     stop();
+    /*
+     * Warm one frame AHEAD of the one being shown.
+     *
+     * Without this the track slid to a slot whose <Image> had only just
+     * mounted, so an empty panel arrived and the photograph popped in after
+     * it. Mounting the next frame as soon as we land on the current one gives
+     * it a full FRAME_MS to fetch and decode before it is ever on screen.
+     */
+    setWarmed((w) => (w.has(1) ? w : new Set(w).add(1)));
+
     timer.current = window.setInterval(() => {
       setIndex((i) => {
-        const next = (i + 1) % frames.length;
-        setWarmed((w) => (w.has(next) ? w : new Set(w).add(next)));
+        /*
+         * Forward only, stopping at the last frame — deliberately NOT a modulo
+         * wrap. Wrapping would send a translated track sliding backwards across
+         * its entire width in one sweep, which is the ugliest thing a filmstrip
+         * can do. Stopping is also honest: the customer has now seen the whole
+         * set, and there is nothing further to show them.
+         */
+        if (i >= frames.length - 1) {
+          stop();
+          return i;
+        }
+        const next = i + 1;
+        // The one after next, so it is loaded before the track reaches it.
+        const ahead = Math.min(next + 1, frames.length - 1);
+        setWarmed((w) =>
+          w.has(next) && w.has(ahead) ? w : new Set(w).add(next).add(ahead),
+        );
         return next;
       });
     }, FRAME_MS);
@@ -98,7 +133,16 @@ export function CardGallery({
 
   const reset = () => {
     stop();
+    /*
+     * Snap back rather than slide back. Returning from frame seven would drag
+     * the track six widths in reverse — long, and pointing the wrong way. The
+     * pointer has already left the card, so an instant return is both cheaper
+     * and less distracting. The transition is suppressed for exactly one frame,
+     * then restored so the next hover animates normally.
+     */
+    setSnap(true);
     setIndex(0);
+    requestAnimationFrame(() => requestAnimationFrame(() => setSnap(false)));
   };
 
   if (frames.length === 0) {
@@ -129,39 +173,58 @@ export function CardGallery({
       onFocus={start}
       onBlur={reset}
     >
-      {frames.map((src, i) =>
-        warmed.has(i) ? (
-          <Image
-            key={src}
-            src={src}
-            alt={i === 0 ? alt : ""}
-            aria-hidden={i === 0 ? undefined : true}
-            fill
-            quality={90}
-            sizes={sizes}
-            /*
-             * `contain`, not `cover`.
-             *
-             * These galleries mix three aspect ratios in a square card: the
-             * lifestyle tiles are 1600x894 (1.79), the hero and comparison
-             * tiles 1400x1400, and every product jar 1200x1490 (0.81). Under
-             * `cover` the square box cropped roughly 44% off each side of the
-             * wide tiles and 19% off the top and bottom of every jar — lids and
-             * labels cut away, which is what made them unreadable.
-             *
-             * `contain` letterboxes onto the card's cream ground instead, so
-             * whatever the photographer framed is what the customer sees. The
-             * inset keeps the artwork off the card's rounded corners.
-             */
-            className={cn(
-              "object-contain p-2",
-              i === index ? "opacity-100" : "opacity-0",
-              className,
-            )}
-            style={{ transition: `opacity ${FADE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` }}
-          />
-        ) : null,
-      )}
+      {/*
+        A sliding filmstrip, not a crossfade.
+
+        The first version dissolved one image into the next, and no amount of
+        slowing it down fixed how it read: a dissolve has no spatial logic, so
+        two unrelated photographs simply melt through each other and the eye
+        registers flicker rather than movement. A track that slides has
+        direction and continuity — each frame arrives from somewhere and the
+        previous one leaves — which is what makes it read as browsing a set
+        rather than watching a picture glitch.
+      */}
+      <div
+        className="flex h-full w-full"
+        style={{
+          transform: `translate3d(-${index * 100}%, 0, 0)`,
+          transition: snap ? "none" : `transform ${SLIDE_MS}ms ${SLIDE_EASE}`,
+        }}
+      >
+        {frames.map((src, i) => (
+          /*
+           * The slot is always rendered even when the image is not, so the
+           * track keeps its full width and the translate above lands on the
+           * right frame. Only warmed slots mount an <Image>.
+           */
+          <div key={src} className="relative h-full w-full shrink-0">
+            {warmed.has(i) ? (
+              <Image
+                src={src}
+                alt={i === 0 ? alt : ""}
+                aria-hidden={i === 0 ? undefined : true}
+                fill
+                quality={90}
+                sizes={sizes}
+                /*
+                 * `contain`, not `cover`.
+                 *
+                 * These galleries mix three aspect ratios in a square card: the
+                 * lifestyle tiles are 1600x894 (1.79), the hero and comparison
+                 * tiles 1400x1400, and every product jar 1200x1490 (0.81).
+                 * Under `cover` the square box cropped roughly 44% off each
+                 * side of the wide tiles and 19% off the top and bottom of
+                 * every jar — lids and labels cut away, which is what made them
+                 * unreadable. `contain` letterboxes onto the card's cream
+                 * ground, so whatever the photographer framed is what the
+                 * customer sees.
+                 */
+                className={cn("object-contain p-2", className)}
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
 
       {/*
         Progress pips, shown only while cycling. They tell the customer this is
