@@ -91,18 +91,20 @@ export function Header() {
                       and the eye travels straight down the list. Width is set
                       so the longest description ("Groundnut, sesame, …") wraps
                       to two lines rather than running long. */}
-                  <div className="bg-ng-paper border border-ng-line rounded-2xl shadow-[var(--shadow-ng-float)] p-2.5 w-[310px] flex flex-col gap-0.5">
+                  <div className="bg-ng-paper border border-ng-line rounded-2xl shadow-[var(--shadow-ng-float)] p-3 w-[380px] flex flex-col gap-1">
                     {item.mega.map((m) => (
                       <Link
                         key={m.label}
                         href={m.href}
-                        className="group flex flex-col gap-0.5 rounded-xl px-3.5 py-2.5 hover:bg-ng-forest transition-colors duration-200"
+                        className="group flex flex-col gap-1 rounded-xl px-4 py-3 hover:bg-ng-forest transition-colors duration-200"
                       >
-                        <span className="font-display text-[16px] text-ng-forest-deep group-hover:text-ng-cream transition-colors">
+                        <span className="font-display text-[17px] leading-tight text-ng-forest-deep group-hover:text-ng-cream transition-colors">
                           {m.label}
                         </span>
                         {m.description ? (
-                          <span className="text-[12px] text-ng-ink-soft group-hover:text-ng-cream/75 transition-colors">{m.description}</span>
+                          <span className="text-[12.5px] leading-snug text-ng-ink-soft group-hover:text-ng-cream/75 transition-colors">
+                            {m.description}
+                          </span>
                         ) : null}
                       </Link>
                     ))}

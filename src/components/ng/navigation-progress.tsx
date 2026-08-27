@@ -95,7 +95,24 @@ export function NavigationProgress() {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       if (!isInternalNavigation(event)) return;
-      setPoint({ x: event.clientX, y: event.clientY });
+      /*
+       * A link activated by keyboard (Enter on a focused anchor) still emits a
+       * click, but with clientX/clientY of 0 — which would pin the spinner to
+       * the very top-left corner of the viewport. Fall back to the anchor's own
+       * position so the feedback still appears where the customer is looking.
+       */
+      if (event.clientX === 0 && event.clientY === 0) {
+        const rect = (event.target as Element | null)
+          ?.closest?.("a")
+          ?.getBoundingClientRect();
+        setPoint(
+          rect
+            ? { x: rect.left + rect.width / 2, y: rect.bottom }
+            : { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+        );
+      } else {
+        setPoint({ x: event.clientX, y: event.clientY });
+      }
       clearTimers();
       showTimer.current = window.setTimeout(() => setPending(true), SHOW_AFTER_MS);
       giveUpTimer.current = window.setTimeout(() => {
@@ -167,20 +184,31 @@ export function NavigationProgress() {
         top: point.y + 16,
       }}
     >
-      {/* Deliberately a bare <img>. next/image cannot optimise an ANIMATED
-          image (it passes them through unchanged), so the component would add
-          a wrapper and a loader for no benefit — and this element is created
-          mid-navigation, where the extra work is exactly what we are trying to
-          avoid. The asset is 13KB and served from /public. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/ui/spinner-dots.webp"
-        alt=""
-        width={26}
-        height={26}
-        className="ng-nav-spinner block h-[26px] w-[26px] select-none"
-        draggable={false}
-      />
+      {/*
+        The dot-ring, drawn rather than loaded.
+
+        This was an animated WebP converted from the supplied GIF, and it
+        smeared: the encoder optimised frames 2+ into sub-rectangles but wrote
+        `dispose: none`, so dots from frame 1 lying outside a later frame's box
+        were never cleared and burned in permanently. Rebuilding the asset
+        would fix that one export, and leave the next one a coin toss.
+
+        Drawn in CSS it cannot desync — there are no frames to dispose — and it
+        gains what the raster never had: crisp at any DPI, recoloured by token
+        so it works on both themes, and no image request on the one code path
+        where the network is already busy.
+
+        The chip behind it is what makes it legible: the spinner appears over
+        whatever the customer happened to be looking at, which on this site is
+        usually photography.
+      */}
+      <span className="ng-nav-spinner grid h-8 w-8 place-items-center rounded-full bg-ng-paper/95 shadow-[0_2px_10px_rgba(20,51,31,0.28)] ring-1 ring-ng-line/60 backdrop-blur-sm">
+        <span className="ng-dot-ring">
+          {Array.from({ length: 8 }, (_, i) => (
+            <i key={i} style={{ ["--i" as string]: i }} />
+          ))}
+        </span>
+      </span>
     </div>
   );
 }

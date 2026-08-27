@@ -1075,29 +1075,7 @@ html[data-navigating] * {
   cursor: progress !important;
 }
 
-/*
- * Reduced motion: keep the SIGNAL, drop the animation. The spinner is a
- * 28-frame loop, so it is replaced by a static dot rather than removed
- * entirely — a customer who cannot see spinning still needs to know the page
- * is opening, and the busy cursor above continues to do its job.
- */
-@media (prefers-reduced-motion: reduce) {
-  .ng-nav-spinner {
-    animation: none;
-    /* Freeze the animated image: rendering it at 1px and scaling up would blur,
-       so instead hide it and show a plain dot in its place. */
-    visibility: hidden;
-    position: relative;
-  }
-  .ng-nav-spinner::after {
-    content: "";
-    visibility: visible;
-    position: absolute;
-    inset: 25%;
-    border-radius: 9999px;
-    background: var(--ng-forest);
-  }
-}
+
 
 /* ── Dual-range price slider ──────────────────────────────────────────────
  *
@@ -1174,4 +1152,56 @@ html[data-navigating] * {
   .ng-range::-moz-range-thumb { transition: none; }
   .ng-range::-webkit-slider-thumb:hover,
   .ng-range::-moz-range-thumb:hover { transform: none; }
+}
+
+/* ── Navigation spinner: the dot ring ─────────────────────────────────────
+ *
+ * Eight dots on a circle, each fading in turn, which is the motif of the
+ * supplied Icons8 spinner rebuilt as markup. See the note in
+ * navigation-progress.tsx for why this is drawn rather than loaded.
+ *
+ * Each dot is placed by rotating it to its slot and pushing it outward, so the
+ * ring geometry comes from one transform and needs no per-dot coordinates. The
+ * `--i` custom property carries the index, which drives both the angle and the
+ * animation delay, so the fade chases around the ring in order.
+ */
+.ng-dot-ring {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.ng-dot-ring > i {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 3.4px;
+  height: 3.4px;
+  border-radius: 9999px;
+  background: var(--ng-forest);
+  /* Rotate to the slot, then push out to the rim. */
+  transform: rotate(calc(var(--i) * 45deg)) translateY(-6.6px);
+  animation: ngDotRing 800ms linear infinite;
+  animation-delay: calc(var(--i) * -100ms);
+}
+
+@keyframes ngDotRing {
+  0%   { opacity: 1;    }
+  70%  { opacity: 0.16; }
+  100% { opacity: 0.16; }
+}
+
+/*
+ * Reduced motion: keep the SIGNAL, drop the chase.
+ *
+ * The ring becomes a static ring of even dots rather than disappearing — a
+ * customer who cannot see motion still needs to know the page is opening, and
+ * the busy cursor above continues to do its job.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ng-dot-ring > i {
+    animation: none;
+    opacity: 0.55;
+  }
 }
