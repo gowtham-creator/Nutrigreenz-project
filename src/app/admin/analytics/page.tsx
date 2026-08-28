@@ -21,6 +21,7 @@ import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { AreaChart, DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /* payload shapes (mirror @/lib/analytics — kept local for the client) */
@@ -343,8 +344,31 @@ export default function AdminAnalytics() {
                         <span className="text-ng-ink-muted truncate">{p.categoryName ?? "—"}</span>
                         <span className="font-mono text-[13px] tabular-nums text-ng-ink text-right">{NUM(p.unitsSold)}</span>
                         <span className="font-mono text-[13px] tabular-nums text-ng-forest-deep font-semibold text-right">{INR(p.revenuePaise)}</span>
-                        <span className="font-mono text-[13px] tabular-nums text-ng-clay-deep text-right">{NUM(p.wishlistCount)}</span>
-                        <span className="font-mono text-[13px] tabular-nums text-ng-blue text-right">{NUM(p.views)}</span>
+                        {/* Colour marks a real figure, not a zero.
+                            Every row was previously painted in the accent
+                            whether it had data or not, so a column of gold
+                            zeros carried the same visual weight as the one
+                            product anybody had actually saved — which made
+                            the numbers that matter harder to pick out, not
+                            easier. A zero now sits back in muted ink. */}
+                        <span
+                          className={cn(
+                            "font-mono text-[13px] tabular-nums text-right",
+                            p.wishlistCount > 0
+                              ? "text-ng-clay-deep font-semibold"
+                              : "text-ng-ink-muted",
+                          )}
+                        >
+                          {NUM(p.wishlistCount)}
+                        </span>
+                        <span
+                          className={cn(
+                            "font-mono text-[13px] tabular-nums text-right",
+                            p.views > 0 ? "text-ng-blue font-semibold" : "text-ng-ink-muted",
+                          )}
+                        >
+                          {NUM(p.views)}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -429,7 +453,18 @@ function SortHead({
     <button
       type="button"
       onClick={() => onSort(k)}
-      className={`inline-flex items-center gap-1 uppercase tracking-wider font-semibold transition-colors cursor-pointer hover:text-ng-forest ${
+      /*
+       * `flex w-full`, not `inline-flex`.
+       *
+       * As an inline-flex the button shrank to its own text width and sat at
+       * the START of the grid cell, so `justify-end` had nothing to push
+       * against — it was aligning content inside a box that was already
+       * exactly that content's size. The values below are `text-right` and
+       * fill the whole cell, so every numeric header sat left of its column
+       * while the figures sat right. Filling the cell is what makes
+       * `justify-end` mean anything.
+       */
+      className={`flex w-full items-center gap-1 uppercase tracking-wider font-semibold transition-colors cursor-pointer hover:text-ng-forest ${
         active ? "text-ng-forest" : ""
       } ${align === "right" ? "justify-end" : "justify-start"}`}
     >
