@@ -16,7 +16,6 @@ import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { AdminStagger, AdminStaggerItem } from "@/components/ng/admin/admin-motion";
-import { Icon } from "@/components/ui/icon";
 import { BellIcon } from "@/components/ui/bell-icon";
 import { DonutChart, HBars, Pipeline, type VizTone } from "@/components/ng/admin/viz";
 import { UiIcon } from "@/components/ui/ui-icon";

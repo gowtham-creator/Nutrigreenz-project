@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --forest:#14331F;--forest-soft:#1F4D2E;--leaf:#66BF73;--clay:#B5862F;--clay-deep:#8A6420;
+    --amber:#F29E12;--terracotta:#C74D33;--cream:#F5F2E0;--soil:#3C2F1F;--paper:#FAFAF5;--ink-soft:#6B7064;
+    --display:"Roboto Slab",serif;--serif:"Lora",serif;--sans:"Figtree",sans-serif;--mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{font-family:var(--sans);background:#e7e3d6;}
+  .board{width:1080px;min-height:1350px;margin:0 auto;background:
+     radial-gradient(120% 70% at 50% 0%, #ffffff 0%, #f6f3ea 50%, #efebdd 100%);
+     padding:54px 54px 44px;color:var(--forest);}
+  .hd{display:flex;align-items:center;gap:22px;border-bottom:2px solid rgba(20,51,31,.12);padding-bottom:26px;}
+  .hd img{height:96px;}
+  .hd .t .k{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--clay-deep);}
+  .hd .t h1{font-family:var(--display);font-weight:600;font-size:30px;margin-top:8px;}
+  .hd .t i{font-family:var(--serif);font-style:italic;color:var(--ink-soft);font-size:16px;}
+
+  .sec{margin-top:30px;}
+  .sec>.lab{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--clay-deep);margin-bottom:14px;}
+
+  .about{font-family:var(--serif);font-size:17px;line-height:1.65;color:var(--soil);}
+  .about b{color:var(--forest);}
+
+  .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .sw{border-radius:14px;overflow:hidden;box-shadow:0 8px 18px -10px rgba(20,51,31,.4);background:#fff;}
+  .sw .chip{height:74px;}
+  .sw .meta{padding:9px 11px;}
+  .sw .nm{font-family:var(--sans);font-weight:600;font-size:12px;color:var(--forest);}
+  .sw .hex{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:2px;}
+
+  .type{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .typecard{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 8px 18px -12px rgba(20,51,31,.35);}
+  .typecard .role{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--clay-deep);}
+  .typecard .face{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+  .typecard .sample{margin-top:10px;color:var(--forest);}
+  .s-display{font-family:var(--display);font-weight:600;font-size:30px;}
+  .s-serif{font-family:var(--serif);font-style:italic;font-size:24px;}
+  .s-sans{font-family:var(--sans);font-size:18px;line-height:1.5;}
+  .s-mono{font-family:var(--mono);font-size:18px;letter-spacing:.05em;}
+
+  .labels{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .labels img{width:100%;border-radius:12px;box-shadow:0 14px 30px -16px rgba(20,51,31,.5);}
+  .labels .cap{text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-top:8px;}
+
+  .ft{margin-top:34px;border-top:1px solid rgba(20,51,31,.12);padding-top:16px;font-family:var(--mono);font-size:11px;color:var(--ink-soft);letter-spacing:.04em;text-align:center;}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="hd">
+    <img src="assets/logo-stacked.png" alt="Nutri Greenz" />
+    <div class="t">
+      <div class="k">Brand DNA · for Pomelli</div>
+      <h1>Nutri Greenz Farm Technologies</h1>
+      <i>Born in Soil, built for tomorrow.</i>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Who we are</div>
+    <p class="about">Hyderabad-based wholefoods brand selling <b>single-origin, farm-traceable</b> Indian staples — cold-pressed oils, A2 bilona ghee, raw forest honey, millets &amp; spices. Food <b>exactly as nature makes it</b>: cold-pressed below 40&deg;C, hand-churned ghee, raw unheated honey — every batch traceable from lot code back to the farm. For health-conscious urban households who want <b>proof, not marketing</b>. Voice: warm, grounded, plain-spoken — premium without hype.</p>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Colour palette</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#14331F"></div><div class="meta"><div class="nm">Forest</div><div class="hex">#14331F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#1F4D2E"></div><div class="meta"><div class="nm">Forest Soft</div><div class="hex">#1F4D2E</div></div></div>
+      <div class="sw"><div class="chip" style="background:#66BF73"></div><div class="meta"><div class="nm">Leaf</div><div class="hex">#66BF73</div></div></div>
+      <div class="sw"><div class="chip" style="background:#B5862F"></div><div class="meta"><div class="nm">Clay / Gold</div><div class="hex">#B5862F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F29E12"></div><div class="meta"><div class="nm">Amber</div><div class="hex">#F29E12</div></div></div>
+      <div class="sw"><div class="chip" style="background:#C74D33"></div><div class="meta"><div class="nm">Terracotta</div><div class="hex">#C74D33</div></div></div>
+      <div class="sw"><div class="chip" style="background:#3C2F1F"></div><div class="meta"><div class="nm">Soil</div><div class="hex">#3C2F1F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F5F2E0;border-bottom:1px solid #e3dec8"></div><div class="meta"><div class="nm">Cream</div><div class="hex">#F5F2E0</div></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Typography</div>
+    <div class="type">
+      <div class="typecard"><div class="role">Display / Headlines</div><div class="face">Roboto Slab</div><div class="sample s-display">Cold-Pressed Goodness</div></div>
+      <div class="typecard"><div class="role">Accent</div><div class="face">Lora Italic</div><div class="sample s-serif">exactly as the bees made it</div></div>
+      <div class="typecard"><div class="role">Body</div><div class="face">Figtree</div><div class="sample s-sans">Traceable from the lot code back to the farm.</div></div>
+      <div class="typecard"><div class="role">Codes / Labels</div><div class="face">JetBrains Mono</div><div class="sample s-mono">LOT NG-ANP24-07A</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="lab">Flagship products &amp; label style</div>
+    <div class="labels">
+      <div><img src="../previews/label-oil.png" alt="" /><div class="cap">Groundnut Oil · 1L</div></div>
+      <div><img src="../previews/label-ghee.png" alt="" /><div class="cap">A2 Gir Cow Ghee · 500ml</div></div>
+      <div><img src="../previews/label-honey.png" alt="" /><div class="cap">Wild Forest Honey · 500g</div></div>
+    </div>
+  </div>
+
+  <div class="ft">Nutrigreenz Farm Technologies Pvt. Ltd. · Hyderabad · nutrigreenz.farm · Brand reference for AI campaign generation</div>
+</div>
+</body>
+</html>

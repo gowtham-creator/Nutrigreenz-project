@@ -25,7 +25,7 @@ export function TraceabilityPanel({ lotCode, farm, harvestDate, labReportHref = 
   return (
     <div className="overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-cream">
       <div className="flex items-center gap-3 border-b border-ng-line-soft bg-ng-forest-deep px-6 py-4 text-ng-cream">
-        <Icon name="map-point-wave-bold" size={22} className="text-ng-leaf" />
+        <UiIcon name="location" size={22} className="text-ng-leaf" />
         <div>
           <p className="font-display text-lg leading-tight text-ng-cream">Lot &amp; traceability</p>
           <p className="text-[12px] text-ng-cream/70">Every batch is traceable to its source.</p>

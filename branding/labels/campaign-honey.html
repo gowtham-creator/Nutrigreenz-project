@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;600;700&family=Lora:ital,wght@0,500;1,400;1,500&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --forest:#14331F;--forest-soft:#1F4D2E;--leaf:#66BF73;--clay:#B5862F;--clay-deep:#8A6420;
+    --amber:#F29E12;--cream:#F5F2E0;--soil:#3C2F1F;--ink-soft:#6B7064;
+    --display:"Roboto Slab",serif;--serif:"Lora",serif;--sans:"Figtree",sans-serif;--mono:"JetBrains Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .post{position:relative;width:1080px;height:1350px;overflow:hidden;font-family:var(--sans);
+    background:
+      radial-gradient(60% 42% at 50% 46%, rgba(242,158,18,.20) 0%, rgba(242,158,18,0) 60%),
+      linear-gradient(180deg,#FBF7E9 0%, #F5EFDC 55%, #EFE6CC 100%);}
+  /* botanical corner line-art */
+  .leaf{position:absolute;opacity:.10;}
+  .leaf.tl{top:-60px;left:-60px;width:340px;transform:rotate(8deg);}
+  .leaf.br{bottom:-80px;right:-70px;width:380px;transform:rotate(196deg);}
+
+  .top{position:absolute;top:54px;left:64px;right:64px;display:flex;align-items:center;justify-content:space-between;}
+  .top img{height:62px;}
+  .top .site{font-family:var(--mono);font-size:18px;letter-spacing:.18em;color:var(--clay-deep);}
+
+  .head{position:absolute;top:168px;left:0;right:0;text-align:center;}
+  .head .eye{font-family:var(--mono);font-size:18px;letter-spacing:.34em;text-transform:uppercase;color:var(--clay-deep);}
+  .head h1{font-family:var(--display);font-weight:600;font-size:82px;line-height:1.02;color:var(--forest);margin-top:18px;letter-spacing:-.02em;}
+  .head h1 em{font-family:var(--serif);font-style:italic;font-weight:500;color:var(--clay-deep);}
+
+  /* hero jar */
+  .hero{position:absolute;top:380px;left:50%;transform:translateX(-50%);width:520px;text-align:center;}
+  .disc{position:absolute;top:36px;left:50%;transform:translateX(-50%);width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle at 38% 34%, #ffffff 0%, #F6E6BE 42%, #EAD08A 100%);
+    box-shadow:0 40px 90px -30px rgba(138,100,32,.55);}
+  .jar{position:relative;height:640px;width:auto;filter:drop-shadow(0 34px 30px rgba(60,40,12,.34));}
+  .reflection{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%) scaleY(-1);
+    height:150px;opacity:.18;-webkit-mask-image:linear-gradient(to bottom, #000, transparent 78%);
+    mask-image:linear-gradient(to bottom, #000, transparent 78%);}
+
+  .chips{position:absolute;bottom:236px;left:0;right:0;display:flex;gap:14px;justify-content:center;}
+  .chips span{font-family:var(--mono);font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--forest-soft);
+    background:rgba(255,255,255,.7);border:1px solid rgba(20,51,31,.18);border-radius:999px;padding:11px 20px;}
+
+  .footer{position:absolute;left:0;right:0;bottom:0;height:178px;background:var(--forest);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  .cta{display:inline-flex;align-items:center;gap:12px;background:var(--amber);color:#3a2406;
+    font-family:var(--sans);font-weight:700;font-size:24px;padding:16px 34px;border-radius:999px;
+    box-shadow:0 12px 26px -10px rgba(0,0,0,.5);}
+  .cta .ar{font-size:22px;}
+  .footer .tag{font-family:var(--serif);font-style:italic;font-size:21px;color:#EAD9A6;letter-spacing:.01em;}
+</style>
+</head>
+<body>
+<div class="post">
+  <svg class="leaf tl" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M20 180 C20 90 90 20 180 20 C180 110 110 180 20 180Z M60 140 C90 110 130 80 160 50" fill="none" stroke="#1F4D2E" stroke-width="5"/></svg>
+  <svg class="leaf br" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M20 180 C20 90 90 20 180 20 C180 110 110 180 20 180Z M60 140 C90 110 130 80 160 50" fill="none" stroke="#1F4D2E" stroke-width="5"/></svg>
+
+  <div class="top">
+    <img src="assets/logo-stacked.png" alt="Nutri Greenz" />
+    <div class="site">nutrigreenz.farm</div>
+  </div>
+
+  <div class="head">
+    <div class="eye">Raw Wild Forest Honey · Sundarbans</div>
+    <h1>Exactly as the<br><em>bees made it.</em></h1>
+  </div>
+
+  <div class="hero">
+    <div class="disc"></div>
+    <img class="jar" src="../previews/jar-pro-honey.png" alt="Wild Forest Honey jar" />
+    <img class="reflection" src="../previews/jar-pro-honey.png" alt="" />
+  </div>
+
+  <div class="chips">
+    <span>Raw &amp; unheated</span><span>No added sugar</span><span>NMR-tested</span>
+  </div>
+
+  <div class="footer">
+    <div class="cta">Shop raw honey <span class="ar">→</span></div>
+    <div class="tag">Born in Soil, built for tomorrow.</div>
+  </div>
+</div>
+</body>
+</html>

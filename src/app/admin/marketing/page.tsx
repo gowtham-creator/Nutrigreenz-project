@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { LiveCouponsPanel } from "@/components/ng/admin/super/live-coupons-panel";
 import { PromotionsPanel } from "@/components/ng/admin/super/promotions-panel";
 import { AnnouncementsPanel } from "@/components/ng/admin/super/announcements-panel";
@@ -54,7 +55,7 @@ export default function AdminMarketing() {
           href="#live-coupons"
           className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
         >
-          <Icon name="tag-price-bold" size={15} />
+          <UiIcon name="tag" size={15} />
           New coupon
         </a>
       }

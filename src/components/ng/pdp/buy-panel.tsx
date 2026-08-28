@@ -167,7 +167,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
 
       {/* Best price with coupon strip */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-ng-leaf bg-ng-leaf/[0.07] px-3.5 py-2.5">
-        <Icon name="tag-price-bold" size={18} className="text-ng-leaf" />
+        <UiIcon name="tag" size={18} className="text-ng-leaf" />
         <p className="text-[13px] text-ng-soil">
           Best Price <span className="font-bold tabular-nums text-ng-forest-deep">₹{coupon.bestPrice.toLocaleString()}</span> with coupon
         </p>

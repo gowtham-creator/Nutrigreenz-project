@@ -394,7 +394,7 @@ export default function AdminCaptains() {
             ) : filtered.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <div className="size-14 rounded-full bg-ng-cream flex items-center justify-center mx-auto">
-                  <Icon name="map-point-bold" size={26} className="text-ng-forest" />
+                  <UiIcon name="location" size={26} className="text-ng-forest" />
                 </div>
                 <p className="mt-4 text-[15px] font-display text-ng-forest-deep">
                   {search ? "No captains match that search" : "No captains yet"}
@@ -523,7 +523,7 @@ function CommunityChip({ name, className }: { name: string; className?: string }
         className,
       )}
     >
-      <Icon name="map-point-bold" size={12} className="shrink-0 opacity-70" />
+      <UiIcon name="location" size={12} className="shrink-0 opacity-70" />
       <span className="truncate">{shortCommunity(name)}</span>
     </span>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Button } from "@/components/ng/button";
 import { useLocation } from "@/lib/location";
 import { lookupArea } from "@/lib/hyderabad-areas";
@@ -191,7 +192,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
                 pinFeedback === "ok" && "border-ng-leaf",
               )}
             >
-              <Icon name="map-point-bold" size={18} className="text-ng-ink-soft" />
+              <UiIcon name="location" size={18} className="text-ng-ink-soft" />
               <input
                 id={inputId}
                 inputMode="numeric"
@@ -245,8 +246,8 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
                     onClick={() => commit({ area, pincode: p, city: "Hyderabad" })}
                     className="group flex w-full items-center gap-2 rounded-xl border border-ng-line-soft bg-ng-paper px-3 py-2.5 text-left transition-colors hover:border-ng-leaf hover:bg-ng-sage/40"
                   >
-                    <Icon
-                      name="map-point-linear"
+                    <UiIcon
+                      name="location"
                       size={16}
                       className="text-ng-ink-soft group-hover:text-ng-forest transition-colors"
                     />

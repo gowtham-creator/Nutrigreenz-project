@@ -576,8 +576,8 @@ function CustomerDrawer({
                                     (hasContact ? " border-t border-ng-line-soft/60 pt-2.5" : "")
                                   }
                                 >
-                                  <Icon
-                                    name="map-point-bold"
+                                  <UiIcon
+                                    name="location"
                                     size={15}
                                     className="mt-0.5 shrink-0 text-ng-forest"
                                   />
@@ -610,7 +610,7 @@ function CustomerDrawer({
                 {detail?.autoDetectedLocation ? (
                   <div className="rounded-xl border border-ng-line-soft bg-ng-paper p-3">
                     <div className="flex items-center gap-2">
-                      <Icon name="map-point-bold" size={15} className="text-ng-forest" />
+                      <UiIcon name="location" size={15} className="text-ng-forest" />
                       <span className="text-[13px] font-semibold text-ng-ink">
                         {[
                           detail.autoDetectedLocation.area,

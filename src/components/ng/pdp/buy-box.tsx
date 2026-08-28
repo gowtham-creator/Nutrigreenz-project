@@ -89,7 +89,7 @@ export function BuyBox({ title, basePrice, mrp, unit, variants, product }: BuyBo
           <span>Inclusive of all taxes{unit ? ` · ${unit}` : ""}</span>
           {savings > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/12 px-2 py-0.5 font-semibold text-ng-forest tabular-nums">
-              <Icon name="tag-price-bold" size={12} className="text-ng-clay" />
+              <UiIcon name="tag" size={12} className="text-ng-clay" />
               You save ₹{savings.toLocaleString()}
             </span>
           ) : null}

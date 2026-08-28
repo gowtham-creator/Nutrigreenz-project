@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Button } from "@/components/ng/button";
 import { useLocation } from "@/lib/location";
 import {
@@ -149,7 +150,7 @@ export function LocationOnboarding() {
             <Icon name="close-circle-linear" size={20} />
           </button>
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-ng-paper/15">
-            <Icon name="map-point-wave-bold" size={26} className="text-ng-paper" />
+            <UiIcon name="location" size={26} className="text-ng-paper" />
           </span>
           <h2 id="ng-onboard-title" className="mt-3 font-display text-[24px] leading-tight">
             Where should we deliver?
@@ -183,7 +184,7 @@ export function LocationOnboarding() {
                 }}
                 className="gap-2.5"
               >
-                <Icon name="map-point-search-bold" size={20} className="text-ng-leaf" />
+                <UiIcon name="location" size={20} className="text-ng-leaf" />
                 Enter pincode
               </Button>
               {error ? <p className="text-center text-[12px] text-ng-danger">{error}</p> : null}
@@ -206,7 +207,7 @@ export function LocationOnboarding() {
                   validPin && "border-ng-leaf",
                 )}
               >
-                <Icon name="map-point-bold" size={18} className="text-ng-ink-soft" />
+                <UiIcon name="location" size={18} className="text-ng-ink-soft" />
                 <input
                   autoFocus
                   inputMode="numeric"

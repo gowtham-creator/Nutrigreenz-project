@@ -1,6 +1,7 @@
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { AddressBook } from "@/components/ng/address/address-book";
 
 export const metadata = {
@@ -14,7 +15,7 @@ export default async function AddressesPage() {
     <AccountShell active="addresses">
       <div className="mb-8">
         <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
-          <Icon name="map-point-bold" size={14} />
+          <UiIcon name="location" size={14} />
           Your account
         </span>
         <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
@@ -31,7 +32,7 @@ export default async function AddressesPage() {
 
         <aside className="h-fit rounded-2xl border border-ng-line-soft bg-ng-sage/30 p-6 shadow-[var(--shadow-ng-card)]">
           <span className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-ng-forest-deep text-ng-cream">
-            <Icon name="map-point-bold" size={22} />
+            <UiIcon name="location" size={22} />
           </span>
           <h2 className="font-display text-[20px] leading-tight text-ng-forest-deep">
             Delivery coverage

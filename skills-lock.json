@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "brand": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/brand/SKILL.md",
+      "computedHash": "3c7acb846082f9e4cc873f1cf85bd57ade027206e18c7c050797f815e3a56af7"
+    },
     "copywriting": {
       "source": "kostja94/marketing-skills",
       "sourceType": "github",

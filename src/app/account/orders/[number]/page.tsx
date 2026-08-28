@@ -368,7 +368,7 @@ export default function AccountOrderDetailPage({
             {addr ? (
               <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-6 text-[13px] shadow-[var(--shadow-ng-card)]">
                 <h3 className="mb-2 flex items-center gap-2 font-display text-[16px] text-ng-forest-deep">
-                  <Icon name="map-point-bold" size={16} className="text-ng-forest" />
+                  <UiIcon name="location" size={16} className="text-ng-forest" />
                   Shipping to
                 </h3>
                 <p className="leading-relaxed text-ng-ink-muted">

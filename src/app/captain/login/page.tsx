@@ -14,7 +14,6 @@ import { otpProvider } from "@/lib/otp-provider";
 import { clearCaptainCache } from "@/components/ng/captain/captain-store";
 import { Logo } from "@/components/ng/logo";
 import { OtpInput } from "@/components/ng/otp-input";
-import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { AppIcon } from "@/components/ui/app-icon";
 

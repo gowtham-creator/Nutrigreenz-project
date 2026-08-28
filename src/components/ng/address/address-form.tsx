@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import type { AddressInput } from "@/lib/addresses";
@@ -236,7 +237,7 @@ export function AddressForm({ initial, onSubmit, onCancel }: AddressFormProps) {
                     onClick={() => void pickSuggestion(s)}
                     className="flex w-full cursor-pointer items-start gap-2.5 px-4 py-3 text-left text-[14px] text-ng-ink transition-colors hover:bg-ng-sage/40"
                   >
-                    <Icon name="map-point-linear" size={16} className="mt-0.5 shrink-0 text-ng-forest" />
+                    <UiIcon name="location" size={16} className="mt-0.5 shrink-0 text-ng-forest" />
                     {s.text}
                   </button>
                 </li>

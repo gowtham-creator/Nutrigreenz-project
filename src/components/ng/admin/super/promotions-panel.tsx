@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -480,7 +481,7 @@ export function PromotionsPanel() {
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-ng-amber/30 to-ng-clay/30 text-ng-clay-deep">
-            <Icon name="tag-price-bold" size={20} />
+            <UiIcon name="tag" size={20} />
           </span>
           <div>
             <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Promotions</h2>
@@ -799,7 +800,7 @@ export function PromotionsPanel() {
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ng-ink-muted">
                     <span className="inline-flex items-center gap-1">
-                      <Icon name="tag-price-bold" size={13} />
+                      <UiIcon name="tag" size={13} />
                       {scopeText(p)}
                     </span>
                     <span className="inline-flex items-center gap-1">

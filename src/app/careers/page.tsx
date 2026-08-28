@@ -4,6 +4,7 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 export const metadata: Metadata = {
   title: "Careers · Nutri Greenz",
@@ -123,7 +124,7 @@ export default function CareersPage() {
                   <p className="mt-2 text-[14.5px] leading-relaxed text-ng-ink-muted max-w-2xl"
                      dangerouslySetInnerHTML={{ __html: r.blurb }} />
                   <div className="mt-3 flex flex-wrap gap-4 text-[13px] text-ng-ink-soft">
-                    <span className="inline-flex items-center gap-1.5"><Icon name="map-point-linear" size={15} />{r.location}</span>
+                    <span className="inline-flex items-center gap-1.5"><UiIcon name="location" size={15} />{r.location}</span>
                     <span className="inline-flex items-center gap-1.5"><Icon name="clock-circle-bold" size={15} />{r.type}</span>
                   </div>
                 </div>

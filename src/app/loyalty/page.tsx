@@ -341,7 +341,7 @@ export default async function LoyaltyPage() {
                   </li>
                 ) : null}
                 <li className="flex gap-3">
-                  <Icon name="tag-price-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
+                  <UiIcon name="tag" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
                   <span>
                     <span className="block font-display text-[15px] text-ng-forest-deep">
                       Redeem any time

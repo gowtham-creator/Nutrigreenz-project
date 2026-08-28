@@ -170,7 +170,7 @@ export function CommunityPicker({
                   onClick={() => add(r.text)}
                   className="flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-ng-sage/40 cursor-pointer"
                 >
-                  <Icon name="map-point-bold" size={15} className="mt-0.5 shrink-0 text-ng-forest" />
+                  <UiIcon name="location" size={15} className="mt-0.5 shrink-0 text-ng-forest" />
                   <span className="text-[13.5px] leading-snug text-ng-ink">{r.text}</span>
                 </button>
               </li>

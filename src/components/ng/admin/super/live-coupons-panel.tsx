@@ -271,7 +271,7 @@ export function LiveCouponsPanel() {
                           className="inline-flex items-center gap-1 rounded-full bg-ng-forest/12 px-2 py-0.5 text-[10px] font-semibold text-ng-forest-deep"
                           title={`Valid only in pincodes: ${c.pincodes.join(", ")}`}
                         >
-                          <Icon name="map-point-bold" size={10} />
+                          <UiIcon name="location" size={10} />
                           {c.pincodes.length === 1 ? c.pincodes[0] : `${c.pincodes.length} pincodes`}
                         </span>
                       ) : null}

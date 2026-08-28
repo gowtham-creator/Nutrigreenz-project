@@ -4,6 +4,7 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
@@ -91,7 +92,7 @@ export default function ContactPage() {
           <div className="flex flex-col gap-6">
             <Reveal delay={0.06} className="rounded-3xl bg-ng-forest-deep text-ng-cream p-7">
               <h3 className="font-display text-[20px] text-ng-cream flex items-center gap-2">
-                <Icon name="map-point-bold" size={20} className="text-ng-clay" />
+                <UiIcon name="location" size={20} className="text-ng-clay" />
                 Our address
               </h3>
               <address className="mt-4 not-italic text-[15px] leading-relaxed text-ng-cream/80">

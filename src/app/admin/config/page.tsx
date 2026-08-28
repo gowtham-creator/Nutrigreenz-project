@@ -280,7 +280,7 @@ function ConfigContent() {
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Icon name="map-point-wave-bold" size={17} className="text-ng-forest" />
+            <UiIcon name="location" size={17} className="text-ng-forest" />
             Shipping zones
           </span>
         }

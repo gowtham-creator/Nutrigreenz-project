@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+const dir = "/Users/gowthamreddy/nutrigreenz project/branding";
+const b = await chromium.launch();
+const page = await b.newPage({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 2 });
+const errs = [];
+page.on("pageerror", (e) => errs.push(String(e)));
+await page.goto("file://" + dir + "/labels/campaign-honey.html", { waitUntil: "networkidle" });
+await page.waitForTimeout(1300);
+await page.locator(".post").screenshot({ path: `${dir}/previews/campaign-honey.png` });
+console.log("campaign rendered · errors:", errs.length, errs.slice(0,2).join(" | "));
+await b.close();

@@ -22,7 +22,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { VisitorPlaces } from "@/components/ng/admin/reports/visitor-places";
 import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
-import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
 import {

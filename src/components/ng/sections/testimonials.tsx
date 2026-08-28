@@ -4,6 +4,7 @@ import { Section } from "../section";
 import { Stars } from "../stars";
 import { Stagger, StaggerItem, Parallax } from "../motion";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { TESTIMONIALS } from "../data";
 
@@ -118,7 +119,7 @@ export function Testimonials() {
                         {t.name}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1 text-[12px] text-ng-ink-soft">
-                        <Icon name="map-point-linear" size={12} className="text-ng-leaf" />
+                        <UiIcon name="location" size={12} className="text-ng-leaf" />
                         <span className="truncate">{t.location}</span>
                       </div>
                     </div>

@@ -36,6 +36,10 @@ const UI_ICONS = {
   wallet: "wallet",
   refer: "refer",
   location: "location",
+  /* Price / offer marker. Replaces Solar's `tag-price-bold` everywhere, so the
+     marketing panels, the loyalty page and both PDP buy boxes now show one
+     tag rather than two different ones. */
+  tag: "tag",
   /* Account profile surfaces. `password` and `key` were supplied as GIFs on an
      opaque white field, so they were traced from LUMINANCE, not alpha — tracing
      their alpha would have yielded an empty file. */

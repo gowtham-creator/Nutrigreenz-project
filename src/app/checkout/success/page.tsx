@@ -106,7 +106,7 @@ function SuccessContent() {
               </div>
               <div className="flex gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-                  <Icon name="map-point-bold" size={18} />
+                  <UiIcon name="location" size={18} />
                 </span>
                 <div>
                   <p className="text-[12px] uppercase tracking-wider text-ng-ink-soft">

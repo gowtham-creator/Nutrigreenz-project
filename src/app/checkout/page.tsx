@@ -540,7 +540,7 @@ export default function CheckoutPage() {
             {notServiceable && selectedAddress ? (
               <StaggerItem>
                 <div className="flex items-center gap-3 rounded-2xl border border-ng-danger/40 bg-ng-danger/10 p-4 text-[14px] text-ng-danger">
-                  <Icon name="map-point-bold" size={20} />
+                  <UiIcon name="location" size={20} />
                   <span>
                     We don&apos;t deliver to{" "}
                     <span className="font-semibold tabular-nums">

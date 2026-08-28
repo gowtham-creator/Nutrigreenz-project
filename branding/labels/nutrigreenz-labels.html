@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nutri Greenz — Product Label Samples</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --forest:#14331F; --forest-deep:#0A1F12; --forest-soft:#1F4D2E;
+    --leaf:#66BF73; --sage:#B2C7B2; --green-bright:#4CAF50;
+    --cream:#F5F2E0; --cream-deep:#ECE7D2; --paper:#FAFAF5;
+    --clay:#B5862F; --clay-deep:#8A6420; --amber:#F29E12;
+    --terracotta:#C74D33; --soil:#3C2F1F;
+    --ink:#14331F; --ink-soft:#6B7064;
+    --display:"Roboto Slab",serif; --serif:"Lora",Georgia,serif;
+    --sans:"Figtree",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{
+    font-family:var(--sans);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, #f1efe6 55%, #e7e3d6 100%);
+    color:var(--ink);padding:56px 40px 72px;
+  }
+  .sheet-head{max-width:1180px;margin:0 auto 40px;text-align:center;}
+  .sheet-head .kk{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--clay-deep);}
+  .sheet-head h1{font-family:var(--display);font-weight:600;font-size:34px;color:var(--forest);margin-top:10px;letter-spacing:-.01em;}
+  .sheet-head p{font-family:var(--serif);font-style:italic;color:var(--ink-soft);margin-top:8px;font-size:15px;}
+
+  .product{max-width:1180px;margin:0 auto 30px;}
+  .product-bar{display:flex;align-items:baseline;gap:14px;margin:0 4px 16px;padding-bottom:10px;border-bottom:1px solid rgba(20,51,31,.12);}
+  .product-bar .no{font-family:var(--mono);font-size:12px;color:var(--clay-deep);letter-spacing:.1em;}
+  .product-bar h2{font-family:var(--display);font-size:20px;font-weight:600;color:var(--forest);}
+  .product-bar .spec{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-soft);letter-spacing:.04em;}
+
+  .pair{display:flex;gap:30px;flex-wrap:wrap;justify-content:center;}
+  .panel-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .panel-cap{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);}
+
+  /* ===== Label shell (the die-cut sticker) ===== */
+  .label{
+    width:360px;height:460px;border-radius:22px;position:relative;overflow:hidden;
+    box-shadow:0 24px 48px -20px rgba(20,51,31,.45), 0 2px 0 rgba(255,255,255,.6) inset;
+    background:var(--cream);
+  }
+  .label.back{background:var(--paper);}
+  /* hairline keyline = printer dieline */
+  .keyline{position:absolute;inset:9px;border:1px dashed rgba(20,51,31,.22);border-radius:15px;pointer-events:none;}
+
+  /* botanical corner wash */
+  .wash{position:absolute;inset:0;opacity:.5;pointer-events:none;}
+
+  /* ---------- FRONT ---------- */
+  .front{padding:28px 26px 44px;display:flex;flex-direction:column;height:100%;position:relative;}
+  .crest{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .crest img{height:58px;width:auto;}
+  .rule{display:flex;align-items:center;gap:8px;color:var(--clay);width:100%;justify-content:center;margin-top:2px;}
+  .rule::before,.rule::after{content:"";height:1px;width:42px;background:linear-gradient(90deg,transparent,var(--clay));}
+  .rule::after{background:linear-gradient(90deg,var(--clay),transparent);}
+  .rule span{font-family:var(--mono);font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;}
+
+  .pname{font-family:var(--display);font-weight:600;font-size:39px;line-height:1.02;color:var(--forest);text-align:center;margin-top:20px;letter-spacing:-.015em;}
+  .pname .accent{display:block;font-family:var(--serif);font-style:italic;font-weight:500;font-size:19px;letter-spacing:.01em;margin-top:9px;}
+  .descript{text-align:center;font-family:var(--serif);font-size:13px;color:var(--soil);line-height:1.5;margin-top:14px;padding:0 6px;}
+
+  .claims{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:18px;}
+  .claims span{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;border:1px solid rgba(20,51,31,.2);color:var(--forest-soft);background:rgba(255,255,255,.45);}
+
+  .front-foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;padding-top:18px;}
+  .origin{font-family:var(--sans);font-size:11px;color:var(--ink-soft);line-height:1.4;}
+  .origin b{display:block;font-family:var(--display);font-weight:600;font-size:13px;color:var(--forest);letter-spacing:.02em;}
+  .netq{text-align:right;}
+  .netq .v{font-family:var(--display);font-weight:600;font-size:22px;color:var(--forest);}
+  .netq .l{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
+  .tagband{position:absolute;left:0;right:0;bottom:0;height:30px;display:flex;align-items:center;justify-content:center;}
+  .tagband i{font-family:var(--serif);font-style:italic;font-size:11px;color:#fff;letter-spacing:.02em;}
+
+  /* veg/nonveg mark */
+  .vmark{width:18px;height:18px;border:1.6px solid var(--green-bright);border-radius:3px;display:grid;place-items:center;background:#fff;}
+  .vmark::after{content:"";width:9px;height:9px;border-radius:999px;background:var(--green-bright);}
+
+  /* ---------- BACK ---------- */
+  .back .front{padding:22px 22px 18px;}
+  .bk-top{display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(20,51,31,.14);padding-bottom:12px;}
+  .bk-top img{height:34px;}
+  .bk-top .nm{font-family:var(--display);font-weight:600;font-size:12px;color:var(--forest);line-height:1.25;}
+  .bk-top .nm small{display:block;font-family:var(--sans);font-weight:400;font-size:9.5px;color:var(--ink-soft);}
+  .bk-top .vmark{margin-left:auto;}
+
+  .bk-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 16px;margin-top:13px;}
+  h4{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--clay-deep);margin-bottom:5px;}
+  .bk p, .bk li{font-family:var(--sans);font-size:10px;line-height:1.5;color:var(--soil);}
+  .ntab{width:100%;border-collapse:collapse;}
+  .ntab td{font-family:var(--sans);font-size:9.5px;padding:2.5px 0;border-bottom:1px dotted rgba(60,47,31,.25);color:var(--soil);}
+  .ntab td:last-child{text-align:right;font-family:var(--mono);font-weight:500;color:var(--forest);}
+  .ntab tr.head td{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid rgba(60,47,31,.4);}
+  .ntab tr.tot td{font-weight:600;color:var(--forest);border-bottom:1.5px solid rgba(60,47,31,.5);}
+
+  .bk-foot{margin-top:13px;padding-top:12px;border-top:1px solid rgba(20,51,31,.14);display:flex;gap:14px;align-items:flex-end;}
+  .compliance{flex:1;}
+  .compliance .row{display:flex;gap:8px;align-items:center;margin-bottom:7px;}
+  .fssai{display:flex;align-items:center;gap:6px;border:1.4px solid var(--forest);border-radius:6px;padding:3px 7px;}
+  .fssai .badge{width:18px;height:18px;border-radius:999px;background:var(--forest);color:#fff;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:9px;}
+  .fssai .lic{font-family:var(--mono);font-size:8.5px;line-height:1.2;color:var(--forest);}
+  .fssai .lic b{display:block;font-size:10px;letter-spacing:.04em;}
+  .addr{font-family:var(--sans);font-size:8.5px;line-height:1.45;color:var(--ink-soft);}
+  .addr b{color:var(--forest);}
+
+  .codes{width:108px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .qr{width:64px;height:64px;border-radius:6px;padding:5px;background:#fff;border:1px solid rgba(20,51,31,.2);}
+  .qr svg{width:100%;height:100%;}
+  .barcode{width:108px;height:34px;background:
+     repeating-linear-gradient(90deg,#14331F 0,#14331F 2px,transparent 2px,transparent 4px,#14331F 4px,#14331F 5px,transparent 5px,transparent 8px,#14331F 8px,#14331F 11px,transparent 11px,transparent 13px,#14331F 13px,#14331F 14px,transparent 14px,transparent 17px);
+     border-radius:2px;}
+  .codes .cnum{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--soil);}
+
+  .footnote{max-width:1180px;margin:30px auto 0;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-soft);letter-spacing:.04em;line-height:1.7;}
+</style>
+</head>
+<body>
+
+<div class="sheet-head">
+  <div class="kk">Nutri Greenz Farm Technologies · Brand label samples</div>
+  <h1>Glass-Bottle Label Catalogue</h1>
+  <p>Three on-brand sample labels — front face &amp; statutory back panel — for client review.</p>
+</div>
+
+<!-- ================= PRODUCT 1 — GROUNDNUT OIL ================= -->
+<div class="product">
+  <div class="product-bar">
+    <span class="no">01</span>
+    <h2>Cold-Pressed Groundnut Oil</h2>
+    <span class="spec">Wrap label · 95 × 120 mm · 1 L flint-glass bottle</span>
+  </div>
+  <div class="pair">
+    <!-- FRONT -->
+    <div class="panel-wrap">
+      <div class="label">
+        <div class="wash"><svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg"><path d="M-20 410 Q90 350 130 420 T330 400 480 470 V520 H-40Z" fill="#66BF73" opacity=".12"/><path d="M300 -30 Q360 60 300 120 Q250 60 300 -30Z" fill="#F29E12" opacity=".1"/></svg></div>
+        <div class="keyline"></div>
+        <div class="front">
+          <div class="crest">
+            <img src="assets/logo-stacked.png" alt="Nutri Greenz" />
+          </div>
+          <div class="rule"><span>Cold-Pressed · Single-Origin</span></div>
+          <div class="pname">Groundnut<span class="accent">Wood-pressed cooking oil</span></div>
+          <div class="descript">Pressed below 40&deg;C in small batches. Unrefined, with its natural aroma and vitamin&nbsp;E intact.</div>
+          <div class="claims"><span>Below 40&deg;C</span><span>Unrefined</span><span>No solvents</span><span>Glass-bottled</span></div>
+          <div class="front-foot">
+            <div class="origin"><b>Anantapur</b>Andhra Pradesh · single-estate lot</div>
+            <!-- Was "1 L&#8462;" — U+210E PLANCK CONSTANT, a mathematical
+                 italic h that rendered as a stray letter after the litre mark
+                 and printed straight onto the label as "1 L h". -->
+            <div class="netq"><div class="v">1 L</div><div class="l">Net volume</div></div>
+          </div>
+        </div>
+        <div class="tagband" style="background:var(--forest);"><i>Born in Soil, built for tomorrow</i></div>
+      </div>
+      <div class="panel-cap">Front face</div>
+    </div>
+    <!-- BACK -->
+    <div class="panel-wrap">
+      <div class="label back">
+        <div class="keyline"></div>
+        <div class="front bk">
+          <div class="bk-top">
+            <img src="assets/logo-stacked.png" style="height:30px" alt="" />
+            <div class="nm">Cold-Pressed Groundnut Oil<small>Single-origin · Anantapur estate</small></div>
+            <div class="vmark" title="Vegetarian"></div>
+          </div>
+          <div class="bk-grid">
+            <div>
+              <h4>Ingredients</h4>
+              <p>100% cold-pressed groundnut (peanut) oil. Nothing added — no refining, bleaching or deodorising.</p>
+              <h4 style="margin-top:11px">Allergen</h4>
+              <p><b>Contains peanuts.</b> Packed in a facility that also handles sesame &amp; tree-nut oils.</p>
+              <h4 style="margin-top:11px">Storage &amp; use</h4>
+              <p>Keep cool, away from direct sunlight. Natural sediment may settle — it's a sign of true cold-pressing. Best for sautéing, curries &amp; deep-frying.</p>
+            </div>
+            <div>
+              <h4>Nutrition — per 100 ml</h4>
+              <table class="ntab">
+                <tr class="head"><td>Particulars</td><td>Value</td></tr>
+                <tr><td>Energy</td><td>900 kcal</td></tr>
+                <tr class="tot"><td>Total Fat</td><td>100 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Saturated</td><td>18 g</td></tr>
+                <tr><td>&nbsp;&nbsp;MUFA</td><td>48 g</td></tr>
+                <tr><td>&nbsp;&nbsp;PUFA</td><td>34 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Trans Fat</td><td>0 g</td></tr>
+                <tr><td>Cholesterol</td><td>0 mg</td></tr>
+              </table>
+              <p style="margin-top:8px;font-size:9px;color:var(--ink-soft)">M.R.P. <b style="color:var(--forest)">&#8377;720</b> (incl. all taxes) · per ml &#8377;0.72</p>
+            </div>
+          </div>
+          <div class="bk-foot">
+            <div class="compliance">
+              <div class="row">
+                <div class="fssai"><div class="badge">F</div><div class="lic">FSSAI Lic. No.<b>10822005000123</b></div></div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--ink-soft);line-height:1.4">Lot <b style="color:var(--forest)">NG-ANP24-07A</b><br>Mfd 04/2026 · Best before 9 months</div>
+              </div>
+              <p class="addr"><b>Marketed &amp; packed by:</b> Nutrigreenz Farm Technologies Pvt. Ltd., HITEC City, Hyderabad, Telangana 500072. care@nutrigreenz.farm</p>
+            </div>
+            <div class="codes">
+              <div class="qr"><svg viewBox="0 0 21 21" shape-rendering="crispEdges"><rect width="21" height="21" fill="#fff"/><path fill="#14331F" d="M0 0h7v7H0zm2 2v3h3V2zM14 0h7v7h-7zm2 2v3h3V2zM0 14h7v7H0zm2 2v3h3v-3zM9 0h2v2H9zm2 2h2v2h-2zM9 4h2v3H9zm4 5h2v2h-2zm-4 0h3v2H9zm0 3h2v3H9zm3 0h2v2h-2zm2 2h2v2h-2zm3-5h2v2h-2zm0 3h2v4h-2zm-3 4h2v2h-2zm3 0h2v2h-2z"/></svg></div>
+              <div class="barcode"></div>
+              <div class="cnum">8 90123 45678 1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-cap">Back · statutory panel</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PRODUCT 2 — A2 GIR COW GHEE ================= -->
+<div class="product">
+  <div class="product-bar">
+    <span class="no">02</span>
+    <h2>A2 Gir Cow Bilona Ghee</h2>
+    <span class="spec">Front + back labels · 80 × 95 mm · 500 ml amber-glass jar</span>
+  </div>
+  <div class="pair">
+    <div class="panel-wrap">
+      <div class="label">
+        <div class="wash"><svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg"><path d="M-20 410 Q90 350 130 420 T330 400 480 470 V520 H-40Z" fill="#B5862F" opacity=".14"/><path d="M300 -30 Q360 60 300 120 Q250 60 300 -30Z" fill="#F29E12" opacity=".12"/></svg></div>
+        <div class="keyline"></div>
+        <div class="front">
+          <div class="crest"><img src="assets/logo-stacked.png" alt="Nutri Greenz" /></div>
+          <div class="rule" style="color:var(--clay-deep)"><span>A2 · Bilona-Churned</span></div>
+          <div class="pname">Gir Cow Ghee<span class="accent" style="color:var(--clay-deep)">Hand-churned from cultured curd</span></div>
+          <div class="descript">Slow bilona method — curd churned to butter, then simmered to a golden, grainy ghee. From a single A2 Gir herd.</div>
+          <div class="claims"><span>A2 beta-casein</span><span>Bilona</span><span>Grass-fed</span><span>Single-herd</span></div>
+          <div class="front-foot">
+            <div class="origin"><b>Junagadh</b>Gujarat · 18-cow Gir herd</div>
+            <div class="netq"><div class="v">500 ml&#8462;</div><div class="l">Net volume</div></div>
+          </div>
+        </div>
+        <div class="tagband" style="background:var(--clay-deep);"><i>Born in Soil, built for tomorrow</i></div>
+      </div>
+      <div class="panel-cap">Front face</div>
+    </div>
+    <div class="panel-wrap">
+      <div class="label back">
+        <div class="keyline"></div>
+        <div class="front bk">
+          <div class="bk-top">
+            <img src="assets/logo-stacked.png" style="height:30px" alt="" />
+            <div class="nm">A2 Gir Cow Bilona Ghee<small>Single-herd · Junagadh</small></div>
+            <div class="vmark" title="Vegetarian"></div>
+          </div>
+          <div class="bk-grid">
+            <div>
+              <h4>Ingredients</h4>
+              <p>100% A2 cow-milk ghee (clarified butter) from grass-fed Gir cows. No colour, no preservatives.</p>
+              <h4 style="margin-top:11px">Allergen</h4>
+              <p><b>Contains milk.</b> Naturally lactose- &amp; casein-light after clarification.</p>
+              <h4 style="margin-top:11px">Storage &amp; use</h4>
+              <p>No refrigeration needed. Use a clean, dry spoon. Grainy texture &amp; seasonal colour change are natural. Ideal for tempering, ghee-roasting &amp; daily use.</p>
+            </div>
+            <div>
+              <h4>Nutrition — per 100 g</h4>
+              <table class="ntab">
+                <tr class="head"><td>Particulars</td><td>Value</td></tr>
+                <tr><td>Energy</td><td>900 kcal</td></tr>
+                <tr class="tot"><td>Total Fat</td><td>100 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Saturated</td><td>62 g</td></tr>
+                <tr><td>&nbsp;&nbsp;MUFA</td><td>28 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Trans Fat</td><td>0 g</td></tr>
+                <tr><td>Cholesterol</td><td>256 mg</td></tr>
+                <tr><td>Vitamin A</td><td>3300 IU</td></tr>
+              </table>
+              <p style="margin-top:8px;font-size:9px;color:var(--ink-soft)">M.R.P. <b style="color:var(--forest)">&#8377;1700</b> (incl. all taxes) · per ml &#8377;3.40</p>
+            </div>
+          </div>
+          <div class="bk-foot">
+            <div class="compliance">
+              <div class="row">
+                <div class="fssai"><div class="badge">F</div><div class="lic">FSSAI Lic. No.<b>10822005000123</b></div></div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--ink-soft);line-height:1.4">Lot <b style="color:var(--forest)">NG-JUN24-03B</b><br>Mfd 04/2026 · Best before 12 months</div>
+              </div>
+              <p class="addr"><b>Marketed &amp; packed by:</b> Nutrigreenz Farm Technologies Pvt. Ltd., HITEC City, Hyderabad, Telangana 500072. care@nutrigreenz.farm</p>
+            </div>
+            <div class="codes">
+              <div class="qr"><svg viewBox="0 0 21 21" shape-rendering="crispEdges"><rect width="21" height="21" fill="#fff"/><path fill="#14331F" d="M0 0h7v7H0zm2 2v3h3V2zM14 0h7v7h-7zm2 2v3h3V2zM0 14h7v7H0zm2 2v3h3v-3zM9 0h2v3H9zm3 1h2v2h-2zM9 5h3v2H9zm5 4h2v2h-2zm-5 0h3v2H9zm0 3h2v3H9zm3 1h2v2h-2zm2 1h2v2h-2zm3-6h2v2h-2zm0 3h2v4h-2zm-3 4h2v2h-2zm3 0h2v2h-2z"/></svg></div>
+              <div class="barcode"></div>
+              <div class="cnum">8 90123 45678 2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-cap">Back · statutory panel</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PRODUCT 3 — WILD FOREST HONEY ================= -->
+<div class="product">
+  <div class="product-bar">
+    <span class="no">03</span>
+    <h2>Wild Forest Honey</h2>
+    <span class="spec">Front + back labels · 80 × 95 mm · 500 g flint-glass jar</span>
+  </div>
+  <div class="pair">
+    <div class="panel-wrap">
+      <div class="label">
+        <div class="wash"><svg viewBox="0 0 360 460" xmlns="http://www.w3.org/2000/svg"><path d="M-20 410 Q90 350 130 420 T330 400 480 470 V520 H-40Z" fill="#F29E12" opacity=".16"/><path d="M300 -30 Q360 60 300 120 Q250 60 300 -30Z" fill="#66BF73" opacity=".12"/></svg></div>
+        <div class="keyline"></div>
+        <div class="front">
+          <div class="crest"><img src="assets/logo-stacked.png" alt="Nutri Greenz" /></div>
+          <div class="rule" style="color:var(--amber)"><span>Raw · Single-Forest</span></div>
+          <div class="pname">Wild Forest<span class="accent" style="color:var(--clay-deep)">Honey, exactly as the bees made it</span></div>
+          <div class="descript">Harvested without smoke or queen-killing, then jarred raw. Unheated, unfiltered, never blended with sugar.</div>
+          <div class="claims"><span>Raw &amp; unheated</span><span>No added sugar</span><span>NMR-tested</span><span>Single-forest</span></div>
+          <div class="front-foot">
+            <div class="origin"><b>Sundarbans</b>West Bengal · wild multifloral</div>
+            <div class="netq"><div class="v">500 g&#8462;</div><div class="l">Net weight</div></div>
+          </div>
+        </div>
+        <div class="tagband" style="background:var(--clay-deep);"><i>Born in Soil, built for tomorrow</i></div>
+      </div>
+      <div class="panel-cap">Front face</div>
+    </div>
+    <div class="panel-wrap">
+      <div class="label back">
+        <div class="keyline"></div>
+        <div class="front bk">
+          <div class="bk-top">
+            <img src="assets/logo-stacked.png" style="height:30px" alt="" />
+            <div class="nm">Wild Forest Honey<small>Raw &amp; unprocessed · Sundarbans</small></div>
+            <div class="vmark" title="Vegetarian"></div>
+          </div>
+          <div class="bk-grid">
+            <div>
+              <h4>Ingredients</h4>
+              <p>100% raw wild forest honey. Nothing added, nothing removed.</p>
+              <h4 style="margin-top:11px">Good to know</h4>
+              <p>Natural crystallisation over time is a mark of purity — set the jar in warm water to reliquefy. Raw honey is <b>not suitable for infants under 12 months.</b></p>
+              <h4 style="margin-top:11px">Storage</h4>
+              <p>Store at room temperature with the lid closed. Use a dry spoon. Keep away from direct heat &amp; moisture.</p>
+            </div>
+            <div>
+              <h4>Nutrition — per 100 g</h4>
+              <table class="ntab">
+                <tr class="head"><td>Particulars</td><td>Value</td></tr>
+                <tr><td>Energy</td><td>304 kcal</td></tr>
+                <tr class="tot"><td>Carbohydrate</td><td>82 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Total Sugars</td><td>82 g</td></tr>
+                <tr><td>&nbsp;&nbsp;Added Sugars</td><td>0 g</td></tr>
+                <tr><td>Protein</td><td>0.3 g</td></tr>
+                <tr><td>Total Fat</td><td>0 g</td></tr>
+                <tr><td>Sodium</td><td>4 mg</td></tr>
+              </table>
+              <p style="margin-top:8px;font-size:9px;color:var(--ink-soft)">M.R.P. <b style="color:var(--forest)">&#8377;700</b> (incl. all taxes) · per g &#8377;1.40</p>
+            </div>
+          </div>
+          <div class="bk-foot">
+            <div class="compliance">
+              <div class="row">
+                <div class="fssai"><div class="badge">F</div><div class="lic">FSSAI Lic. No.<b>10822005000123</b></div></div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--ink-soft);line-height:1.4">Lot <b style="color:var(--forest)">NG-SUN24-11C</b><br>Mfd 04/2026 · Best before 24 months</div>
+              </div>
+              <p class="addr"><b>Marketed &amp; packed by:</b> Nutrigreenz Farm Technologies Pvt. Ltd., HITEC City, Hyderabad, Telangana 500072. care@nutrigreenz.farm</p>
+            </div>
+            <div class="codes">
+              <div class="qr"><svg viewBox="0 0 21 21" shape-rendering="crispEdges"><rect width="21" height="21" fill="#fff"/><path fill="#14331F" d="M0 0h7v7H0zm2 2v3h3V2zM14 0h7v7h-7zm2 2v3h3V2zM0 14h7v7H0zm2 2v3h3v-3zM10 0h2v2h-2zm-1 3h3v2H9zm4 2h2v2h-2zm-4 1h2v3H9zm5 3h2v2h-2zm-5 0h3v2H9zm0 3h2v3H9zm3 0h2v2h-2zm3-3h2v2h-2zm0 3h2v3h-2zm-1 3h2v2h-2z"/></svg></div>
+              <div class="barcode"></div>
+              <div class="cnum">8 90123 45678 3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-cap">Back · statutory panel</div>
+    </div>
+  </div>
+</div>
+
+<div class="footnote">
+  Sample artwork for client review only · Colours: Forest #14331F · Clay #B5862F · Amber #F29E12 · Cream #F5F2E0<br>
+  Fonts: Roboto Slab (display) · Lora (accent) · Figtree (text) · JetBrains Mono (codes) — all matched to the live storefront.<br>
+  Dashed keyline = printer dieline (does not print). Nutrition values indicative — confirm from lab COA before production.
+</div>
+
+</body>
+</html>

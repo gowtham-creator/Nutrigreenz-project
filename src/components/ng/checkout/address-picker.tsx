@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { useAddresses } from "@/lib/addresses";
 import { AddressForm } from "@/components/ng/address/address-form";
@@ -39,7 +40,7 @@ export function AddressPicker({
     <div className="group/card rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">
       <div className="mb-5 flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ng-cream text-ng-forest-deep">
-          <Icon name="map-point-bold" size={20} />
+          <UiIcon name="location" size={20} />
         </span>
         <div className="flex flex-col">
           <span className="ng-eyebrow text-ng-forest/70">Step 1</span>
