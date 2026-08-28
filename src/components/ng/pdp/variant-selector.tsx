@@ -59,12 +59,44 @@ function VariantTile({
       onClick={onSelect}
       disabled={soldOut}
       aria-pressed={active}
+      /*
+       * Shading, not a flat fill.
+       *
+       * Both states were flat washes — 6% forest when selected, 10% sage on
+       * hover — and at that strength on a cream card neither registered: the
+       * chosen pack looked the same as the two beside it. A soft top-to-bottom
+       * gradient reads as a *shaded* surface rather than a tinted rectangle,
+       * so the tile picks up a little depth and the eye lands on it without
+       * the colour having to shout.
+       *
+       * Deliberately restrained. This sits directly under the price and the
+       * Add to cart button, and a strongly filled tile would compete with the
+       * one control on the page that matters more.
+       *
+       * Transitions name their properties rather than using `all`, so the
+       * disabled state and the layout are never animated by accident.
+       */
       className={cn(
-        "relative flex cursor-pointer flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200",
+        "relative flex cursor-pointer flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left",
+        "transition-[background-image,background-color,border-color,box-shadow] duration-200 ease-out",
         active
-          ? "border-ng-forest bg-ng-forest/[0.06]"
-          : "border-ng-line hover:border-ng-leaf hover:bg-ng-sage/10",
-        soldOut && "cursor-not-allowed opacity-45 hover:border-ng-line hover:bg-transparent",
+          ? // Selected: forest shading, deepest at the foot, with a hairline
+            // inner highlight along the top edge so it reads as lit from above.
+            //
+            // The floor is capped at 10% forest, and that number is measured
+            // rather than chosen by eye: the per-unit line at the BOTTOM of the
+            // tile is `ng-ink-muted`, which sits exactly where the gradient is
+            // deepest. At 16% it fell to 4.02:1 and failed WCAG AA; 10% holds
+            // it at 4.52:1. The heading and price are near-black and clear
+            // 12:1 either way, so this cap is set entirely by the small grey
+            // line — deepen it and that text goes first.
+            "border-ng-forest bg-gradient-to-b from-ng-forest/[0.03] via-ng-forest/[0.06] to-ng-forest/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_1px_2px_rgba(20,51,31,0.10)]"
+          : // Unselected: nothing until pointed at, then the same shape of
+            // shading in sage so hover previews what selection will look like.
+            // Capped at 35% for the same reason (4.50:1 at the floor).
+            "border-ng-line hover:border-ng-leaf hover:bg-gradient-to-b hover:from-ng-sage/15 hover:to-ng-sage/35",
+        soldOut &&
+          "cursor-not-allowed opacity-45 hover:border-ng-line hover:bg-none hover:from-transparent hover:to-transparent",
       )}
     >
       {discount > 0 && !soldOut ? (
@@ -142,11 +174,16 @@ export function VariantSelector({ variants, activeIndex, onSelect }: VariantSele
                 type="button"
                 onClick={() => onSelect(firstIndexForSize(s))}
                 aria-pressed={isActive}
+                /* The size chip keeps its solid fill when chosen — size is the
+                   primary choice and pack the refinement, so the hierarchy is
+                   worth preserving. Only the hover gains the same shading as
+                   the tiles below, so the two rows feel like one control. */
                 className={cn(
-                  "cursor-pointer rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors",
+                  "cursor-pointer rounded-full border px-4 py-2 text-[13px] font-semibold",
+                  "transition-[background-image,background-color,border-color,box-shadow] duration-200 ease-out",
                   isActive
-                    ? "border-ng-forest bg-ng-forest text-ng-cream"
-                    : "border-ng-line text-ng-forest hover:border-ng-leaf hover:bg-ng-sage",
+                    ? "border-ng-forest bg-gradient-to-b from-ng-forest to-ng-forest-deep text-ng-cream shadow-[inset_0_1px_0_rgba(245,242,224,0.18)]"
+                    : "border-ng-line text-ng-forest hover:border-ng-leaf hover:bg-gradient-to-b hover:from-ng-sage/35 hover:to-ng-sage/70",
                   sizeSoldOut && !isActive && "opacity-50",
                 )}
               >
