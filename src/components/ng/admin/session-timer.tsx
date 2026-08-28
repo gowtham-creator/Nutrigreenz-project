@@ -213,9 +213,14 @@ function ClockFace({ mins, secs }: { mins: number; secs: number }) {
   const remaining = ((mins % 60) * 60 + secs) / 3600;
 
   return (
+    /* 19px, up from 15. At the smaller size the rim arc and the seconds hand
+       merged into a single smudge — the glyph read as "something round" rather
+       than as a clock. The strokes below are NOT scaled up with it: the extra
+       room goes into separating the parts, which is what makes it legible,
+       rather than into making the same crowded drawing bigger. */
     <svg
-      width="15"
-      height="15"
+      width="19"
+      height="19"
       viewBox="0 0 24 24"
       fill="none"
       className="shrink-0"
@@ -223,22 +228,22 @@ function ClockFace({ mins, secs }: { mins: number; secs: number }) {
     >
       {/* The dial: a full ring at low opacity, so the glyph still reads as a
           clock once the arc above it has drained away to nothing. */}
-      <circle cx="12" cy="12" r={R} stroke="currentColor" strokeWidth="1.5" opacity="0.22" />
+      <circle cx="12" cy="12" r={R} stroke="currentColor" strokeWidth="1.4" opacity="0.26" />
       {/* Minutes, as a rim arc that empties clockwise from twelve. */}
       <circle
         cx="12" cy="12" r={R}
-        stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round"
         strokeDasharray={CIRC}
         strokeDashoffset={CIRC * (1 - remaining)}
         transform="rotate(-90 12 12)"
       />
       {/* Seconds — the part that visibly ticks. */}
       <line
-        x1="12" y1="12" x2="12" y2="5.9"
-        stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"
+        x1="12" y1="12" x2="12" y2="6.2"
+        stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
         transform={`rotate(${secondAngle} 12 12)`}
       />
-      <circle cx="12" cy="12" r="1.3" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.15" fill="currentColor" />
     </svg>
   );
 }
@@ -261,7 +266,7 @@ export function SessionCountdown({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1",
+        "inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5",
         warning
           ? "border-ng-terracotta/40 bg-ng-terracotta/10 text-ng-terracotta"
           : "border-ng-line bg-ng-paper text-ng-ink-muted",
@@ -277,13 +282,19 @@ export function SessionCountdown({ className }: { className?: string }) {
           than "here is the remaining time". This slot previously held an
           `opacity-0` caution icon purely to reserve the space — the clock now
           does that job while actually saying something. */}
+      {/* Matched to the clock's 19px. They occupy the same slot, so a size
+          mismatch would visibly resize the pill at the five-minute mark —
+          exactly when the operator should be reading it, not watching it
+          twitch. */}
       {warning ? (
-        <UiIcon name="caution" size={12} aria-hidden />
+        <UiIcon name="caution" size={19} aria-hidden />
       ) : (
         <ClockFace mins={mins} secs={secs} />
       )}
       <span className="sr-only">Time left in this session:</span>
-      <span className="font-mono text-[12px] font-semibold tabular-nums leading-none">
+      {/* 14px, and tracking-tight so the wider glyph and the longer number do
+          not push the pill out of the header row. */}
+      <span className="font-mono text-[14px] font-semibold tabular-nums leading-none tracking-tight">
         {pad(mins)}:{pad(secs)}
       </span>
     </div>
