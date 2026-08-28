@@ -235,8 +235,57 @@ export function AreaChart({
   const padB = 26;
   const allVals = series.flatMap((s) => s.data);
   const max = Math.max(...allVals, 1);
-  const niceMax = Math.ceil(max / 5) * 5 || 5;
   const gridLines = 4;
+
+  /*
+   * A y-axis whose printed numbers match its evenly-spaced lines.
+   *
+   * The scale was `Math.ceil(max / 5) * 5`, which rounds the TOP of the axis
+   * to a multiple of five but says nothing about whether that top divides by
+   * the four gridlines beneath it. It usually does not, and the labels were
+   * then rounded for display, so the axis printed uneven steps against evenly
+   * spaced rules:
+   *
+   *   max 9  -> top 10 -> 10, 8, 5, 3, 0   gaps 2,3,2,3
+   *   max 47 -> top 50 -> 50, 38, 25, 13, 0  gaps 12,13,12,13
+   *
+   * Six of eight sampled maxima came out uneven. On a chart of daily views,
+   * where the peak is single digits, that is the common case — the axis was
+   * misdescribing the data it sat next to.
+   *
+   * Standard nice-number scaling instead: round the STEP up to 1, 2, 2.5 or 5
+   * times a power of ten, then derive the top from it. The top is a multiple
+   * of the step by construction, so every label is exact and no rounding is
+   * needed to print it.
+   */
+  const niceStep = useMemo(() => {
+    /*
+     * Candidate steps: familiar bases across each magnitude, keeping only
+     * those that come out whole. These axes count things — orders, views,
+     * saves — so a step of 2.5 would print "7.5 views", which is why the
+     * textbook 1/2/2.5/5 set is filtered rather than used directly.
+     *
+     * 3, 6 and 8 are included alongside the usual bases because at the small
+     * magnitudes this dashboard actually plots, restricting to 1/2/5 forces
+     * large jumps: a peak of 23 would round to a top of 40 and leave the plot
+     * using 57% of its height. With 6 available it tops at 24 and fills 96%.
+     */
+    const steps: number[] = [];
+    for (let e = 0; e < 9; e++) {
+      const mag = 10 ** e;
+      for (const base of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7.5, 8]) {
+        const s = base * mag;
+        if (Number.isInteger(s)) steps.push(s);
+      }
+    }
+    const sorted = [...new Set(steps)].sort((a, b) => a - b);
+    // Smallest step whose four intervals still cover the tallest value.
+    return sorted.find((s) => s * gridLines >= max) ?? Math.ceil(max / gridLines);
+  }, [max]);
+
+  /** Top of the axis. A multiple of the step by construction, so every tick
+   *  label is exact and none of them need rounding to print. */
+  const niceMax = niceStep * gridLines;
 
   const toPts = (data: number[]) => {
     const step = data.length > 1 ? (W - padL - padR) / (data.length - 1) : 0;
@@ -329,9 +378,32 @@ export function AreaChart({
           const val = niceMax * (1 - i / gridLines);
           return (
             <g key={i}>
-              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--ng-line-soft)" strokeWidth="1" />
-              <text x={labelX} y={y - 3} fontSize="11" fill="var(--ng-ink-soft)" className="font-mono font-medium">
-                {formatY ? formatY(val) : Math.round(val)}
+              {/* The baseline (i === gridLines) is the axis itself and carries
+                  more weight than the rules above it, which are only there to
+                  help the eye judge height. Drawing all five identically made
+                  the plot look like it floated on ruled paper rather than
+                  sitting on a floor. */}
+              <line
+                x1={padL}
+                y1={y}
+                x2={W - padR}
+                y2={y}
+                stroke={i === gridLines ? "var(--ng-line)" : "var(--ng-line-soft)"}
+                strokeWidth="1"
+              />
+              {/* Centred on the rule rather than sitting 3px above it, so the
+                  number reads as belonging to that line instead of hovering
+                  between two. `val` is exact by construction now, so there is
+                  nothing to round. */}
+              <text
+                x={labelX}
+                y={y}
+                dominantBaseline="middle"
+                fontSize="11"
+                fill="var(--ng-ink-muted)"
+                className="font-mono font-medium tabular-nums"
+              >
+                {formatY ? formatY(val) : val}
               </text>
             </g>
           );
