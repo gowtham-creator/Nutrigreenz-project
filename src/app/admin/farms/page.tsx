@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { getAdminRole } from "@/lib/admin-auth";
 import { AdminShell, Card } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { FarmModal, type Farm, type FarmDraft } from "./farm-modal";
 
 async function postJson<T>(url: string, method: string, body: unknown): Promise<T> {
@@ -199,7 +200,7 @@ export default function AdminFarms() {
                         aria-label={`Edit ${f.name}`}
                         className="grid size-8 place-items-center rounded-full text-ng-ink-muted hover:bg-ng-line-soft hover:text-ng-forest-deep transition-colors cursor-pointer"
                       >
-                        <Icon name="pen-2-bold" size={15} />
+                        <UiIcon name="edit" size={15} />
                       </button>
                       <button
                         type="button"

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import type { Category } from "./types";
 
 const FIELD =
@@ -291,7 +292,7 @@ export function CategoryModal({
                     aria-label={`Edit ${c.name}`}
                     className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
                   >
-                    <Icon name="pen-2-bold" size={13} />
+                    <UiIcon name="edit" size={13} />
                     Edit
                   </button>
                   <button

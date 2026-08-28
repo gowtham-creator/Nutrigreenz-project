@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import type { Address } from "@/types/nutrigreenz";
 
@@ -84,7 +85,7 @@ export function AddressCard({
           onClick={() => onEdit(address)}
           className="-my-1.5 inline-flex min-h-[44px] items-center gap-1.5 py-1.5 text-ng-forest hover:text-ng-forest-deep transition-colors"
         >
-          <Icon name="pen-2-linear" size={15} />
+          <UiIcon name="edit" size={15} />
           Edit
         </button>
         <button

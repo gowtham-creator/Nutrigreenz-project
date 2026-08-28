@@ -593,7 +593,7 @@ function CaptainDrawer({
                 onClick={() => onEdit(c)}
                 className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
-                <Icon name="pen-2-bold" size={13} className="text-ng-forest" />
+                <UiIcon name="edit" size={13} className="text-ng-forest" />
                 Edit
               </button>
             ) : null}

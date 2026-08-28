@@ -466,7 +466,7 @@ export default function AdminInventory() {
                       aria-label={`Edit ${p.name}`}
                       className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
                     >
-                      <Icon name="pen-2-bold" size={13} />
+                      <UiIcon name="edit" size={13} />
                       Edit
                     </button>
                     {isSuper && (

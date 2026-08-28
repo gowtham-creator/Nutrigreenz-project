@@ -40,6 +40,11 @@ const UI_ICONS = {
      marketing panels, the loyalty page and both PDP buy boxes now show one
      tag rather than two different ones. */
   tag: "tag",
+  /* Edit / amend. Replaces Solar's three different pens (`pen-2-bold`,
+     `pen-2-linear`, `pen-new-square-bold`) which were mixed across the admin
+     tables, the address card and the review form — three glyphs for one
+     action. */
+  edit: "edit",
   /* Account profile surfaces. `password` and `key` were supplied as GIFs on an
      opaque white field, so they were traced from LUMINANCE, not alpha — tracing
      their alpha would have yielded an empty file. */

@@ -944,7 +944,7 @@ export function CouponCampaignBuilder() {
                       aria-label={`Edit ${c.code}`}
                       className="size-8 grid place-items-center rounded-lg border border-ng-line text-ng-ink-muted hover:text-ng-forest hover:border-ng-forest/40 transition-colors cursor-pointer"
                     >
-                      <Icon name="pen-2-bold" size={15} />
+                      <UiIcon name="edit" size={15} />
                     </button>
                   </span>
                 </li>

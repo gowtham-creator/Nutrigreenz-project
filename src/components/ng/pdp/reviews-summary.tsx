@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Stars } from "@/components/ng/stars";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import type { Review } from "./reviews";
 
@@ -81,7 +82,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
             className="cursor-pointer"
             onClick={() => toast.success("Review form coming soon", { description: "Verified buyers can review from their orders." })}
           >
-            <Icon name="pen-new-square-bold" size={16} />
+            <UiIcon name="edit" size={16} />
             Write a review
           </Button>
         </div>
