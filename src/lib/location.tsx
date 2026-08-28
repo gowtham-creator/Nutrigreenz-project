@@ -63,6 +63,8 @@ export interface PincodeResult {
   area: string;
   district: string;
   state: string;
+  /** Every locality sharing this pincode, for disambiguation in the UI. */
+  localities: string[];
   pincode: string;
   serviceable: boolean;
 }
@@ -143,14 +145,31 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       const pin = pincode.trim();
       if (!isValidIndianPincode(pin)) return null;
 
-      // Offline first: a real label immediately, refined by the response below.
       const offline = resolveOffline(pin);
       try {
         const res = await fetch(`/api/geo/pincode?pincode=${pin}`, { cache: "force-cache" });
+
+        /*
+         * 404 means India Post has no record of this pincode — it does not
+         * exist. Return null so the caller reports a bad pincode, rather than
+         * falling through to the state label below.
+         *
+         * This is the 310002 bug: six digits, a valid-looking Rajasthan
+         * prefix, and no such postcode. The old code fell back to the prefix
+         * table and displayed "Rajasthan", so a typo looked like a real
+         * delivery address and the customer could proceed with it.
+         */
+        if (res.status === 404) return null;
+
         if (res.ok) {
           const d = (await res.json()) as {
             ok?: boolean;
-            location?: { area?: string; district?: string; state?: string };
+            location?: {
+              area?: string;
+              district?: string;
+              state?: string;
+              localities?: string[];
+            };
             serviceable?: boolean;
           };
           if (d?.ok && d.location) {
@@ -158,19 +177,23 @@ export function LocationProvider({ children }: { children: ReactNode }) {
               area: d.location.area || offline?.area || "",
               district: d.location.district || "",
               state: d.location.state || offline?.state || "",
+              localities: d.location.localities ?? [],
               pincode: pin,
               serviceable: d.serviceable === true,
             };
           }
         }
       } catch {
-        /* fall through to the offline label */
+        /* Network failure — fall through to the offline label. */
       }
-      // Upstream unreachable: still recognise the pincode, but do not claim we
-      // deliver there. Guessing "serviceable" would take an order we cannot fill.
-      return offline
-        ? { ...offline, serviceable: false }
-        : null;
+
+      /*
+       * We could not reach the API, so we cannot confirm the pincode either
+       * way. Recognise it by state, but do NOT claim we deliver there:
+       * guessing "serviceable" would accept an order we may not be able to
+       * fill.
+       */
+      return offline ? { ...offline, localities: [], serviceable: false } : null;
     },
     [],
   );

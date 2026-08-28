@@ -92,9 +92,15 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
     try {
       const hit = await resolvePincode(trimmed);
       if (!hit) {
-        setDetectError("That doesn't look like an Indian pincode.");
+        setDetectError(`We couldn't find pincode ${trimmed}. Please check and try again.`);
         return;
       }
+      /*
+       * `area` is the post-office locality from India Post — "Andheri East",
+       * "Miyapur" — which is what the customer recognises. `city` carries the
+       * district beneath it. Falling back to the state here would reproduce
+       * the "Rajasthan, 310002" display this fixes.
+       */
       commit({ area: hit.area, pincode: hit.pincode, city: hit.district || hit.state });
     } finally {
       setResolving(false);

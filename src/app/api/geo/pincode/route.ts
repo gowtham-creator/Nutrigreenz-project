@@ -49,8 +49,27 @@ interface PostOffice {
   Block?: string;
 }
 
-/** Ask India Post for the locality. Returns null on any failure — never throws. */
-async function lookupUpstream(pincode: string): Promise<PincodeLocation | null> {
+/**
+ * The three distinct outcomes of asking India Post, which must NOT be
+ * collapsed into one.
+ *
+ * The first version returned null for both "no such pincode" and "could not
+ * reach the API", and fell back to the prefix table in either case. So typing
+ * 310002 — which does not exist; the real Rajasthan codes in that series are
+ * 311001, 312001, 313001 — was accepted and labelled "Rajasthan". A typo
+ * looked like a valid delivery location.
+ *
+ * `not-found` is an answer and must be surfaced as one. `unreachable` is an
+ * absence of an answer, where falling back to the state is right: a real
+ * pincode must not be rejected because a third party timed out.
+ */
+type Lookup =
+  | { status: "found"; location: PincodeLocation }
+  | { status: "not-found" }
+  | { status: "unreachable" };
+
+/** Ask India Post for the locality. Never throws. */
+async function lookupUpstream(pincode: string): Promise<Lookup> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
@@ -58,19 +77,28 @@ async function lookupUpstream(pincode: string): Promise<PincodeLocation | null> 
       signal: controller.signal,
       headers: { accept: "application/json" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { status: "unreachable" };
     const body = (await res.json()) as unknown;
     const first = Array.isArray(body) ? (body[0] as Record<string, unknown>) : null;
-    if (!first || first.Status !== "Success") return null;
+    if (!first) return { status: "unreachable" };
+
     const offices = first.PostOffice;
-    if (!Array.isArray(offices) || offices.length === 0) return null;
+    /*
+     * India Post answers a nonexistent pincode with
+     * `{ Status: "Error", Message: "No records found", PostOffice: null }`.
+     * That is a definitive NO, not a failure, and it is the whole reason
+     * 310002 used to be accepted.
+     */
+    if (first.Status !== "Success" || !Array.isArray(offices) || offices.length === 0) {
+      return { status: "not-found" };
+    }
 
     /*
-     * A pincode covers several post offices. Prefer the one whose name is not
-     * a bare "<District> H.O"/"S.O" administrative entry, since the customer
-     * recognises "Andheri East" and not "Mumbai H.O". Falls back to the first.
+     * A pincode covers several post offices. Prefer one whose name is not a
+     * bare "<District>" administrative entry, since the customer recognises
+     * "Andheri East" rather than "Mumbai". Falls back to the first.
      */
-    const po = (offices as PostOffice[]);
+    const po = offices as PostOffice[];
     const district = po[0]?.District?.trim() || "";
     const named =
       po.find((o) => {
@@ -80,13 +108,23 @@ async function lookupUpstream(pincode: string): Promise<PincodeLocation | null> 
 
     const area = (named?.Name ?? "").trim() || district || stateForPincode(pincode);
     return {
-      pincode,
-      area,
-      district,
-      state: (named?.State ?? "").trim() || stateForPincode(pincode),
+      status: "found",
+      location: {
+        pincode,
+        area,
+        district,
+        state: (named?.State ?? "").trim() || stateForPincode(pincode),
+        /* Every locality sharing this pincode. A pincode is an area, not a
+           point — 110001 covers 21 post offices — and the customer may well
+           recognise the third name rather than the first. */
+        localities: po
+          .map((o) => (o.Name ?? "").trim())
+          .filter((n, i, all) => n && all.indexOf(n) === i),
+      },
     };
   } catch {
-    return null; // timeout, DNS, malformed body — all the same to the caller
+    // Timeout, DNS, malformed body: we did not get an answer either way.
+    return { status: "unreachable" };
   } finally {
     clearTimeout(timer);
   }
@@ -102,15 +140,39 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
-  // Offline resolution first, so `location` is never null for a valid pincode.
-  let location = cache.get(pincode) ?? resolveOffline(pincode)!;
+  let location = cache.get(pincode) ?? null;
 
-  if (!cache.has(pincode)) {
-    const upstream = await lookupUpstream(pincode);
-    if (upstream) {
-      cache.set(pincode, upstream);
-      location = upstream;
+  if (!location) {
+    const lookup = await lookupUpstream(pincode);
+
+    if (lookup.status === "not-found") {
+      /*
+       * India Post says this pincode does not exist. Say so, rather than
+       * falling back to the prefix table — that fallback is what let 310002
+       * through as "Rajasthan" and made a typo look like a real address.
+       */
+      return Response.json(
+        { ok: false, error: "unknown-pincode", pincode },
+        { status: 404 },
+      );
     }
+
+    if (lookup.status === "found") {
+      cache.set(pincode, lookup.location);
+      location = lookup.location;
+    } else {
+      /*
+       * Unreachable. We could not confirm the pincode either way, so fall back
+       * to the prefix table and label it with its state. Deliberately NOT
+       * cached: the next request should try the API again rather than being
+       * served a degraded answer for the life of the process.
+       */
+      location = resolveOffline(pincode);
+    }
+  }
+
+  if (!location) {
+    return Response.json({ ok: false, error: "unknown-pincode", pincode }, { status: 404 });
   }
 
   // Serviceability is independent of recognition and must not fail the lookup.

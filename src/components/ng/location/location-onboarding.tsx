@@ -103,7 +103,7 @@ export function LocationOnboarding() {
     try {
       const hit = await resolvePincode(trimmed);
       if (!hit) {
-        setError("That doesn't look like an Indian pincode.");
+        setError(`We couldn't find pincode ${trimmed}. Please check and try again.`);
         return;
       }
       setZone({
