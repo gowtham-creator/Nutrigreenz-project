@@ -639,7 +639,7 @@ function CaptainDrawer({
               </div>
 
               <dl className="grid grid-cols-2 gap-3">
-                <Field icon="map-point-bold" label="Area" value={c.area} />
+                <Field icon="location" label="Area" value={c.area} />
                 <Field icon="shop-bold" label="Stall" value={c.stall} />
                 <Field icon="tag-price-bold" label="Commission" value={`${c.commissionPercent}%`} />
                 <Field icon="calendar-bold" label="Joined" value={fmtDay(c.createdAt)} />
@@ -653,7 +653,7 @@ function CaptainDrawer({
                 </div>
               ) : null}
 
-              <Section icon="map-point-wave-bold" title="Communities">
+              <Section icon="location" title="Communities">
                 {c.communities.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {c.communities.map((name) => (

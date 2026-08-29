@@ -35,7 +35,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
       <header className="flex flex-wrap items-start justify-between gap-4 px-6 py-5 border-b border-ng-line-soft bg-ng-cream/40">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Icon name="home-2-bold" size={18} className="text-ng-forest" />
+            <Icon name="home" size={18} className="text-ng-forest" />
             <h2 className="font-display text-[20px] text-ng-forest-deep leading-tight">{group.community}</h2>
           </div>
           {location.length > 0 ? (

@@ -115,7 +115,7 @@ export const ADMIN_PERMISSIONS: readonly PermissionDef[] = [
     key: "captains",
     label: "Captains",
     description: "Field-sales captains: the roster, their stall sales, settlements and pickups.",
-    icon: "map-point-bold",
+    icon: "location",
   },
   {
     key: "people",

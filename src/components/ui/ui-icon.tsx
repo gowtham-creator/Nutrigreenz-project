@@ -36,6 +36,13 @@ const UI_ICONS = {
   wallet: "wallet",
   refer: "refer",
   location: "location",
+  /* Address types. `home` is a house with the door cut out, `office` a pair of
+     window-gridded towers — used on the address book, the address form, the
+     checkout address picker and anywhere an address is labelled Home or Work.
+     Note these are ICON names that happen to match the address `type` keys;
+     nothing renders `<Icon name={address.type}>`, so there is no collision. */
+  home: "home",
+  office: "office",
   /* Price / offer marker. Replaces Solar's `tag-price-bold` everywhere, so the
      marketing panels, the loyalty page and both PDP buy boxes now show one
      tag rather than two different ones. */

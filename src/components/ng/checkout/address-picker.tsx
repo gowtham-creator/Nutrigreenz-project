@@ -10,9 +10,9 @@ import { AddressForm } from "@/components/ng/address/address-form";
 import type { Address } from "@/types/nutrigreenz";
 
 const TYPE_META: Record<Address["type"], { icon: string; label: string }> = {
-  home: { icon: "home-2-bold", label: "Home" },
-  work: { icon: "buildings-2-bold", label: "Work" },
-  other: { icon: "map-point-bold", label: "Other" },
+  home: { icon: "home", label: "Home" },
+  work: { icon: "office", label: "Work" },
+  other: { icon: "location", label: "Other" },
 };
 
 export function AddressPicker({

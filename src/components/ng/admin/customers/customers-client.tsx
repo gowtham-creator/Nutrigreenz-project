@@ -457,7 +457,7 @@ function CustomerDrawer({
               <dl className="grid grid-cols-2 gap-3">
                 <Field icon="letter-bold" label="Email" value={c.primaryEmail} />
                 <Field icon="phone-bold" label="Phone" value={c.primaryPhone} />
-                <Field icon="map-point-bold" label="Addresses" value={String(c.addressCount)} />
+                <Field icon="location" label="Addresses" value={String(c.addressCount)} />
                 <Field
                   icon="user-rounded-bold"
                   label="Joined"
@@ -503,7 +503,7 @@ function CustomerDrawer({
               </Section>
 
               <Section
-                icon="map-point-wave-bold"
+                icon="location"
                 title={`Saved addresses (${detail?.addresses.length ?? 0})`}
               >
                 {detail && detail.addresses.length > 0 ? (

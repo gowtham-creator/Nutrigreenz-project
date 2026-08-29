@@ -27,9 +27,9 @@ interface AddressFormProps {
 }
 
 const TYPE_OPTIONS: { value: AddressType; label: string; icon: string }[] = [
-  { value: "home", label: "Home", icon: "home-2-bold" },
-  { value: "work", label: "Work", icon: "buildings-2-bold" },
-  { value: "other", label: "Other", icon: "map-point-bold" },
+  { value: "home", label: "Home", icon: "home" },
+  { value: "work", label: "Work", icon: "office" },
+  { value: "other", label: "Other", icon: "location" },
 ];
 
 interface FormState {

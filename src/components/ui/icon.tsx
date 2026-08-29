@@ -27,7 +27,7 @@ for (const collection of iconSubset as unknown as IconifyJSON[]) {
 }
 
 export interface IconProps {
-  /** Solar icon name, e.g. "home-2-bold" or fully-qualified "solar:home-2-bold". */
+  /** Solar icon name, e.g. "home" or fully-qualified "solar:home-2-bold". */
   name: string;
   /** Pixel size (applied to width + height). Defaults to 20. */
   size?: number;

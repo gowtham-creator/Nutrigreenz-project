@@ -663,7 +663,7 @@ function AreasCard({
   return (
     <Card>
       <SectionHeader
-        icon="map-point-wave-bold"
+        icon="location"
         tone="forest"
         title="Serviceable areas"
         caption="Pincodes you deliver to. When the list is empty, every pincode is treated as serviceable."

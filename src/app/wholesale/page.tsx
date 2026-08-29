@@ -19,7 +19,7 @@ const USE_CASES = [
     body: "Cold-pressed oils, A2 ghee and stone-ground flours in catering sizes: the same single-origin, lab-tested quality, at volume pricing.",
   },
   {
-    icon: "buildings-2-bold",
+    icon: "office",
     title: "Office pantries",
     body: "Stock your team kitchen with honest snacks, honey, millets and superfoods on a recurring schedule across Hyderabad.",
   },

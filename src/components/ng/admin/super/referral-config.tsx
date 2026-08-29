@@ -115,7 +115,7 @@ const ABUSE_GUARDS: {
     key: "blockAddressCluster",
     label: "Address-cluster guard",
     desc: "Flag bursts of referrals sharing one delivery address",
-    icon: "map-point-wave-bold",
+    icon: "location",
   },
 ];
 

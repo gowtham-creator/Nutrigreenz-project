@@ -66,7 +66,7 @@ const TARGET_MODES: {
   {
     value: "zip",
     label: "Zip-code cluster",
-    icon: "map-point-wave-bold",
+    icon: "location",
     hint: "Everyone in one or more PIN codes.",
     selectorLabel: "PIN codes",
     placeholder: "500032, 500081, 500089",
@@ -74,7 +74,7 @@ const TARGET_MODES: {
   {
     value: "community",
     label: "Gated community",
-    icon: "buildings-2-bold",
+    icon: "office",
     hint: "A captain-led society or apartment cluster.",
     selectorLabel: "Community / society",
     placeholder: "My Home Avatar, Aparna Sarovar",

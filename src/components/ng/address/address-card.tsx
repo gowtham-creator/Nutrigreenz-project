@@ -16,9 +16,9 @@ const TYPE_META: Record<
   Address["type"],
   { icon: string; label: string; chip: string }
 > = {
-  home: { icon: "home-2-bold", label: "Home", chip: "bg-ng-leaf/15 text-ng-forest" },
-  work: { icon: "buildings-2-bold", label: "Work", chip: "bg-ng-blue/12 text-ng-blue" },
-  other: { icon: "map-point-bold", label: "Other", chip: "bg-ng-clay/18 text-ng-clay-deep" },
+  home: { icon: "home", label: "Home", chip: "bg-ng-leaf/15 text-ng-forest" },
+  work: { icon: "office", label: "Work", chip: "bg-ng-blue/12 text-ng-blue" },
+  other: { icon: "location", label: "Other", chip: "bg-ng-clay/18 text-ng-clay-deep" },
 };
 
 export function AddressCard({

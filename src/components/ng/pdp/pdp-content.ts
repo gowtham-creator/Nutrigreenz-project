@@ -126,8 +126,8 @@ export interface PdpCategoryContent {
 /* ───────────────────────────── shared fragments ──────────────────────────── */
 
 const IMPACT_BASE: ImpactStat[] = [
-  { value: "42", label: "Partner farms", icon: "home-smile-bold" },
-  { value: "500+", label: "Lots fully traced", icon: "map-point-wave-bold" },
+  { value: "42", label: "Partner farms", icon: "home" },
+  { value: "500+", label: "Lots fully traced", icon: "location" },
   { value: "70+", label: "Quality checks", icon: "test-tube-bold" },
   { value: "12,400+", label: "Households fed", icon: "customers" },
 ];

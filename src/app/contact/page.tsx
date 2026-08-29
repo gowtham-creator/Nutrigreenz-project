@@ -29,7 +29,7 @@ const CHANNELS = [
     note: "Mon–Sat, 9 AM – 7 PM IST.",
   },
   {
-    icon: "map-point-bold",
+    icon: "location",
     title: "Visit us",
     value: "Kukatpally, Hyderabad",
     href: "https://maps.google.com/?q=Prashanth+Nagar+Kukatpally+Hyderabad+500072",

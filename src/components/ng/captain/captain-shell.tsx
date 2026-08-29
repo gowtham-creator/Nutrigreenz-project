@@ -10,7 +10,7 @@ import { useCaptain, formatCaptainDate } from "@/components/ng/captain/captain-s
 import { UiIcon } from "@/components/ui/ui-icon";
 
 const TABS = [
-  { href: "/captain", label: "Today", icon: "home-smile-bold", iconLine: "home-smile-linear" },
+  { href: "/captain", label: "Today", icon: "home", iconLine: "home" },
   { href: "/captain/intake", label: "Intake", icon: "user-plus-bold", iconLine: "user-plus-linear" },
   { href: "/captain/pickups", label: "Pickups", icon: "order", iconLine: "order" },
   { href: "/captain/settle", label: "Settle", icon: "wallet", iconLine: "wallet" },
