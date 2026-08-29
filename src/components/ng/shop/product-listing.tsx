@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/ng/product-card";
 import { Button } from "@/components/ng/button";
 import { Chip } from "@/components/ng/chip";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { PRODUCTS } from "@/components/ng/data";
 import { cn } from "@/lib/utils";
 import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
@@ -362,7 +363,7 @@ export function ProductListing({
                   </Button>
                 ) : (
                   <p className="flex items-center gap-1.5 text-[13px] text-ng-ink-muted">
-                    <Icon name="check-circle-bold" size={15} className="text-ng-leaf" />
+                    <UiIcon name="verified" size={15} className="text-ng-leaf" />
                     You&apos;ve reached the end of the harvest
                   </p>
                 )}

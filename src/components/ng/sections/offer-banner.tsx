@@ -104,7 +104,7 @@ export function OfferBanner() {
                     <span className="text-[12px] uppercase tracking-[0.14em] text-ng-cream/70">Use code</span>
                     <span className="font-mono text-[15px] font-semibold tracking-wide text-ng-clay">{COUPON}</span>
                     <span className="grid h-6 w-6 place-items-center rounded-full bg-ng-cream/12 text-ng-cream transition-transform group-active:scale-90">
-                      <Icon name={copied ? "check-circle-bold" : "copy-linear"} size={15} />
+                      <Icon name={copied ? "verified" : "copy-linear"} size={15} />
                     </span>
                   </button>
                 </div>

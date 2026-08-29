@@ -104,7 +104,7 @@ export function AddressPicker({
                         : "border-ng-line",
                     )}
                   >
-                    {selected ? <Icon name="check-read-linear" size={12} /> : null}
+                    {selected ? <Icon name="verified" size={12} /> : null}
                   </span>
                 </div>
                 <div className="text-[13px] leading-relaxed text-ng-ink-muted">

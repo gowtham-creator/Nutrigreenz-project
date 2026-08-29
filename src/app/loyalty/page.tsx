@@ -241,8 +241,8 @@ export default async function LoyaltyPage() {
                     <ul className="mt-5 space-y-2.5 text-[14px] text-ng-ink-muted">
                       {t.perks.map((p) => (
                         <li key={p} className="flex gap-2">
-                          <Icon
-                            name="check-circle-bold"
+                          <UiIcon
+                            name="verified"
                             size={15}
                             className={`mt-0.5 shrink-0 ${featured ? "text-ng-clay" : "text-ng-forest"}`}
                           />

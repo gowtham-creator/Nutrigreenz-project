@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Reveal } from "@/components/ng/motion";
 import type { WayCard } from "./pdp-content";
 
@@ -43,7 +44,7 @@ export function TheWay({ cards }: TheWayProps) {
             <ul className="mt-auto flex flex-col gap-2 border-t border-ng-line-soft pt-4">
               {card.points.map((pt) => (
                 <li key={pt} className="flex items-start gap-2 text-[13px] text-ng-ink-muted">
-                  <Icon name="check-circle-bold" size={15} className="mt-0.5 shrink-0 text-ng-leaf" />
+                  <UiIcon name="verified" size={15} className="mt-0.5 shrink-0 text-ng-leaf" />
                   {pt}
                 </li>
               ))}

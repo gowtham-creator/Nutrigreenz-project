@@ -1,6 +1,5 @@
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
-import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { AddressBook } from "@/components/ng/address/address-book";
 
@@ -43,15 +42,15 @@ export default async function AddressesPage() {
           </p>
           <ul className="mt-4 space-y-2 text-[13px] text-ng-ink-muted">
             <li className="flex items-start gap-2">
-              <Icon name="check-circle-bold" size={15} className="mt-0.5 text-ng-leaf" />
+              <UiIcon name="verified" size={15} className="mt-0.5 text-ng-leaf" />
               Free shipping on orders above {freeFrom}
             </li>
             <li className="flex items-start gap-2">
-              <Icon name="check-circle-bold" size={15} className="mt-0.5 text-ng-leaf" />
+              <UiIcon name="verified" size={15} className="mt-0.5 text-ng-leaf" />
               Live trace codes on every label
             </li>
             <li className="flex items-start gap-2">
-              <Icon name="check-circle-bold" size={15} className="mt-0.5 text-ng-leaf" />
+              <UiIcon name="verified" size={15} className="mt-0.5 text-ng-leaf" />
               Hyderabad-wide and growing
             </li>
           </ul>

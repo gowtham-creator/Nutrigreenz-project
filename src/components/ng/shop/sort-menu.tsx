@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { SORT_OPTIONS, type SortKey } from "./types";
 
@@ -113,7 +114,7 @@ export function SortMenu({ value, onChange, className }: SortMenuProps) {
                   />
                   <span className={cn("flex-1", active && "font-semibold")}>{o.label}</span>
                   {active ? (
-                    <Icon name="check-circle-bold" size={15} className="shrink-0 text-ng-cream" />
+                    <UiIcon name="verified" size={15} className="shrink-0 text-ng-cream" />
                   ) : null}
                 </button>
               </li>

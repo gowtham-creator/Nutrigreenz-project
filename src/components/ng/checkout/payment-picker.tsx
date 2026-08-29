@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -129,7 +130,7 @@ export function PaymentPicker({
           </span>
         </span>
         {upiChosen ? (
-          <Icon name="check-circle-bold" size={20} className="shrink-0 text-ng-forest" />
+          <UiIcon name="verified" size={20} className="shrink-0 text-ng-forest" />
         ) : null}
       </button>
 
@@ -157,7 +158,7 @@ export function PaymentPicker({
           </span>
         </span>
         {codChosen ? (
-          <Icon name="check-circle-bold" size={20} className="shrink-0 text-ng-forest" />
+          <UiIcon name="verified" size={20} className="shrink-0 text-ng-forest" />
         ) : null}
       </button>
     </div>

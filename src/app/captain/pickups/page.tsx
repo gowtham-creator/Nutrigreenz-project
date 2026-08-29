@@ -108,7 +108,7 @@ export default function CaptainPickups() {
       <div className="grid grid-cols-3 gap-2.5 mb-4">
         <CaptainStat label="Due" value={dueCount} icon="box-bold" />
         <CaptainStat label="Collected" value={collectedCount} icon="bag-check-bold" />
-        <CaptainStat label="Done" value={doneCount} icon="check-circle-bold" />
+        <CaptainStat label="Done" value={doneCount} icon="verified" />
       </div>
 
       {/* Next stop emphasis */}
@@ -192,7 +192,7 @@ export default function CaptainPickups() {
                     }`}
                   >
                     <Icon
-                      name={p.status === "handed_over" ? "check-circle-bold" : "box-bold"}
+                      name={p.status === "handed_over" ? "verified" : "box-bold"}
                       size={19}
                     />
                   </span>
@@ -285,7 +285,7 @@ export default function CaptainPickups() {
 
           {!loading && visible.length === 0 ? (
             <CaptainEmpty
-              icon="check-circle-bold"
+              icon="verified"
               title={filter === "Due" ? "All caught up" : "Nothing here"}
               hint="No pickups match this filter."
             />

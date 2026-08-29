@@ -175,7 +175,7 @@ export default function ReferralPage() {
                     onClick={() => copy(link, "link")}
                     className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-clay text-ng-forest-deep font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay-deep hover:text-ng-cream transition-colors disabled:opacity-40"
                   >
-                    <Icon name={copied === "link" ? "check-circle-bold" : "copy-bold"} size={14} />
+                    <Icon name={copied === "link" ? "verified" : "copy-bold"} size={14} />
                     {copied === "link" ? "Copied" : "Copy"}
                   </button>
                 </div>
@@ -193,7 +193,7 @@ export default function ReferralPage() {
                     onClick={() => copy(code, "code")}
                     className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ng-cream/10 border border-ng-clay/40 text-ng-cream font-semibold px-5 py-2 text-[13px] hover:bg-ng-clay/25 transition-colors disabled:opacity-40"
                   >
-                    <Icon name={copied === "code" ? "check-circle-bold" : "copy-bold"} size={14} />
+                    <Icon name={copied === "code" ? "verified" : "copy-bold"} size={14} />
                     {copied === "code" ? "Copied" : "Copy"}
                   </button>
                 </div>
@@ -299,7 +299,7 @@ export default function ReferralPage() {
                             : "bg-ng-clay/15 text-ng-clay-deep ring-ng-clay/30"
                         }`}
                       >
-                        <Icon name={credited ? "check-circle-bold" : "clock-circle-bold"} size={18} />
+                        <Icon name={credited ? "verified" : "clock-circle-bold"} size={18} />
                       </div>
                       <div>
                         <div className="text-[15px] text-ng-ink">

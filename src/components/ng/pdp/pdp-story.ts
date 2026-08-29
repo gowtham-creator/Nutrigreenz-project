@@ -148,7 +148,7 @@ const GHEE_STORY: ProductStoryContent = {
       bullets: [
         { icon: "shield-check-linear", label: "Easily digestible" },
         { icon: "leaf-linear", label: "Antioxidant-rich" },
-        { icon: "verified-check-linear", label: "Nutrient-dense" },
+        { icon: "verified", label: "Nutrient-dense" },
       ],
     },
     {
@@ -291,7 +291,7 @@ const RICE_STORY_BASE = minimalStory(
     bullets: [
       { icon: "shield-check-linear", label: "Lightly milled" },
       { icon: "leaf-linear", label: "Naturally aged" },
-      { icon: "verified-check-linear", label: "Single-origin" },
+      { icon: "verified", label: "Single-origin" },
     ],
   },
   {

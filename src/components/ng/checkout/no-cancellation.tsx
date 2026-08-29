@@ -61,7 +61,7 @@ export function NoCancellationAck({
         <span className="flex-1">
           <span className="flex items-center gap-2 font-display text-[16px] text-ng-forest-deep">
             <Icon
-              name={checked ? "check-circle-bold" : "shield-warning-bold"}
+              name={checked ? "verified" : "shield-warning-bold"}
               size={18}
               className={checked ? "text-ng-leaf" : "text-ng-amber"}
             />

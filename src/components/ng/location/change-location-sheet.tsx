@@ -207,7 +207,7 @@ export function ChangeLocationSheet({ open, onClose }: ChangeLocationSheetProps)
                 className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
               />
               {pinFeedback === "ok" ? (
-                <Icon name="check-circle-bold" size={20} className="text-ng-leaf" />
+                <UiIcon name="verified" size={20} className="text-ng-leaf" />
               ) : null}
               <Button
                 type="submit"

@@ -34,7 +34,7 @@ const TONES: Record<
     rail: "bg-ng-green-bright",
     glyphBg: "bg-ng-sage/50",
     glyph: "text-ng-forest",
-    icon: "check-circle-bold",
+    icon: "verified",
     progress: "bg-ng-green-bright/45",
   },
   error: {

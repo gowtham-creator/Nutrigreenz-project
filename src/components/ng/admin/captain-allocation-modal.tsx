@@ -216,7 +216,7 @@ export function CaptainAllocationModal({
                               on ? "border-ng-forest bg-ng-forest text-ng-cream" : "border-ng-line",
                             )}
                           >
-                            {on ? <Icon name="check-circle-bold" size={11} /> : null}
+                            {on ? <UiIcon name="verified" size={11} /> : null}
                           </span>
                           <span className="min-w-0 flex-1 text-[13px] text-ng-ink">
                             {v.label}

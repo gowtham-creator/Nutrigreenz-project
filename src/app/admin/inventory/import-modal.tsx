@@ -181,7 +181,7 @@ export function ImportModal({
           {phase === "done" && summary ? (
             <div className="py-4 text-center">
               <span className="inline-flex size-12 rounded-full bg-ng-success/15 items-center justify-center mb-3">
-                <Icon name="check-circle-bold" size={26} className="text-ng-success" />
+                <UiIcon name="verified" size={26} className="text-ng-success" />
               </span>
               <p className="text-[15px] font-semibold text-ng-ink">Import complete</p>
               <p className="text-[13px] text-ng-ink-muted mt-1">

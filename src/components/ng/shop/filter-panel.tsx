@@ -93,7 +93,7 @@ export function FilterPanel({
                     allChecked ? "border-ng-forest bg-ng-forest text-ng-paper" : "border-ng-line bg-ng-paper",
                   )}
                 >
-                  {allChecked ? <Icon name="check-read-linear" size={12} /> : null}
+                  {allChecked ? <Icon name="verified" size={12} /> : null}
                 </span>
                 <input
                   type="checkbox"
@@ -123,7 +123,7 @@ export function FilterPanel({
                     checked ? "border-ng-forest bg-ng-forest text-ng-paper" : "border-ng-line bg-ng-paper",
                   )}
                 >
-                  {checked ? <Icon name="check-read-linear" size={12} /> : null}
+                  {checked ? <Icon name="verified" size={12} /> : null}
                 </span>
                 <input
                   type="checkbox"

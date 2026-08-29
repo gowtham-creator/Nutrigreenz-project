@@ -221,7 +221,7 @@ export function LocationOnboarding() {
                   aria-label="Delivery pincode"
                   className="flex-1 bg-transparent outline-none text-[15px] tracking-wide text-ng-ink placeholder:text-ng-ink-soft"
                 />
-                {validPin ? <Icon name="check-circle-bold" size={20} className="text-ng-leaf" /> : null}
+                {validPin ? <UiIcon name="verified" size={20} className="text-ng-leaf" /> : null}
               </div>
               {/* The message is about the PINCODE being real, not about whether
                   we deliver there. Coverage is reported after we resolve it, so

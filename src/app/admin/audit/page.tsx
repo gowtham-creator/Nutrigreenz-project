@@ -399,7 +399,7 @@ function ActivityRow({ entry, viewerEmail }: { entry: AuditEntry; viewerEmail: s
         </div>
         <div className="mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap">
           <span className="inline-flex items-center gap-1 rounded-full bg-ng-success/12 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-success">
-            <Icon name="check-circle-bold" size={11} /> Done
+            <UiIcon name="verified" size={11} /> Done
           </span>
           <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">
             {d.meta.kind}

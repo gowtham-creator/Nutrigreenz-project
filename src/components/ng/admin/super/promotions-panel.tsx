@@ -538,7 +538,7 @@ export function PromotionsPanel() {
                     />
                     {selected ? (
                       <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ng-clay text-ng-paper">
-                        <Icon name="check-circle-bold" size={14} />
+                        <UiIcon name="verified" size={14} />
                       </span>
                     ) : null}
                   </div>

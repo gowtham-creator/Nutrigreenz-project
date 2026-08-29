@@ -7,6 +7,7 @@ import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ADMIN_VERSION_LABEL } from "@/lib/app-version";
 
@@ -196,7 +197,7 @@ export default function AdminResetPage() {
                 />
 
                 <Button type="submit" fullWidth disabled={submitting} className="mt-1">
-                  <Icon name="check-circle-bold" size={18} />
+                  <UiIcon name="verified" size={18} />
                   {submitting ? "Saving…" : "Update password"}
                 </Button>
               </form>

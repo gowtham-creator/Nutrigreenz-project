@@ -12,6 +12,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { OtpInput } from "@/components/ng/otp-input";
@@ -395,7 +396,7 @@ export function LinkPhonePrompt() {
         <div className="px-6 pb-6 pt-5">
           {done ? (
             <div className="flex flex-col items-center gap-2 py-2">
-              <Icon name="check-circle-bold" size={40} className="text-ng-leaf" />
+              <UiIcon name="verified" size={40} className="text-ng-leaf" />
             </div>
           ) : step === "phone" ? (
             <div className="flex flex-col gap-3">

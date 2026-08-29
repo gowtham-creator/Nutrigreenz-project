@@ -21,7 +21,7 @@ export function Certifications() {
      * artwork. Both have to be settled before a logo replaces this.
      */
     { icon: "shield-check-bold", label: "FSSAI", sub: "Licensed" },
-    { icon: "verified-check-bold", label: "ISO 22000", sub: "Food safety" },
+    { icon: "verified", label: "ISO 22000", sub: "Food safety" },
     { icon: "star", label: "GMP", sub: "Good mfg." },
     { icon: "checklist-minimalistic-bold", label: "HACCP", sub: "Hazard control" },
     { app: "lab" as const, label: "Lab-tested", sub: "Every lot" },

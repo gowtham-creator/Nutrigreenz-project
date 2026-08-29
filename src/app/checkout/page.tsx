@@ -112,7 +112,7 @@ function CheckoutStepper({
                     on ? "bg-ng-forest text-ng-cream" : "bg-ng-line text-ng-ink-soft lg:bg-ng-forest lg:text-ng-cream",
                   )}
                 >
-                  {done ? <Icon name="check-circle-bold" size={11} /> : i + 1}
+                  {done ? <UiIcon name="verified" size={11} /> : i + 1}
                 </span>
                 <Icon name={step.icon} size={14} className="hidden text-ng-forest sm:inline" />
                 <span className="hidden sm:inline">{step.label}</span>
@@ -700,24 +700,24 @@ export default function CheckoutPage() {
 
               <ul className="mt-6 space-y-1.5 border-t border-ng-line-soft pt-5 text-[12px] text-ng-ink-muted">
                 <li className="flex items-center gap-2">
-                  <Icon
-                    name="check-circle-bold"
+                  <UiIcon
+                    name="verified"
                     size={14}
                     className="text-ng-leaf"
                   />
                   Lot codes printed on every label
                 </li>
                 <li className="flex items-center gap-2">
-                  <Icon
-                    name="check-circle-bold"
+                  <UiIcon
+                    name="verified"
                     size={14}
                     className="text-ng-leaf"
                   />
                   Plastic-free, recyclable packaging
                 </li>
                 <li className="flex items-center gap-2">
-                  <Icon
-                    name="check-circle-bold"
+                  <UiIcon
+                    name="verified"
                     size={14}
                     className="text-ng-leaf"
                   />

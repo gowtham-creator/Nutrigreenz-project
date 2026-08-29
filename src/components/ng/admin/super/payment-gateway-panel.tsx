@@ -171,7 +171,7 @@ export function PaymentGatewayPanel() {
               )}
             >
               <Icon
-                name={ready ? "check-circle-bold" : "info-circle-bold"}
+                name={ready ? "verified" : "info-circle-bold"}
                 size={19}
                 className={cn("mt-px shrink-0", ready ? "text-ng-forest" : "text-ng-clay-deep")}
               />
@@ -207,7 +207,7 @@ export function PaymentGatewayPanel() {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Icon
-                    name={status.proxy.configured ? "check-circle-bold" : "close-circle-bold"}
+                    name={status.proxy.configured ? "verified" : "close-circle-bold"}
                     size={15}
                     className={status.proxy.configured ? "text-ng-green-bright" : "text-ng-danger"}
                   />
@@ -261,7 +261,7 @@ export function PaymentGatewayPanel() {
                       className="flex items-center gap-2.5 border-b border-ng-line-soft bg-ng-paper px-3.5 py-2.5 last:border-b-0"
                     >
                       <Icon
-                        name={c.present ? "check-circle-bold" : "close-circle-bold"}
+                        name={c.present ? "verified" : "close-circle-bold"}
                         size={15}
                         className={c.present ? "text-ng-green-bright" : "text-ng-danger"}
                       />
@@ -306,7 +306,7 @@ export function PaymentGatewayPanel() {
                   {selftest.checks.map((c) => (
                     <li key={c.step} className="flex items-start gap-2">
                       <Icon
-                        name={c.ok ? "check-circle-bold" : "close-circle-bold"}
+                        name={c.ok ? "verified" : "close-circle-bold"}
                         size={14}
                         className={cn("mt-px shrink-0", c.ok ? "text-ng-green-bright" : "text-ng-danger")}
                       />
@@ -353,7 +353,7 @@ export function PaymentGatewayPanel() {
                       {testOrder.attempts.map((a) => (
                         <li key={a.mode} className="flex items-start gap-2">
                           <Icon
-                            name={a.ok ? "check-circle-bold" : "close-circle-bold"}
+                            name={a.ok ? "verified" : "close-circle-bold"}
                             size={14}
                             className={cn(
                               "mt-0.5 shrink-0",

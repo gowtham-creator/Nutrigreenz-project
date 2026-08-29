@@ -102,7 +102,7 @@ export default function CareersPage() {
           {PERKS.map((p) => (
             <Reveal key={p} className="flex h-full items-center gap-3 rounded-xl bg-ng-paper border border-ng-line-soft px-5 py-4">
               <span className="h-7 w-7 shrink-0 rounded-full bg-ng-forest text-ng-cream inline-flex items-center justify-center">
-                <Icon name="check-circle-bold" size={16} />
+                <UiIcon name="verified" size={16} />
               </span>
               <span className="text-[15px] text-ng-ink">{p}</span>
             </Reveal>

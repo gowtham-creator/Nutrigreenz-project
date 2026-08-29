@@ -59,7 +59,7 @@ function SuccessContent() {
               aria-hidden
               className="absolute inset-0 animate-ping rounded-full bg-ng-leaf/20 [animation-duration:2.5s] motion-reduce:hidden"
             />
-            <Icon name="check-circle-bold" size={52} className="relative" />
+            <UiIcon name="verified" size={52} className="relative" />
           </span>
         </FloatIn>
         <span className="ng-eyebrow mt-6 text-ng-forest">Order confirmed</span>

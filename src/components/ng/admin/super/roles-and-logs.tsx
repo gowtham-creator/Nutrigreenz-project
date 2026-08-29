@@ -195,8 +195,8 @@ export function RolesAndLogs() {
               <ul className="space-y-1.5">
                 {r.can.map((c) => (
                   <li key={c} className="flex items-start gap-2 text-[12.5px] font-medium text-ng-ink-muted">
-                    <Icon
-                      name="check-circle-bold"
+                    <UiIcon
+                      name="verified"
                       size={14}
                       className={cn("mt-0.5 shrink-0", r.tone === "clay" ? "text-ng-clay-deep" : "text-ng-forest")}
                     />

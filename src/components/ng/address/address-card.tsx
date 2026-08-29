@@ -102,7 +102,7 @@ export function AddressCard({
             onClick={() => onSetDefault(address.id)}
             className="-my-1.5 ml-auto inline-flex min-h-[44px] items-center gap-1.5 py-1.5 text-ng-leaf hover:text-ng-forest transition-colors"
           >
-            <Icon name="check-circle-bold" size={15} />
+            <UiIcon name="verified" size={15} />
             Set as default
           </button>
         ) : null}

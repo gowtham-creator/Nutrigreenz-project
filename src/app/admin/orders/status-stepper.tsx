@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 import {
   ADVANCE_LABEL,
   ORDER_STATUS_FLOW,
@@ -89,7 +90,7 @@ export function StatusStepper({
                   )}
                 >
                   {done ? (
-                    <Icon name="check-circle-bold" size={18} />
+                    <UiIcon name="verified" size={18} />
                   ) : (
                     <span className="text-[13px] font-bold tabular-nums">{idx + 1}</span>
                   )}
@@ -142,7 +143,7 @@ export function StatusStepper({
           </>
         ) : (
           <div className="flex items-center gap-2.5 text-ng-success">
-            <Icon name="check-circle-bold" size={20} />
+            <UiIcon name="verified" size={20} />
             <span className="text-[13px] font-semibold">
               Order delivered, fulfilment complete.
             </span>

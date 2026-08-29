@@ -50,7 +50,7 @@ export function SlotPicker({
             >
               {selected ? (
                 <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-ng-forest text-ng-cream">
-                  <Icon name="check-read-linear" size={12} />
+                  <Icon name="verified" size={12} />
                 </span>
               ) : null}
               <div className="font-display text-[18px] text-ng-forest-deep">

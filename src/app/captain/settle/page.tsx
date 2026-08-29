@@ -82,7 +82,7 @@ export default function CaptainSettle() {
               matched ? "bg-ng-leaf/20 text-ng-leaf" : "bg-ng-amber/20 text-ng-amber"
             }`}
           >
-            <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={12} />
+            <Icon name={matched ? "verified" : "danger-triangle-bold"} size={12} />
             {matched ? "Balanced" : "Variance"}
           </span>
         </div>
@@ -185,7 +185,7 @@ export default function CaptainSettle() {
             matched ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-amber/15 text-ng-soil"
           }`}
         >
-          <Icon name={matched ? "check-circle-bold" : "danger-triangle-bold"} size={16} className="shrink-0" />
+          <Icon name={matched ? "verified" : "danger-triangle-bold"} size={16} className="shrink-0" />
           {matched
             ? "Cash matches captured total."
             : `Variance ${cashVariance > 0 ? "+" : ""}₹${cashVariance.toLocaleString("en-IN")}. Note it before submitting.`}

@@ -127,7 +127,7 @@ export function BuyBox({ title, basePrice, mrp, unit, variants, product }: BuyBo
               subscribe ? "border-ng-forest bg-ng-forest text-ng-paper" : "border-ng-line",
             )}
           >
-            {subscribe ? <Icon name="check-read-bold" size={13} /> : null}
+            {subscribe ? <Icon name="verified" size={13} /> : null}
           </span>
           <span>
             <span className="block text-[14px] font-semibold text-ng-forest-deep">Subscribe &amp; save 8%</span>
