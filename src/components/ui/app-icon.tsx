@@ -23,19 +23,22 @@ import { cn } from "@/lib/utils";
  *
  * ── On sharpness ──────────────────────────────────────────────────────────
  *
- * The sources top out at 100px (60 for profile, 50 for location), so they hold
- * up to roughly 48px on a 2x screen and no further. That covers every badge and
- * chip we use them in. Anything larger — a hero mark, a print asset — needs
- * vector art, not these.
+ * These used to be the PNGs themselves, which topped out at 100px (60 for
+ * some, 50 for others) and so held up to roughly 48px on a 2x screen and no
+ * further. On a 3x phone the smaller ones were soft at ordinary badge sizes.
+ *
+ * They are now traced to SVG, so there is no ceiling: the mask is vector and
+ * stays sharp at any size and any pixel density. The old advice to keep them
+ * at or below 48px no longer applies.
  */
 
 /**
  * The imported PRODUCT glyphs. Files live under `public/icons/app/`.
  *
- * Only these two remain. Everything generic — lab, shipping, location, profile,
- * freshness, farm — moved to Lucide, which ships real SVG that scales past the
- * ~48px these PNGs top out at and needs no attribution. What no general library
- * carries is a honey jar or a cold-pressed oil bottle, so those stay here.
+ * Everything generic — lab, shipping, location, profile, freshness, farm —
+ * moved elsewhere. What no general library carries is a honey jar or a
+ * cold-pressed oil bottle, so those stay here. They are now vector too, so the
+ * scaling argument that once favoured a general set no longer applies.
  *
  * `honey-colour` and `oil-colour` sit alongside as full illustrations. A mask
  * would flatten them to a silhouette, so anything using them needs a real
@@ -57,7 +60,7 @@ export type AppIconName =
 
 interface AppIconProps {
   name: AppIconName;
-  /** Rendered px. Keep at or below 48 — see the note on sharpness above. */
+  /** Rendered px. Vector source, so any size is sharp. */
   size?: number;
   className?: string;
   /** Decorative by default; pass a label when the icon is the only meaning. */
@@ -65,7 +68,20 @@ interface AppIconProps {
 }
 
 export function AppIcon({ name, size = 22, className, label }: AppIconProps) {
-  const url = `url(/icons/app/${name}.png)`;
+  /*
+   * SVG, not PNG.
+   *
+   * These were 50-100px PNGs used as masks, which is fine on a 1x display and
+   * visibly soft on every retina one: a 22px icon needs 44 real pixels at 2x
+   * and 66 at 3x, so a 60px source was already being stretched and a 50px one
+   * badly. Nothing about upscaling the PNGs would have helped — interpolating
+   * a raster adds pixels, not detail.
+   *
+   * Traced to vector instead, so the same mask is now resolution-independent
+   * and sharp at any size or density. The mask contract is unchanged: colour
+   * still comes from `bg-current`, the file supplies only the shape.
+   */
+  const url = `url(/icons/app/${name}.svg)`;
   return (
     <span
       role={label ? "img" : undefined}

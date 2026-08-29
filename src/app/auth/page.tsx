@@ -33,7 +33,7 @@ const PERKS = [
 // Condensed value props for the mobile form field, where the forest brand panel
 // on the right is hidden — so small screens still see why membership is worth it.
 const TRUST = [
-  { icon: "verified-check-bold", label: "Lab-tested lots" },
+  { icon: "verified", label: "Lab-tested lots" },
   { icon: "wallet-money-bold", label: "5% back" },
   { icon: "leaf-bold", label: "Farm-direct" },
 ];

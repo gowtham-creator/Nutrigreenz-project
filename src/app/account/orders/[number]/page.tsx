@@ -32,10 +32,10 @@ type LoadState = "loading" | "ready" | "missing" | "error" | "unauth";
 // Forward-only fulfilment pipeline + the icon for each step.
 const FLOW: { status: OrderStatus; label: string; icon: string }[] = [
   { status: "placed", label: "Order placed", icon: "cart-check-bold" },
-  { status: "confirmed", label: "Confirmed", icon: "verified-check-bold" },
+  { status: "confirmed", label: "Confirmed", icon: "verified" },
   { status: "packed", label: "Packed at warehouse", icon: "box-bold" },
   { status: "shipped", label: "Shipped", icon: "delivery" },
-  { status: "delivered", label: "Delivered", icon: "verified-check-bold" },
+  { status: "delivered", label: "Delivered", icon: "verified" },
 ];
 
 const STATUS_RANK: Record<OrderStatus, number> = {

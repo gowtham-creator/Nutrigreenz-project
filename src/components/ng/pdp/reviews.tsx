@@ -1,5 +1,5 @@
 import { Stars } from "@/components/ng/stars";
-import { Icon } from "@/components/ui/icon";
+import { UiIcon } from "@/components/ui/ui-icon";
 
 export interface Review {
   id: string;
@@ -31,7 +31,7 @@ export function Reviews({ rating, reviewCount, reviews }: ReviewsProps) {
           <Stars rating={rating} size="md" showCount={false} className="mt-2 justify-center" />
           <p className="mt-2 text-[13px] text-ng-ink-muted">{reviewCount.toLocaleString()} verified reviews</p>
           <div className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-ng-forest">
-            <Icon name="verified-check-bold" size={15} className="text-ng-leaf" />
+            <UiIcon name="verified" size={15} className="text-ng-leaf" />
             98% recommend this product
           </div>
         </div>
@@ -53,7 +53,7 @@ export function Reviews({ rating, reviewCount, reviews }: ReviewsProps) {
               <span>{r.location}</span>
               {r.verified ? (
                 <span className="inline-flex items-center gap-1 text-ng-leaf">
-                  <Icon name="verified-check-bold" size={14} />
+                  <UiIcon name="verified" size={14} />
                   Verified buyer
                 </span>
               ) : null}

@@ -57,7 +57,7 @@ export function AddressCard({
         </div>
         {isDefault ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-ng-forest">
-            <Icon name="verified-check-bold" size={13} className="text-ng-green-bright" />
+            <UiIcon name="verified" size={13} className="text-ng-green-bright" />
             Default
           </span>
         ) : null}

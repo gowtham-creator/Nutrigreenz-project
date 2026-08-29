@@ -131,7 +131,7 @@ export function ReviewsSummary({ rating, reviewCount, reviews }: ReviewsSummaryP
                   <span>{r.location}</span>
                   {r.verified ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-ng-leaf/12 px-2 py-0.5 text-[12px] font-medium text-ng-forest">
-                      <Icon name="verified-check-bold" size={14} className="text-ng-leaf" />
+                      <UiIcon name="verified" size={14} className="text-ng-leaf" />
                       Verified
                     </span>
                   ) : null}

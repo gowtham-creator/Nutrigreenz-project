@@ -3,7 +3,6 @@
 import { Section } from "../section";
 import { Stars } from "../stars";
 import { Stagger, StaggerItem, Parallax } from "../motion";
-import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { TESTIMONIALS } from "../data";
@@ -125,7 +124,7 @@ export function Testimonials() {
                     </div>
                     {/* Verified pill with check glyph */}
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ng-success/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ng-forest-deep">
-                      <Icon name="verified-check-bold" size={13} className="text-ng-success" />
+                      <UiIcon name="verified" size={13} className="text-ng-success" />
                       Verified
                     </span>
                   </figcaption>
