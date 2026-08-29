@@ -51,7 +51,7 @@ const TIERS = [
 /** A ledger reason mapped to human copy + an icon. */
 function describeEntry(reason: string, orderId: string | null): { note: string; icon: string } {
   if (reason === "order_earn") {
-    return { note: orderId ? "Earned on an order" : "Points earned", icon: "box-bold" };
+    return { note: orderId ? "Earned on an order" : "Points earned", icon: "order" };
   }
   if (reason === "order_redeem") return { note: "Redeemed at checkout", icon: "tag-price-bold" };
   return { note: "Adjustment", icon: "customers" };
@@ -111,7 +111,7 @@ export default async function LoyaltyPage() {
     <AccountShell active="loyalty">
       <Reveal className="mb-8">
         <span className="ng-eyebrow inline-flex items-center gap-2">
-          <Icon name="wallet-money-bold" size={14} />
+          <Icon name="wallet" size={14} />
           Your wallet
         </span>
         <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
@@ -180,7 +180,7 @@ export default async function LoyaltyPage() {
         <Stagger className="grid items-stretch sm:grid-cols-3 gap-4 mb-12">
           <StaggerItem className="h-full">
             <Tile
-              icon="wallet-money-bold"
+              icon="wallet"
               big={`₹${balance.toLocaleString("en-IN")}`}
               small="Current balance"
               tone="forest"
@@ -298,7 +298,7 @@ export default async function LoyaltyPage() {
               ) : (
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ng-cream text-ng-forest">
-                    <Icon name="wallet-money-bold" size={24} />
+                    <Icon name="wallet" size={24} />
                   </span>
                   <p className="max-w-xs text-[14px] leading-relaxed text-ng-ink-muted">
                     No credit yet. Your first order will show up here with the points it earned.
@@ -314,7 +314,7 @@ export default async function LoyaltyPage() {
               <h3 className="font-display text-[22px] text-ng-forest-deep">How to earn</h3>
               <ul className="mt-5 space-y-4 text-[14px] text-ng-ink-muted">
                 <li className="flex gap-3">
-                  <Icon name="box-bold" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
+                  <Icon name="order" size={20} className="mt-0.5 shrink-0 text-ng-forest" />
                   <span>
                     <span className="block font-display text-[15px] text-ng-forest-deep">
                       Every order

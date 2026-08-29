@@ -33,7 +33,7 @@ type LoadState = "loading" | "ready" | "missing" | "error" | "unauth";
 const FLOW: { status: OrderStatus; label: string; icon: string }[] = [
   { status: "placed", label: "Order placed", icon: "cart-check-bold" },
   { status: "confirmed", label: "Confirmed", icon: "verified" },
-  { status: "packed", label: "Packed at warehouse", icon: "box-bold" },
+  { status: "packed", label: "Packed at warehouse", icon: "order" },
   { status: "shipped", label: "Shipped", icon: "delivery" },
   { status: "delivered", label: "Delivered", icon: "verified" },
 ];
@@ -111,7 +111,7 @@ export default function AccountOrderDetailPage({
             <section className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
               <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
                 <Icon
-                  name={state === "unauth" ? "lock-keyhole-minimalistic-bold" : "box-linear"}
+                  name={state === "unauth" ? "lock-keyhole-minimalistic-bold" : "order"}
                   size={28}
                 />
               </span>
@@ -180,7 +180,7 @@ export default function AccountOrderDetailPage({
         <header>
           <div className="flex flex-wrap items-center gap-3">
             <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
-              <Icon name="box-bold" size={14} />
+              <Icon name="order" size={14} />
               Order ·{" "}
               <span className="font-mono normal-case tracking-normal text-ng-forest-deep">
                 {order.orderNumber}

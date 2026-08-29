@@ -106,7 +106,7 @@ export default function CaptainPickups() {
     >
       {/* Route summary */}
       <div className="grid grid-cols-3 gap-2.5 mb-4">
-        <CaptainStat label="Due" value={dueCount} icon="box-bold" />
+        <CaptainStat label="Due" value={dueCount} icon="order" />
         <CaptainStat label="Collected" value={collectedCount} icon="bag-check-bold" />
         <CaptainStat label="Done" value={doneCount} icon="verified" />
       </div>
@@ -192,7 +192,7 @@ export default function CaptainPickups() {
                     }`}
                   >
                     <Icon
-                      name={p.status === "handed_over" ? "verified" : "box-bold"}
+                      name={p.status === "handed_over" ? "verified" : "order"}
                       size={19}
                     />
                   </span>
@@ -269,7 +269,7 @@ export default function CaptainPickups() {
                         disabled={advancing === p.id}
                         className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98] disabled:opacity-45 disabled:hover:bg-ng-forest"
                       >
-                        <Icon name={p.status === "due" ? "box-bold" : "hand-stars-bold"} size={15} />
+                        <Icon name={p.status === "due" ? "order" : "hand-stars-bold"} size={15} />
                         {p.status === "due" ? "Collect" : "Hand over"}
                       </button>
                     )}

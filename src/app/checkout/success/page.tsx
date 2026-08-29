@@ -87,7 +87,7 @@ function SuccessContent() {
           {/* Delivery slot + address */}
           <StaggerItem className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)]">
             <h2 className="flex items-center gap-2.5 font-display text-[22px] text-ng-forest-deep">
-              <Icon name="box-bold" size={20} className="text-ng-leaf" />
+              <Icon name="order" size={20} className="text-ng-leaf" />
               Delivery details
             </h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">

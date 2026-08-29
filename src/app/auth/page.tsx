@@ -26,7 +26,7 @@ function GoogleIcon() {
 
 const PERKS = [
   { icon: "shield-check-bold", title: "Lab-tested, every lot", body: "Scan the code on any pack to see its harvest, farm and purity report." },
-  { icon: "wallet-money-bold", title: "5% back on every order", body: "Loyalty credit you can redeem on anything in the pantry." },
+  { icon: "wallet", title: "5% back on every order", body: "Loyalty credit you can redeem on anything in the pantry." },
   { icon: "star", title: "First dibs on harvests", body: "Limited-batch lots ship to members 48 hours before the public." },
 ];
 
@@ -34,7 +34,7 @@ const PERKS = [
 // on the right is hidden — so small screens still see why membership is worth it.
 const TRUST = [
   { icon: "verified", label: "Lab-tested lots" },
-  { icon: "wallet-money-bold", label: "5% back" },
+  { icon: "wallet", label: "5% back" },
   { icon: "leaf-bold", label: "Farm-direct" },
 ];
 

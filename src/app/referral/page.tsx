@@ -122,7 +122,7 @@ export default function ReferralPage() {
       n: "03",
       title: reward ? `You get ₹${reward} credit` : "You earn wallet credit",
       body: "It lands in your harvest wallet once their first order is complete, redeemable on anything.",
-      icon: "wallet-money-bold",
+      icon: "wallet",
       block: "bg-ng-leaf/15 border-ng-leaf/30",
       num: "text-ng-forest",
       chip: "bg-ng-leaf/25 text-ng-forest",

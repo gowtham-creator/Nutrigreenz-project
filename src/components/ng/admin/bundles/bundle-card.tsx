@@ -94,7 +94,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         {/* Consolidated SKU totals */}
         <div className="px-6 py-5 bg-ng-paper">
           <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">
-            <Icon name="box-bold" size={13} className="text-ng-forest" />
+            <Icon name="order" size={13} className="text-ng-forest" />
             Consolidated SKU totals
           </div>
           <ul className="space-y-2">

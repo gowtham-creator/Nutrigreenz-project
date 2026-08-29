@@ -41,7 +41,7 @@ const PREFS: { key: PrefKey; label: string; desc: string; icon: string }[] = [
   { key: "whatsapp", label: "WhatsApp updates", desc: "Harvest drops, restocks and offers on WhatsApp.", icon: "chat-round-line-bold" },
   { key: "sms", label: "SMS updates", desc: "Occasional texts for time-sensitive offers.", icon: "smartphone-bold" },
   { key: "email", label: "Email newsletter", desc: "The monthly harvest letter and recipes.", icon: "letter-bold" },
-  { key: "orders", label: "Order updates", desc: "Dispatch, delivery and trace alerts. Recommended.", icon: "box-bold" },
+  { key: "orders", label: "Order updates", desc: "Dispatch, delivery and trace alerts. Recommended.", icon: "order" },
 ];
 
 function formatPhone(phone: string): string {

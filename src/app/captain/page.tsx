@@ -133,8 +133,8 @@ export default function CaptainHome() {
       {/* ===== Quick actions ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
         <QuickAction href="/captain/intake" icon="user-plus-bold" label="Intake" tone="forest" />
-        <QuickAction href="/captain/pickups" icon="box-bold" label="Pickups" />
-        <QuickAction href="/captain/settle" icon="wallet-money-bold" label="Settle" />
+        <QuickAction href="/captain/pickups" icon="order" label="Pickups" />
+        <QuickAction href="/captain/settle" icon="wallet" label="Settle" />
       </div>
 
       {/* ===== Next stop (route emphasis) ===== */}

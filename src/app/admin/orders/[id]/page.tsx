@@ -114,7 +114,7 @@ export default function AdminOrderDetail({
       >
         <Card className="text-center py-16">
           <div className="mx-auto size-12 rounded-full bg-ng-cream flex items-center justify-center text-ng-ink-soft mb-4">
-            <Icon name="box-bold" size={24} />
+            <Icon name="order" size={24} />
           </div>
           <h2 className="font-display text-[20px] text-ng-forest-deep">
             We couldn&rsquo;t find that order
@@ -312,7 +312,7 @@ export default function AdminOrderDetail({
                 onClick={() => void markCodCollected()}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ng-forest-deep px-4 py-2.5 text-[12.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon name="wallet-money-bold" size={15} />
+                <Icon name="wallet" size={15} />
                 {markingPaid ? "Recording…" : `Mark ${formatPaise(order.totalPaise)} collected`}
               </button>
             ) : null}

@@ -18,7 +18,7 @@ export function TrustRow({ checks }: TrustRowProps) {
   const items: ({ label: string; sub: string } & ({ app: BrandIconName } | { icon: string }))[] = [
     { app: "shipping", label: "Free shipping", sub: "On orders over ₹599" },
     { icon: "headphones-round-sound-bold", label: "Customer support", sub: "We reply within a day" },
-    { icon: "box-bold", label: "Damage replacements", sub: "Damaged or incorrect items only" },
+    { icon: "order", label: "Damage replacements", sub: "Damaged or incorrect items only" },
     { app: "lab", label: `${checks}+ quality checks`, sub: "On every single lot" },
   ];
   return (

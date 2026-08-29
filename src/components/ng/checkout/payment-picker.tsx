@@ -147,7 +147,7 @@ export function PaymentPicker({
         )}
       >
         <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-ng-cream text-ng-clay-deep">
-          <Icon name="wallet-money-bold" size={20} />
+          <Icon name="wallet" size={20} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-[16px] leading-tight text-ng-forest-deep">

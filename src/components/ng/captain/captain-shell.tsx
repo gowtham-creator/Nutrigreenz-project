@@ -12,8 +12,8 @@ import { UiIcon } from "@/components/ui/ui-icon";
 const TABS = [
   { href: "/captain", label: "Today", icon: "home-smile-bold", iconLine: "home-smile-linear" },
   { href: "/captain/intake", label: "Intake", icon: "user-plus-bold", iconLine: "user-plus-linear" },
-  { href: "/captain/pickups", label: "Pickups", icon: "box-bold", iconLine: "box-linear" },
-  { href: "/captain/settle", label: "Settle", icon: "wallet-money-bold", iconLine: "wallet-money-linear" },
+  { href: "/captain/pickups", label: "Pickups", icon: "order", iconLine: "order" },
+  { href: "/captain/settle", label: "Settle", icon: "wallet", iconLine: "wallet" },
 ] as const;
 
 export function CaptainShell({

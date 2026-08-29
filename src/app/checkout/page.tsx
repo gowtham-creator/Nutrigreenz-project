@@ -46,7 +46,7 @@ const CHECKOUT_STEPS = [
   { label: "Address", icon: "map-point-bold" },
   { label: "Slot", icon: "deliveryTime" },
   { label: "Rewards", icon: "coupon" },
-  { label: "Payment", icon: "wallet-money-bold" },
+  { label: "Payment", icon: "wallet" },
   { label: "Review", icon: "shield-check-bold" },
 ] as const;
 

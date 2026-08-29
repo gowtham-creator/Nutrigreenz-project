@@ -149,7 +149,7 @@ export function PaymentGatewayPanel() {
     <section id="payments" className="mb-6 scroll-mt-32">
       <Card>
         <SectionHeader
-          icon="wallet-money-bold"
+          icon="wallet"
           title="Payment gateway"
           caption="What the live server can actually see. Values are never shown. Only whether each credential is present."
         />

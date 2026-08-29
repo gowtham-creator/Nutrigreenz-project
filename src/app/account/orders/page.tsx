@@ -91,7 +91,7 @@ export default function AccountOrdersPage() {
         {/* Heading */}
         <Reveal>
           <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
-            <Icon name="box-bold" size={14} />
+            <Icon name="order" size={14} />
             Your orders
           </span>
           <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
@@ -104,7 +104,7 @@ export default function AccountOrdersPage() {
           {state === "ready" && hasOrders ? (
             <div className="mt-6 grid grid-cols-3 items-stretch gap-3 sm:max-w-md">
               {[
-                { icon: "box-bold", n: orders.length, l: "Orders" },
+                { icon: "order", n: orders.length, l: "Orders" },
                 { icon: "delivery", n: deliveredCount, l: "Delivered" },
                 { icon: "delivery", n: orders.length - deliveredCount, l: "In progress" },
               ].map((s) => (
@@ -216,7 +216,7 @@ export default function AccountOrdersPage() {
                 {filtered.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
                     <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-                      <Icon name="box-linear" size={30} />
+                      <Icon name="order" size={30} />
                     </span>
                     <p className="font-display text-[20px] text-ng-forest-deep">No orders match</p>
                     <p className="mt-1.5 text-[14px] text-ng-ink-muted">
@@ -236,7 +236,7 @@ export default function AccountOrdersPage() {
             /* Empty — a signed-in account with no orders yet. */
             <section className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-12 text-center">
               <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-                <Icon name="box-linear" size={30} />
+                <Icon name="order" size={30} />
               </span>
               <p className="font-display text-[22px] text-ng-forest-deep">No orders yet</p>
               <p className="mx-auto mt-1.5 max-w-sm text-[14px] text-ng-ink-muted">

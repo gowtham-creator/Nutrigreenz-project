@@ -68,14 +68,14 @@ export default function AccountPage() {
   const recent = orders.slice(0, 3);
   const stats = [
     {
-      icon: "wallet-money-bold",
+      icon: "wallet",
       number: creditRupees === null ? "—" : `₹${creditRupees.toLocaleString("en-IN")}`,
       label: "Wallet credit",
       href: "/loyalty",
       tint: "leaf" as const,
     },
     {
-      icon: "box-bold",
+      icon: "order",
       number: String(orders.length),
       label: "Orders placed",
       href: "/account/orders",
@@ -149,7 +149,7 @@ export default function AccountPage() {
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-                <Icon name="box-bold" size={16} />
+                <Icon name="order" size={16} />
               </span>
               <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Recent orders</h2>
             </div>
@@ -162,7 +162,7 @@ export default function AccountPage() {
           {recent.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-10 text-center">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-                <Icon name="box-linear" size={26} />
+                <Icon name="order" size={26} />
               </span>
               <p className="font-display text-[19px] text-ng-forest-deep">No orders yet</p>
               <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] text-ng-ink-muted">
@@ -250,7 +250,7 @@ export default function AccountPage() {
               <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-ng-leaf/15 blur-3xl" />
               <div className="relative flex-1">
                 <span className="ng-eyebrow inline-flex items-center gap-2 text-ng-forest">
-                  <Icon name="wallet-money-bold" size={14} />
+                  <Icon name="wallet" size={14} />
                   Earn ₹100
                 </span>
                 <h3 className="mt-2 font-display text-[22px] text-ng-forest-deep">Review your recent orders</h3>

@@ -723,7 +723,7 @@ function CaptainDrawer({
               </Section>
 
               <Section
-                icon="wallet-money-bold"
+                icon="wallet"
                 title={`Recent settlements (${detail?.settlements.length ?? 0})`}
               >
                 {detail && detail.settlements.length > 0 ? (
