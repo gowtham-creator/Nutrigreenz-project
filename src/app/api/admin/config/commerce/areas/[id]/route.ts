@@ -1,4 +1,5 @@
 import { requireSuperAdmin } from "../../../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertArea, deleteArea, type AreaInput } from "@/lib/commerce-rules";
 
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (!pincode) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   const input: AreaInput = { id, pincode };
-  if (body.area !== undefined) input.area = String(body.area);
+  if (body.area !== undefined) input.area = plainText(body.area, TEXT_LIMITS.area);
   if (body.community !== undefined) input.community = String(body.community);
   if (typeof body.active === "boolean") input.active = body.active;
 

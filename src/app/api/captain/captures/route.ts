@@ -1,4 +1,5 @@
 import { requireCaptain } from "@/lib/captain-session";
+import { TEXT_LIMITS, plainMultiline, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
   addCapture,
@@ -80,11 +81,11 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "bad_request" }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   const mobile = normalizeMobile10(String(body.mobile ?? ""));
   const community = body.community != null ? String(body.community).trim() : null;
   const payModeRaw = String(body.payMode ?? "").toLowerCase();
-  const notes = body.notes != null ? String(body.notes).trim() : null;
+  const notes = body.notes != null ? plainMultiline(body.notes, TEXT_LIMITS.notes) : null;
   const rawItems = Array.isArray(body.items) ? (body.items as RawItem[]) : [];
 
   if (!name) return Response.json({ ok: false, error: "name_required" }, { status: 400 });

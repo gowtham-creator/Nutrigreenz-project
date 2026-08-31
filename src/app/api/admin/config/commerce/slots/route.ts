@@ -1,4 +1,5 @@
 import { requireSuperAdmin } from "../../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listDeliverySlots, createSlot } from "@/lib/commerce-rules";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const label = String(body.label ?? "").trim();
+  const label = plainText(body.label, TEXT_LIMITS.label);
   if (!label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const windowText = body.windowText !== undefined ? String(body.windowText) : undefined;
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import {
@@ -113,7 +114,7 @@ export async function PATCH(
   } = {};
 
   if (body.name !== undefined) {
-    const name = String(body.name).trim();
+    const name = plainText(body.name, TEXT_LIMITS.name);
     if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
     patch.name = name;
   }

@@ -1,4 +1,5 @@
 import { isSignedInAdmin, isSuperAdmin } from "../../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertCategory, deleteCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
   const icon = typeof body.icon === "string" ? body.icon.trim() || null : undefined;

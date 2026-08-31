@@ -1,4 +1,5 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { TEXT_LIMITS, plainMultiline, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
   listProducts,
@@ -85,7 +86,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   // Price is a super-admin-only field. A plain admin may create a product, but
@@ -98,13 +99,13 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const product = await createProduct({
       name,
-      slug: String(body.slug ?? "").trim() || undefined,
+      slug: plainText(body.slug, TEXT_LIMITS.slug) || undefined,
       categoryId: body.categoryId ? String(body.categoryId) : null,
-      description: body.description != null ? String(body.description) : null,
+      description: body.description != null ? plainMultiline(body.description, TEXT_LIMITS.description) : null,
       pricePaise,
       imageUrl: body.imageUrl != null ? String(body.imageUrl) : null,
       gallery: Array.isArray(body.gallery) ? body.gallery.map(String) : undefined,
-      sku: body.sku != null ? String(body.sku) : null,
+      sku: body.sku != null ? plainText(body.sku, TEXT_LIMITS.sku) : null,
       status: asStatus(body.status) ?? "active",
       stock,
     });

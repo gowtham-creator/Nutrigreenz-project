@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -67,9 +68,9 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "bad_request" }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   const phone = normalizeMobile10(String(body.phone ?? ""));
-  const area = body.area != null ? String(body.area).trim() : null;
+  const area = body.area != null ? plainText(body.area, TEXT_LIMITS.area) : null;
   const stall = body.stall != null ? String(body.stall).trim() : null;
   const communities = sanitizeCommunities(body.communities);
   const active = body.active === undefined ? true : Boolean(body.active);

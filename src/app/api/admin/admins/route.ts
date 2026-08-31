@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/admins";
@@ -60,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   const email = String(body.email ?? "").trim().toLowerCase();
   const phoneDigits = String(body.phone ?? "").replace(/\D/g, "");
   const password = String(body.password ?? "");

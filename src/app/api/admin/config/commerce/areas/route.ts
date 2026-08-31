@@ -1,4 +1,5 @@
 import { requireSuperAdmin } from "../../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listServiceableAreas, upsertArea, importAreas } from "@/lib/commerce-rules";
 import { parseCsv } from "@/lib/csv";
@@ -76,7 +77,7 @@ export async function POST(request: Request): Promise<Response> {
   // Single area create.
   const pincode = String(body.pincode ?? "").trim();
   if (!pincode) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
-  const area = body.area !== undefined ? String(body.area) : undefined;
+  const area = body.area !== undefined ? plainText(body.area, TEXT_LIMITS.area) : undefined;
   const community = body.community !== undefined ? String(body.community) : undefined;
   const active = typeof body.active === "boolean" ? body.active : undefined;
 

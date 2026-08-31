@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -89,7 +90,7 @@ export async function PATCH(
 
   const patch: CaptainUpdateInput = {};
   if (body.name !== undefined) {
-    const name = String(body.name).trim();
+    const name = plainText(body.name, TEXT_LIMITS.name);
     if (!name) return Response.json({ ok: false, error: "name_required" }, { status: 400 });
     patch.name = name;
   }
@@ -101,7 +102,7 @@ export async function PATCH(
     }
     patch.phone = phone;
   }
-  if (body.area !== undefined) patch.area = body.area != null ? String(body.area).trim() : null;
+  if (body.area !== undefined) patch.area = body.area != null ? plainText(body.area, TEXT_LIMITS.area) : null;
   if (body.stall !== undefined) patch.stall = body.stall != null ? String(body.stall).trim() : null;
   if (body.communities !== undefined) patch.communities = sanitizeCommunities(body.communities);
   if (body.commissionPercent !== undefined) {

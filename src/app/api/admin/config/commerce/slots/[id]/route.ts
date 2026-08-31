@@ -1,4 +1,5 @@
 import { requireSuperAdmin } from "../../../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateSlot, deleteSlot, type SlotUpdateInput } from "@/lib/commerce-rules";
 
@@ -22,7 +23,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   const input: SlotUpdateInput = {};
   if (body.label !== undefined) {
-    const label = String(body.label).trim();
+    const label = plainText(body.label, TEXT_LIMITS.label);
     if (!label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
     input.label = label;
   }

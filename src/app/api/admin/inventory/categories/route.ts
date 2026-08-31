@@ -1,4 +1,5 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
@@ -34,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = String(body.name ?? "").trim();
+  const name = plainText(body.name, TEXT_LIMITS.name);
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;

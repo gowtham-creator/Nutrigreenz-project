@@ -1,4 +1,5 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listVariants, createVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
@@ -35,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const productId = String(body.productId ?? "").trim();
-  const label = String(body.label ?? "").trim();
+  const label = plainText(body.label, TEXT_LIMITS.label);
   if (!productId || !label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   // Price is a super-admin-only field. A plain admin may create a variant, but
@@ -55,7 +56,7 @@ export async function POST(request: Request): Promise<Response> {
           : null,
       sizeUnit: body.sizeUnit != null && String(body.sizeUnit).trim() ? String(body.sizeUnit) : null,
       pricePaise,
-      sku: body.sku != null ? String(body.sku) : null,
+      sku: body.sku != null ? plainText(body.sku, TEXT_LIMITS.sku) : null,
       stock: Math.max(0, Math.round(Number(body.stock) || 0)),
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),
       sort: Math.round(Number(body.sort) || 0),
