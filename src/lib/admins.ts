@@ -280,16 +280,30 @@ export interface NewAdminInput {
   name: string;
   email: string;
   phone: string;
-  password: string;
+  /**
+   * Optional. When omitted the account is created with NO passcode, which
+   * `verifyAdminLogin` already treats as un-signin-able — the invited admin
+   * sets their own via a one-time setup link. Passing one is retained only for
+   * seeding/migration, not for the invite flow.
+   */
+  password?: string;
   role?: AdminRole;
   /** Granted section keys (already sanitised by the caller). Omit/null ⇒ the
    *  default admin set applies at resolve time (see admin-permissions.ts). */
   permissions?: string[] | null;
 }
 
-/** Create an admin (defaults to role `admin`, must change password on first login). */
+/**
+ * Create an admin (defaults to role `admin`).
+ *
+ * With no `password`, `passcode_hash` is left NULL. That is deliberate and is
+ * what makes the invite flow safe: `verifyAdminLogin` refuses any row without a
+ * hash, so the account cannot be signed into until the invited person sets
+ * their own password through a one-time link. Nobody — not even the super
+ * admin who created it — ever knows a credential for it.
+ */
 export async function createAdmin(input: NewAdminInput): Promise<AdminRecord> {
-  const passcode_hash = await hashPassword(input.password);
+  const passcode_hash = input.password ? await hashPassword(input.password) : null;
   const { data, error } = await supabaseAdmin()
     .from("admins")
     .insert({
@@ -479,4 +493,22 @@ export async function countActiveSuperadmins(): Promise<number> {
     .eq("role", "superadmin")
     .eq("status", "active");
   return count ?? 0;
+}
+
+/**
+ * Revoke an admin's ability to sign in, by nulling their passcode hash.
+ *
+ * Used by the reset flow: `verifyAdminLogin` refuses any row without a hash, so
+ * the old password stops working immediately rather than remaining valid
+ * alongside a newly issued one. The account is not disabled — it is simply
+ * awaiting its owner to set a password via the one-time link.
+ *
+ * Returns false when no such admin exists, so the caller can 404.
+ */
+export async function clearAdminPassword(id: string): Promise<boolean> {
+  const { error, count } = await supabaseAdmin()
+    .from("admins")
+    .update({ passcode_hash: null, must_change_password: true }, { count: "exact" })
+    .eq("id", id);
+  return !error && (count ?? 0) > 0;
 }

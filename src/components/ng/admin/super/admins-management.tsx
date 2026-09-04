@@ -5,7 +5,7 @@
  *
  * Interactive roster backed by the `public.admins` table. Supports adding an
  * admin (with a copyable credentials hand-off), editing name/mobile/role/status,
- * resetting the password (revealed once), activating/deactivating, resending
+ * revoking the password (one-time setup link), activating/deactivating, resending
  * credentials and deleting. All mutations go through the super-admin-gated
  * `/api/admin/admins` endpoints.
  */
@@ -71,11 +71,10 @@ type NewAdminPayload = {
   name: string;
   email: string;
   phone: string;
-  password: string;
   factors: FactorFlags;
   permissions: PermissionKey[];
 };
-type Credentials = { email: string; password: string };
+type Credentials = { email: string; setupLink?: string };
 
 const labelChannel = (c: string) => (c === "email" ? "Email" : c === "sms" ? "SMS" : "WhatsApp");
 
@@ -206,23 +205,26 @@ function CredentialsPanel({
           <Icon name="close-circle-bold" size={16} />
         </button>
       </div>
-      <div className="grid gap-2.5 sm:grid-cols-2 mt-3">
+      <div className="grid gap-2.5 mt-3">
         <CopyField label="Email" value={creds.email} mono />
-        <CopyField label="Password" value={creds.password} mono />
+        {/* A setup LINK, and only when email is unconfigured. There is no
+            password to show: the invited operator chooses their own, so
+            nobody here — including this super admin — ever sees a credential
+            belonging to somebody else. */}
+        {creds.setupLink ? <CopyField label="One-time setup link" value={creds.setupLink} mono /> : null}
       </div>
       <div className="flex items-center justify-between gap-2 mt-3">
         <p className="text-[11.5px] font-medium text-ng-ink-soft">
-          Shown once. Copy and share it now. It can’t be retrieved again.
+          {creds.setupLink
+            ? "Email isn’t configured, so share this link directly. It expires in 48 hours and works once."
+            : "A one-time setup link has been emailed. It expires in 48 hours and works once."}
         </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          type="button"
-          onClick={() => copyText(`Email: ${creds.email}\nPassword: ${creds.password}`, "Credentials")}
-        >
-          <Icon name="copy-bold" size={15} />
-          Copy both
-        </Button>
+        {creds.setupLink ? (
+          <Button variant="secondary" size="sm" type="button" onClick={() => copyText(creds.setupLink!, "Setup link")}>
+            <Icon name="copy-bold" size={15} />
+            Copy link
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -277,9 +279,7 @@ export function AdminsManagement() {
             ? "That email is already an admin."
             : data.error === "phone-exists"
               ? "This number already belongs to an admin."
-              : data.error === "weak-password"
-                ? "Use at least 12 characters for the password."
-                : data.error === "db-unavailable"
+              : data.error === "db-unavailable"
                   ? "The database isn’t configured yet."
                   : "Couldn’t add the admin. Check the details.";
         toast.error("Not added", { description: msg });
@@ -287,13 +287,13 @@ export function AdminsManagement() {
       }
       setAdmins((prev) => [...prev, recordToUser({ ...data.admin, factors: payload.factors })]);
       setReset(null);
-      setCreated({ email: data.admin.email, password: payload.password });
+      setCreated({ email: data.admin.email, setupLink: data.setupLink });
       const sent = (data.sent ?? []).map(labelChannel).join(", ");
       const pending = (data.pending ?? []).map(labelChannel).join(", ");
       toast.success("Admin added", {
         description:
           `${data.admin.email} created as Admin.` +
-          (sent ? ` Credentials sent via ${sent}.` : "") +
+          (sent ? ` Setup link sent via ${sent}.` : "") +
           (pending ? ` Pending (no provider yet): ${pending}.` : ""),
       });
       return true;
@@ -345,30 +345,27 @@ export function AdminsManagement() {
         body: JSON.stringify({ action }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.password) {
-        toast.error("Action failed", { description: "Couldn’t update the password." });
+      if (!res.ok) {
+        toast.error("Action failed", { description: "Couldn’t send the setup link." });
         return;
       }
       setCreated(null);
-      setReset({ email: data.email, password: data.password });
+      setReset({ email: data.email, setupLink: data.setupLink });
       const sent: string[] = Array.isArray(data.sent) ? data.sent : [];
       if (action === "resend") {
-        toast.success("Credentials regenerated", {
+        toast.success("Setup link sent", {
           description: sent.includes("admin")
-            ? `New password emailed to ${a.email}.`
-            : `New password ready for ${a.email}, copy it below.`,
+            ? `A one-time link was emailed to ${a.email}.`
+            : `Email isn’t configured — copy the link below and share it with ${a.email}.`,
         });
       } else {
-        const emailedAdmin = sent.includes("admin");
-        const emailedYou = sent.includes("you");
-        const note =
-          emailedAdmin && emailedYou
-            ? ` Also emailed to ${a.email} and to you.`
-            : emailedAdmin
-              ? ` Also emailed to ${a.email}.`
-              : "";
-        toast.success("Password reset", {
-          description: `New password ready for ${a.email}, copy it below.${note}`,
+        /* The old password is revoked immediately and a link goes to the
+           ACCOUNT HOLDER only — deliberately not copied to the acting super
+           admin, as the credentials email used to be. */
+        toast.success("Password revoked", {
+          description: sent.includes("admin")
+            ? `${a.email} can no longer sign in until they set a new password via the link emailed to them.`
+            : `${a.email} can no longer sign in. Email isn’t configured — share the link below.`,
         });
       }
     } catch {
@@ -573,7 +570,7 @@ export function AdminsManagement() {
       ) : null}
       {reset ? (
         <CredentialsPanel
-          title="New password · copy & share"
+          title="Setup link · share with the operator"
           creds={reset}
           onDismiss={() => setReset(null)}
         />
@@ -581,7 +578,7 @@ export function AdminsManagement() {
 
       <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
         <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-        Passwords are stored hashed. A reset reveals the new one only once, so copy it before dismissing.
+        Passwords are stored hashed and never shown to anyone. A reset revokes the old password immediately and emails the operator a one-time link to choose a new one.
       </p>
 
       {open ? <AddInviteAdminModal onClose={() => setOpen(false)} onInvite={handleInvite} /> : null}
@@ -780,14 +777,13 @@ function AddInviteAdminModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
-  const [password, setPassword] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["email"]);
   const [factors, setFactors] = useState<FactorFlags>({ ...NO_FACTORS });
   // New admins are role `admin`; seed the granted sections with the default set.
   const [perms, setPerms] = useState<Set<PermissionKey>>(() => new Set(DEFAULT_ADMIN_PERMISSIONS));
   const [submitting, setSubmitting] = useState(false);
   const [mobileTaken, setMobileTaken] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; mobile?: string }>({});
 
   // focus the first field on mount, restore focus on unmount
   useEffect(() => {
@@ -838,28 +834,19 @@ function AddInviteAdminModal({
     };
   }, [mobileDigits]);
 
-  function generatePassword() {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%&";
-    const buf = new Uint32Array(16);
-    crypto.getRandomValues(buf);
-    setPassword(Array.from(buf, (n) => chars[n % chars.length]).join(""));
-    setErrors((e) => ({ ...e, password: undefined }));
-  }
-
   function toggleChannel(c: Channel) {
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   }
 
   async function handleInvite() {
     const digits = mobile.replace(/\D/g, "");
-    const next: { name?: string; email?: string; mobile?: string; password?: string } = {};
+    const next: { name?: string; email?: string; mobile?: string } = {};
     if (!name.trim()) next.name = "Name is required.";
     if (!EMAIL_RE.test(email.trim())) next.email = "Enter a valid email address.";
     if (digits.length !== 10) next.mobile = "Enter a 10-digit mobile number.";
     else if (mobileTaken) next.mobile = "This number already belongs to an admin.";
-    if (password.length < 12) next.password = "Use at least 12 characters.";
     setErrors(next);
-    if (next.name || next.email || next.mobile || next.password) {
+    if (next.name || next.email || next.mobile) {
       toast.error("Couldn’t send invite", { description: "Fill in every field correctly." });
       return;
     }
@@ -871,7 +858,7 @@ function AddInviteAdminModal({
     }
     setSubmitting(true);
     const ok = await onInvite(
-      { name: name.trim(), email: email.trim(), phone: digits, password, factors, permissions: [...perms] },
+      { name: name.trim(), email: email.trim(), phone: digits, factors, permissions: [...perms] },
       channels,
     );
     setSubmitting(false);
@@ -974,29 +961,18 @@ function AddInviteAdminModal({
             error={errors.mobile ?? undefined}
           />
 
-          {/* Password + auto-generate */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-ng-ink">Password</span>
-              <button
-                type="button"
-                onClick={generatePassword}
-                className="text-[12px] font-semibold text-ng-clay-deep hover:text-ng-clay transition-colors cursor-pointer"
-              >
-                Auto-generate
-              </button>
-            </div>
-            <Input
-              type="text"
-              placeholder="Set or auto-generate (min 12 characters)"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors((prev) => ({ ...prev, password: undefined }));
-              }}
-              prefix={<Icon name="key-minimalistic-bold" size={18} />}
-              error={errors.password ?? undefined}
-            />
+          {/* No password field, deliberately.
+              Setting another person's password means somebody other than the
+              account holder knows their credential. The invited operator gets
+              a one-time link and chooses their own, so there is nothing here
+              to type, generate, display or share. */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-ng-line-soft bg-ng-cream/60 px-3.5 py-3">
+            <Icon name="key-minimalistic-bold" size={17} className="mt-0.5 shrink-0 text-ng-forest" />
+            <p className="text-[12.5px] leading-relaxed text-ng-ink-muted">
+              <span className="font-semibold text-ng-forest-deep">No password needed.</span>{" "}
+              We&rsquo;ll email a one-time setup link and they&rsquo;ll choose their own. It expires
+              in 48 hours and can be used once.
+            </p>
           </div>
 
           {/* Sign-in security (per-admin factors) */}

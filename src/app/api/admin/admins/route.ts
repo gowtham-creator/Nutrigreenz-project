@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { sendAdminInvite } from "@/lib/admin-invite";
 import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
@@ -6,7 +7,6 @@ import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/adm
 import { sanitizePermissions } from "@/lib/admin-permissions";
 import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { logActivity } from "@/lib/activity-log";
 
 /** Only a signed-in super-admin may list or create admins. */
@@ -22,19 +22,6 @@ async function superAdminEmail(): Promise<string | null> {
 }
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-function credentialsEmailHtml(name: string, email: string, password: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#f4f1e8;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#1a2b22">
-  <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-    <div style="font-size:18px;font-weight:700;color:#14532d">Nutri Greenz · Admin access</div>
-    <p style="font-size:15px;line-height:1.6">Hi ${name || "there"}, you've been added as an <b>Admin</b>. Sign in at the Nutri Greenz admin portal with:</p>
-    <div style="background:#fff;border:1px solid #d9d3c2;border-radius:12px;padding:16px 18px;margin:14px 0">
-      <div style="font-size:13px;color:#5b6b60">Email</div><div style="font-size:16px;font-weight:600">${email}</div>
-      <div style="font-size:13px;color:#5b6b60;margin-top:10px">Temporary password</div><div style="font-size:18px;font-weight:700;letter-spacing:1px;color:#14532d">${password}</div>
-    </div>
-    <p style="font-size:13px;color:#5b6b60">Please change this password after your first sign-in. If you didn't expect this, ignore the email.</p>
-  </div></body></html>`;
-}
 
 /** GET — list admins (plus the optional built-in env staff email, if set). */
 export async function GET(): Promise<Response> {
@@ -64,7 +51,6 @@ export async function POST(request: Request): Promise<Response> {
   const name = plainText(body.name, TEXT_LIMITS.name);
   const email = String(body.email ?? "").trim().toLowerCase();
   const phoneDigits = String(body.phone ?? "").replace(/\D/g, "");
-  const password = String(body.password ?? "");
   const channels = (Array.isArray(body.channels) ? body.channels : ["email"]).map(String);
   const factors = (typeof body.factors === "object" && body.factors ? body.factors : {}) as Record<
     string,
@@ -77,9 +63,12 @@ export async function POST(request: Request): Promise<Response> {
   if (!name || !EMAIL_RE.test(email) || phoneDigits.length !== 10) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   }
-  if (password.length < 12) {
-    return Response.json({ ok: false, error: "weak-password" }, { status: 400 });
-  }
+  /*
+   * No password is accepted here any more — see `admin-invite.ts`. A super
+   * admin invites; the invited person chooses their own credential. A body
+   * still carrying `password` is simply ignored rather than rejected, so an
+   * older client cannot break, and it can never be stored either way.
+   */
   if (await adminEmailExists(email)) {
     return Response.json({ ok: false, error: "exists" }, { status: 409 });
   }
@@ -93,7 +82,9 @@ export async function POST(request: Request): Promise<Response> {
     name,
     email,
     phone,
-    password,
+    // No password: the row is created with a NULL passcode hash, which
+    // `verifyAdminLogin` refuses, so the account is inert until its owner
+    // completes the setup link below.
     role: "admin",
     permissions,
   });
@@ -113,25 +104,13 @@ export async function POST(request: Request): Promise<Response> {
     /* non-fatal */
   }
 
-  // Deliver credentials. Email via Brevo; SMS/WhatsApp await their providers.
-  const sent: string[] = [];
-  const pending: string[] = [];
-  if (channels.includes("email")) {
-    if (isEmailConfigured()) {
-      try {
-        await sendEmail({
-          to: email,
-          subject: "Your Nutri Greenz admin access",
-          html: credentialsEmailHtml(name, email, password),
-        });
-        sent.push("email");
-      } catch {
-        pending.push("email");
-      }
-    } else {
-      pending.push("email");
-    }
-  }
+  // Send the one-time setup link. Nothing secret is generated, stored or
+  // returned — see `admin-invite.ts` for why the temp password was removed.
+  const invite = channels.includes("email")
+    ? await sendAdminInvite(email, name, { isNew: true })
+    : { sent: [] as string[], pending: [] as string[], link: undefined };
+  const sent = [...invite.sent];
+  const pending = [...invite.pending];
   if (channels.includes("sms")) pending.push("sms");
   if (channels.includes("whatsapp")) pending.push("whatsapp");
 
@@ -143,5 +122,5 @@ export async function POST(request: Request): Promise<Response> {
     meta: { name: admin.name ?? null, role: admin.role },
   });
 
-  return Response.json({ ok: true, admin, sent, pending });
+  return Response.json({ ok: true, admin, sent, pending, setupLink: invite.link });
 }
