@@ -71,7 +71,7 @@ export async function POST(request: Request): Promise<Response> {
   const name = plainText(body.name, TEXT_LIMITS.name);
   const phone = normalizeMobile10(String(body.phone ?? ""));
   const area = body.area != null ? plainText(body.area, TEXT_LIMITS.area) : null;
-  const stall = body.stall != null ? String(body.stall).trim() : null;
+  const stall = body.stall != null ? plainText(body.stall, TEXT_LIMITS.label) : null;
   const communities = sanitizeCommunities(body.communities);
   const active = body.active === undefined ? true : Boolean(body.active);
 

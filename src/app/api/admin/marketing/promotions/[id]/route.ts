@@ -26,10 +26,13 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() ? v.trim() : undefined;
 }
 
+/** A finite, NON-NEGATIVE number, else undefined. Guards `priority` and
+ *  `discountPercent`: a negative discount is a price INCREASE, and a negative
+ *  priority jumps a promotion above every one an operator ordered. */
 function num(v: unknown): number | undefined {
   if (v === undefined || v === null || v === "") return undefined;
   const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
 function nullableStr(v: unknown): string | null | undefined {

@@ -24,11 +24,13 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() ? v.trim() : undefined;
 }
 
-/** A finite number, else undefined (blank / null / non-numeric drop out). */
+/** A finite, NON-NEGATIVE number, else undefined (blank / null / negative /
+ *  non-numeric drop out). Ordering keys below zero let a tampered request jump
+ *  a row above everything an operator arranged — see sanitize-text.ts. */
 function num(v: unknown): number | undefined {
   if (v === undefined || v === null || v === "") return undefined;
   const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
 /** A nullable ISO-date string: null/blank → null (open-ended); absent → undefined. */
