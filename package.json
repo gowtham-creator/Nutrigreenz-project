@@ -2,7 +2,7 @@
   "name": "nutrigreenz",
   "version": "0.1.0",
   "private": true,
-  "description": "Nutri Greenz — farm-to-table e-commerce storefront and operations portal.",
+  "description": "Nutri Greenz \u2014 farm-to-table e-commerce storefront and operations portal.",
   "author": "Nayini Gowtham Reddy",
   "license": "UNLICENSED",
   "repository": {
@@ -60,7 +60,7 @@
     "gsap": "^3.15.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.6.0",
-    "next": "16.3.0",
+    "next": "16.3.4",
     "opentype.js": "^2.0.0",
     "pdf-lib": "^1.17.1",
     "qrcode": "^1.5.4",
@@ -85,5 +85,8 @@
     "playwright": "^1.55.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

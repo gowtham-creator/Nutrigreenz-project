@@ -14,6 +14,20 @@ const supabaseImageHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  /*
+   * Do not advertise the framework.
+   *
+   * Next sends `X-Powered-By: Next.js` by default. That is exactly how the
+   * penetration test found its "Components with Known Vulnerabilities" finding
+   * — Wappalyzer read the version off the response and matched it against a
+   * CVE list, without ever testing whether this application was affected.
+   *
+   * This is not a fix for a vulnerability and is not pretended to be one:
+   * patching is (see the uuid override and the Next upgrade in the same
+   * commit). But there is no reason to hand an attacker a free version banner
+   * that tells them which exploits to try, and removing it costs nothing.
+   */
+  poweredByHeader: false,
   // Token verification is done with `jose` (see src/lib/firebase-admin.ts), so
   // no firebase-admin externalisation or `output: "standalone"` is needed.
 
