@@ -7,7 +7,6 @@ import { Button } from "@/components/ng/button";
 import { Stars } from "@/components/ng/stars";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
-import { AppIcon } from "@/components/ui/app-icon";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { useCart, type CartVariantInput } from "@/lib/cart";
 import type { ProductCard } from "@/types/nutrigreenz";
@@ -195,8 +194,19 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-stretch gap-3">
+        <div className="flex flex-col gap-3.5">
+          {/*
+            Quantity and the running subtotal share a row, and the two actions
+            sit together on the next one.
+
+            The subtotal moved OUT of the Add to cart label. It read
+            "Add to cart · ₹720" when that button was full width, which does not
+            survive being halved — the price is the first thing to truncate, and
+            truncating a price is worse than not showing one. On its own line it
+            is larger, always legible, and updates as the stepper moves, so the
+            customer sees what they are about to pay before choosing HOW to pay.
+          */}
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1 rounded-full border border-ng-line bg-ng-cream/50 p-1">
               <button
                 type="button"
@@ -219,15 +229,49 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
                 <span className="text-[22px] font-semibold leading-none">+</span>
               </button>
             </div>
-            <Button onClick={add} size="lg" fullWidth className="min-w-0 flex-1 cursor-pointer px-4 sm:px-8">
+            <div className="min-w-0 text-right">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-soft">
+                Subtotal
+              </div>
+              <div className="font-display text-[22px] leading-tight tabular-nums text-ng-forest-deep">
+                ₹{lineTotal.toLocaleString("en-IN")}
+              </div>
+            </div>
+          </div>
+
+          {/*
+            Side by side, equal width, and deliberately NOT equal weight.
+
+            Both are solid so neither reads as disabled, but forest green is the
+            brand's primary and gold is the warmer, more urgent mark — which
+            matches what the two actions are for. Add to cart is the workhorse
+            on a catalogue people buy in baskets (ghee AND honey AND an oil);
+            Buy Now is the single-item shortcut. Giving them identical
+            treatment would make the customer stop and read, which is exactly
+            the pause a buy row should not create.
+          */}
+          <div className="flex items-stretch gap-3">
+            <Button
+              onClick={add}
+              size="lg"
+              className="min-w-0 flex-1 cursor-pointer px-3 sm:px-5"
+            >
               <BrandIcon name="cart" size={18} weight="solid" />
-              <span className="min-w-0 truncate">Add to cart · ₹{lineTotal.toLocaleString()}</span>
+              <span className="min-w-0 truncate">Add to cart</span>
+            </Button>
+            <Button
+              onClick={buyNow}
+              variant="gold"
+              size="lg"
+              className="min-w-0 flex-1 cursor-pointer px-3 sm:px-5"
+            >
+              {/* A bolt, not `cart-add`. The old icon put an ADD-TO-CART mark on
+                  the one button that does not add to the cart — it goes straight
+                  to checkout. */}
+              <Icon name="bolt-bold" size={17} />
+              <span className="min-w-0 truncate font-display tracking-wide">Buy Now</span>
             </Button>
           </div>
-          <Button onClick={buyNow} variant="gold" size="lg" className="cursor-pointer">
-            <AppIcon name="cart-add" size={18} />
-            <span className="font-display tracking-wide">Buy Now</span>
-          </Button>
         </div>
       )}
     </div>
