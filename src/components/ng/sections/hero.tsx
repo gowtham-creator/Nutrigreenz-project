@@ -429,18 +429,46 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
         style={{ background: `linear-gradient(to right, ${wash}F7 0%, ${wash}EE 38%, ${wash}99 60%, transparent 82%)` }}
       />
 
-      {/* Corner tag — the promotion's name (e.g. "Diwali Sale"), word-stacked. */}
-      <div className="absolute left-0 top-0 z-10 rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-cream">
+      {/*
+        Corner tag — the promotion's name (e.g. "Diwali Sale"), word-stacked.
+
+        Stacking is capped at three lines. Every word on its own line reads well
+        for the two- and three-word names these campaigns actually carry, but it
+        grows without limit: a four-word title made the tag taller than the copy
+        column's top padding and printed the banner's own headline through it.
+        Past three words the tag wraps normally instead, which keeps its height
+        bounded no matter what an operator types.
+      */}
+      <div className="absolute left-0 top-0 z-10 max-w-[42%] rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-cream sm:max-w-[30%]">
         <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
-          {promo.title.split(" ").map((w, wi) => (
-            <span key={`${w}-${wi}`} className="block">{w}</span>
-          ))}
+          {(() => {
+            const words = promo.title.split(" ").filter(Boolean);
+            if (words.length > 3) return promo.title;
+            return words.map((w, wi) => (
+              <span key={`${w}-${wi}`} className="block">{w}</span>
+            ));
+          })()}
         </span>
       </div>
 
-      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-4 p-6 pt-14 sm:gap-5 sm:p-12 sm:pt-16 md:p-14 lg:pl-16">
+      {/*
+        The top padding is restated at EVERY breakpoint that sets `p-*`.
+        `md:p-14` sits after `sm:pt-16` in Tailwind's generated sheet, so the
+        shorthand silently won at md and up and the column kept a 56px top
+        inset — less than the 69px corner tag standing in front of it. The
+        clearance is now stated per breakpoint so no shorthand can undercut it.
+      */}
+      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-3.5 p-6 pt-[72px] sm:gap-4 sm:p-12 sm:pt-[76px] md:p-14 md:pt-[76px] lg:pl-16">
         <FloatIn delay={0.05}>
-          <h2 className="font-display text-[clamp(28px,4.6vw,60px)] leading-[1.02] text-ng-forest-deep">
+          {/*
+            Sized DOWN, deliberately. At clamp(…,60px) the headline set larger
+            than the discount it introduces and ran to three lines, so the eye
+            met the qualifier before the offer. The banner's hierarchy is
+            occasion tag → what's on sale → how much off, and the type scale now
+            follows it. `text-balance` keeps a two-line headline evenly split
+            rather than leaving one word stranded.
+          */}
+          <h2 className="text-balance font-display text-[clamp(22px,3vw,38px)] leading-[1.08] text-ng-forest-deep">
             {promo.headline}
           </h2>
         </FloatIn>
@@ -457,7 +485,13 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
 
         {promo.subcopy ? (
           <FloatIn delay={0.2}>
-            <p className="font-sans text-[clamp(15px,1.6vw,20px)] font-medium text-ng-forest">{promo.subcopy}</p>
+            {/* Capped at two lines and a comfortable measure. This is the one
+                field with no length discipline of its own — it explains the
+                offer rather than announcing it, so a long entry should run out
+                of room quietly instead of pushing the CTA off the banner. */}
+            <p className="line-clamp-2 max-w-[46ch] font-sans text-[clamp(14px,1.35vw,17px)] font-medium leading-snug text-ng-forest">
+              {promo.subcopy}
+            </p>
           </FloatIn>
         ) : null}
 
