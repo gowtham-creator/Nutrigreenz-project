@@ -308,6 +308,62 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   Corner tag — shared by the static slides and the live-promotion banner.
+
+   Both used to carry their own copy of this markup, and only one of them got
+   fixed when the stacking overflowed. One component means the next change
+   cannot land on half the slides.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Words too short to hold a line of their own.
+ *
+ * "Raw & Pure" set one word per line put the ampersand on its own row: three
+ * lines tall, with a single character marooned in the middle of them. Joining
+ * connectors to the word before both reads better and keeps the tag shorter —
+ * the same change fixes the typography and the height.
+ */
+const TAG_CONNECTORS = new Set(["&", "+", "and", "of", "the", "n", "·"]);
+
+/** Split a tag into stacked lines, keeping connectors attached to the word before. */
+function stackTagWords(tag: string): string[] {
+  const lines: string[] = [];
+  for (const word of tag.split(" ").filter(Boolean)) {
+    if (lines.length > 0 && TAG_CONNECTORS.has(word.toLowerCase())) {
+      lines[lines.length - 1] += ` ${word}`;
+    } else {
+      lines.push(word);
+    }
+  }
+  return lines;
+}
+
+/**
+ * The dark occasion tag pinned to the banner's top-left corner.
+ *
+ * Its height is set by its content while the copy column that has to clear it
+ * carries a fixed inset, so stacking is capped at three lines. Past that the
+ * label wraps normally and the tag stops growing, whatever an operator types
+ * into the promotion form.
+ */
+function CornerTag({ label }: { label: string }) {
+  const lines = stackTagWords(label);
+  return (
+    <div className="absolute left-0 top-0 z-10 max-w-[42%] rounded-br-3xl rounded-tl-[28px] bg-ng-forest-deep px-5 py-3 text-ng-cream sm:max-w-[30%] md:rounded-tl-[36px]">
+      <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
+        {lines.length > 3
+          ? label
+          : lines.map((line, i) => (
+              <span key={`${line}-${i}`} className="block">
+                {line}
+              </span>
+            ))}
+      </span>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    Promo slide — light ad banner: product scene photo right, HTML copy left
    (banner format: tag → Hinglish headline → sub → dashed tagline → orange
    Shop Now).
@@ -346,20 +402,24 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         }}
       />
 
-      {/* Corner tag — top-left radius matches the card so it follows the rounded
-          corner cleanly instead of being clipped by the card's overflow. */}
-      <div className="absolute left-0 top-0 z-10 rounded-br-3xl rounded-tl-[28px] bg-ng-forest-deep px-5 py-3 text-ng-cream md:rounded-tl-[36px]">
-        <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
-          {slide.tag.split(" ").map((w) => (
-            <span key={w} className="block">{w}</span>
-          ))}
-        </span>
-      </div>
+      <CornerTag label={slide.tag} />
 
-      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-4 p-6 pt-14 sm:gap-5 sm:p-12 sm:pt-16 md:p-14 lg:pl-16">
+      {/*
+        Top clearance is restated at EVERY breakpoint that sets `p-*`.
+        `md:p-14` sits after `sm:pt-16` in Tailwind's generated sheet, so the
+        shorthand won from md up and the column kept a 56px inset behind a tag
+        standing 54–69px tall. Measured at 1440px, all five static slides had
+        their kicker printing through the tag.
+
+        The type scale comes down with it. The column is vertically centred, so
+        content taller than the padded box does not clip — it overflows evenly
+        in BOTH directions and walks up under the tag. Padding alone could not
+        have fixed that; the content had to fit as well.
+      */}
+      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-3 p-6 pt-[72px] sm:gap-3.5 sm:p-12 sm:pt-[76px] md:p-14 md:pt-[76px] lg:pl-16">
         <FloatIn delay={0.05}>
-          <p className="font-sans text-[clamp(15px,2vw,26px)] font-semibold text-ng-forest">{slide.kicker}</p>
-          <h2 className="mt-1 font-display text-[clamp(30px,5.4vw,68px)] leading-[0.98] text-ng-forest-deep">
+          <p className="font-sans text-[clamp(14px,1.5vw,20px)] font-semibold text-ng-forest">{slide.kicker}</p>
+          <h2 className="mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep">
             {slide.title}{" "}
             <em className="relative whitespace-nowrap italic text-ng-forest">
               {slide.script}
@@ -369,12 +429,14 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         </FloatIn>
 
         <FloatIn delay={0.15}>
-          <p className="font-sans text-[clamp(15px,1.6vw,20px)] font-medium text-ng-forest">{slide.sub}</p>
+          <p className="line-clamp-2 font-sans text-[clamp(14px,1.35vw,17px)] font-medium leading-snug text-ng-forest">
+            {slide.sub}
+          </p>
         </FloatIn>
 
         <FloatIn delay={0.22}>
-          <div className="inline-flex rounded-xl border border-dashed border-ng-forest/60 px-5 py-2.5">
-            <span className="font-sans text-[clamp(14px,1.4vw,18px)] font-medium text-ng-forest-deep">
+          <div className="inline-flex rounded-xl border border-dashed border-ng-forest/60 px-4 py-2">
+            <span className="font-sans text-[clamp(13px,1.2vw,16px)] font-medium text-ng-forest-deep">
               {slide.tagline}
             </span>
           </div>
@@ -429,27 +491,7 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
         style={{ background: `linear-gradient(to right, ${wash}F7 0%, ${wash}EE 38%, ${wash}99 60%, transparent 82%)` }}
       />
 
-      {/*
-        Corner tag — the promotion's name (e.g. "Diwali Sale"), word-stacked.
-
-        Stacking is capped at three lines. Every word on its own line reads well
-        for the two- and three-word names these campaigns actually carry, but it
-        grows without limit: a four-word title made the tag taller than the copy
-        column's top padding and printed the banner's own headline through it.
-        Past three words the tag wraps normally instead, which keeps its height
-        bounded no matter what an operator types.
-      */}
-      <div className="absolute left-0 top-0 z-10 max-w-[42%] rounded-br-3xl bg-ng-forest-deep px-5 py-3 text-ng-cream sm:max-w-[30%]">
-        <span className="block font-display text-[13px] font-bold uppercase leading-[1.15] tracking-wider">
-          {(() => {
-            const words = promo.title.split(" ").filter(Boolean);
-            if (words.length > 3) return promo.title;
-            return words.map((w, wi) => (
-              <span key={`${w}-${wi}`} className="block">{w}</span>
-            ));
-          })()}
-        </span>
-      </div>
+      <CornerTag label={promo.title} />
 
       {/*
         The top padding is restated at EVERY breakpoint that sets `p-*`.
