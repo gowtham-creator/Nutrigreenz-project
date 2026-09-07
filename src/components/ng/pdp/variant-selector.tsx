@@ -87,78 +87,65 @@ function VariantTile({
         "group flex cursor-pointer flex-col overflow-hidden rounded-xl border text-left",
         "transition-[border-color,box-shadow,transform] duration-200 ease-out",
         /*
-           Shading lives in the BAND and the tile's shadow — never as a wash
-           behind the numbers. A full-tile gradient was tried before and its
-           floor had to be capped at 10% to keep the per-unit line above
-           4.5:1, which is a tint too faint to read as depth anyway. Putting
-           the colour where no text has to survive it buys real contrast for
-           the state and costs none from the prices.
+           Depth comes from the border, the band fill and a shallow shadow —
+           never from a wash behind the numbers. A full-tile gradient was tried
+           before and had to be capped at 10% to keep the per-unit line above
+           4.5:1, which is too faint to register as depth anyway. Colour goes
+           where no text has to survive it.
+
+           The shadows are deliberately shallow. These tiles sit in a grid the
+           customer is scanning to COMPARE, and eight strongly-lifted cards
+           compete with each other instead of with the decision; the selected
+           one only has to be obviously selected.
         */
         active
-          ? "border-ng-forest shadow-[0_4px_14px_rgba(20,51,31,0.20),0_1px_3px_rgba(20,51,31,0.14)]"
-          : "border-ng-line shadow-[0_1px_2px_rgba(20,51,31,0.06)] hover:border-ng-leaf hover:shadow-[0_4px_12px_rgba(20,51,31,0.13)]",
-        // A one-pixel lift on hover. Enough to read as "this is pickable"
-        // without shifting the grid the eye is trying to compare across.
-        !soldOut && !active && "hover:-translate-y-px",
+          ? "border-ng-forest shadow-[0_2px_8px_rgba(20,51,31,0.16)]"
+          : "border-ng-line hover:border-ng-leaf hover:shadow-[0_2px_8px_rgba(20,51,31,0.10)]",
         soldOut && "cursor-not-allowed opacity-45 shadow-none hover:border-ng-line hover:shadow-none",
       )}
     >
-      {/* Label band — the pack name, and the offer when this size has one. */}
+      {/*
+        Label band — the pack name, and nothing else.
+
+        The offer briefly lived up here as a pill. It reads as a badge on a
+        nameplate rather than as part of the price, and it separates the
+        percentage from the two numbers that give it meaning: a bare "50% OFF"
+        beside "1L · Glass" is a decoration, while "₹250 ₹500 50% off" is a
+        sentence. It belongs with the money, below.
+
+        The band keeps its own fill and a hairline foot, so it reads as a
+        header for the panel under it rather than a stripe across the tile.
+      */}
       <span
         className={cn(
-          "flex w-full items-center justify-between gap-1.5 px-3 py-2 text-[13.5px] font-semibold leading-tight",
-          "bg-gradient-to-b transition-[background-color,background-image] duration-200",
+          "w-full truncate border-b px-3.5 py-2.5 text-[13.5px] font-semibold leading-tight transition-colors duration-200",
           active
-            ? // Top-lit: the band reads as a raised surface rather than a flat fill.
-              "from-ng-forest to-ng-forest-deep text-ng-cream"
-            : "from-ng-cream/80 to-ng-cream/50 text-ng-forest-deep group-hover:from-ng-sage/55 group-hover:to-ng-sage/30",
+            ? "border-ng-forest-deep/40 bg-ng-forest text-ng-cream"
+            : "border-ng-line/70 bg-ng-cream/60 text-ng-forest-deep group-hover:bg-ng-sage/35",
         )}
       >
-        <span className="min-w-0 truncate">{label}</span>
-        {discount > 0 && !soldOut ? (
-          /*
-           * The offer rides the BAND, next to the name of the size it belongs
-           * to — because with per-variant pricing the discount is now a fact
-           * about this pack, not about the product. A shopper scanning eight
-           * tiles for "which size is on offer?" reads the band; making them
-           * infer it from a struck price two lines down is work.
-           *
-           * This replaced the inline "% off" that used to sit beside the price
-           * rather than joining it. Running both printed the same number twice
-           * per tile — "50% OFF" in the band and "50% off" under it, sixteen
-           * times across a grid of eight — and the struck ₹500 beside ₹250 was
-           * already doing the explaining the second copy claimed to do.
-           */
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-1.5 py-0.5 text-[10.5px] font-bold uppercase leading-none tracking-wide tabular-nums",
-              active ? "bg-ng-cream text-ng-forest-deep" : "bg-[#B84329] text-ng-paper",
-            )}
-          >
-            {discount}% off
-          </span>
-        ) : null}
+        {label}
       </span>
 
-      {/* Money — the palest possible top-lit wash. Its darkest stop is 8%
-          sage, which leaves the ₹ figures and the per-unit line on effectively
-          the same ground they had before; this is here to stop the body
-          reading as a hole below the band, not to colour it. */}
-      <span
-        className={cn(
-          "flex w-full flex-col gap-0.5 bg-gradient-to-b px-3 py-2.5 transition-[background-image] duration-200",
-          active
-            ? "from-ng-sage/[0.13] to-transparent"
-            : "from-ng-cream/25 to-transparent group-hover:from-ng-sage/[0.08]",
-        )}
-      >
+      {/* Money — kept on plain ground. Every shaded surface on this tile is one
+          no text has to survive; the figures are the thing being compared. */}
+      <span className="flex w-full flex-col gap-1 px-3.5 py-2.5">
         <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <span className="text-[16px] font-bold tabular-nums leading-none text-ng-forest-deep">
             ₹{variant.price.toLocaleString("en-IN")}
           </span>
           {variant.mrp && variant.mrp > variant.price ? (
-            <span className="text-[12px] tabular-nums leading-none text-ng-ink-muted line-through">
+            <span className="text-[12.5px] tabular-nums leading-none text-ng-ink-muted line-through">
               ₹{variant.mrp.toLocaleString("en-IN")}
+            </span>
+          ) : null}
+          {discount > 0 && !soldOut ? (
+            /* Third in the line, after the price and the struck MRP, because it
+               is the conclusion those two are building to. Set in terracotta —
+               the only warm colour on an otherwise green tile, so the eye finds
+               the discounted sizes without anything needing a badge. */
+            <span className="text-[12.5px] font-semibold leading-none text-[#B84329] tabular-nums">
+              {discount}% off
             </span>
           ) : null}
         </span>
