@@ -427,7 +427,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
           <div className="md:sticky md:top-24 md:self-start">
             <Reveal>
-              <Gallery images={images} nutritionBySize={nutritionBySize} badge={p.badge} badgeTone={p.badgeTone} discount={discount} produceIcon={content.produceIcon} theme={theme} />
+              <Gallery images={images} nutritionBySize={nutritionBySize} badge={p.badge} badgeTone={p.badgeTone} discount={discount} promoLabel={p.promoLabel} promoPercent={p.promoPercent} produceIcon={content.produceIcon} theme={theme} />
             </Reveal>
           </div>
 

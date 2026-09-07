@@ -26,6 +26,16 @@ interface GalleryProps {
   badge?: string;
   badgeTone?: Tone;
   discount?: number;
+  /**
+   * The label an admin set on a promotion ("Diwali Sale", "Festive 20% OFF"),
+   * for the specific SKU or its whole category.
+   *
+   * The PDP previously ignored this entirely and showed only a percentage it
+   * derived from the price gap — so a campaign named in the admin appeared on
+   * the shop grid and then vanished on the page where the customer decides.
+   */
+  promoLabel?: string;
+  promoPercent?: number;
   /** Category glyph used by the photo placeholders until real photos exist. */
   produceIcon?: ProduceIconName;
   /** Per-category theme — tints the stage glow + empty placeholders. */
@@ -63,7 +73,7 @@ const isPanel = (src: string) => src.includes("/gallery/");
  * product's own image(s). Until real photography exists, each empty slot renders
  * an attractive, category-aware <PhotoPlaceholder> instead of a flat logo.
  */
-export function Gallery({ images, badge, badgeTone, discount, produceIcon = "leaf", theme, nutritionBySize }: GalleryProps) {
+export function Gallery({ images, badge, badgeTone, discount, promoLabel, promoPercent, produceIcon = "leaf", theme, nutritionBySize }: GalleryProps) {
   const reduce = useReducedMotion();
   const shared = usePdpVariant();
   const selected = shared?.selected;
@@ -381,7 +391,23 @@ export function Gallery({ images, badge, badgeTone, discount, produceIcon = "lea
             <>
               <div className="pointer-events-none absolute left-5 top-5 z-10 flex flex-col gap-2">
                 {badge ? <Badge tone={badgeTone ?? "leaf"}>{badge}</Badge> : null}
-                {discount && discount > 0 && !badge ? <Badge tone="terracotta">{discount}% OFF</Badge> : null}
+                {/* The admin's own promo wording wins over a derived
+                    percentage. If someone named the campaign "Harvest Festival"
+                    they meant that to be what a customer reads; falling back to
+                    "20% OFF" throws away the only part they wrote.
+                    `size="md"` because this badge sits over photography at the
+                    top of the page and is the one mark a discounted product
+                    most needs seen. */}
+                {!badge && (promoLabel || (promoPercent ?? 0) > 0) ? (
+                  <Badge tone="terracotta" size="md">
+                    {promoLabel || `${promoPercent}% OFF`}
+                  </Badge>
+                ) : null}
+                {/* Only when there is no promotion — otherwise the same saving
+                    is announced twice in the same corner. */}
+                {!badge && !promoLabel && !(promoPercent ?? 0) && discount && discount > 0 ? (
+                  <Badge tone="terracotta" size="md">{discount}% OFF</Badge>
+                ) : null}
               </div>
 
               <div className="pointer-events-none absolute bottom-5 right-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-ng-paper/80 px-3 py-1.5 text-[11px] font-medium text-ng-forest backdrop-blur-sm">
