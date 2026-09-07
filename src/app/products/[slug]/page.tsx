@@ -403,8 +403,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </ol>
       </nav>
 
-      {/* 1 · Product hero — gallery (left) + buy panel (right) */}
-      <Section className="relative overflow-hidden !py-10 md:!py-14">
+      {/* 1 · Product hero — gallery (left) + buy panel (right)
+          NO `overflow-hidden` on this Section, deliberately. It used to carry
+          one, and that silently broke the sticky gallery below: an ancestor
+          with `overflow: hidden` becomes the scroll container for any sticky
+          descendant, so the gallery pinned to a box that never scrolls and
+          therefore scrolled away with the page instead. Measured before the
+          fix: the gallery's top ran to -479px, never once resting at its 96px
+          offset.
+          It was redundant anyway — the decorative halos below are already
+          clipped by their own absolutely-positioned wrapper, which is where
+          that containment belongs. */}
+      <Section className="relative !py-10 md:!py-14">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <Parallax speed={0.4} className="absolute -left-32 top-10">
             <div className="h-96 w-96 rounded-full blur-3xl" style={{ background: theme.halo }} />
