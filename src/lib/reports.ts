@@ -79,6 +79,22 @@ export interface AdminReport {
   unitsSold: number;
   /** Revenue restricted to orders whose payment has settled (`paid`). */
   paidRevenuePaise: number;
+  /** Orders whose payment has SETTLED. */
+  paidOrderCount: number;
+  /**
+   * Money still to be collected: orders with `payment_status = 'pending'`.
+   *
+   * Deliberately NOT `revenue - paid`. That subtraction sweeps FAILED payments
+   * in as well, and a failed payment is not money owed — it is an attempt that
+   * did not complete. Reporting the two together would overstate what is
+   * actually collectable, which is the one number this figure exists to answer.
+   */
+  pendingRevenuePaise: number;
+  pendingOrderCount: number;
+  /** Attempts that failed outright. Shown separately so they never inflate
+   *  the pending figure above. */
+  failedRevenuePaise: number;
+  failedOrderCount: number;
   statusBreakdown: StatusBreakdownEntry[];
   paymentBreakdown: PaymentBreakdownEntry[];
   topProducts: TopProductEntry[];
@@ -169,13 +185,30 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
 
   let revenuePaise = 0;
   let paidRevenuePaise = 0;
+  let paidOrderCount = 0;
+  let pendingRevenuePaise = 0;
+  let pendingOrderCount = 0;
+  let failedRevenuePaise = 0;
+  let failedOrderCount = 0;
   const statusMap = new Map<OrderStatus, { orders: number; revenuePaise: number }>();
   const paymentMap = new Map<PaymentStatus, { orders: number; revenuePaise: number }>();
   const couponMap = new Map<string, { orders: number; discountPaise: number }>();
 
   for (const o of orders) {
     revenuePaise += o.total_paise;
-    if (o.payment_status === "paid") paidRevenuePaise += o.total_paise;
+    /* Split by settlement state rather than deriving one from the others, so
+       "pending" means exactly what an operator will chase and nothing else.
+       Cancelled orders are already excluded by the query above. */
+    if (o.payment_status === "paid") {
+      paidRevenuePaise += o.total_paise;
+      paidOrderCount += 1;
+    } else if (o.payment_status === "failed") {
+      failedRevenuePaise += o.total_paise;
+      failedOrderCount += 1;
+    } else {
+      pendingRevenuePaise += o.total_paise;
+      pendingOrderCount += 1;
+    }
 
     const status = (ORDER_STATUS_FLOW.includes(o.status as OrderStatus)
       ? o.status
@@ -301,6 +334,11 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
     aovPaise,
     unitsSold,
     paidRevenuePaise,
+    paidOrderCount,
+    pendingRevenuePaise,
+    pendingOrderCount,
+    failedRevenuePaise,
+    failedOrderCount,
     statusBreakdown,
     paymentBreakdown,
     topProducts,

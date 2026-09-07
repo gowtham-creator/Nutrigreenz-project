@@ -162,8 +162,16 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
   const summaryCsv = (r: AdminReport): { rows: CsvRow[]; headers: string[] } => ({
     headers: ["Metric", "Value"],
     rows: [
-      { Metric: "Revenue (INR)", Value: rupees(r.revenuePaise) },
-      { Metric: "Paid revenue (INR)", Value: rupees(r.paidRevenuePaise) },
+      { Metric: "Revenue booked (INR)", Value: rupees(r.revenuePaise) },
+      { Metric: "Collected (INR)", Value: rupees(r.paidRevenuePaise) },
+      { Metric: "Collected orders", Value: r.paidOrderCount },
+      /* The export has to carry the same figures as the screen. An operator who
+         exports to chase payments and finds no pending column would have to go
+         back and read them off the page by hand. */
+      { Metric: "Pending collection (INR)", Value: rupees(r.pendingRevenuePaise) },
+      { Metric: "Pending orders", Value: r.pendingOrderCount },
+      { Metric: "Failed payments (INR)", Value: rupees(r.failedRevenuePaise) },
+      { Metric: "Failed payment attempts", Value: r.failedOrderCount },
       { Metric: "Orders", Value: r.orderCount },
       { Metric: "Average order value (INR)", Value: rupees(r.aovPaise) },
       { Metric: "Units sold", Value: r.unitsSold },
@@ -275,11 +283,53 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
       ) : (
         <>
           {/* Headline KPIs ------------------------------------------- */}
+          {/* Money first: what was booked, what has landed, what is still owed.
+              "Collected" and "Pending" were previously a single subtitle under
+              Revenue, which meant the one figure an operator chases — money
+              still to come in — had no number of its own on the page. */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <StatTile
+              label="Revenue booked"
+              value={INR(report.revenuePaise)}
+              delta={`${report.orderCount.toLocaleString("en-IN")} orders · AOV ${INR(report.aovPaise)}`}
+              trend="up"
+            />
+            <StatTile
+              label="Collected"
+              value={INR(report.paidRevenuePaise)}
+              delta={`${report.paidOrderCount.toLocaleString("en-IN")} orders settled${
+                report.revenuePaise > 0
+                  ? ` · ${Math.round((report.paidRevenuePaise / report.revenuePaise) * 100)}% of booked`
+                  : ""
+              }`}
+              trend="up"
+            />
+            <StatTile
+              label="Pending collection"
+              value={INR(report.pendingRevenuePaise)}
+              delta={
+                report.pendingOrderCount > 0
+                  ? `${report.pendingOrderCount.toLocaleString("en-IN")} orders awaiting payment`
+                  : "nothing outstanding"
+              }
+              /* Not "up". Money owed rising is not good news, and a green
+                 up-arrow beside it would say the opposite of what it means. */
+              trend={report.pendingRevenuePaise > 0 ? "down" : "flat"}
+            />
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatTile label="Revenue" value={INR(report.revenuePaise)} delta={`${INR(report.paidRevenuePaise)} paid`} trend="up" />
             <StatTile label="Orders" value={report.orderCount.toLocaleString("en-IN")} delta={`AOV ${INR(report.aovPaise)}`} trend="up" />
             <StatTile label="Units sold" value={report.unitsSold.toLocaleString("en-IN")} delta="items shipped in range" trend="up" />
             <StatTile label="New customers" value={report.newCustomers.toLocaleString("en-IN")} delta="joined in range" trend="up" />
+            {/* Failed attempts are NOT money owed — they are shown apart from
+                Pending so nobody chases a payment that already bounced. */}
+            <StatTile
+              label="Failed payments"
+              value={INR(report.failedRevenuePaise)}
+              delta={`${report.failedOrderCount.toLocaleString("en-IN")} attempts failed`}
+              trend="flat"
+            />
           </div>
 
           {/* 1 · ORDERS BY STATUS & PAYMENT -------------------------- */}
