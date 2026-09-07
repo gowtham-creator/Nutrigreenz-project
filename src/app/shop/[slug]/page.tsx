@@ -14,6 +14,30 @@ import { getCategoryTheme } from "@/lib/category-theme";
 // on category pages without a redeploy.
 export const revalidate = 60;
 
+/**
+ * Enumerate the live category slugs at build time.
+ *
+ * Same fix, and the same reason, as the PDP: `revalidate` on a dynamic segment
+ * with no `generateStaticParams` builds no ISR entry at all, so the route
+ * compiled as `ƒ (Dynamic)` and every visit re-rendered the whole catalogue.
+ * Measured on production before this change: 1215–2664ms per category, every
+ * request `MISS`, answering `private, no-cache, no-store`.
+ *
+ * These sit between the shop index and the product page, so a customer walking
+ * /shop → /shop/oils → /products/… was paying that twice on the way to buying.
+ *
+ * `dynamicParams` stays at its default, so a category added later still
+ * resolves — rendered once, then cached.
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const { categories } = await getStorefrontCatalog();
+    return categories.map((c) => ({ slug: c.slug }));
+  } catch {
+    return [];
+  }
+}
+
 const CATEGORY_BLURBS: Record<string, string> = {
   oils: "Single-press, never refined. Each bottle traceable to the village ghani and the harvest lot it came from.",
   ghee: "Bilona-churned from A2 milk, made the same day it's collected. Named cows, named dairies.",

@@ -198,10 +198,48 @@ const SAMPLE_REVIEWS: Review[] = [
 /* ---------------------------------- SEO ---------------------------------- */
 
 // Re-fetch the product at most once a minute so Inventory-Portal edits (price,
-// stock, status) appear on the PDP without a redeploy. Pages render on-demand
-// and are cached/revalidated rather than pre-built, since live SKUs aren't known
-// at build time.
+// stock, status) appear on the PDP without a redeploy.
 export const revalidate = 60;
+
+/**
+ * Enumerate the live product slugs at build time.
+ *
+ * ── Why this exists ───────────────────────────────────────────────────────
+ *
+ * `revalidate = 60` was here on its own, on the assumption that pages would
+ * "render on-demand and be cached/revalidated rather than pre-built". They were
+ * not. A dynamic segment with no `generateStaticParams` is compiled as
+ * `ƒ (Dynamic) — server-rendered on demand`, with an EMPTY revalidate column:
+ * Next.js never builds an ISR entry for it, so `revalidate` had nothing to
+ * revalidate and every visit re-rendered from scratch.
+ *
+ * Measured on production before this change: 1211–1789ms per view, four out of
+ * four `x-vercel-cache: MISS`, answering `private, no-cache, no-store`. That is
+ * the page a customer reads before deciding to buy, and it was the slowest
+ * thing on the site by an order of magnitude.
+ *
+ * ── New products still work ───────────────────────────────────────────────
+ *
+ * `dynamicParams` is left at its default of true, so a slug added after the
+ * build is rendered on demand exactly as before — and then cached, which is the
+ * part that was missing. Pre-building is an optimisation for the SKUs that
+ * exist at deploy time, not a restriction to them.
+ *
+ * ── Never fail the build ──────────────────────────────────────────────────
+ *
+ * A catalogue read can fail (Supabase unconfigured in a preview, a transient
+ * error). Returning an empty list degrades to on-demand rendering rather than
+ * breaking the deploy — and the route stays ISR-cached either way, so even the
+ * failure case is faster than what it replaces.
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  try {
+    const { products } = await getStorefrontCatalog();
+    return products.map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
