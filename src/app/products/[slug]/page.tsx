@@ -421,40 +421,53 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </Reveal>
           </div>
 
-          <Reveal delay={0.08}>
-            <BuyPanel
-              product={p}
-              categoryTitle={cat.title}
-              credentials={content.credentials}
-              variants={variants}
-              initialIndex={baseIndex}
-              coins={coins}
-              coupon={{ code: COUPON_CODE, bestPrice, off: COUPON_PERCENT }}
-              outOfStock={outOfStock}
-            />
-          </Reveal>
-        </div>
-      </Section>
+          {/*
+            The right column carries the buy panel AND the description and trust
+            row beneath it, rather than those sitting in a full-width band below
+            the hero.
 
-      {/* 2 · Product description + trust bar (one tight block) */}
-      <Section className="!pt-0">
-        <div className="flex flex-col gap-8">
-          {story ? (
-            <ProductDescription paragraphs={story.description} />
-          ) : (
-            <Reveal className="flex max-w-3xl flex-col gap-4">
-              <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
-              <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
-              <p className="text-[15px] leading-relaxed text-ng-ink">
-                Every batch is traceable to a named partner farm and screened by an independent lab before it ships, so what
-                reaches your kitchen is exactly what left the field, with nothing hidden in between.
-              </p>
+            That placement is the whole effect. The gallery beside it is
+            `sticky`, and a sticky element only pins for as long as its NEIGHBOUR
+            is still scrolling — so with the description moved in here, the
+            bottle stays in view while the reasons to buy it travel past. Left
+            in a separate section, the gallery unpinned the moment the short buy
+            panel ended, and the product vanished exactly when the copy started
+            arguing for it.
+          */}
+          <div className="flex flex-col gap-8">
+            <Reveal delay={0.08}>
+              <BuyPanel
+                product={p}
+                categoryTitle={cat.title}
+                credentials={content.credentials}
+                variants={variants}
+                initialIndex={baseIndex}
+                coins={coins}
+                coupon={{ code: COUPON_CODE, bestPrice, off: COUPON_PERCENT }}
+                outOfStock={outOfStock}
+              />
             </Reveal>
-          )}
-          {/* Trust bar — live free-delivery threshold, no return/refund promise (§3.9) */}
-          <Reveal>
-            <TrustBar checks={content.checks} />
-          </Reveal>
+
+            {/* Product description */}
+            {story ? (
+              <ProductDescription paragraphs={story.description} />
+            ) : (
+              <Reveal className="flex flex-col gap-4">
+                <h2 className="font-display text-2xl text-ng-forest-deep">About this {cat.title.toLowerCase()}</h2>
+                <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
+                <p className="text-[15px] leading-relaxed text-ng-ink">
+                  Every batch is traceable to a named partner farm and screened by an independent lab before it ships, so what
+                  reaches your kitchen is exactly what left the field, with nothing hidden in between.
+                </p>
+              </Reveal>
+            )}
+
+            {/* Trust row — live free-delivery threshold, no return/refund
+                promise (§3.9). Sits directly under the copy it backs up. */}
+            <Reveal>
+              <TrustBar checks={content.checks} />
+            </Reveal>
+          </div>
         </div>
       </Section>
 

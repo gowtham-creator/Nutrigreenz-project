@@ -38,10 +38,19 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
     { app: "verified", label: "100% authentic", sub: "Farm-fresh, never adulterated" },
   ];
 
+  /*
+   * Four across, matching the reference.
+   *
+   * This sits in the buy column now (~550px), so the columns break at `sm`
+   * rather than `lg`. Waiting for a large VIEWPORT would have kept it 2-up
+   * inside a container that was already wide enough for four — the breakpoint
+   * was describing the page, not the box the list actually lives in. Gaps and
+   * top padding tighten to suit the narrower measure.
+   */
   return (
-    <ul className="grid grid-cols-2 gap-x-4 gap-y-7 border-t border-ng-line-soft pt-8 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-6 border-t border-ng-line-soft pt-6 sm:grid-cols-4">
       {items.map((t) => (
-        <li key={t.label} className="flex flex-col items-center gap-2 px-1 text-center">
+        <li key={t.label} className="flex flex-col items-center gap-1.5 text-center">
           <span className="grid h-11 w-11 place-items-center rounded-full bg-ng-sage/25 text-ng-forest">
             {"app" in t ? <BrandIcon name={t.app} size={22} weight="line" /> : <Icon name={t.icon} size={22} />}
           </span>
