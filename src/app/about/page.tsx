@@ -10,7 +10,7 @@ import { IndiaFlag } from "@/components/ui/india-flag";
 export const metadata: Metadata = {
   title: "Our story · Nutri Greenz",
   description:
-    "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering chemical-free food direct from farmers. Read our story, vision, mission and the people behind it.",
+    "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering non-adulterated food direct from farmers. Read our story, vision, mission and the people behind it.",
 };
 
 /*
@@ -71,10 +71,10 @@ export default function AboutPage() {
         eyebrow="Our story"
         title={
           <>
-            Chemical-free food, <em className="italic text-ng-leaf">direct from the farmer.</em>
+            Non-adulterated food, <em className="italic text-ng-leaf">direct from the farmer.</em>
           </>
         }
-        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices, and to bring their honest, chemical-free harvest straight to your door."
+        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices, and to bring their honest, non-adulterated harvest straight to your door."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild variant="primary" size="lg" className="!bg-ng-cream !text-ng-forest-deep hover:!bg-white">
@@ -199,7 +199,7 @@ export default function AboutPage() {
         <Reveal className="rounded-3xl bg-ng-forest text-ng-cream p-10 md:p-14 text-center">
           <h2 className="font-display text-[clamp(26px,4vw,42px)] leading-tight">Taste the difference honesty makes</h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-ng-cream/75">
-            Stock your pantry with chemical-free produce sourced directly from farmers. Delivered
+            Stock your pantry with non-adulterated produce sourced directly from farmers. Delivered
             fresh across Hyderabad.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">

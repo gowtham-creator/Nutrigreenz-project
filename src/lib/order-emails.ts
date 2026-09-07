@@ -16,6 +16,7 @@ import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
 import { billingAttachments } from "@/lib/invoice-pdf";
 import { gstFor } from "@/lib/gst";
+import { sendAdminOrderAlert } from "@/lib/admin-order-alerts";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -420,9 +421,18 @@ async function send(orderId: string, kind: Kind): Promise<void> {
   }
 }
 
-/** Sent at checkout, with the tax invoice attached. */
-export function sendOrderPlacedEmail(orderId: string): Promise<void> {
-  return send(orderId, "placed");
+/**
+ * Sent at checkout, with the tax invoice attached.
+ *
+ * The operators are told at the same moment. Until now a placed order produced
+ * exactly one notification — the customer's — and nobody on the Nutri Greenz
+ * side heard anything until somebody happened to open the console.
+ *
+ * `allSettled`, so a failure to reach the operators cannot cost the customer
+ * their confirmation, and vice versa.
+ */
+export async function sendOrderPlacedEmail(orderId: string): Promise<void> {
+  await Promise.allSettled([send(orderId, "placed"), sendAdminOrderAlert(orderId)]);
 }
 
 /** Sent when an operator accepts the order — a distinct step from placing it. */
