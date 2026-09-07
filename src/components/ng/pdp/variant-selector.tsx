@@ -85,26 +85,33 @@ function VariantTile({
       aria-pressed={active}
       className={cn(
         "group flex cursor-pointer flex-col overflow-hidden rounded-xl border text-left",
-        "transition-[border-color,box-shadow] duration-200 ease-out",
+        "transition-[border-color,box-shadow,transform] duration-200 ease-out",
+        /*
+           Shading lives in the BAND and the tile's shadow — never as a wash
+           behind the numbers. A full-tile gradient was tried before and its
+           floor had to be capped at 10% to keep the per-unit line above
+           4.5:1, which is a tint too faint to read as depth anyway. Putting
+           the colour where no text has to survive it buys real contrast for
+           the state and costs none from the prices.
+        */
         active
-          ? /* The selected card is carried by its BAND, not by a wash across
-               the whole tile. A filled band plus a plain body keeps the
-               numbers on white where they stay legible, which the earlier
-               full-tile gradient could not do — its floor had to be capped at
-               10% to keep the per-unit line above 4.5:1. Colour moved to where
-               no text has to survive it. */
-            "border-ng-forest shadow-[0_1px_3px_rgba(20,51,31,0.14)]"
-          : "border-ng-line hover:border-ng-leaf",
-        soldOut && "cursor-not-allowed opacity-45 hover:border-ng-line",
+          ? "border-ng-forest shadow-[0_4px_14px_rgba(20,51,31,0.20),0_1px_3px_rgba(20,51,31,0.14)]"
+          : "border-ng-line shadow-[0_1px_2px_rgba(20,51,31,0.06)] hover:border-ng-leaf hover:shadow-[0_4px_12px_rgba(20,51,31,0.13)]",
+        // A one-pixel lift on hover. Enough to read as "this is pickable"
+        // without shifting the grid the eye is trying to compare across.
+        !soldOut && !active && "hover:-translate-y-px",
+        soldOut && "cursor-not-allowed opacity-45 shadow-none hover:border-ng-line hover:shadow-none",
       )}
     >
       {/* Label band — the pack name, and the offer when this size has one. */}
       <span
         className={cn(
-          "flex w-full items-center justify-between gap-1.5 px-3 py-2 text-[13.5px] font-semibold leading-tight transition-colors duration-200",
+          "flex w-full items-center justify-between gap-1.5 px-3 py-2 text-[13.5px] font-semibold leading-tight",
+          "bg-gradient-to-b transition-[background-color,background-image] duration-200",
           active
-            ? "bg-ng-forest text-ng-cream"
-            : "bg-ng-cream/70 text-ng-forest-deep group-hover:bg-ng-sage/40",
+            ? // Top-lit: the band reads as a raised surface rather than a flat fill.
+              "from-ng-forest to-ng-forest-deep text-ng-cream"
+            : "from-ng-cream/80 to-ng-cream/50 text-ng-forest-deep group-hover:from-ng-sage/55 group-hover:to-ng-sage/30",
         )}
       >
         <span className="min-w-0 truncate">{label}</span>
@@ -112,12 +119,15 @@ function VariantTile({
           /*
            * The offer rides the BAND, next to the name of the size it belongs
            * to — because with per-variant pricing the discount is now a fact
-           * about this pack, not about the product. A shopper scanning six
+           * about this pack, not about the product. A shopper scanning eight
            * tiles for "which size is on offer?" reads the band; making them
            * infer it from a struck price two lines down is work.
            *
-           * The inline "% off" beside the price stays. It is doing a different
-           * job: this badge finds the offer, that one explains the arithmetic.
+           * This replaced the inline "% off" that used to sit beside the price
+           * rather than joining it. Running both printed the same number twice
+           * per tile — "50% OFF" in the band and "50% off" under it, sixteen
+           * times across a grid of eight — and the struck ₹500 beside ₹250 was
+           * already doing the explaining the second copy claimed to do.
            */
           <span
             className={cn(
@@ -130,8 +140,18 @@ function VariantTile({
         ) : null}
       </span>
 
-      {/* Money */}
-      <span className="flex w-full flex-col gap-0.5 px-3 py-2.5">
+      {/* Money — the palest possible top-lit wash. Its darkest stop is 8%
+          sage, which leaves the ₹ figures and the per-unit line on effectively
+          the same ground they had before; this is here to stop the body
+          reading as a hole below the band, not to colour it. */}
+      <span
+        className={cn(
+          "flex w-full flex-col gap-0.5 bg-gradient-to-b px-3 py-2.5 transition-[background-image] duration-200",
+          active
+            ? "from-ng-sage/[0.13] to-transparent"
+            : "from-ng-cream/25 to-transparent group-hover:from-ng-sage/[0.08]",
+        )}
+      >
         <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <span className="text-[16px] font-bold tabular-nums leading-none text-ng-forest-deep">
             ₹{variant.price.toLocaleString("en-IN")}
@@ -139,14 +159,6 @@ function VariantTile({
           {variant.mrp && variant.mrp > variant.price ? (
             <span className="text-[12px] tabular-nums leading-none text-ng-ink-muted line-through">
               ₹{variant.mrp.toLocaleString("en-IN")}
-            </span>
-          ) : null}
-          {discount > 0 && !soldOut ? (
-            /* Inline beside the price it discounts, not floated in the corner.
-               A corner badge made the saving a decoration on the card; here it
-               is part of the sentence the prices are already making. */
-            <span className="text-[12px] font-semibold leading-none text-ng-terracotta">
-              {discount}% off
             </span>
           ) : null}
         </span>
