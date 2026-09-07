@@ -1,0 +1,57 @@
+# Payment reconciliation, driven from GitHub instead of Vercel.
+#
+# WHY THIS EXISTS
+# Vercel's Hobby plan allows a cron to run at most once per DAY. This job asks
+# SBI directly about every order that was sent to the gateway and never produced
+# a callback, then settles it — so a once-a-day cadence means a customer could
+# pay, have the callback dropped, and sit with money taken and no order
+# progressing for up to 24 hours.
+#
+# The endpoint is already protected by CRON_SECRET (Bearer token), so it can be
+# called from anywhere that holds the secret. GitHub Actions schedules are free
+# and, on this repo's cadence, close enough to the original 15 minutes.
+#
+# vercel.json keeps a once-daily cron as well. That is deliberate: it is the
+# backstop for any day GitHub is degraded or this workflow is disabled, so
+# reconciliation never depends on a single scheduler.
+#
+# SETUP (one time):
+#   Repo → Settings → Secrets and variables → Actions → New repository secret
+#     CRON_SECRET  = the same value as the CRON_SECRET env var in Vercel
+#     SITE_URL     = https://nutrigreenz.farm
+name: Reconcile payments
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub treats schedules as best-effort and may delay
+    # runs under load, so treat this as "roughly every 15 minutes", not a
+    # guarantee — which is exactly what the daily Vercel cron backstops.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # lets an operator force a reconciliation from the UI
+
+# Never let two reconciliation runs overlap. The job is idempotent (every write
+# is an atomic compare-and-set), so an overlap is safe, but queueing is wasteful.
+concurrency:
+  group: reconcile-payments
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Call reconciliation endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ] || [ -z "${SITE_URL:-}" ]; then
+            echo "::error::CRON_SECRET or SITE_URL secret is not set — see the header of this file."
+            exit 1
+          fi
+          # -f so a non-2xx is a failed run rather than a green tick over a 401.
+          curl -fsS -X GET \
+            -H "authorization: Bearer ${CRON_SECRET}" \
+            --max-time 300 \
+            "${SITE_URL}/api/cron/reconcile-payments"
