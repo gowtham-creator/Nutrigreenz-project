@@ -18,10 +18,26 @@ import {
   type PromotionInput,
   type PromotionScope,
 } from "@/lib/promotions";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
-/** A trimmed non-empty string, else undefined. */
-function str(v: unknown): string | undefined {
-  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+/*
+ * Every string below is capped and stripped, not merely trimmed.
+ *
+ * The previous helper checked only that a value was non-empty after trimming,
+ * which let a promotion store 22 KB in `title`, 25 KB in `headline` and 23 KB
+ * in `subcopy`. That row went LIVE: the storefront served ~70 KB of junk on
+ * every page load and the top marquee scrolled one unbroken word.
+ *
+ * `plainText` also removes tags, template braces and bidi overrides, so this
+ * surface matches the rest of the admin API instead of being the one door left
+ * open — see sanitize-text.ts for why input is cleaned even though output is
+ * already escaped.
+ */
+
+/** A cleaned, length-capped non-empty string, else undefined. */
+function str(v: unknown, max: number = TEXT_LIMITS.name): string | undefined {
+  const s = plainText(v, max);
+  return s ? s : undefined;
 }
 
 /** A finite, NON-NEGATIVE number, else undefined (blank / null / negative /
@@ -33,11 +49,18 @@ function num(v: unknown): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-/** A nullable ISO-date string: null/blank → null (open-ended); absent → undefined. */
-function nullableStr(v: unknown): string | null | undefined {
+/**
+ * A nullable string: null/blank → null (clears the field); absent → undefined.
+ *
+ * `max` is optional because this also carries ISO dates, which are fixed-format
+ * and must not be run through the prose cleaner.
+ */
+function nullableStr(v: unknown, max?: number): string | null | undefined {
   if (v === undefined) return undefined;
   if (v === null || (typeof v === "string" && !v.trim())) return null;
-  return typeof v === "string" ? v.trim() : undefined;
+  if (typeof v !== "string") return undefined;
+  if (max === undefined) return v.trim();
+  return plainText(v, max) || null;
 }
 
 /** A validated scope, else undefined (falls back to the column default 'all'). */
@@ -45,12 +68,19 @@ function scope(v: unknown): PromotionScope | undefined {
   return v === "all" || v === "category" || v === "product" ? v : undefined;
 }
 
-/** A cleaned string[] of scope values, else undefined. */
+/**
+ * A cleaned string[] of scope values, else undefined.
+ *
+ * Bounded on BOTH axes — each entry is a slug, and the list cannot exceed the
+ * catalogue by any sane margin. Capping the strings alone would still let a
+ * request store a hundred thousand of them.
+ */
 function strArray(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   return v
-    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-    .map((x) => x.trim());
+    .slice(0, 200)
+    .map((x) => plainText(x, TEXT_LIMITS.slug))
+    .filter((x) => x.length > 0);
 }
 
 /** GET — list all promotions, highest priority first. Super-admin only. */
@@ -76,13 +106,13 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const title = str(body.title);
+  const title = str(body.title, TEXT_LIMITS.name);
   if (!title) return Response.json({ ok: false, error: "title-required" }, { status: 400 });
-  const bannerKey = str(body.bannerKey);
+  const bannerKey = str(body.bannerKey, TEXT_LIMITS.slug);
   if (!bannerKey || !isBannerKey(bannerKey)) {
     return Response.json({ ok: false, error: "invalid-banner-key" }, { status: 400 });
   }
-  const headline = str(body.headline);
+  const headline = str(body.headline, TEXT_LIMITS.headline);
   if (!headline) return Response.json({ ok: false, error: "headline-required" }, { status: 400 });
   const discountPercent = num(body.discountPercent);
   if (discountPercent === undefined || discountPercent < 1 || discountPercent > 90) {
@@ -90,11 +120,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const input: PromotionInput = { title, bannerKey, headline, discountPercent };
-  const slug = str(body.slug);
+  const slug = str(body.slug, TEXT_LIMITS.slug);
   if (slug !== undefined) input.slug = slug;
-  const subcopy = nullableStr(body.subcopy);
+  const subcopy = nullableStr(body.subcopy, TEXT_LIMITS.subcopy);
   if (subcopy !== undefined) input.subcopy = subcopy;
-  const announcement = nullableStr(body.announcement);
+  const announcement = nullableStr(body.announcement, TEXT_LIMITS.announcement);
   if (announcement !== undefined) input.announcement = announcement;
   const sc = scope(body.scope);
   if (sc !== undefined) input.scope = sc;
@@ -105,9 +135,9 @@ export async function POST(request: Request): Promise<Response> {
   const endsAt = nullableStr(body.endsAt);
   if (endsAt !== undefined) input.endsAt = endsAt;
   if (typeof body.active === "boolean") input.active = body.active;
-  const ctaLabel = str(body.ctaLabel);
+  const ctaLabel = str(body.ctaLabel, TEXT_LIMITS.cta);
   if (ctaLabel !== undefined) input.ctaLabel = ctaLabel;
-  const ctaHref = str(body.ctaHref);
+  const ctaHref = str(body.ctaHref, TEXT_LIMITS.slug);
   if (ctaHref !== undefined) input.ctaHref = ctaHref;
   if (typeof body.autoMonth === "boolean") input.autoMonth = body.autoMonth;
   const priority = num(body.priority);

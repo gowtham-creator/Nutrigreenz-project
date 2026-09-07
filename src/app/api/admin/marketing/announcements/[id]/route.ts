@@ -15,12 +15,15 @@ import {
   deleteAnnouncement,
   type AnnouncementPatch,
 } from "@/lib/announcements";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** A trimmed non-empty string, else undefined. */
-function str(v: unknown): string | undefined {
-  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+/** A cleaned, length-capped non-empty string, else undefined — see the POST
+ *  route beside this one; an edit needs the same ceiling as a create. */
+function str(v: unknown, max: number = TEXT_LIMITS.announcement): string | undefined {
+  const s = plainText(v, max);
+  return s ? s : undefined;
 }
 
 /** A finite, NON-NEGATIVE number, else undefined (blank / null / negative /

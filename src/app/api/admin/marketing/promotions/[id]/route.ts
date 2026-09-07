@@ -19,11 +19,20 @@ import {
   type PromotionPatch,
   type PromotionScope,
 } from "@/lib/promotions";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-function str(v: unknown): string | undefined {
-  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+/*
+ * Capped and stripped, matching the POST route beside this one. An edit is the
+ * likelier route to oversized copy than a create — an operator pastes into a
+ * field that already has content — so the ceilings have to live on both.
+ */
+
+/** A cleaned, length-capped non-empty string, else undefined. */
+function str(v: unknown, max: number = TEXT_LIMITS.name): string | undefined {
+  const s = plainText(v, max);
+  return s ? s : undefined;
 }
 
 /** A finite, NON-NEGATIVE number, else undefined. Guards `priority` and
@@ -35,21 +44,26 @@ function num(v: unknown): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function nullableStr(v: unknown): string | null | undefined {
+/** Nullable string; `max` omitted for fixed-format ISO dates. */
+function nullableStr(v: unknown, max?: number): string | null | undefined {
   if (v === undefined) return undefined;
   if (v === null || (typeof v === "string" && !v.trim())) return null;
-  return typeof v === "string" ? v.trim() : undefined;
+  if (typeof v !== "string") return undefined;
+  if (max === undefined) return v.trim();
+  return plainText(v, max) || null;
 }
 
 function scope(v: unknown): PromotionScope | undefined {
   return v === "all" || v === "category" || v === "product" ? v : undefined;
 }
 
+/** Bounded on both axes — entry length and list length. */
 function strArray(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   return v
-    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-    .map((x) => x.trim());
+    .slice(0, 200)
+    .map((x) => plainText(x, TEXT_LIMITS.slug))
+    .filter((x) => x.length > 0);
 }
 
 /** PATCH — edit a promotion's terms (not its slug). Super-admin only. */
@@ -78,14 +92,14 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   const patch: PromotionPatch = {};
-  const title = str(body.title);
+  const title = str(body.title, TEXT_LIMITS.name);
   if (title !== undefined) patch.title = title;
   if (typeof body.bannerKey === "string") patch.bannerKey = body.bannerKey;
-  const headline = str(body.headline);
+  const headline = str(body.headline, TEXT_LIMITS.headline);
   if (headline !== undefined) patch.headline = headline;
-  const subcopy = nullableStr(body.subcopy);
+  const subcopy = nullableStr(body.subcopy, TEXT_LIMITS.subcopy);
   if (subcopy !== undefined) patch.subcopy = subcopy;
-  const announcement = nullableStr(body.announcement);
+  const announcement = nullableStr(body.announcement, TEXT_LIMITS.announcement);
   if (announcement !== undefined) patch.announcement = announcement;
   if (percentIn !== undefined) patch.discountPercent = percentIn;
   const sc = scope(body.scope);
@@ -97,9 +111,9 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   const endsAt = nullableStr(body.endsAt);
   if (endsAt !== undefined) patch.endsAt = endsAt;
   if (typeof body.active === "boolean") patch.active = body.active;
-  const ctaLabel = str(body.ctaLabel);
+  const ctaLabel = str(body.ctaLabel, TEXT_LIMITS.cta);
   if (ctaLabel !== undefined) patch.ctaLabel = ctaLabel;
-  const ctaHref = str(body.ctaHref);
+  const ctaHref = str(body.ctaHref, TEXT_LIMITS.slug);
   if (ctaHref !== undefined) patch.ctaHref = ctaHref;
   if (typeof body.autoMonth === "boolean") patch.autoMonth = body.autoMonth;
   const priority = num(body.priority);
