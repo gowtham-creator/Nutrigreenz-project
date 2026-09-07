@@ -55,7 +55,11 @@ function isBannerKey(v: string): v is BannerKey {
   return (BANNER_KEYS as readonly string[]).includes(v);
 }
 
-type ScopeMode = "all" | "category" | "product";
+/**
+ * `variant` targets individual SKUs, so a sale can mark down the 1L glass
+ * bottle while the 5L tin beside it holds list price.
+ */
+type ScopeMode = "all" | "category" | "product" | "variant";
 
 const CATEGORIES = [
   { slug: "ghee", label: "Ghee" },
@@ -94,6 +98,8 @@ interface FormState {
   scope: ScopeMode;
   categories: string[];
   productSlugs: string;
+  /** Comma-separated variant SKUs, for the `variant` scope. */
+  variantSkus: string;
   startsAt: string;
   endsAt: string;
   ctaLabel: string;
@@ -113,6 +119,7 @@ const EMPTY_FORM: FormState = {
   scope: "all",
   categories: [],
   productSlugs: "",
+  variantSkus: "",
   startsAt: "",
   endsAt: "",
   ctaLabel: "",
@@ -231,7 +238,8 @@ function scheduleText(p: PromotionRow): string {
 
 function scopeText(p: PromotionRow): string {
   if (p.scope === "all") return "All products";
-  const label = p.scope === "category" ? "Categories" : "Products";
+  const label =
+    p.scope === "category" ? "Categories" : p.scope === "variant" ? "Variants" : "Products";
   return p.scopeValues.length ? `${label}: ${p.scopeValues.join(", ")}` : label;
 }
 
@@ -327,6 +335,7 @@ export function PromotionsPanel() {
       scope: p.scope,
       categories: p.scope === "category" ? p.scopeValues : [],
       productSlugs: p.scope === "product" ? p.scopeValues.join(", ") : "",
+      variantSkus: p.scope === "variant" ? p.scopeValues.join(", ") : "",
       startsAt: toDateInput(p.startsAt),
       endsAt: toDateInput(p.endsAt),
       ctaLabel: p.ctaLabel,
@@ -370,19 +379,31 @@ export function PromotionsPanel() {
     if (!Number.isFinite(percent) || percent < 1 || percent > 90) {
       return toast.error("Discount must be a whole number 1–90%.");
     }
-    const productSlugs = form.productSlugs
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const csv = (value: string) =>
+      value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    const productSlugs = csv(form.productSlugs);
+    const variantSkus = csv(form.variantSkus);
     if (form.scope === "category" && form.categories.length === 0) {
       return toast.error("Pick at least one category.");
     }
     if (form.scope === "product" && productSlugs.length === 0) {
       return toast.error("Enter at least one product slug.");
     }
+    if (form.scope === "variant" && variantSkus.length === 0) {
+      return toast.error("Enter at least one variant SKU.");
+    }
 
     const scopeValues =
-      form.scope === "category" ? form.categories : form.scope === "product" ? productSlugs : [];
+      form.scope === "category"
+        ? form.categories
+        : form.scope === "product"
+          ? productSlugs
+          : form.scope === "variant"
+            ? variantSkus
+            : [];
 
     const priorityNum = Math.round(Number(form.priority || "0"));
     const body: Record<string, unknown> = {
@@ -615,20 +636,29 @@ export function PromotionsPanel() {
 
           {/* Scope */}
           <span className="mb-2 block text-[13px] font-semibold text-ng-ink">Applies to</span>
-          <div className="mb-3 flex gap-1.5">
-            {(["all", "category", "product"] as const).map((s) => (
+          {/* A four-up grid rather than a flex row: at four options the labels
+              ("Specific products", "Specific variants") no longer survive being
+              quartered on a narrow admin column. */}
+          <div className="mb-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            {(["all", "category", "product", "variant"] as const).map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, scope: s }))}
                 className={cn(
-                  "h-11 flex-1 rounded-xl border text-[13px] font-semibold transition-all",
+                  "h-11 rounded-xl border px-2 text-[13px] font-semibold transition-all",
                   form.scope === s
                     ? "border-ng-clay bg-ng-clay text-ng-paper"
                     : "border-ng-line bg-ng-paper text-ng-ink-muted hover:border-ng-amber",
                 )}
               >
-                {s === "all" ? "All products" : s === "category" ? "Category" : "Specific products"}
+                {s === "all"
+                  ? "All products"
+                  : s === "category"
+                    ? "Category"
+                    : s === "product"
+                      ? "Products"
+                      : "Variants"}
               </button>
             ))}
           </div>
@@ -670,6 +700,21 @@ export function PromotionsPanel() {
                 value={form.productSlugs}
                 onChange={(e) => setForm((f) => ({ ...f, productSlugs: e.target.value }))}
               />
+            </div>
+          ) : null}
+          {form.scope === "variant" ? (
+            <div className="mb-5">
+              <Input
+                label="Variant SKUs (comma-separated)"
+                placeholder="NG-OIL-GN-1L-GLASS, NG-GHEE-GIR-500G"
+                value={form.variantSkus}
+                onChange={(e) => setForm((f) => ({ ...f, variantSkus: e.target.value }))}
+              />
+              <p className="mt-1.5 text-[12px] leading-snug text-ng-ink-muted">
+                Marks down these sizes only — every other variant of the same product keeps its
+                list price. The offer tag appears on the matching size on the product page. A
+                variant with no SKU cannot be targeted; give it one first.
+              </p>
             </div>
           ) : null}
 

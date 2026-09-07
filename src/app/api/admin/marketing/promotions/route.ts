@@ -65,7 +65,7 @@ function nullableStr(v: unknown, max?: number): string | null | undefined {
 
 /** A validated scope, else undefined (falls back to the column default 'all'). */
 function scope(v: unknown): PromotionScope | undefined {
-  return v === "all" || v === "category" || v === "product" ? v : undefined;
+  return v === "all" || v === "category" || v === "product" || v === "variant" ? v : undefined;
 }
 
 /**

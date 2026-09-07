@@ -30,7 +30,7 @@ import {
 } from "@/lib/rewards";
 import {
   getActivePromotions,
-  promoPercentForProduct,
+  promoPercentForVariant,
   applyPromoPaise,
 } from "@/lib/promotions";
 import { rewardReferralIfEligible } from "@/lib/referrals";
@@ -448,13 +448,21 @@ async function applyPromotionsToPricedLines(
       new Set(priced.map((p) => p.line.variantId).filter((v): v is string => !!v)),
     );
     const variantToProduct = new Map<string, string>();
+    // The SKU comes back with it: a variant-scoped promotion is matched on SKU,
+    // so without this the checkout would charge the product-wide price for a
+    // line the storefront had already marked down — the customer seeing one
+    // number and paying another.
+    const variantToSku = new Map<string, string>();
     if (variantIds.length > 0) {
       const { data } = await db
         .from("product_variants")
-        .select("id, product_id")
+        .select("id, product_id, sku")
         .in("id", variantIds);
-      for (const row of (data as { id: string; product_id: string | null }[] | null) ?? []) {
+      for (const row of (data as
+        | { id: string; product_id: string | null; sku: string | null }[]
+        | null) ?? []) {
         if (row.product_id) variantToProduct.set(row.id, row.product_id);
+        if (row.sku) variantToSku.set(row.id, row.sku);
       }
     }
     const productIdFor = (line: OrderLineInput): string | null =>
@@ -494,8 +502,9 @@ async function applyPromotionsToPricedLines(
       const meta = pid ? productMeta.get(pid) : undefined;
       if (!meta) return { line, unitPricePaise };
       const catSlug = meta.categoryId ? categorySlug.get(meta.categoryId) ?? null : null;
-      const percent = promoPercentForProduct(
+      const percent = promoPercentForVariant(
         { slug: meta.slug, categorySlug: catSlug, tags: catSlug ? [catSlug] : [] },
+        line.variantId ? variantToSku.get(line.variantId) ?? null : null,
         activePromos,
       );
       return {

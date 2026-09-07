@@ -54,7 +54,7 @@ function nullableStr(v: unknown, max?: number): string | null | undefined {
 }
 
 function scope(v: unknown): PromotionScope | undefined {
-  return v === "all" || v === "category" || v === "product" ? v : undefined;
+  return v === "all" || v === "category" || v === "product" || v === "variant" ? v : undefined;
 }
 
 /** Bounded on both axes — entry length and list length. */

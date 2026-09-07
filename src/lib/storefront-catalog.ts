@@ -26,6 +26,7 @@ import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
   getActivePromotionsCached,
   promoPercentForProduct,
+  promoPercentForVariant,
   applyPromoPaise,
   type PromotionRecord,
 } from "@/lib/promotions";
@@ -81,7 +82,15 @@ function deriveSocialProof(seed: string): { rating: number; reviewCount: number 
   return { rating: Number(rating.toFixed(1)), reviewCount };
 }
 
-/** Map a single catalog variant → its storefront option (price in rupees). */
+/**
+ * Map a single catalog variant → its storefront option (price in rupees).
+ *
+ * `promoPercent` is resolved PER VARIANT, not per product: it is the
+ * product-wide markdown raised by any variant-scoped campaign naming this
+ * SKU. That is what lets a 1L glass bottle go on offer while the 5L tin beside
+ * it stays at list price, and it is why the option carries its own
+ * `promoPercent` — the size tile has to be able to label itself.
+ */
 function mapVariantOption(v: ProductVariantRecord, promoPercent = 0): ProductVariantOption {
   const hasPromo = promoPercent > 0;
   return {
@@ -91,12 +100,11 @@ function mapVariantOption(v: ProductVariantRecord, promoPercent = 0): ProductVar
     pack: v.pack,
     sizeValue: v.sizeValue,
     sizeUnit: v.sizeUnit,
-    // Mark each variant down by the SAME product promo the card + order path use,
-    // so the PDP's selected-size price matches the sale (original kept as strike mrp).
     price: paiseToRupees(hasPromo ? applyPromoPaise(v.pricePaise, promoPercent) : v.pricePaise),
     mrp: hasPromo ? paiseToRupees(v.pricePaise) : undefined,
     inStock: v.stock - v.reserved > 0,
     imageUrl: v.imageUrl,
+    promoPercent: hasPromo ? promoPercent : undefined,
   };
 }
 
@@ -136,20 +144,51 @@ export function mapRecordToProductCard(
     : record.pricePaise;
   const inStock = hasVariants ? stats.inStock : record.stock - record.reserved > 0;
 
-  // Best live promo for THIS product (0 when none) — the single source of truth
-  // shared with the order path so every surface marks the same price down.
-  const promoPercent = promoPercentForProduct(
-    { slug: record.slug, categorySlug, tags: tag ? [tag] : [] },
-    activePromos,
+  const promoProduct = { slug: record.slug, categorySlug, tags: tag ? [tag] : [] };
+
+  // Product-wide floor (0 when none) — the markdown every variant inherits,
+  // and the single source of truth shared with the order path.
+  const basePromoPercent = promoPercentForProduct(promoProduct, activePromos);
+
+  // Each variant then resolves its OWN percent, which may be higher when a
+  // variant-scoped campaign names its SKU.
+  const options = activeVariants.map((v) =>
+    mapVariantOption(v, promoPercentForVariant(promoProduct, v.sku, activePromos)),
+  );
+
+  /*
+   * The card's lead price is the cheapest thing a shopper can actually buy.
+   *
+   * It used to be the cheapest LIST price marked down by the product promo,
+   * which stops being true the moment one size carries its own offer: a 5L tin
+   * at 40% off can undercut a 1L bottle at full price, and the grid would still
+   * have advertised "from ₹<1L>". Taking the minimum of the already-discounted
+   * variant prices keeps "from" honest whichever variant wins.
+   */
+  const cheapest = options.reduce<ProductVariantOption | null>(
+    (min, o) => (min === null || o.price < min.price ? o : min),
+    null,
+  );
+
+  // The badge percent is the best on offer anywhere in this product, so a
+  // single-variant deal still advertises itself on the grid.
+  const promoPercent = options.reduce(
+    (max, o) => Math.max(max, o.promoPercent ?? 0),
+    basePromoPercent,
   );
   const hasPromo = promoPercent > 0;
-  const price = paiseToRupees(
-    hasPromo ? applyPromoPaise(baseListPaise, promoPercent) : baseListPaise,
-  );
-  // Keep the un-discounted price as the strike-through mrp only when on sale.
-  const mrp = hasPromo ? paiseToRupees(baseListPaise) : undefined;
 
-  const options = activeVariants.map((v) => mapVariantOption(v, promoPercent));
+  const price = cheapest
+    ? cheapest.price
+    : paiseToRupees(
+        basePromoPercent > 0 ? applyPromoPaise(baseListPaise, basePromoPercent) : baseListPaise,
+      );
+  // Keep the un-discounted price as the strike-through mrp only when on sale.
+  const mrp = cheapest
+    ? cheapest.mrp
+    : basePromoPercent > 0
+      ? paiseToRupees(baseListPaise)
+      : undefined;
 
   return {
     id: record.id,

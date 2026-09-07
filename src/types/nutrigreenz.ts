@@ -42,6 +42,14 @@ export interface ProductVariantOption {
   inStock: boolean;
   /** Optional per-variant image URL; null falls back to the product image(s). */
   imageUrl: string | null;
+  /**
+   * Discount percent applying to THIS size, when it is on offer.
+   *
+   * Resolved per variant rather than per product, so a campaign aimed at a
+   * single SKU can mark down one pack size while its siblings stay at list.
+   * Undefined when the variant is not discounted.
+   */
+  promoPercent?: number;
 }
 
 export interface ProductCard {

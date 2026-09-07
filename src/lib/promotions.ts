@@ -44,7 +44,7 @@ export function isBannerKey(value: unknown): value is BannerKey {
 /* ── record + input shapes ────────────────────────────────────────────────── */
 
 /** Targeting mode for a promotion. */
-export type PromotionScope = "all" | "category" | "product";
+export type PromotionScope = "all" | "category" | "product" | "variant";
 
 /** A persisted promotion, camelCased. Percent is a whole 1..90. */
 export interface PromotionRecord {
@@ -137,7 +137,7 @@ const PROMO_COLS =
   "id, title, slug, banner_key, headline, subcopy, announcement, discount_percent, scope, scope_values, starts_at, ends_at, active, cta_label, cta_href, auto_month, priority, created_at, updated_at";
 
 function toScope(raw: string): PromotionScope {
-  return raw === "category" || raw === "product" ? raw : "all";
+  return raw === "category" || raw === "product" || raw === "variant" ? raw : "all";
 }
 
 function toPromotion(r: PromotionRow): PromotionRecord {
@@ -283,9 +283,42 @@ export interface PromoProduct {
 }
 
 /**
+ * Does this promotion cover the whole product (every size and pack of it)?
+ *
+ * `variant` scope deliberately answers NO here even when one of its SKUs
+ * belongs to this product: it marks down one size, and treating it as a
+ * product-wide markdown is exactly the bug this scope exists to avoid.
+ */
+function appliesToWholeProduct(promo: PromotionRecord, product: PromoProduct): boolean {
+  switch (promo.scope) {
+    case "all":
+      return true;
+    case "category": {
+      const inCategory =
+        product.categorySlug != null && promo.scopeValues.includes(product.categorySlug);
+      const inTags = product.tags?.some((tag) => promo.scopeValues.includes(tag)) ?? false;
+      return inCategory || inTags;
+    }
+    case "product":
+      return promo.scopeValues.includes(product.slug);
+    case "variant":
+      return false;
+  }
+}
+
+/**
  * The HIGHEST applicable discount percent for a product across the given active
  * promotions, or 0 when none apply. `all` always applies; `category` matches on
  * the product's category slug OR any of its tags; `product` matches on its slug.
+ *
+ * This is the PRODUCT-WIDE floor — the markdown every variant inherits.
+ * A variant-scoped promotion is not counted here; see
+ * {@link promoPercentForVariant}, which layers per-SKU offers on top.
+ *
+ * The scope test used to end in an `else` that matched product slugs, so any
+ * unrecognised scope quietly behaved like `product`. Adding a fourth scope made
+ * that fallback actively wrong — variant SKUs would have been compared against
+ * product slugs — so the match is now exhaustive over the union instead.
  */
 export function promoPercentForProduct(
   product: PromoProduct,
@@ -294,18 +327,33 @@ export function promoPercentForProduct(
   let best = 0;
   for (const promo of activePromos) {
     if (promo.discountPercent <= best) continue; // can't beat the current best
-    let applies = false;
-    if (promo.scope === "all") {
-      applies = true;
-    } else if (promo.scope === "category") {
-      const inCategory =
-        product.categorySlug != null && promo.scopeValues.includes(product.categorySlug);
-      const inTags = product.tags?.some((tag) => promo.scopeValues.includes(tag)) ?? false;
-      applies = inCategory || inTags;
-    } else {
-      applies = promo.scopeValues.includes(product.slug);
-    }
-    if (applies) best = promo.discountPercent;
+    if (appliesToWholeProduct(promo, product)) best = promo.discountPercent;
+  }
+  return best;
+}
+
+/**
+ * The HIGHEST discount percent for ONE variant: the product-wide floor, raised
+ * by any `variant`-scoped promotion naming this variant's SKU.
+ *
+ * Taking the max rather than letting the variant scope override means a 1L
+ * bottle already covered by a category sale never gets a WORSE price for also
+ * being named in a smaller campaign — the shopper always receives the better of
+ * the two, which is the only behaviour that is safe to run unattended.
+ *
+ * A variant with no SKU can never be targeted; it simply keeps the floor.
+ */
+export function promoPercentForVariant(
+  product: PromoProduct,
+  variantSku: string | null | undefined,
+  activePromos: readonly PromotionRecord[],
+): number {
+  let best = promoPercentForProduct(product, activePromos);
+  if (!variantSku) return best;
+  for (const promo of activePromos) {
+    if (promo.scope !== "variant") continue;
+    if (promo.discountPercent <= best) continue;
+    if (promo.scopeValues.includes(variantSku)) best = promo.discountPercent;
   }
   return best;
 }

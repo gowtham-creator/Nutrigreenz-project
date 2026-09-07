@@ -21,6 +21,13 @@ export interface PdpVariant {
   inStock?: boolean;
   /** Optional per-variant image URL; when set the gallery leads with it. */
   imageUrl?: string | null;
+  /**
+   * Discount percent applying to THIS size, when it is on offer.
+   *
+   * Set for every discounted variant, whether the markdown was inherited from
+   * a product/category sale or aimed at this SKU alone.
+   */
+  promoPercent?: number;
 }
 
 interface VariantSelectorProps {
@@ -58,10 +65,18 @@ function VariantTile({
   onSelect: () => void;
 }) {
   const soldOut = variant.inStock === false;
+  /*
+   * The campaign's own percent wins when it is known; the price gap is the
+   * fallback. Deriving it is only ever an inference — rounding a ratio of two
+   * rupee figures can land a whole point away from the percent the operator
+   * actually entered, and "39% off" against a campaign sold as 40% is the kind
+   * of mismatch a customer notices and a support inbox pays for.
+   */
   const discount =
-    variant.mrp && variant.mrp > variant.price
+    variant.promoPercent ??
+    (variant.mrp && variant.mrp > variant.price
       ? Math.round((1 - variant.price / variant.mrp) * 100)
-      : 0;
+      : 0);
   return (
     <button
       type="button"
@@ -83,16 +98,36 @@ function VariantTile({
         soldOut && "cursor-not-allowed opacity-45 hover:border-ng-line",
       )}
     >
-      {/* Label band */}
+      {/* Label band — the pack name, and the offer when this size has one. */}
       <span
         className={cn(
-          "w-full px-3 py-2 text-[13.5px] font-semibold leading-tight transition-colors duration-200",
+          "flex w-full items-center justify-between gap-1.5 px-3 py-2 text-[13.5px] font-semibold leading-tight transition-colors duration-200",
           active
             ? "bg-ng-forest text-ng-cream"
             : "bg-ng-cream/70 text-ng-forest-deep group-hover:bg-ng-sage/40",
         )}
       >
-        {label}
+        <span className="min-w-0 truncate">{label}</span>
+        {discount > 0 && !soldOut ? (
+          /*
+           * The offer rides the BAND, next to the name of the size it belongs
+           * to — because with per-variant pricing the discount is now a fact
+           * about this pack, not about the product. A shopper scanning six
+           * tiles for "which size is on offer?" reads the band; making them
+           * infer it from a struck price two lines down is work.
+           *
+           * The inline "% off" beside the price stays. It is doing a different
+           * job: this badge finds the offer, that one explains the arithmetic.
+           */
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-1.5 py-0.5 text-[10.5px] font-bold uppercase leading-none tracking-wide tabular-nums",
+              active ? "bg-ng-cream text-ng-forest-deep" : "bg-[#B84329] text-ng-paper",
+            )}
+          >
+            {discount}% off
+          </span>
+        ) : null}
       </span>
 
       {/* Money */}

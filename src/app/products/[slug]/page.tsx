@@ -146,6 +146,9 @@ function toBuyVariant(v: ProductVariantOption): PdpVariant {
     perUnit,
     inStock: v.inStock,
     imageUrl: v.imageUrl,
+    // Carried through so the tile can label ITS offer, which may be higher than
+    // the product's when a campaign targets this SKU alone.
+    promoPercent: v.promoPercent,
   };
 }
 
