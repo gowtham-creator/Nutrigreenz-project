@@ -50,12 +50,29 @@ export function TrustBar({ checks = 70 }: TrustBarProps) {
   return (
     <ul className="grid grid-cols-2 gap-x-3 gap-y-6 border-t border-ng-line-soft pt-6 sm:grid-cols-4">
       {items.map((t) => (
-        <li key={t.label} className="flex flex-col items-center gap-1.5 text-center">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-ng-sage/25 text-ng-forest">
-            {"app" in t ? <BrandIcon name={t.app} size={22} weight="line" /> : <Icon name={t.icon} size={22} />}
+        <li key={t.label} className="flex flex-col items-center gap-2 text-center">
+          {/* 56px disc, 28px glyph — up from 44/22. At the old size these read
+              as decoration beside the copy; a claim the customer is meant to
+              weigh should carry its own weight on the page. The disc grows
+              faster than the glyph so the ring stays a ring rather than
+              tightening into an outline around the mark. */}
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-ng-sage/25 text-ng-forest">
+            {"app" in t ? <BrandIcon name={t.app} size={28} weight="line" /> : <Icon name={t.icon} size={28} />}
           </span>
-          <span className="text-[13px] font-semibold text-ng-forest-deep">{t.label}</span>
-          <span className="text-[11px] leading-snug text-ng-ink-muted">{t.sub}</span>
+          {/* The label moves to the display serif.
+              Everything in this column is set in the sans, so a fourth block of
+              it read as more body copy. Fraunces is what the brand already uses
+              for things it wants believed — the product title, the section
+              headings — and borrowing that voice here is the point: these are
+              promises, not captions. Tracking is tightened because the serif
+              sets wider than the sans at the same size. */}
+          <span className="font-display text-[16px] leading-tight tracking-[-0.01em] text-ng-forest-deep">
+            {t.label}
+          </span>
+          {/* The sub-line stays in the sans and stays small — it explains the
+              claim above it, and matching the label's weight would leave the
+              eye with nothing to land on first. */}
+          <span className="text-[12px] leading-snug text-ng-ink-muted">{t.sub}</span>
         </li>
       ))}
     </ul>
