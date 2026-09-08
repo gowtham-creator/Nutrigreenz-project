@@ -499,8 +499,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
             </Reveal>
 
-            {/* Product description */}
-            {story ? (
+            {/*
+              Product description.
+
+              The product's OWN copy wins when an operator has written one.
+              `story.description` is keyed by category, so falling back to it
+              first meant all six oils shared a single paragraph and the
+              per-product field was never displayed at all.
+            */}
+            {p.description?.trim() ? (
+              <ProductDescription
+                paragraphs={p.description
+                  .split(/\n{2,}/)
+                  .map((s: string) => s.trim())
+                  .filter(Boolean)}
+              />
+            ) : story ? (
               <ProductDescription paragraphs={story.description} />
             ) : (
               <Reveal className="flex flex-col gap-4">

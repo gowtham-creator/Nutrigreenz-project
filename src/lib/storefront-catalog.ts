@@ -209,6 +209,16 @@ export function mapRecordToProductCard(
     badge: inStock ? undefined : "Sold out",
     badgeTone: inStock ? undefined : "terracotta",
     href: `/products/${record.slug}`,
+    /*
+     * The operator-written description, carried through to the storefront.
+     *
+     * It was mapped nowhere, so `products.description` was write-only: an
+     * operator could edit it in the Inventory panel and nothing on the site
+     * would change. Meanwhile the PDP fell back to `getProductStory`, which is
+     * keyed by CATEGORY, so all six oils shared one paragraph and gave a
+     * shopper no reason to choose between them.
+     */
+    description: record.description?.trim() || undefined,
     tags: tag ? [tag] : [],
     variants: options,
     promoPercent: hasPromo ? promoPercent : undefined,

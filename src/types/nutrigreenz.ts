@@ -86,6 +86,14 @@ export interface ProductCard {
   promoPercent?: number;
   /** Ready-to-render promo chip label, e.g. "15% OFF" (present with `promoPercent`). */
   promoLabel?: string;
+  /**
+   * The operator-written product description, when one exists.
+   *
+   * The PDP prefers this over the shared category story. Without it the
+   * per-product field was write-only: editable in the Inventory panel, visible
+   * nowhere, while every product in a category showed the same paragraph.
+   */
+  description?: string;
 }
 
 export interface Category {
