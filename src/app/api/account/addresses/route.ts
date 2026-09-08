@@ -17,6 +17,7 @@ import {
   type AddressInput,
   type AddressLabel,
 } from "@/lib/customer-addresses";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
 export const runtime = "nodejs";
@@ -26,10 +27,26 @@ function normalizeLabel(value: unknown): AddressLabel | undefined {
   return undefined;
 }
 
-function str(value: unknown): string | null | undefined {
+/*
+ * Capped and stripped, not merely trimmed.
+ *
+ * This is a CUSTOMER-writable surface and it had no length ceiling at all —
+ * whatever was sent was trimmed and stored. Entersoft's retest reported
+ * "Improper Input Length Validation" still open and was right: the earlier
+ * sanitisation sweeps covered the admin routes and never reached the address
+ * book. `plainText` adds the tag, template-brace and bidi-override stripping
+ * the rest of the API already applies — see sanitize-text.ts for why input is
+ * cleaned even though output is escaped.
+ */
+
+/** A cleaned, length-capped string. `null` clears the field; `undefined` leaves it. */
+function str(value: unknown, max: number): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
-  return typeof value === "string" ? value.trim() : undefined;
+  if (typeof value !== "string") return undefined;
+  // An entry that was pure markup collapses to "", which the lib treats as blank
+  // rather than storing the payload.
+  return plainText(value, max);
 }
 
 function num(value: unknown): number | null | undefined {
@@ -41,17 +58,17 @@ function num(value: unknown): number | null | undefined {
 /** Coerce an untrusted JSON body into a typed, sanitized AddressInput. */
 function parseInput(body: Record<string, unknown>): AddressInput {
   return {
-    fullName: str(body.fullName),
-    phone: str(body.phone),
+    fullName: str(body.fullName, TEXT_LIMITS.name),
+    phone: str(body.phone, TEXT_LIMITS.phone),
     label: normalizeLabel(body.label),
-    customLabel: str(body.customLabel),
-    buildingFloorFlat: str(body.buildingFloorFlat),
-    roadStreet: str(body.roadStreet),
-    areaLandmark: str(body.areaLandmark),
-    city: str(body.city),
-    pincode: str(body.pincode),
-    region: str(body.region),
-    state: str(body.state),
+    customLabel: str(body.customLabel, TEXT_LIMITS.label),
+    buildingFloorFlat: str(body.buildingFloorFlat, TEXT_LIMITS.addressLine),
+    roadStreet: str(body.roadStreet, TEXT_LIMITS.addressLine),
+    areaLandmark: str(body.areaLandmark, TEXT_LIMITS.addressLine),
+    city: str(body.city, TEXT_LIMITS.area),
+    pincode: str(body.pincode, TEXT_LIMITS.pincode),
+    region: str(body.region, TEXT_LIMITS.area),
+    state: str(body.state, TEXT_LIMITS.area),
     isDefault: typeof body.isDefault === "boolean" ? body.isDefault : undefined,
     lat: num(body.lat),
     lng: num(body.lng),

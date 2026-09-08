@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
 /**
  * Reading and writing the profile fields the account page collects.
@@ -115,8 +116,15 @@ export async function updateCustomerProfile(
   const update: Record<string, unknown> = {};
 
   if (patch.name !== undefined) {
-    const name = patch.name?.trim() ?? "";
-    if (name.length > 120) {
+    /*
+     * Stripped BEFORE the length check, so the limit measures the name rather
+     * than the markup around it. The ceiling was already enforced here — this
+     * adds the tag/brace/bidi cleaning the rest of the API applies, because a
+     * display name travels well beyond HTML: it is interpolated into order
+     * emails, invoices and WhatsApp messages, none of which escape.
+     */
+    const name = plainText(patch.name, TEXT_LIMITS.name + 1);
+    if (name.length > TEXT_LIMITS.name) {
       throw new ProfileValidationError("name", "Name is too long (120 characters maximum).");
     }
     update.display_name = name || null;

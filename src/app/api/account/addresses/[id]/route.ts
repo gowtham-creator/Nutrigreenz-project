@@ -17,6 +17,7 @@ import {
   type AddressInput,
   type AddressLabel,
 } from "@/lib/customer-addresses";
+import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
 
 export const runtime = "nodejs";
 
@@ -25,10 +26,13 @@ function normalizeLabel(value: unknown): AddressLabel | undefined {
   return undefined;
 }
 
-function str(value: unknown): string | null | undefined {
+/** Capped and stripped — see the POST route beside this one. An edit needs the
+ *  same ceiling as a create, or the cap is one request away from being bypassed. */
+function str(value: unknown, max: number): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
-  return typeof value === "string" ? value.trim() : undefined;
+  if (typeof value !== "string") return undefined;
+  return plainText(value, max);
 }
 
 function num(value: unknown): number | null | undefined {
@@ -39,17 +43,17 @@ function num(value: unknown): number | null | undefined {
 
 function parseInput(body: Record<string, unknown>): AddressInput {
   return {
-    fullName: str(body.fullName),
-    phone: str(body.phone),
+    fullName: str(body.fullName, TEXT_LIMITS.name),
+    phone: str(body.phone, TEXT_LIMITS.phone),
     label: normalizeLabel(body.label),
-    customLabel: str(body.customLabel),
-    buildingFloorFlat: str(body.buildingFloorFlat),
-    roadStreet: str(body.roadStreet),
-    areaLandmark: str(body.areaLandmark),
-    city: str(body.city),
-    pincode: str(body.pincode),
-    region: str(body.region),
-    state: str(body.state),
+    customLabel: str(body.customLabel, TEXT_LIMITS.label),
+    buildingFloorFlat: str(body.buildingFloorFlat, TEXT_LIMITS.addressLine),
+    roadStreet: str(body.roadStreet, TEXT_LIMITS.addressLine),
+    areaLandmark: str(body.areaLandmark, TEXT_LIMITS.addressLine),
+    city: str(body.city, TEXT_LIMITS.area),
+    pincode: str(body.pincode, TEXT_LIMITS.pincode),
+    region: str(body.region, TEXT_LIMITS.area),
+    state: str(body.state, TEXT_LIMITS.area),
     isDefault: typeof body.isDefault === "boolean" ? body.isDefault : undefined,
     lat: num(body.lat),
     lng: num(body.lng),
