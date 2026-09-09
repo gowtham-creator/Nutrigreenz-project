@@ -1,12 +1,13 @@
 import { requireSuperAdmin } from "../../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertArea, deleteArea, type AreaInput } from "@/lib/commerce-rules";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PATCH — edit a serviceable area (pincode / area / community / active). Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -27,7 +28,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (!pincode) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   const input: AreaInput = { id, pincode };
-  if (body.area !== undefined) input.area = plainText(body.area, TEXT_LIMITS.area);
+  if (body.area !== undefined) input.area = strictText(body.area, TEXT_LIMITS.area, "Area");
   if (body.community !== undefined) input.community = String(body.community);
   if (typeof body.active === "boolean") input.active = body.active;
 
@@ -51,3 +52,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   await deleteArea(id);
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

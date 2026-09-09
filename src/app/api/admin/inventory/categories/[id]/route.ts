@@ -1,14 +1,15 @@
 import { isSignedInAdmin, isSuperAdmin } from "../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertCategory, deleteCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PATCH — rename a category or change its sort order. Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
@@ -27,7 +28,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = plainText(body.name, TEXT_LIMITS.name);
+  const name = strictText(body.name, TEXT_LIMITS.name, "Name");
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
   const icon = typeof body.icon === "string" ? body.icon.trim() || null : undefined;
@@ -59,3 +60,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   revalidateStorefront();
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

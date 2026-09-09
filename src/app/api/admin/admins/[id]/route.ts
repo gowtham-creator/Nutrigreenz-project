@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { sendAdminInvite } from "@/lib/admin-invite";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import {
@@ -16,6 +16,7 @@ import { sanitizePermissions } from "@/lib/admin-permissions";
 import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** The signed-in super-admin's email, or null when not a super-admin. */
 async function superAdminEmail(): Promise<string | null> {
@@ -69,7 +70,7 @@ async function protectedTargetDenial(
 }
 
 /** PATCH — edit name, mobile, role or status. */
-export async function PATCH(
+async function PATCHHandler(
   request: Request,
   ctx: RouteContext<"/api/admin/admins/[id]">,
 ): Promise<Response> {
@@ -101,7 +102,7 @@ export async function PATCH(
   } = {};
 
   if (body.name !== undefined) {
-    const name = plainText(body.name, TEXT_LIMITS.name);
+    const name = strictText(body.name, TEXT_LIMITS.name, "Name");
     if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
     patch.name = name;
   }
@@ -185,7 +186,7 @@ export async function PATCH(
 }
 
 /** POST — per-row credential actions (reset password, resend credentials). */
-export async function POST(
+async function POSTHandler(
   request: Request,
   ctx: RouteContext<"/api/admin/admins/[id]">,
 ): Promise<Response> {
@@ -299,3 +300,9 @@ export async function DELETE(
 
   return Response.json({ ok: true });
 }
+
+
+export const POST = withLengthValidation(POSTHandler);
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

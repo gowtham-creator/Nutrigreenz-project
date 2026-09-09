@@ -1,9 +1,10 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listVariants, createVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** GET — list a product's variants (`?productId=`). */
 export async function GET(request: Request): Promise<Response> {
@@ -22,7 +23,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 /** POST — create a variant for a product. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
@@ -36,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const productId = String(body.productId ?? "").trim();
-  const label = plainText(body.label, TEXT_LIMITS.label);
+  const label = strictText(body.label, TEXT_LIMITS.label, "Label");
   if (!productId || !label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   // Price is a super-admin-only field. A plain admin may create a variant, but
@@ -56,7 +57,7 @@ export async function POST(request: Request): Promise<Response> {
           : null,
       sizeUnit: body.sizeUnit != null && String(body.sizeUnit).trim() ? String(body.sizeUnit) : null,
       pricePaise,
-      sku: body.sku != null ? plainText(body.sku, TEXT_LIMITS.sku) : null,
+      sku: body.sku != null ? strictText(body.sku, TEXT_LIMITS.sku, "Sku") : null,
       stock: Math.max(0, Math.round(Number(body.stock) || 0)),
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),
       sort: Math.round(Number(body.sort) || 0),
@@ -69,3 +70,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

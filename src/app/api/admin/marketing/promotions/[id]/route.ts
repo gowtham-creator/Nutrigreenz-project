@@ -19,7 +19,8 @@ import {
   type PromotionPatch,
   type PromotionScope,
 } from "@/lib/promotions";
-import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { strictText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -31,7 +32,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /** A cleaned, length-capped non-empty string, else undefined. */
 function str(v: unknown, max: number = TEXT_LIMITS.name): string | undefined {
-  const s = plainText(v, max);
+  const s = strictText(v, max, "Field");
   return s ? s : undefined;
 }
 
@@ -50,7 +51,7 @@ function nullableStr(v: unknown, max?: number): string | null | undefined {
   if (v === null || (typeof v === "string" && !v.trim())) return null;
   if (typeof v !== "string") return undefined;
   if (max === undefined) return v.trim();
-  return plainText(v, max) || null;
+  return strictText(v, max, "Field") || null;
 }
 
 function scope(v: unknown): PromotionScope | undefined {
@@ -62,12 +63,12 @@ function strArray(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   return v
     .slice(0, 200)
-    .map((x) => plainText(x, TEXT_LIMITS.slug))
+    .map((x) => strictText(x, TEXT_LIMITS.slug, "Field"))
     .filter((x) => x.length > 0);
 }
 
 /** PATCH — edit a promotion's terms (not its slug). Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -172,3 +173,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

@@ -1,12 +1,13 @@
 import { requireSuperAdmin } from "../../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateSlot, deleteSlot, type SlotUpdateInput } from "@/lib/commerce-rules";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PATCH — edit a delivery slot (label / window / sort / active). Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -23,7 +24,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   const input: SlotUpdateInput = {};
   if (body.label !== undefined) {
-    const label = plainText(body.label, TEXT_LIMITS.label);
+    const label = strictText(body.label, TEXT_LIMITS.label, "Label");
     if (!label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
     input.label = label;
   }
@@ -52,3 +53,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   await deleteSlot(id);
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

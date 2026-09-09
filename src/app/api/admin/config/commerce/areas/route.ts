@@ -1,8 +1,9 @@
 import { requireSuperAdmin } from "../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listServiceableAreas, upsertArea, importAreas } from "@/lib/commerce-rules";
 import { parseCsv } from "@/lib/csv";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** GET — list all serviceable areas. Super-admin only. */
 export async function GET(): Promise<Response> {
@@ -51,7 +52,7 @@ function parseAreaCsv(text: string): { pincode: string; area?: string; community
  *   - `{ pincode, area?, community? }` → create a single serviceable area.
  * Super-admin only.
  */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -77,7 +78,7 @@ export async function POST(request: Request): Promise<Response> {
   // Single area create.
   const pincode = String(body.pincode ?? "").trim();
   if (!pincode) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
-  const area = body.area !== undefined ? plainText(body.area, TEXT_LIMITS.area) : undefined;
+  const area = body.area !== undefined ? strictText(body.area, TEXT_LIMITS.area, "Area") : undefined;
   const community = body.community !== undefined ? String(body.community) : undefined;
   const active = typeof body.active === "boolean" ? body.active : undefined;
 
@@ -89,3 +90,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

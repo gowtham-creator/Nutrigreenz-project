@@ -1,14 +1,15 @@
 import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { updateVariant, deleteVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** PATCH — edit an editable subset of a variant's fields. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
@@ -29,13 +30,13 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   const patch: Parameters<typeof updateVariant>[1] = {};
-  if (body.label !== undefined) patch.label = plainText(body.label, TEXT_LIMITS.label);
+  if (body.label !== undefined) patch.label = strictText(body.label, TEXT_LIMITS.label, "Label");
   if (body.pack !== undefined) patch.pack = body.pack != null && String(body.pack).trim() ? String(body.pack) : null;
   if (body.sizeValue !== undefined)
     patch.sizeValue = body.sizeValue != null && Number.isFinite(Number(body.sizeValue)) ? Number(body.sizeValue) : null;
   if (body.sizeUnit !== undefined) patch.sizeUnit = body.sizeUnit != null ? String(body.sizeUnit) : null;
   if (body.pricePaise !== undefined) patch.pricePaise = Math.max(0, Math.round(Number(body.pricePaise) || 0));
-  if (body.sku !== undefined) patch.sku = body.sku != null ? plainText(body.sku, TEXT_LIMITS.sku) : null;
+  if (body.sku !== undefined) patch.sku = body.sku != null ? strictText(body.sku, TEXT_LIMITS.sku, "Sku") : null;
   if (body.isActive !== undefined) patch.isActive = Boolean(body.isActive);
   if (body.sort !== undefined) patch.sort = Math.round(Number(body.sort) || 0);
   if (body.imageUrl !== undefined)
@@ -66,3 +67,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   revalidateStorefront();
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

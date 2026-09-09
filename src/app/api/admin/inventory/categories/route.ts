@@ -1,9 +1,10 @@
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** GET — list all categories. */
 export async function GET(): Promise<Response> {
@@ -17,7 +18,7 @@ export async function GET(): Promise<Response> {
 }
 
 /** POST — create a category. Super-admin only. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
@@ -35,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = plainText(body.name, TEXT_LIMITS.name);
+  const name = strictText(body.name, TEXT_LIMITS.name, "Name");
   if (!name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
@@ -50,3 +51,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

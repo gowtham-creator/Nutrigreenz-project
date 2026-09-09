@@ -7,6 +7,7 @@ import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertFarm, deleteFarm } from "@/lib/content";
 import { farmDraftFromBody } from "@/lib/content-input";
+import { InputTooLongError } from "@/lib/sanitize-text";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 
 export const runtime = "nodejs";
@@ -32,7 +33,18 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const draft = farmDraftFromBody(body);
+  /* An over-length field is now a 400 naming the field, not a silent trim.
+     See sanitize-text.ts: truncating returned 200 and told the operator their
+     work had saved while cutting it to fit. */
+  let draft;
+  try {
+    draft = farmDraftFromBody(body);
+  } catch (err) {
+    if (err instanceof InputTooLongError) {
+      return Response.json({ ok: false, field: err.field, error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
   if (!draft.name) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
   try {

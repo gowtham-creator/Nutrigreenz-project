@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -10,6 +10,7 @@ import {
   listCaptains,
   normalizeMobile10,
 } from "@/lib/captains";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /**
  * Admin captain roster.
@@ -52,7 +53,7 @@ export async function GET(): Promise<Response> {
   return Response.json({ ok: true, captains });
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireApiPermission("captains");
   if (denied) return denied;
   const session = await adminSession();
@@ -68,10 +69,10 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "bad_request" }, { status: 400 });
   }
 
-  const name = plainText(body.name, TEXT_LIMITS.name);
+  const name = strictText(body.name, TEXT_LIMITS.name, "Name");
   const phone = normalizeMobile10(String(body.phone ?? ""));
-  const area = body.area != null ? plainText(body.area, TEXT_LIMITS.area) : null;
-  const stall = body.stall != null ? plainText(body.stall, TEXT_LIMITS.label) : null;
+  const area = body.area != null ? strictText(body.area, TEXT_LIMITS.area, "Area") : null;
+  const stall = body.stall != null ? strictText(body.stall, TEXT_LIMITS.label, "Stall") : null;
   const communities = sanitizeCommunities(body.communities);
   const active = body.active === undefined ? true : Boolean(body.active);
 
@@ -103,3 +104,6 @@ export async function POST(request: Request): Promise<Response> {
   });
   return Response.json({ ok: true, captain }, { status: 201 });
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

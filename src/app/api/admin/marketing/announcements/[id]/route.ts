@@ -15,14 +15,15 @@ import {
   deleteAnnouncement,
   type AnnouncementPatch,
 } from "@/lib/announcements";
-import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { strictText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** A cleaned, length-capped non-empty string, else undefined — see the POST
  *  route beside this one; an edit needs the same ceiling as a create. */
 function str(v: unknown, max: number = TEXT_LIMITS.announcement): string | undefined {
-  const s = plainText(v, max);
+  const s = strictText(v, max, "Field");
   return s ? s : undefined;
 }
 
@@ -36,7 +37,7 @@ function num(v: unknown): number | undefined {
 }
 
 /** PATCH — edit a line's text / sort / active flag. Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -106,3 +107,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

@@ -1,7 +1,8 @@
 import { requireSuperAdmin } from "../../guard";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listDeliverySlots, createSlot } from "@/lib/commerce-rules";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** GET — list all delivery slots. Super-admin only. */
 export async function GET(): Promise<Response> {
@@ -12,7 +13,7 @@ export async function GET(): Promise<Response> {
 }
 
 /** POST — create a delivery slot. Super-admin only. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -26,7 +27,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const label = plainText(body.label, TEXT_LIMITS.label);
+  const label = strictText(body.label, TEXT_LIMITS.label, "Label");
   if (!label) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const windowText = body.windowText !== undefined ? String(body.windowText) : undefined;
   const sort = Number.isFinite(Number(body.sort)) ? Number(body.sort) : undefined;
@@ -40,3 +41,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

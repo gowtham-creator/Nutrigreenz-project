@@ -1,9 +1,10 @@
 import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
-import { TEXT_LIMITS, plainMultiline, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictMultiline, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, updateProduct, deleteProduct, type ProductStatus } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -28,7 +29,7 @@ export async function GET(_request: Request, ctx: Ctx): Promise<Response> {
 }
 
 /** PATCH — edit an editable subset of product fields. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
@@ -49,14 +50,14 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   const patch: Parameters<typeof updateProduct>[1] = {};
-  if (body.name !== undefined) patch.name = plainText(body.name, TEXT_LIMITS.name);
-  if (body.slug !== undefined) patch.slug = plainText(body.slug, TEXT_LIMITS.slug);
+  if (body.name !== undefined) patch.name = strictText(body.name, TEXT_LIMITS.name, "Name");
+  if (body.slug !== undefined) patch.slug = strictText(body.slug, TEXT_LIMITS.slug, "Slug");
   if (body.categoryId !== undefined) patch.categoryId = body.categoryId ? String(body.categoryId) : null;
-  if (body.description !== undefined) patch.description = body.description != null ? plainMultiline(body.description, TEXT_LIMITS.description) : null;
+  if (body.description !== undefined) patch.description = body.description != null ? strictMultiline(body.description, TEXT_LIMITS.description, "Description") : null;
   if (body.pricePaise !== undefined) patch.pricePaise = Math.max(0, Math.round(Number(body.pricePaise) || 0));
   if (body.imageUrl !== undefined) patch.imageUrl = body.imageUrl != null ? String(body.imageUrl) : null;
   if (body.gallery !== undefined) patch.gallery = Array.isArray(body.gallery) ? body.gallery.map(String) : [];
-  if (body.sku !== undefined) patch.sku = body.sku != null ? plainText(body.sku, TEXT_LIMITS.sku) : null;
+  if (body.sku !== undefined) patch.sku = body.sku != null ? strictText(body.sku, TEXT_LIMITS.sku, "Sku") : null;
   if (body.status !== undefined) {
     const status = asStatus(body.status);
     if (status) patch.status = status;
@@ -87,3 +88,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   revalidateStorefront();
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

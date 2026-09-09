@@ -15,7 +15,8 @@ import {
   createAnnouncement,
   type AnnouncementInput,
 } from "@/lib/announcements";
-import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { strictText, TEXT_LIMITS } from "@/lib/sanitize-text";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /**
  * A cleaned, length-capped non-empty string, else undefined.
@@ -25,7 +26,7 @@ import { plainText, TEXT_LIMITS } from "@/lib/sanitize-text";
  * matters most on this surface was the one that was missing.
  */
 function str(v: unknown, max: number = TEXT_LIMITS.announcement): string | undefined {
-  const s = plainText(v, max);
+  const s = strictText(v, max, "Field");
   return s ? s : undefined;
 }
 
@@ -47,7 +48,7 @@ export async function GET(): Promise<Response> {
 }
 
 /** POST — create an announcement line. Super-admin only. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -91,3 +92,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

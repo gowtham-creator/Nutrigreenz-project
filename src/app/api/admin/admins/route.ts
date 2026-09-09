@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { sendAdminInvite } from "@/lib/admin-invite";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { listAdmins, createAdmin, adminEmailExists, phoneTaken } from "@/lib/admins";
@@ -8,6 +8,7 @@ import { sanitizePermissions } from "@/lib/admin-permissions";
 import { setAdminFactors } from "@/lib/admin-security";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /** Only a signed-in super-admin may list or create admins. */
 async function isSuperAdmin(): Promise<boolean> {
@@ -34,7 +35,7 @@ export async function GET(): Promise<Response> {
 }
 
 /** POST — create an admin and deliver their credentials. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const actorEmail = await superAdminEmail();
   if (!actorEmail) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) {
@@ -48,7 +49,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const name = plainText(body.name, TEXT_LIMITS.name);
+  const name = strictText(body.name, TEXT_LIMITS.name, "Name");
   const email = String(body.email ?? "").trim().toLowerCase();
   const phoneDigits = String(body.phone ?? "").replace(/\D/g, "");
   const channels = (Array.isArray(body.channels) ? body.channels : ["email"]).map(String);
@@ -124,3 +125,6 @@ export async function POST(request: Request): Promise<Response> {
 
   return Response.json({ ok: true, admin, sent, pending, setupLink: invite.link });
 }
+
+
+export const POST = withLengthValidation(POSTHandler);

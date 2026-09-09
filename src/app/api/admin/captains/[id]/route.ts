@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { TEXT_LIMITS, plainText } from "@/lib/sanitize-text";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -15,6 +15,7 @@ import {
   updateCaptain,
   type CaptainUpdateInput,
 } from "@/lib/captains";
+import { withLengthValidation } from "@/lib/input-validation-guard";
 
 /**
  * Admin single-captain surface.
@@ -66,7 +67,7 @@ export async function GET(
   return Response.json({ ok: true, captain, captures, settlements, todayStats });
 }
 
-export async function PATCH(
+async function PATCHHandler(
   request: Request,
   ctx: RouteContext<"/api/admin/captains/[id]">,
 ): Promise<Response> {
@@ -90,7 +91,7 @@ export async function PATCH(
 
   const patch: CaptainUpdateInput = {};
   if (body.name !== undefined) {
-    const name = plainText(body.name, TEXT_LIMITS.name);
+    const name = strictText(body.name, TEXT_LIMITS.name, "Name");
     if (!name) return Response.json({ ok: false, error: "name_required" }, { status: 400 });
     patch.name = name;
   }
@@ -102,7 +103,7 @@ export async function PATCH(
     }
     patch.phone = phone;
   }
-  if (body.area !== undefined) patch.area = body.area != null ? plainText(body.area, TEXT_LIMITS.area) : null;
+  if (body.area !== undefined) patch.area = body.area != null ? strictText(body.area, TEXT_LIMITS.area, "Area") : null;
   if (body.stall !== undefined) patch.stall = body.stall != null ? String(body.stall).trim() : null;
   if (body.communities !== undefined) patch.communities = sanitizeCommunities(body.communities);
   if (body.commissionPercent !== undefined) {
@@ -136,3 +137,6 @@ export async function DELETE(
   await deleteCaptain(id);
   return Response.json({ ok: true });
 }
+
+
+export const PATCH = withLengthValidation(PATCHHandler);

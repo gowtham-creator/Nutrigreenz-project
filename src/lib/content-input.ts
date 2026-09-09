@@ -10,8 +10,9 @@ import {
   nonNegativeInt,
   nonNegativeNumber,
   oneOf,
-  plainMultiline,
   plainText,
+  strictMultiline,
+  strictText,
 } from "@/lib/sanitize-text";
 
 /**
@@ -42,14 +43,18 @@ export function journalDraftFromBody(body: Record<string, unknown>): JournalInpu
         ? body.imageUrl
         : undefined;
   return {
-    title: plainText(body.title, TEXT_LIMITS.name),
-    slug: typeof body.slug === "string" ? plainText(body.slug, TEXT_LIMITS.slug) : undefined,
-    excerpt: typeof body.excerpt === "string" ? plainText(body.excerpt, 300) : undefined,
+    /* Over-length values are REFUSED here rather than trimmed to fit. Silent
+       truncation returned 200 and a "Article updated" toast while cutting the
+       operator's text at 120 characters, which is both the audit finding and
+       the worse outcome for the person using the form. */
+    title: strictText(body.title, TEXT_LIMITS.name, "Title"),
+    slug: typeof body.slug === "string" ? strictText(body.slug, TEXT_LIMITS.slug, "Slug") : undefined,
+    excerpt: typeof body.excerpt === "string" ? strictText(body.excerpt, 300, "Excerpt") : undefined,
     /* The article body is long-form prose written by an operator, so line
        structure is kept — but tags and template delimiters still come out. */
-    body: typeof body.body === "string" ? plainMultiline(body.body, 20000) : undefined,
+    body: typeof body.body === "string" ? strictMultiline(body.body, 20000, "Body") : undefined,
     cover,
-    author: typeof body.author === "string" ? plainText(body.author, TEXT_LIMITS.name) : undefined,
+    author: typeof body.author === "string" ? strictText(body.author, TEXT_LIMITS.name, "Author") : undefined,
     category: oneOf(body.category, JOURNAL_CATEGORIES),
     readMinutes: nonNegativeInt(body.readMinutes),
     tags: body.tags !== undefined ? toStringArray(body.tags) : undefined,
@@ -72,14 +77,17 @@ export function farmDraftFromBody(body: Record<string, unknown>): FarmInput {
   const hectares =
     rawHectares === null || rawHectares === "" ? null : nonNegativeNumber(rawHectares);
   return {
-    name: plainText(body.name, TEXT_LIMITS.name),
-    region: typeof body.region === "string" ? plainText(body.region, TEXT_LIMITS.area) : undefined,
+    name: strictText(body.name, TEXT_LIMITS.name, "Farm name"),
+    region:
+      typeof body.region === "string" ? strictText(body.region, TEXT_LIMITS.area, "Region") : undefined,
     hectares,
     practices: body.practices !== undefined ? toStringArray(body.practices) : undefined,
     partneredSince: typeof body.partneredSince === "string" ? body.partneredSince : undefined,
     farmerName:
-      typeof body.farmerName === "string" ? plainText(body.farmerName, TEXT_LIMITS.name) : undefined,
-    story: typeof body.story === "string" ? plainMultiline(body.story, 5000) : undefined,
+      typeof body.farmerName === "string"
+        ? strictText(body.farmerName, TEXT_LIMITS.name, "Farmer name")
+        : undefined,
+    story: typeof body.story === "string" ? strictMultiline(body.story, 5000, "Story") : undefined,
     image,
     gallery: body.gallery !== undefined ? toStringArray(body.gallery) : undefined,
     sort: nonNegativeInt(body.sort),
