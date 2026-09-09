@@ -26,7 +26,15 @@ type TabDef = {
 /* The house mark, not the generic leaf — see `BrandMarkIcon`. Every other tab
    shows what it filters to; the one that means "everything" shows whose
    everything it is. */
-const ALL_TAB: TabDef = { key: "all", label: "All", icon: "brandMark", href: "/shop" };
+/*
+ * "All" gets a drawing, not the logotype.
+ *
+ * `brandMark` is the Nutri Greenz N — a wordmark sitting in a row of pictures
+ * of food. It reads as branding that has wandered into the control rather than
+ * as a category, and it is the one tab whose icon told you nothing about what
+ * pressing it does. A gift basket is the whole harvest in one mark.
+ */
+const ALL_TAB: TabDef = { key: "all", label: "All", icon: "gift", href: "/shop" };
 
 /**
  * A produce glyph per known category slug so the live catalog (whose categories
@@ -113,6 +121,15 @@ export function ShopByCategory({ categories, products, className }: Props) {
   return (
     <Section
       className={cn("overflow-hidden", className)}
+      /*
+       * Centred, because the tabs beneath are centred.
+       *
+       * The heading sat left while the row sat centre, which left a wide
+       * diagonal of empty space between the two and made the tabs read as
+       * floating rather than as the thing the heading is introducing. They are
+       * one unit: a title and the control it labels.
+       */
+      align="center"
       eyebrow="Shop the harvest"
       heading={
         <>
