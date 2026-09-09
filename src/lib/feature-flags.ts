@@ -21,7 +21,8 @@ export type FeatureFlagKey =
   | "subscriptions"
   | "referrals"
   | "community_bundles"
-  | "captain_network";
+  | "captain_network"
+  | "auto_product_badges";
 
 export interface FeatureFlagMeta {
   key: FeatureFlagKey;
@@ -56,6 +57,19 @@ export const FEATURE_FLAGS: readonly FeatureFlagMeta[] = [
     description: "Field-pickup captain PWA",
     defaultEnabled: false,
   },
+  {
+    key: "auto_product_badges",
+    /*
+     * Defaults ON, which is safe because the badge rules carry their own
+     * volume floors: with the current order history nothing qualifies, so
+     * enabling it shows nothing until real sales justify it. The switch is
+     * here for the case where an operator wants the storefront quiet during
+     * a campaign, not as a guard against premature badges.
+     */
+    label: "Automatic product badges",
+    description: 'Show "Best Seller" and "Selling Fast" from paid order volume',
+    defaultEnabled: true,
+  },
 ];
 
 /** A plain key → enabled map — the shape the storefront consumes. */
@@ -67,6 +81,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   referrals: true,
   community_bundles: true,
   captain_network: false,
+  auto_product_badges: true,
 };
 
 interface FeatureFlagRow {

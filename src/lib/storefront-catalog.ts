@@ -36,6 +36,13 @@ import {
 } from "@/components/ng/data";
 import { CATEGORY_TAGS as SAMPLE_CATEGORY_TAGS } from "@/components/ng/shop/types";
 import type { Category, ProductCard, ProductVariantOption } from "@/types/nutrigreenz";
+import { getFeatureFlags } from "@/lib/feature-flags";
+import {
+  getProductSales,
+  deriveAutoBadges,
+  BADGE_PRESENTATION,
+  type AutoBadge,
+} from "@/lib/product-badges";
 
 /** A facet entry for the category chip-strip / filter panel. */
 export interface CategoryTag {
@@ -130,6 +137,10 @@ export function mapRecordToProductCard(
   categorySlug: string | null,
   variants?: readonly ProductVariantRecord[],
   activePromos: readonly PromotionRecord[] = [],
+  /* Earned from paid order volume, or undefined when the product has not
+     cleared the floor — see product-badges.ts. Passed in rather than computed
+     here because "Best Seller" is a rank across the whole catalogue. */
+  autoBadge?: AutoBadge,
 ): ProductCard {
   const { rating, reviewCount } = deriveSocialProof(record.id);
   const tag = categorySlug ?? "";
@@ -206,8 +217,15 @@ export function mapRecordToProductCard(
     // The catalog carries no per-product pack-size; show the category as the unit
     // caption so the card/PDP have a sensible label instead of an empty slot.
     unit: record.categoryName ?? undefined,
-    badge: inStock ? undefined : "Sold out",
-    badgeTone: inStock ? undefined : "terracotta",
+    /*
+     * "Sold out" outranks any earned badge.
+     *
+     * A card carries one badge, and availability is the fact that changes what
+     * the shopper can do next. "Best Seller" on something they cannot buy is
+     * an advert for a disappointment.
+     */
+    badge: !inStock ? "Sold out" : autoBadge ? BADGE_PRESENTATION[autoBadge].label : undefined,
+    badgeTone: !inStock ? "terracotta" : autoBadge === "best-seller" ? "clay" : autoBadge ? "leaf" : undefined,
     href: `/products/${record.slug}`,
     /*
      * The operator-written description, carried through to the storefront.
@@ -259,14 +277,25 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
   if (!isSupabaseConfigured) return sampleCatalog();
 
   try {
-    const [{ products: records }, categoryRecords, activePromos] = await Promise.all([
+    const [{ products: records }, categoryRecords, activePromos, flags, sales] = await Promise.all([
       listProducts({ status: "active", pageSize: MAX_PRODUCTS }),
       listCategories(),
       // One promo read per catalog build (short-cached); shared across all cards.
       getActivePromotionsCached(),
+      getFeatureFlags(),
+      // Paid unit counts, for the earned badges. Resolves to an empty map on
+      // any failure, so a reporting problem costs a badge rather than the page.
+      getProductSales(),
     ]);
 
     if (records.length === 0) return sampleCatalog();
+
+    /* Badges are a RANK across the catalogue, so they are decided once here
+       rather than per card. The operator switch is checked at this level too:
+       flag off means an empty map, and every card maps as it did before. */
+    const autoBadges = flags.auto_product_badges
+      ? deriveAutoBadges(sales)
+      : new Map<string, AutoBadge>();
 
     const slugById = new Map<string, string>();
     for (const c of categoryRecords) slugById.set(c.id, c.slug);
@@ -281,6 +310,7 @@ export async function getStorefrontCatalog(): Promise<StorefrontCatalog> {
         r.categoryId ? slugById.get(r.categoryId) ?? null : null,
         variantsByProduct.get(r.id) ?? [],
         activePromos,
+        autoBadges.get(r.id),
       ),
     );
 

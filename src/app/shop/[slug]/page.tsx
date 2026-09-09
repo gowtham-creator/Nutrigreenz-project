@@ -7,6 +7,7 @@ import { Chip } from "@/components/ng/chip";
 import { Icon } from "@/components/ui/icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
+import { CategoryStrip } from "@/components/ng/shop/category-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getCategoryTheme } from "@/lib/category-theme";
 
@@ -142,6 +143,13 @@ export default async function ShopCategoryPage({
           ))}
         </div>
       </PageHero>
+
+      {/* Same strip as /shop, with this category lit. It matters more here
+          than on the index: a shopper who landed on the wrong category can
+          move sideways without going back first. */}
+      <div className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6">
+        <CategoryStrip categories={categories} active={slug} />
+      </div>
 
       <ShopTrustStrip />
       {/* Suspense because ProductListing reads ?q= via useSearchParams, which

@@ -6,6 +6,7 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
+import { CategoryStrip } from "@/components/ng/shop/category-strip";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 
@@ -70,6 +71,13 @@ export default async function ShopPage() {
           ))}
         </dl>
       </PageHero>
+
+      {/* The category strip sits between the hero and the trust row, where a
+          shopper who already knows what they came for can leave without
+          reading anything else. */}
+      <div className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6">
+        <CategoryStrip categories={categories} active="all" />
+      </div>
 
       <ShopTrustStrip />
       {/* Suspense because ProductListing reads ?q= via useSearchParams, which
