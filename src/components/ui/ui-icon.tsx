@@ -73,6 +73,11 @@ const UI_ICONS = {
   macos: "macos",
   android: "android",
   windows: "windows",
+  /* Tablets are their own marks. An iPad shown as a phone is not a cosmetic
+     slip in a session list: the whole point of the row is telling one device
+     apart from another when deciding whether to revoke it. */
+  ipad: "ipad",
+  "android-tablet": "android-tablet",
   status: "status",
   signin: "signin",
   save: "save",

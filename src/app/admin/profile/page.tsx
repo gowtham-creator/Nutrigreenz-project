@@ -146,8 +146,19 @@ function detectDevice(): DeviceInfo {
             : "Browser";
   // iPadOS reports as Macintosh, so a touch-capable "Mac" is really an iPad.
   const isIpad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  /*
+   * Android puts "Mobile" in the UA on phones and omits it on tablets. That
+   * one token is the only reliable separator Google documents, so it is what
+   * distinguishes a Galaxy Tab from a Pixel here.
+   */
+  const isAndroidTablet = /Android/.test(ua) && !/Mobile/.test(ua);
   if (/iPhone/.test(ua)) return { label: `${browser} on iPhone`, icon: "iphone" };
-  if (isIpad) return { label: `${browser} on iPad`, icon: "iphone" };
+  // Was returning the iPhone mark: a tablet session was indistinguishable from
+  // a phone session in the list an operator uses to decide what to revoke.
+  if (isIpad) return { label: `${browser} on iPad`, icon: "ipad" };
+  if (isAndroidTablet) {
+    return { label: `${browser} on Android tablet`, icon: "android-tablet" };
+  }
   if (/Android/.test(ua)) return { label: `${browser} on Android`, icon: "android" };
   if (/Macintosh|Mac OS X/.test(ua)) return { label: `${browser} on macOS`, icon: "macos" };
   if (/Windows/.test(ua)) return { label: `${browser} on Windows`, icon: "windows" };
