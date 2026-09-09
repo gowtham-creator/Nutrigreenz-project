@@ -138,8 +138,14 @@ export function ShopByCategory({ categories, products, className }: Props) {
       }
       description="Browse every harvest by category. Tap a tab to see its freshest picks, then add to your bag right here."
     >
-      {/* ── Category tab selector ───────────────────────────────────────── */}
-      <div className="relative -mx-5 px-5 md:mx-0 md:px-0">
+      {/* ── Category tab selector ─────────────────────────────────────────
+          Pulled up against the heading. `Section` puts 64px under its header,
+          which is right when the children are content but too much here: these
+          tabs ARE part of the header, and at that distance they read as a
+          separate row that happens to sit below rather than as the control the
+          sentence above just asked the shopper to use. Local, so no other
+          section's rhythm changes. */}
+      <div className="relative -mx-5 -mt-5 px-5 md:mx-0 md:-mt-9 md:px-0">
         <div
           role="tablist"
           aria-label="Shop by category"
