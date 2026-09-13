@@ -246,12 +246,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const provider = new GoogleAuthProvider();
-    // People API scopes (Task T6, Decision C) — ADDITIVE. Requesting them lets the
-    // server auto-import the account's phone + addresses. Denial of these sensitive
-    // scopes must NEVER break sign-in: the popup still completes with profile/email,
-    // `credentialFromResult` simply returns no usable token and enrichment no-ops.
-    provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
-    provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
+    /*
+     * People API scopes are OFF unless explicitly enabled.
+     *
+     * These were requested on every sign-in on the reasoning that they are
+     * additive: the user could decline the checkboxes and still sign in. That
+     * reasoning holds for DENIAL, and it is not the failure that happened.
+     *
+     * `user.phonenumbers.read` and `user.addresses.read` are SENSITIVE scopes.
+     * When the OAuth consent screen is not verified for them, or the project
+     * drops out of Testing, Google rejects the authorisation request outright
+     * with "The requested action is invalid" — before any consent screen is
+     * shown and with no way for the user to proceed. Sign-in does not degrade,
+     * it stops entirely, which is what took Google login down in production.
+     *
+     * So the default is now plain sign-in, which needs no verification and
+     * cannot be rejected this way. Enrichment stays available through the
+     * explicit "import from Google" action below, where a rejection is
+     * contained to the feature the customer just asked for rather than
+     * standing between them and their account.
+     *
+     * Set NEXT_PUBLIC_GOOGLE_PEOPLE_SCOPES=1 to restore them once the consent
+     * screen is verified for both scopes.
+     */
+    if (process.env.NEXT_PUBLIC_GOOGLE_PEOPLE_SCOPES === "1") {
+      provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
+      provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
+    }
     provider.setCustomParameters({ prompt: "select_account" });
     const result = await signInWithPopup(auth, provider);
     // onAuthStateChanged populates `account`. Separately, capture the Google OAuth
@@ -269,6 +290,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const importGoogleProfile = useCallback(async (): Promise<GoogleEnrichDetail | null> => {
     if (!auth?.currentUser) return null;
     const provider = new GoogleAuthProvider();
+    /* The sensitive scopes stay HERE, on the explicit import action. If Google
+       rejects them the customer loses an optional convenience they just asked
+       for, and the catch below returns null. They are already signed in, so
+       nothing about their account is at risk. */
     provider.addScope("https://www.googleapis.com/auth/user.phonenumbers.read");
     provider.addScope("https://www.googleapis.com/auth/user.addresses.read");
     // Force the consent screen to re-appear: Google REMEMBERS a previously
