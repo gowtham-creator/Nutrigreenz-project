@@ -1,6 +1,10 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+} from "firebase/app-check";
 
 /**
  * Firebase client config — per the Tech Stack doc (§3), auth is Firebase Auth
@@ -69,15 +73,35 @@ export const auth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null;
  * whether unattested requests are allowed, which is the correct place for that
  * decision to live.
  */
-const APP_CHECK_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
+/*
+ * Two providers, because there are two ways to get a site key and one of them
+ * is far easier to obtain.
+ *
+ * reCAPTCHA Enterprise is a Google Cloud product: the API has to be enabled on
+ * the project and it requires billing, which is why it does not appear under
+ * Security in a console where it was never switched on.
+ *
+ * reCAPTCHA v3 needs none of that. The key is created at
+ * google.com/recaptcha/admin, is free, and App Check accepts it as a first-
+ * class provider. For attesting a storefront it is the same control: a token
+ * the genuine app can mint and a copied key cannot.
+ *
+ * Enterprise wins when both are set, since it is the stronger signal, but
+ * either one closes the finding.
+ */
+const ENTERPRISE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
+const V3_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_V3_SITE_KEY;
 
-/** True when App Check has a site key to attest with. */
-export const isAppCheckConfigured = Boolean(APP_CHECK_SITE_KEY);
+/** True when App Check has a site key to attest with, from either provider. */
+export const isAppCheckConfigured = Boolean(ENTERPRISE_KEY || V3_KEY);
 
-if (firebaseApp && APP_CHECK_SITE_KEY && typeof window !== "undefined") {
+if (firebaseApp && typeof window !== "undefined" && (ENTERPRISE_KEY || V3_KEY)) {
   try {
+    const provider = ENTERPRISE_KEY
+      ? new ReCaptchaEnterpriseProvider(ENTERPRISE_KEY)
+      : new ReCaptchaV3Provider(V3_KEY as string);
     initializeAppCheck(firebaseApp, {
-      provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+      provider,
       /* Refresh the token in the background so a long session does not start
          failing attestation part-way through a checkout. */
       isTokenAutoRefreshEnabled: true,
