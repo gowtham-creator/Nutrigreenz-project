@@ -40,8 +40,6 @@ export const firebaseApp: FirebaseApp | null = isFirebaseConfigured
     : initializeApp(firebaseConfig)
   : null;
 
-export const auth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null;
-
 /* ── App Check ─────────────────────────────────────────────────────────────
  *
  * ── What this answers ─────────────────────────────────────────────────────
@@ -111,3 +109,11 @@ if (firebaseApp && typeof window !== "undefined" && (ENTERPRISE_KEY || V3_KEY)) 
     console.error("[firebase] App Check init failed; continuing unattested:", err);
   }
 }
+
+/* getAuth AFTER App Check.
+ *
+ * Firebase requires App Check to initialise before any other service, so the
+ * attestation provider is in place when Auth makes its first call. It was
+ * below `getAuth` before, which is the wrong order and would have left early
+ * auth requests unattested the moment enforcement went on. */
+export const auth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null;
