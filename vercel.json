@@ -1,5 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "//regions": "Functions run in Mumbai. They were defaulting to iad1 (Washington DC) while the customers, the edge entry point and the operators are all in India, so every dynamic request crossed the Atlantic and the Pacific: India -> Washington DC -> Tokyo (Supabase) -> Washington DC -> India. Measured as x-vercel-id: bom1::iad1. The storefront hides it behind ISR, but the admin is entirely dynamic and pays the full round trip on every call, which is why Overview felt slow while the SQL itself measured 0.1ms. bom1 puts compute beside both the users and, once the database moves to ap-south-1, beside the data too.",
+  "regions": ["bom1"],
   "crons": [
     {
       "path": "/api/cron/reconcile-payments",
