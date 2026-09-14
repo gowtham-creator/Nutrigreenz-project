@@ -137,12 +137,23 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
   // When a promotion is live it leads the carousel; otherwise the hero is exactly
   // the four static slides. The promo only ever takes the first slot, so the
   // `index` cursor stays valid whether or not a promo is present.
-  const items: SlideItem[] = [
-    ...(promo
-      ? [{ kind: "promo" as const, key: "active-promo", label: promo.title, promo }]
-      : []),
-    ...SLIDES.map((s) => ({ kind: "slide" as const, key: s.id, label: s.label, slide: s })),
-  ];
+  /*
+   * A live promotion takes the hero on its own.
+   *
+   * The promo used to sit in slot 0 and rotate with the four evergreen slides,
+   * which reads as "here is a sale, and here are four other things" — the
+   * festival is gone in eight seconds and a shopper who looked away misses it
+   * entirely. On the one day a campaign is actually running, the hero should be
+   * about that campaign.
+   *
+   * Solo also means `count` is 1, so autoplay has nothing to advance to and the
+   * arrows and dots hide themselves. No date logic and nothing to switch back:
+   * when the promotion is deactivated or its window closes, `promo` is null and
+   * the carousel returns exactly as it was.
+   */
+  const items: SlideItem[] = promo
+    ? [{ kind: "promo" as const, key: "active-promo", label: promo.title, promo }]
+    : SLIDES.map((s) => ({ kind: "slide" as const, key: s.id, label: s.label, slide: s }));
 
   const count = items.length;
   const go = useCallback((n: number) => setIndex(((n % count) + count) % count), [count]);
@@ -164,7 +175,8 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
   // after every change (manual or auto), so a slide is never cut short right
   // after you click an arrow/dot or finish a swipe.
   useEffect(() => {
-    if (paused || reduce || dragging) return;
+    // Nothing to advance to when a promotion owns the hero on its own.
+    if (count < 2 || paused || reduce || dragging) return;
     const t = window.setTimeout(() => setIndex((i) => (i + 1) % count), AUTO_MS);
     return () => window.clearTimeout(t);
   }, [paused, reduce, count, index, dragging]);
@@ -258,7 +270,12 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
 
           {/* Controls — prev · dots · next in one slim glass pill at the bottom.
               Compact and light so it sits over the art without dominating it;
-              44px touch targets are preserved via padding on the hit area. */}
+              44px touch targets are preserved via padding on the hit area.
+
+              Hidden entirely on a single slide. A prev/next pair and one dot
+              that cannot go anywhere is a control that lies about what it does,
+              and it covers the artwork to do it. */}
+          {count > 1 ? (
           <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-ng-forest-deep/45 px-1 py-1 shadow-[0_6px_18px_rgba(20,40,24,0.28)] ring-1 ring-white/15 backdrop-blur-md md:bottom-5">
             <button
               type="button"
@@ -301,6 +318,7 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
               <Icon name="alt-arrow-right-linear" size={17} />
             </button>
           </div>
+          ) : null}
         </div>
       </div>
     </section>
