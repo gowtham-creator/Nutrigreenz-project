@@ -76,7 +76,15 @@ export function ProfileMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-ng-line bg-ng-paper shadow-[var(--shadow-ng-float)] p-2 z-50"
+          /* Anchoring: right-aligned to the trigger from `sm` up, centred under
+             it below that.
+             The trigger is the last of five header icons, so on desktop its
+             right edge is near the viewport edge and `right-0` lands the panel
+             neatly inside. On a phone the same icon sits mid-header (x≈169 on a
+             390px screen), and right-aligning a 240px panel to it put its left
+             edge at -27px — the panel opened half off-screen with "Sign in"
+             clipped. Centring keeps all 240px on screen down to 320px wide. */
+          className="absolute top-full mt-2 w-60 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 rounded-2xl border border-ng-line bg-ng-paper shadow-[var(--shadow-ng-float)] p-2 z-50"
         >
           {isAuthed ? (
             <>

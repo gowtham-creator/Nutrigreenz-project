@@ -146,7 +146,12 @@ export function Footer() {
         </div>
 
         {/* Link columns */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
+        {/* min-w-0 on the columns: a grid item defaults to min-width:auto, so it
+            refuses to shrink below its longest unbreakable word. The support
+            address is one 224px token in a 155px column on a phone, and without
+            this it pushed itself — and every ancestor — 69px past the footer
+            edge, clipping the address block. Pairs with break-words below. */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16 [&>*]:min-w-0">
           {NAV_GROUPS.map((group) => (
             <div key={group.title}>
               <h4 className="font-display text-[15px] tracking-wider uppercase text-ng-clay mb-5">
@@ -191,7 +196,9 @@ export function Footer() {
                 <p>Near Moosapet Y Junction, Prashanth Nagar,</p>
                 <p>Kukatpally, Hyderabad, Telangana 500072</p>
                 <p>+91 94918 93370</p>
-                <p>customersupport@nutrigreenz.farm</p>
+                {/* break-words so the address can wrap mid-token; it has no
+                    space to break at and is wider than a mobile column. */}
+                <p className="break-words">customersupport@nutrigreenz.farm</p>
               </address>
               <div className="flex flex-wrap gap-3">
                 {SOCIALS.map((s) => (
