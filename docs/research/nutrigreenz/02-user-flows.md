@@ -27,6 +27,9 @@
 
 ## F1 — Online Customer Onboarding
 
+<img src="diagrams/f01-online-customer-onboarding.webp" alt="F1 — Online Customer Onboarding" width="820">
+
+
 ```mermaid
 flowchart TB
   S([Land on nutrigreenz.com]) --> B{Has account?}
@@ -49,6 +52,9 @@ flowchart TB
 ---
 
 ## F2 — Stall-Capture Conversion
+
+<img src="diagrams/f02-stall-capture-conversion.webp" alt="F2 — Stall-Capture Conversion" width="820">
+
 
 ```mermaid
 flowchart TB
@@ -80,6 +86,9 @@ flowchart TB
 
 ## F3 — Browse → PDP → Cart → Checkout
 
+<img src="diagrams/f03-browse-pdp-cart.webp" alt="F3 — Browse → PDP → Cart → Checkout" width="820">
+
+
 ```mermaid
 flowchart LR
   L([Landing]) --> CAT[Category page<br/>SSG/ISR via Vercel Edge]
@@ -106,6 +115,9 @@ flowchart LR
 ---
 
 ## F4 — Checkout 8-Stage Sequence
+
+<img src="diagrams/f04-checkout-8-stage.webp" alt="F4 — Checkout 8-Stage Sequence" width="820">
+
 
 ```mermaid
 sequenceDiagram
@@ -156,6 +168,9 @@ sequenceDiagram
 
 ## F5 — Loyalty Points Lifecycle
 
+<img src="diagrams/f05-loyalty-lifecycle.webp" alt="F5 — Loyalty Points Lifecycle" width="820">
+
+
 ```mermaid
 flowchart TB
   E([Order paid event]) --> CALC[Compute points: 1pt per ₹10 × tier multiplier]
@@ -186,6 +201,9 @@ flowchart TB
 ---
 
 ## F6 — Coupon Lifecycle
+
+<img src="diagrams/f06-coupon-lifecycle.webp" alt="F6 — Coupon Lifecycle" width="820">
+
 
 ```mermaid
 flowchart TB
@@ -222,6 +240,9 @@ flowchart TB
 
 ## F7 — Referral Lifecycle
 
+<img src="diagrams/f07-referral-lifecycle.webp" alt="F7 — Referral Lifecycle" width="820">
+
+
 ```mermaid
 flowchart TB
   R([Referrer shares referral_code]) --> N[New visitor uses link]
@@ -249,6 +270,9 @@ flowchart TB
 ---
 
 ## F8 — Multi-Address Management
+
+<img src="diagrams/f08-multi-address.webp" alt="F8 — Multi-Address Management" width="820">
+
 
 ```mermaid
 flowchart TB
@@ -284,6 +308,9 @@ flowchart TB
 
 ## F9 — Community Bundle Aggregation
 
+<img src="diagrams/f09-community-bundles.webp" alt="F9 — Community Bundle Aggregation" width="820">
+
+
 ```mermaid
 flowchart TB
   S([Customer joins bundle]) --> CK{Bundle open?}
@@ -316,6 +343,9 @@ flowchart TB
 ---
 
 ## F10 — Admin Orders Portal
+
+<img src="diagrams/f10-admin-orders.webp" alt="F10 — Admin Orders Portal" width="820">
+
 
 ```mermaid
 flowchart TB
@@ -353,6 +383,9 @@ flowchart TB
 
 ## F11 — Admin Inventory Portal
 
+<img src="diagrams/f11-admin-inventory.webp" alt="F11 — Admin Inventory Portal" width="820">
+
+
 ```mermaid
 flowchart TB
   S([Inventory staff login]) --> M{Module?}
@@ -388,6 +421,9 @@ flowchart TB
 ---
 
 ## F12 — Super-Admin Config Flow
+
+<img src="diagrams/f12-super-admin-config.webp" alt="F12 — Super-Admin Config Flow" width="820">
+
 
 ```mermaid
 flowchart TB

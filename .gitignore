@@ -110,6 +110,8 @@ graphify-out/
 !docs/research/
 !docs/research/nutrigreenz/
 docs/research/nutrigreenz/*
+!docs/research/nutrigreenz/diagrams/
+!docs/research/nutrigreenz/diagrams/*
 !docs/research/nutrigreenz/01-system-architecture.md
 !docs/research/nutrigreenz/02-user-flows.md
 !docs/research/nutrigreenz/03-data-model.md

@@ -26,6 +26,18 @@
   class O1,O2 obs
 ```
 
+## Unified system architecture
+
+<img src="diagrams/arch-unified-system.svg" alt="Unified system architecture" width="100%">
+
+<details>
+<summary>Headless topology and checkout sequence</summary>
+
+<img src="diagrams/arch-headless.svg" alt="Headless architecture" width="420">
+<img src="diagrams/arch-checkout-sequence.svg" alt="Checkout sequence" width="420">
+
+</details>
+
 ## Official tech stack
 
 | Component | Technology | Purpose |

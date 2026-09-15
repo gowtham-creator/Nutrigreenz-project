@@ -207,14 +207,27 @@ diverged from the design.
 | [User flows](docs/research/nutrigreenz/02-user-flows.md) | Twelve end-to-end flows, F1 to F12 |
 | [Data model](docs/research/nutrigreenz/03-data-model.md) | Core commerce ERD and its invariants |
 
+### System architecture
+
+<div align="center">
+<img src="docs/research/nutrigreenz/diagrams/arch-unified-system.svg" alt="Unified system architecture" width="100%">
+</div>
+
 ### The twelve flows
 
+Every flow below was drawn before it was built, and all twelve are live.
+Click any one to open it full size.
+
+<div align="center">
+
 | | | |
-|---|---|---|
-| **F1** Online onboarding | **F5** Loyalty lifecycle | **F9** Community bundles |
-| **F2** Stall-capture conversion | **F6** Coupon lifecycle | **F10** Admin orders |
-| **F3** Browse → PDP → Cart | **F7** Referral lifecycle | **F11** Admin inventory |
-| **F4** Checkout, 8 stages | **F8** Multi-address | **F12** Super-admin config |
+|:--:|:--:|:--:|
+| [<img src="docs/research/nutrigreenz/diagrams/f01-online-customer-onboarding.webp" width="230"><br>**F1** Online onboarding](docs/research/nutrigreenz/diagrams/f01-online-customer-onboarding.webp) | [<img src="docs/research/nutrigreenz/diagrams/f02-stall-capture-conversion.webp" width="230"><br>**F2** Stall-capture conversion](docs/research/nutrigreenz/diagrams/f02-stall-capture-conversion.webp) | [<img src="docs/research/nutrigreenz/diagrams/f03-browse-pdp-cart.webp" width="230"><br>**F3** Browse → PDP → Cart](docs/research/nutrigreenz/diagrams/f03-browse-pdp-cart.webp) |
+| [<img src="docs/research/nutrigreenz/diagrams/f04-checkout-8-stage.webp" width="230"><br>**F4** Checkout, 8 stages](docs/research/nutrigreenz/diagrams/f04-checkout-8-stage.webp) | [<img src="docs/research/nutrigreenz/diagrams/f05-loyalty-lifecycle.webp" width="230"><br>**F5** Loyalty lifecycle](docs/research/nutrigreenz/diagrams/f05-loyalty-lifecycle.webp) | [<img src="docs/research/nutrigreenz/diagrams/f06-coupon-lifecycle.webp" width="230"><br>**F6** Coupon lifecycle](docs/research/nutrigreenz/diagrams/f06-coupon-lifecycle.webp) |
+| [<img src="docs/research/nutrigreenz/diagrams/f07-referral-lifecycle.webp" width="230"><br>**F7** Referral lifecycle](docs/research/nutrigreenz/diagrams/f07-referral-lifecycle.webp) | [<img src="docs/research/nutrigreenz/diagrams/f08-multi-address.webp" width="230"><br>**F8** Multi-address](docs/research/nutrigreenz/diagrams/f08-multi-address.webp) | [<img src="docs/research/nutrigreenz/diagrams/f09-community-bundles.webp" width="230"><br>**F9** Community bundles](docs/research/nutrigreenz/diagrams/f09-community-bundles.webp) |
+| [<img src="docs/research/nutrigreenz/diagrams/f10-admin-orders.webp" width="230"><br>**F10** Admin orders](docs/research/nutrigreenz/diagrams/f10-admin-orders.webp) | [<img src="docs/research/nutrigreenz/diagrams/f11-admin-inventory.webp" width="230"><br>**F11** Admin inventory](docs/research/nutrigreenz/diagrams/f11-admin-inventory.webp) | [<img src="docs/research/nutrigreenz/diagrams/f12-super-admin-config.webp" width="230"><br>**F12** Super-admin config](docs/research/nutrigreenz/diagrams/f12-super-admin-config.webp) |
+
+</div>
 
 ### Core data model
 
