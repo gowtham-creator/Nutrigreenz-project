@@ -41,6 +41,22 @@ interface PromoSlideDef {
   cta: { label: string; href: string };
   /** Left legibility wash colour matched to each artwork's background. */
   wash: string;
+  /**
+   * Opacity of the left legibility wash, 0 to 1. Omitted means "flat ground",
+   * which keeps the original near-opaque ramp.
+   *
+   * Measured, not eyeballed. The photographic banners are lit with their left
+   * half held soft and open, so each one already clears WCAG AA against the
+   * forest headline ink with no wash at all:
+   *
+   *   ghee 5.91:1   oils 4.82:1   honey 5.15:1   rice 4.98:1
+   *
+   * The 0.10 they carry is margin, not necessity, and buys a little headroom
+   * for the lighter weights in the sub-copy (final: 5.31:1 to 6.39:1). It
+   * replaces the 0.95 the illustrated art needed. Push this back up and you
+   * are covering the photograph you paid to shoot, so re-measure first.
+   */
+  washAlpha?: number;
 }
 
 const SLIDES: PromoSlideDef[] = [
@@ -48,7 +64,7 @@ const SLIDES: PromoSlideDef[] = [
     id: "ghee",
     label: "A2 Bilona Ghee",
     tag: "New Launch",
-    img: "/images/hero/launch-ghee.webp",
+    img: "/images/hero/launch-ghee-photo.webp",
     alt: "Nutri Greenz A2 Desi Cow Ghee · made from curd, 100% A2 milk",
     kicker: "Ghar jaisa ghee?",
     title: "A2 Bilona",
@@ -57,12 +73,13 @@ const SLIDES: PromoSlideDef[] = [
     tagline: "Your family's daily dose of purity",
     cta: { label: "Shop Ghee", href: "/shop/ghee" },
     wash: "#E7F1E4",
+    washAlpha: 0.1,
   },
   {
     id: "oils",
     label: "Cold-pressed oils",
     tag: "6 Varieties",
-    img: "/images/hero/launch-oils.webp",
+    img: "/images/hero/launch-oils-photo.webp",
     alt: "Nutri Greenz cold-pressed groundnut oil · cold-pressed, zero refining",
     kicker: "Refined oil? Chhodo.",
     title: "Cold-Pressed",
@@ -73,12 +90,13 @@ const SLIDES: PromoSlideDef[] = [
     // Warm golden-wheat — matches the oils artwork and reads distinctly from
     // the ghee slide's sage green (no two banners share a wash now).
     wash: "#F3E9C9",
+    washAlpha: 0.1,
   },
   {
     id: "honey",
     label: "Wild raw honey",
     tag: "Raw & Pure",
-    img: "/images/hero/launch-honey.webp",
+    img: "/images/hero/launch-honey-photo.webp",
     alt: "Nutri Greenz Wild Raw Honey · raw & unheated, no added sugar",
     kicker: "Cheeni nahi,",
     title: "Sahi Shahad",
@@ -87,12 +105,13 @@ const SLIDES: PromoSlideDef[] = [
     tagline: "No added sugar. Ever.",
     cta: { label: "Shop Honey", href: "/shop/honey" },
     wash: "#F4EFE0",
+    washAlpha: 0.1,
   },
   {
     id: "rice",
     label: "Everyday rice",
     tag: "Coming Soon",
-    img: "/images/hero/rice-hero.webp",
+    img: "/images/hero/launch-rice-photo.webp",
     alt: "Nutri Greenz rice - Sona Masoori, HMT and Basmati, naturally aged",
     kicker: "Roz ka chawal,",
     title: "Goodness in",
@@ -102,6 +121,7 @@ const SLIDES: PromoSlideDef[] = [
     cta: { label: "Explore the pantry", href: "/shop" },
     // Warm cream to match the new rice artwork's soft beige backdrop.
     wash: "#F4ECD8",
+    washAlpha: 0.1,
   },
 ];
 
@@ -386,6 +406,52 @@ function CornerTag({ label }: { label: string }) {
    (banner format: tag → Hinglish headline → sub → dashed tagline → orange
    Shop Now).
    ────────────────────────────────────────────────────────────────────────── */
+/** 0–1 alpha as the two-digit hex suffix of an 8-digit CSS colour. */
+function alphaHex(a: number): string {
+  return Math.round(Math.min(1, Math.max(0, a)) * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
+}
+
+/**
+ * Desktop legibility fade.
+ *
+ * A photographic banner carries its own open left side, so the wash is anchored
+ * on the measured `washAlpha` and thins to nothing well before the product.
+ * A slide without one keeps the original near-opaque ramp, which flat
+ * illustrated art still needs to stop it bleeding under the copy.
+ */
+function desktopWash(slide: PromoSlideDef): string {
+  const w = slide.wash;
+  const a = slide.washAlpha;
+  if (a == null) {
+    return `linear-gradient(to right, ${w}F2 0%, ${w}B3 42%, transparent 68%)`;
+  }
+  return `linear-gradient(to right, ${w}${alphaHex(a)} 0%, ${w}${alphaHex(a * 0.72)} 42%, transparent 68%)`;
+}
+
+/**
+ * Mobile legibility fade. Carries roughly 0.4 more alpha than desktop: the
+ * 21:9 banner is zoom-cropped on a narrow viewport, so the copy lands on busier
+ * pixels than the desktop measurement assumed.
+ */
+function mobileWash(slide: PromoSlideDef): string {
+  const w = slide.wash;
+  const a = slide.washAlpha;
+  if (a == null) {
+    return `linear-gradient(to right, ${w}F7 0%, ${w}EE 38%, ${w}99 60%, transparent 82%)`;
+  }
+  /* +0.72, not +0.4. Desktop legibility is a contrast problem and the measured
+     alpha solves it. Mobile is a BUSYNESS problem: the 21:9 crop drags the
+     product and its claim badges under the copy, so the headline crosses a hard
+     badge edge. Mean contrast there still measured 7.08:1 — it was the stdev of
+     74 that made it unreadable, and averages cannot see that. Only more cover
+     fixes it. */
+  const m = Math.min(0.92, a + 0.72);
+  return `linear-gradient(to right, ${w}${alphaHex(m)} 0%, ${w}${alphaHex(m * 0.92)} 38%, ${w}${alphaHex(m * 0.55)} 60%, transparent 82%)`;
+}
+
 function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {
   return (
     <div className="relative flex h-full min-h-[inherit] overflow-hidden" style={{ backgroundColor: slide.wash }}>
@@ -402,22 +468,23 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         sizes="100vw"
         className="object-cover object-[62%_center] sm:object-right"
       />
-      {/* Left legibility wash. Desktop: a gentle fade so the product still shows.
-          Mobile (sm:hidden): opaque under the copy on the left, then fades by
-          mid-frame so the product stays clearly visible on the right. */}
+      {/* Left legibility wash.
+          Over a photographic ground this is deliberately light: the alpha is the
+          measured minimum that clears WCAG AA against the headline ink (see
+          `bgWash`), so the scene still reads as a photograph. Slides with no
+          `bg` keep the original near-opaque fade, which is what a flat ground
+          needs to stop the artwork bleeding under the copy.
+          Mobile carries more cover than desktop because the crop puts the copy
+          over busier pixels. */}
       <div
         aria-hidden
         className="absolute inset-0 hidden sm:block"
-        style={{
-          background: `linear-gradient(to right, ${slide.wash}F2 0%, ${slide.wash}B3 42%, transparent 68%)`,
-        }}
+        style={{ background: desktopWash(slide) }}
       />
       <div
         aria-hidden
         className="absolute inset-0 sm:hidden"
-        style={{
-          background: `linear-gradient(to right, ${slide.wash}F7 0%, ${slide.wash}EE 38%, ${slide.wash}99 60%, transparent 82%)`,
-        }}
+        style={{ background: mobileWash(slide) }}
       />
 
       <CornerTag label={slide.tag} />
