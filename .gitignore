@@ -104,3 +104,12 @@ scripts/download-anveshan-assets.mjs
 
 # Local caches from tooling (keyed by absolute mtime, machine-specific)
 graphify-out/
+
+# Design record: docs/* is ignored, but the original architecture, user-flow
+# and data-model diagrams are part of the project's story and belong in the repo.
+!docs/research/
+!docs/research/nutrigreenz/
+docs/research/nutrigreenz/*
+!docs/research/nutrigreenz/01-system-architecture.md
+!docs/research/nutrigreenz/02-user-flows.md
+!docs/research/nutrigreenz/03-data-model.md

@@ -195,6 +195,73 @@ docs/                  architecture, brand and compliance notes
 
 ---
 
+## Design record
+
+The system was drawn before it was built, and those documents live in the repo
+rather than in a tool nobody can open. Each carries a note on where the build
+diverged from the design.
+
+| Document | What is in it |
+|---|---|
+| [System architecture](docs/research/nutrigreenz/01-system-architecture.md) | Edge delivery, serverless transaction processing, async post-order handlers, read/write lanes |
+| [User flows](docs/research/nutrigreenz/02-user-flows.md) | Twelve end-to-end flows, F1 to F12 |
+| [Data model](docs/research/nutrigreenz/03-data-model.md) | Core commerce ERD and its invariants |
+
+### The twelve flows
+
+| | | |
+|---|---|---|
+| **F1** Online onboarding | **F5** Loyalty lifecycle | **F9** Community bundles |
+| **F2** Stall-capture conversion | **F6** Coupon lifecycle | **F10** Admin orders |
+| **F3** Browse → PDP → Cart | **F7** Referral lifecycle | **F11** Admin inventory |
+| **F4** Checkout, 8 stages | **F8** Multi-address | **F12** Super-admin config |
+
+### Core data model
+
+```mermaid
+erDiagram
+  CUSTOMER ||--o{ ADDRESS        : "has"
+  CUSTOMER ||--o{ ORDER          : "places"
+  ADDRESS  ||--o{ ORDER          : "ships to"
+  CUSTOMER ||--o{ LOYALTY_LEDGER : "owns"
+  ORDER    ||--o{ LOYALTY_LEDGER : "produces"
+  CUSTOMER ||--o{ CUSTOMER       : "referred by"
+
+  CUSTOMER {
+    uuid id PK
+    varchar phone UK
+    varchar email
+    enum tier "retail|club|community"
+    varchar referral_code UK
+    uuid referred_by FK
+  }
+  ADDRESS {
+    uuid id PK
+    uuid customer_id FK
+    enum label "home|work|other"
+    varchar pincode
+    boolean is_default
+  }
+  ORDER {
+    uuid id PK
+    varchar display_id UK
+    uuid customer_id FK
+    uuid shipping_address_id FK
+  }
+  LOYALTY_LEDGER {
+    uuid id PK
+    uuid customer_id FK
+    uuid order_id FK
+    int points
+  }
+```
+
+The full ERD, including coupons and the referral edge, is in the
+[data model](docs/research/nutrigreenz/03-data-model.md). The live schema runs
+to 42 tables; the diagram above is the commerce core, not the whole thing.
+
+---
+
 ## Engineering notes
 
 <details>
