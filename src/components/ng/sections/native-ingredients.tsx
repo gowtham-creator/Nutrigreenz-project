@@ -82,20 +82,9 @@ export function NativeIngredients() {
         </span>
       }
     >
-      {/* Foliage runs behind the cards and is masked away from the middle, so it
-          decorates the margins without sitting under the photographs. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          maskImage:
-            "linear-gradient(90deg, black 0%, transparent 26%, transparent 74%, black 100%)",
-          WebkitMaskImage:
-            "linear-gradient(90deg, black 0%, transparent 26%, transparent 74%, black 100%)",
-        }}
-      >
-        <BotanicalField color="#C8A668" opacity={0.42} className="absolute inset-0" />
-      </div>
+      {/* The engraving dresses the margins and fades out before the middle, so
+          it never sits under the heading or the photographs. */}
+      <BotanicalField color="#B8912F" opacity={0.2} />
 
       <Stagger className="relative z-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {PANELS.map((p) => (

@@ -1,0 +1,8 @@
+Source     : Wikimedia Commons
+File       : File:Arachis hypogaea - Köhler–s Medizinal-Pflanzen-163.jpg
+Descr. page: https://commons.wikimedia.org/wiki/File:Arachis_hypogaea_-_K%C3%B6hler%E2%80%93s_Medizinal-Pflanzen-163.jpg
+Artist     : Franz Eugen Köhler, Köhler's Medizinal-Pflanzen
+Date       : 1887
+Licence    : Public domain
+Usage terms: Public domain
+Downloaded : 2026-09-17 for Nutri Greenz label artwork

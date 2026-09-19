@@ -87,18 +87,7 @@ export function OnlyPerfect() {
       className="relative overflow-hidden bg-[#E9F0E4]"
       heading={<span className="text-ng-forest-soft">Only perfect makes the cut</span>}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          maskImage:
-            "linear-gradient(90deg, black 0%, transparent 26%, transparent 74%, black 100%)",
-          WebkitMaskImage:
-            "linear-gradient(90deg, black 0%, transparent 26%, transparent 74%, black 100%)",
-        }}
-      >
-        <BotanicalField color="#A9C09E" opacity={0.55} className="absolute inset-0" />
-      </div>
+      <BotanicalField color="#6F8F67" opacity={0.28} flip />
 
       <Stagger className="relative z-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {CHECKS.map((c, i) => {
