@@ -31,7 +31,11 @@ import type { CSSProperties } from "react";
  * and always beneath the content layer.
  */
 
-const PLANT = "/images/botanical/groundnut-plant.svg";
+/* Content-hashed name (first 8 hex of its sha256). Cloudflare sits in front of
+   Vercel and caches /images/* at the edge — 404s included — so a file that is
+   added or changed needs a URL the edge has never seen, not a purge. Change the
+   artwork, rename the file to its new hash. */
+const PLANT = "/images/botanical/groundnut-plant.9daf8ab6.svg";
 // The traced artwork's own viewBox, so the mask never letterboxes.
 const PLANT_RATIO = "412.25 / 357.36";
 
