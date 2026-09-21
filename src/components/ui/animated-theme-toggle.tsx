@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
+import { Monitor } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAdminTheme } from "@/lib/admin-theme";
@@ -39,14 +40,24 @@ import { useAdminTheme } from "@/lib/admin-theme";
  */
 export function AnimatedThemeToggle({ className }: { className?: string }) {
   const { choice, resolved, toggle, label } = useAdminTheme();
+  const reduced = useReducedMotion();
   const isDark = resolved === "dark";
   /*
    * `system` needs to be visibly distinct from a pinned choice, or the third
-   * state is invisible and the control looks like it has two. The sun/moon
-   * still shows what is ON SCREEN; a small dot marks that the console is
-   * following the device rather than holding a choice of its own.
+   * state is invisible and the control looks like it has two.
+   *
+   * It used to be a sun/moon plus a small dot on the rim. The dot is a legend
+   * you have to be taught; a monitor is the thing itself, and it is what the
+   * operator already knows from every OS appearance setting. So `system` gets
+   * its own glyph and the dot is gone.
+   *
+   * The trade is deliberate: while following the device, the control no longer
+   * says whether light or dark is painted. That is the right way round — the
+   * answer is on screen already, and what the control has to communicate is
+   * which of the three modes it is in.
    */
   const following = choice === "system";
+  const duration = reduced ? 0 : 0.34;
 
   return (
     <button
@@ -71,16 +82,29 @@ export function AnimatedThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      <SolarSwitch isDark={isDark} />
-      {following ? (
-        <span
+      {/* Both glyphs are mounted and cross-faded, rather than swapped on a
+          condition. Unmounting the sun would restart its ray animation from
+          scratch on the way back, and the morph is the point of this control. */}
+      <span className="relative grid size-[18px] place-items-center">
+        <motion.span
           aria-hidden
-          /* Marks "following the device" so the third state is visible at a
-             glance. Sits on the rim rather than over the glyph, so it never
-             competes with the sun/moon it is annotating. */
-          className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-ng-leaf ring-2 ring-[var(--ng-admin-ground)]"
-        />
-      ) : null}
+          className="absolute inset-0 grid place-items-center"
+          animate={{ opacity: following ? 0 : 1, scale: following ? 0.55 : 1 }}
+          transition={{ duration }}
+        >
+          <SolarSwitch isDark={isDark} />
+        </motion.span>
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 grid place-items-center"
+          animate={{ opacity: following ? 1 : 0, scale: following ? 1 : 0.55 }}
+          transition={{ duration }}
+        >
+          {/* 17px against the sun's 18: a monitor is a filled-looking rectangle
+              and reads heavier than an outlined disc at the same measure. */}
+          <Monitor size={17} strokeWidth={2} />
+        </motion.span>
+      </span>
     </button>
   );
 }
