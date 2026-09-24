@@ -21,7 +21,7 @@ import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { AdminStagger, AdminStaggerItem } from "@/components/ng/admin/admin-motion";
 import { BellIcon } from "@/components/ui/bell-icon";
-import { HBars, Pipeline, STAGE_TONE, compareFigures } from "@/components/ng/admin/viz";
+import { DonutChart, HBars, PAYMENT_TONE, Pipeline, STAGE_TONE, compareFigures } from "@/components/ng/admin/viz";
 import { UiIcon } from "@/components/ui/ui-icon";
 
 /* ── API shapes (JSON only — no server modules imported client-side) ─────── */
@@ -222,6 +222,13 @@ export default function AdminOverview() {
     };
   };
   const num = (n: number) => n.toLocaleString("en-IN");
+
+  const paidCount = report?.paymentBreakdown.find((p) => p.paymentStatus === "paid")?.orders ?? 0;
+  const paymentSegments = (["paid", "pending", "failed"] as const).map((st) => ({
+    label: st === "paid" ? "Paid" : st === "pending" ? "Pending" : "Failed",
+    value: report?.paymentBreakdown.find((p) => p.paymentStatus === st)?.orders ?? 0,
+    tone: PAYMENT_TONE[st],
+  }));
   const recent = orders.slice(0, 6);
 
   return (
@@ -258,12 +265,26 @@ export default function AdminOverview() {
           ) : (
             <>
               <Pipeline stages={queue} />
-              <p className="mt-4 border-t border-ng-line-soft pt-3 text-[12px] font-medium text-ng-ink-soft">
+              <p className="mt-3 text-[12px] font-medium text-ng-ink-soft">
                 {openOrders === 0
                   ? "Nothing waiting. "
                   : `${num(openOrders)} order${openOrders === 1 ? "" : "s"} in progress. `}
                 {num(delivered)} delivered in all.
               </p>
+              <div className="mt-4 grid grid-cols-3 gap-3 border-t border-ng-line-soft pt-4 text-center">
+                <div>
+                  <div className="font-display text-[20px] tabular-nums text-ng-forest-deep">{num(report.orderCount)}</div>
+                  <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">Orders</div>
+                </div>
+                <div>
+                  <div className="font-display text-[20px] tabular-nums text-ng-success">{num(paidCount)}</div>
+                  <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">Paid</div>
+                </div>
+                <div>
+                  <div className="font-display text-[20px] tabular-nums text-ng-clay">{num(pendingCount + failedCount)}</div>
+                  <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">Unpaid</div>
+                </div>
+              </div>
             </>
           )}
         </Card>
@@ -271,7 +292,20 @@ export default function AdminOverview() {
         {/* Money to chase. Pending and failed stay separate: a failed payment
             is not owed, it is an attempt that did not complete, and chasing it
             as a debt is the wrong conversation with a customer. */}
-        <Card title="Payments to follow up">
+        <Card
+          title="Payments"
+          action={<span className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">by order</span>}
+        >
+          {report ? (
+            <DonutChart
+              size={150}
+              thickness={20}
+              segments={paymentSegments}
+              centerValue={num(report.orderCount)}
+              centerLabel="orders"
+              className="mb-5"
+            />
+          ) : null}
           {!report ? (
             <p className="py-8 text-center text-[13px] font-medium text-ng-ink-soft">{loading ? "Loading…" : "No payments yet."}</p>
           ) : pendingCount + failedCount === 0 ? (
@@ -352,6 +386,31 @@ export default function AdminOverview() {
           />
         </AdminStaggerItem>
       </AdminStagger>
+
+      {/* ── all time ───────────────────────────────────────────────────────── */}
+      <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">All time</div>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile
+          label="Revenue"
+          value={report ? rupees(report.revenuePaise) : "—"}
+          delta={report ? `${rupees(report.paidRevenuePaise)} settled` : undefined}
+        />
+        <StatTile
+          label="Orders"
+          value={report ? num(report.orderCount) : "—"}
+          delta={report ? `${num(paidCount)} paid` : undefined}
+        />
+        <StatTile
+          label="Avg order value"
+          value={report ? rupees(report.aovPaise) : "—"}
+          delta={report ? `${num(report.unitsSold)} units sold` : undefined}
+        />
+        <StatTile
+          label="New customers"
+          value={report ? num(report.newCustomers) : "—"}
+          delta="since launch"
+        />
+      </div>
 
       {/* ── recent orders + top products ─────────────────────────────────── */}
       <div className="grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-6">
