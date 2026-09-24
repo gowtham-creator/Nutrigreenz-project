@@ -12,7 +12,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { otpProvider } from "@/lib/otp-provider";
+import { otpProvider, OTP_RESEND_SECONDS } from "@/lib/otp-provider";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ng/logo";
 import { Button } from "@/components/ng/button";
@@ -536,7 +536,7 @@ function LoginForm() {
         if (res.ok) {
           setCodeSent(true);
           setCode("");
-          setResendIn(30);
+          setResendIn(OTP_RESEND_SECONDS);
           toast.success(isResend ? "New code sent" : "Code sent", {
             description: isTwoFactor
               ? `OTP sent to ${otpPhone ?? "your mobile"}.`
@@ -597,7 +597,7 @@ function LoginForm() {
       confirmationRef.current = await signInWithPhoneNumber(fbAuth, e164, verifier);
       setCodeSent(true);
       setCode("");
-      setResendIn(30);
+      setResendIn(OTP_RESEND_SECONDS);
       toast.success(isResend ? "New code sent" : "Code sent", {
         description: `OTP sent to ${e164}.`,
       });

@@ -1,5 +1,6 @@
 import "server-only";
 import { bumpFailure, maxRetryAfter } from "@/lib/admin-login-guard";
+import { OTP_RESEND_SECONDS } from "@/lib/otp-provider";
 
 /**
  * Rate limit for OTP *sending*, persisted rather than held in memory.
@@ -47,8 +48,9 @@ const IP_MAX = 20;
 const IP_LOCK_MS = 60 * 60 * 1000;
 const IP_WINDOW_MS = 60 * 60 * 1000;
 
-/** Minimum gap between two sends to the same number. */
-const COOLDOWN_MS = 30 * 1000;
+/** Minimum gap between two sends to the same number — the same wait the
+ *  sign-in screens show, so a resend the button allows is never refused. */
+const COOLDOWN_MS = OTP_RESEND_SECONDS * 1000;
 const COOLDOWN_MAX = 1;
 
 const phoneKey = (mobile: string) => `otp-send:${mobile}`;

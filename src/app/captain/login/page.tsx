@@ -10,7 +10,7 @@ import {
   type ConfirmationResult,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { otpProvider } from "@/lib/otp-provider";
+import { otpProvider, OTP_RESEND_SECONDS } from "@/lib/otp-provider";
 import { clearCaptainCache } from "@/components/ng/captain/captain-store";
 import { Logo } from "@/components/ng/logo";
 import { OtpInput } from "@/components/ng/otp-input";
@@ -80,7 +80,7 @@ function CaptainLoginForm() {
         if (res.ok) {
           setCodeSent(true);
           setCode("");
-          setResendIn(30);
+          setResendIn(OTP_RESEND_SECONDS);
           toast.success(isResend ? "New code sent" : "Code sent", {
             description: `OTP sent to ${e164}.`,
           });
@@ -125,7 +125,7 @@ function CaptainLoginForm() {
       confirmationRef.current = await signInWithPhoneNumber(fbAuth, e164, verifier);
       setCodeSent(true);
       setCode("");
-      setResendIn(30);
+      setResendIn(OTP_RESEND_SECONDS);
       toast.success(isResend ? "New code sent" : "Code sent", { description: `OTP sent to ${e164}.` });
     } catch (err) {
       const c =

@@ -33,8 +33,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "no_phone_factor" }, { status: 400 });
   }
 
-  // Anti-abuse: 30s resend cooldown + max 5 sends / 15 min per number, before
-  // spending an SMS.
+  // Anti-abuse: OTP_RESEND_SECONDS between sends, and at most 5 sends an hour
+  // per number (see otp-send-guard), before spending an SMS.
   const limit = await checkOtpSendAllowed(factors.otpPhone, clientIp(request));
   if (!limit.ok) {
     return Response.json(

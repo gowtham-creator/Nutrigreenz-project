@@ -12,6 +12,7 @@ import { OtpInput } from "@/components/ng/otp-input";
 import { Icon } from "@/components/ui/icon";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
+import { OTP_RESEND_SECONDS } from "@/lib/otp-provider";
 
 function GoogleIcon() {
   return (
@@ -71,7 +72,7 @@ function AuthScreen() {
     try {
       await sendOtp(e164);
       setStep("otp");
-      setResendIn(30);
+      setResendIn(OTP_RESEND_SECONDS);
       toast.success(`OTP sent to ${e164}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't send the code");
