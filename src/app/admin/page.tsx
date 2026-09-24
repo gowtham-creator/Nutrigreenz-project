@@ -265,7 +265,7 @@ export default function AdminOverview() {
           ) : (
             <>
               <Pipeline stages={queue} />
-              <p className="mt-3 text-[12px] font-medium text-ng-ink-soft">
+              <p className="mt-3 text-[12.5px] font-medium text-ng-ink-muted">
                 {openOrders === 0
                   ? "Nothing waiting. "
                   : `${num(openOrders)} order${openOrders === 1 ? "" : "s"} in progress. `}
@@ -323,11 +323,11 @@ export default function AdminOverview() {
                 </span>
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold text-ng-ink">Awaiting payment</div>
-                  <div className="text-[12px] font-medium text-ng-ink-soft">
+                  <div className="text-[12.5px] font-medium text-ng-ink-muted">
                     {pendingCount > 0 ? `${rupees(report.pendingRevenuePaise)} owed` : "none"}
                   </div>
                 </div>
-                <span className="ml-auto font-mono text-[18px] font-semibold tabular-nums text-ng-forest-deep">{num(pendingCount)}</span>
+                <span className="ml-auto font-display text-[22px] tabular-nums text-ng-forest-deep">{num(pendingCount)}</span>
               </li>
               <li className="flex items-center gap-3 py-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ng-terracotta/10 text-ng-terracotta">
@@ -335,11 +335,11 @@ export default function AdminOverview() {
                 </span>
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold text-ng-ink">Failed payments</div>
-                  <div className="text-[12px] font-medium text-ng-ink-soft">
+                  <div className="text-[12.5px] font-medium text-ng-ink-muted">
                     {failedCount > 0 ? `${rupees(report.failedRevenuePaise)} did not go through` : "none"}
                   </div>
                 </div>
-                <span className="ml-auto font-mono text-[18px] font-semibold tabular-nums text-ng-forest-deep">{num(failedCount)}</span>
+                <span className="ml-auto font-display text-[22px] tabular-nums text-ng-forest-deep">{num(failedCount)}</span>
               </li>
               <li className="pt-3">
                 <Link href="/admin/orders" className="text-[12.5px] font-semibold text-ng-forest hover:text-ng-forest-deep hover:underline">

@@ -985,18 +985,18 @@ export function DonutChart({
                   style={{ borderColor: TONE_STROKE[s.tone], opacity: empty ? 0.35 : 1 }}
                 />
                 {/* `min-w-0` is what makes `truncate` work inside a flex row. */}
-                <span className={cn("min-w-0 truncate font-medium", empty ? "text-ng-ink-soft" : "text-ng-ink-muted")}>
+                <span className={cn("min-w-0 truncate font-semibold", empty ? "text-ng-ink-muted" : "text-ng-ink")}>
                   {s.label}
                 </span>
                 {/* The count is the unambiguous number. A percentage alone cannot
                     tell 3 orders of 8 from 3,000 of 8,000. */}
-                <span className={cn("ml-auto pl-3 font-mono tabular-nums", empty ? "text-ng-ink-soft" : "text-ng-forest-deep")}>
+                <span className={cn("ml-auto pl-3 font-mono font-semibold tabular-nums", empty ? "text-ng-ink-muted" : "text-ng-forest-deep")}>
                   {s.value.toLocaleString("en-IN")}
                 </span>
                 <span
                   className={cn(
                     "w-10 shrink-0 text-right font-mono font-semibold tabular-nums",
-                    empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
+                    empty ? "text-ng-ink-muted" : "text-ng-forest-deep",
                   )}
                 >
                   {pct[i]}%
@@ -1120,7 +1120,7 @@ export function Pipeline({
         const pct = (s.value / max) * 100;
         const row = (
           <>
-            <div className="flex w-32 shrink-0 items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
+            <div className="flex w-32 shrink-0 items-center gap-2 text-[12.5px] font-semibold text-ng-ink">
               <span className="font-mono text-[11px] font-medium text-ng-ink-soft">{String(i + 1).padStart(2, "0")}</span>
               {s.label}
             </div>
@@ -1138,8 +1138,8 @@ export function Pipeline({
                 both themes; beside it, it is always the console's own ink. */}
             <span
               className={cn(
-                "w-10 shrink-0 text-right font-mono text-[13px] font-semibold tabular-nums",
-                s.value > 0 ? "text-ng-forest-deep" : "text-ng-ink-soft",
+                "w-10 shrink-0 text-right font-mono text-[12.5px] font-semibold tabular-nums",
+                s.value > 0 ? "text-ng-forest-deep" : "text-ng-ink-muted",
               )}
             >
               {s.value.toLocaleString("en-IN")}
@@ -1223,17 +1223,17 @@ export function ShareBar({
             )}
             onPointerEnter={() => setActive(i)}
           >
-            <div className="flex items-center gap-2 text-[12px] font-medium text-ng-ink-muted">
+            <div className="flex items-center gap-2 text-[12.5px] font-semibold text-ng-ink">
               <span
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-full border-2"
                 style={{ borderColor: TONE_STROKE[p.tone], opacity: p.value === 0 ? 0.35 : 1 }}
               />
               {p.label}
-              <span className="ml-auto font-mono font-semibold tabular-nums text-ng-ink-soft">{share(p.value)}%</span>
+              <span className="ml-auto font-mono font-semibold tabular-nums text-ng-ink-muted">{share(p.value)}%</span>
             </div>
             <div className="mt-1 font-mono text-[17px] font-semibold tabular-nums text-ng-forest-deep">{fmt(p.value)}</div>
-            {p.note ? <div className="mt-0.5 text-[11.5px] font-medium text-ng-ink-soft">{p.note}</div> : null}
+            {p.note ? <div className="mt-0.5 text-[12px] font-medium text-ng-ink-muted">{p.note}</div> : null}
           </li>
         ))}
       </ul>
