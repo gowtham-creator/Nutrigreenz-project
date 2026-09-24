@@ -14,32 +14,59 @@
  * the module being pulled into a client graph by accident.
  */
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /* shared helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Palette tokens usable as SVG stroke/fill via CSS custom props. */
-export type VizTone = "forest" | "leaf" | "clay" | "terracotta" | "blue" | "amber" | "ink";
-
 /**
- * Ink to use for text drawn ON a filled tone.
+ * Palette tokens usable as SVG stroke/fill via CSS custom props.
  *
- * Not a constant: each tone names a variable whose value flips with the admin
- * theme, because forest and ink invert when the console goes dark. See the
- * `--ng-on-*` block in globals.css for the measured contrast of each pairing.
+ * The first seven are the UI palette. The rest are the chart palette
+ * (`--ng-viz-*` in globals.css), validated for colour-vision separation in
+ * both themes: `stage1`..`stage5` for order status in flow order, the
+ * `paid`/`pending`/`failed` status trio, `cat1`..`cat3` for unordered
+ * identities, and `compare` for a previous-period line. Prefer them for data;
+ * the UI tones were never tuned to be told apart.
  */
-const TONE_ON: Record<VizTone, string> = {
-  forest: "var(--ng-on-forest)",
-  leaf: "var(--ng-on-leaf)",
-  clay: "var(--ng-on-clay)",
-  terracotta: "var(--ng-on-terracotta)",
-  blue: "var(--ng-on-blue)",
-  amber: "var(--ng-on-amber)",
-  ink: "var(--ng-on-ink)",
-};
+export type VizTone =
+  | "forest"
+  | "leaf"
+  | "clay"
+  | "terracotta"
+  | "blue"
+  | "amber"
+  | "ink"
+  | "stage1"
+  | "stage2"
+  | "stage3"
+  | "stage4"
+  | "stage5"
+  | "paid"
+  | "pending"
+  | "failed"
+  | "compare"
+  | "cat1"
+  | "cat2"
+  | "cat3";
+
+/** Order status → its step on the validated forest ramp, in flow order. */
+export const STAGE_TONE = {
+  placed: "stage1",
+  confirmed: "stage2",
+  packed: "stage3",
+  shipped: "stage4",
+  delivered: "stage5",
+} as const satisfies Record<string, VizTone>;
+
+/** Payment status → the reserved status trio. */
+export const PAYMENT_TONE = {
+  paid: "paid",
+  pending: "pending",
+  failed: "failed",
+} as const satisfies Record<string, VizTone>;
 
 const TONE_STROKE: Record<VizTone, string> = {
   forest: "var(--ng-forest)",
@@ -49,7 +76,44 @@ const TONE_STROKE: Record<VizTone, string> = {
   blue: "var(--ng-blue)",
   amber: "var(--ng-amber)",
   ink: "var(--ng-ink-muted)",
+  stage1: "var(--ng-viz-stage-1)",
+  stage2: "var(--ng-viz-stage-2)",
+  stage3: "var(--ng-viz-stage-3)",
+  stage4: "var(--ng-viz-stage-4)",
+  stage5: "var(--ng-viz-stage-5)",
+  paid: "var(--ng-viz-paid)",
+  pending: "var(--ng-viz-pending)",
+  failed: "var(--ng-viz-failed)",
+  compare: "var(--ng-viz-compare)",
+  cat1: "var(--ng-viz-cat-1)",
+  cat2: "var(--ng-viz-cat-2)",
+  cat3: "var(--ng-viz-cat-3)",
 };
+
+/**
+ * Change between two figures, as the chip and sentence a KPI needs.
+ *
+ * Returns null when there is nothing honest to say: no previous period, or a
+ * previous value of zero, where any percentage is infinite and "+∞%" helps
+ * nobody. `goodWhen` decides the colour, because a rise is good news for
+ * revenue and bad news for money still owed.
+ */
+export function compareFigures(
+  current: number,
+  previous: number | null | undefined,
+  goodWhen: "up" | "down" = "up",
+): { text: string; direction: "up" | "down" | "flat"; sentiment: "good" | "bad" | "neutral" } | null {
+  if (previous == null || previous === 0) return null;
+  const change = (current - previous) / Math.abs(previous);
+  const pct = Math.round(change * 100);
+  if (pct === 0) return { text: "0%", direction: "flat", sentiment: "neutral" };
+  const direction = pct > 0 ? "up" : "down";
+  return {
+    text: `${Math.abs(pct)}%`,
+    direction,
+    sentiment: direction === goodWhen ? "good" : "bad",
+  };
+}
 
 function buildPoints(values: number[], w: number, h: number, pad = 2) {
   const max = Math.max(...values, 1);
@@ -70,27 +134,40 @@ function buildPoints(values: number[], w: number, h: number, pad = 2) {
 export function TrendChip({
   delta,
   direction,
+  sentiment,
   className,
 }: {
   delta: string;
   direction: "up" | "down" | "flat";
+  /**
+   * Colour, decided separately from the arrow. Up is not always good: more
+   * money still owed is an arrow pointing up in the bad colour. Defaults to
+   * the old coupling (up good, down bad) for existing callers.
+   */
+  sentiment?: "good" | "bad" | "neutral";
   className?: string;
 }) {
-  const map = {
-    up: { c: "text-ng-success bg-ng-success/12", a: "M3 8.5L6 5.5L8 7.5L11 4" },
-    down: { c: "text-ng-terracotta bg-ng-terracotta/12", a: "M3 4L6 7L8 5L11 8.5" },
-    flat: { c: "text-ng-ink-muted bg-ng-line-soft", a: "M3 6.5H11" },
+  const arrow = {
+    up: "M3 8.5L6 5.5L8 7.5L11 4",
+    down: "M3 4L6 7L8 5L11 8.5",
+    flat: "M3 6.5H11",
   }[direction];
+  const tone = sentiment ?? (direction === "up" ? "good" : direction === "down" ? "bad" : "neutral");
+  const colour = {
+    good: "text-ng-success bg-ng-success/12",
+    bad: "text-ng-terracotta bg-ng-terracotta/12",
+    neutral: "text-ng-ink-muted bg-ng-line-soft",
+  }[tone];
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
-        map.c,
+        colour,
         className,
       )}
     >
       <svg width="13" height="11" viewBox="0 0 14 12" fill="none" aria-hidden>
-        <path d={map.a} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={arrow} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {delta}
     </span>
@@ -204,13 +281,23 @@ export function AreaChart({
   labels,
   height = 220,
   formatY,
+  annotatePeak = false,
+  label,
   className,
 }: {
-  /** one or two named series sharing the same x-axis */
-  series: { name: string; data: number[]; tone: VizTone }[];
+  /**
+   * Named series sharing the x-axis. A `compare` series is the previous
+   * period: a recessive dashed line with no fill and no markers, there to give
+   * the solid line something to be judged against rather than to be read.
+   */
+  series: { name: string; data: number[]; tone: VizTone; variant?: "compare" }[];
   labels: string[];
   height?: number;
   formatY?: (v: number) => string;
+  /** Mark the highest point of the first solid series with its value. */
+  annotatePeak?: boolean;
+  /** Accessible name, announced when the chart takes keyboard focus. */
+  label?: string;
   className?: string;
 }) {
   const W = 720;
@@ -228,7 +315,6 @@ export function AreaChart({
    * Wide enough for a formatted rupee value, which is the longest thing that
    * ever renders there.
    */
-  const labelX = 6;
   const padL = 62;
   const padR = 8;
   const padT = 16;
@@ -287,13 +373,10 @@ export function AreaChart({
    *  label is exact and none of them need rounding to print. */
   const niceMax = niceStep * gridLines;
 
+  const plotY = (v: number) => padT + (1 - v / niceMax) * (H - padT - padB);
   const toPts = (data: number[]) => {
     const step = data.length > 1 ? (W - padL - padR) / (data.length - 1) : 0;
-    return data.map((v, i) => {
-      const x = padL + i * step;
-      const y = padT + (1 - v / niceMax) * (H - padT - padB);
-      return [x, y] as const;
-    });
+    return data.map((v, i) => [padL + i * step, plotY(v)] as const);
   };
 
   /* Hover read-out.
@@ -309,6 +392,18 @@ export function AreaChart({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
 
+  /* The chart's rendered width, so the date axis can hold as many labels as
+     actually fit. A fixed eight collided in a half-width card: "20 Sept24
+     Sept". Zero until measured, which falls back to the full eight. */
+  const [boxW, setBoxW] = useState(0);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setBoxW(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   /*
    * Which x labels to print. At most eight, evenly spaced, always including the
    * first and the last, and never two adjacent — computing the set up front is
@@ -319,7 +414,9 @@ export function AreaChart({
     const n = labels.length;
     const set = new Set<number>();
     if (n === 0) return set;
-    if (n <= 8) {
+    // About 80px per date label, the width of "24 Sept" plus air either side.
+    const fit = boxW > 0 ? Math.max(2, Math.min(8, Math.floor((boxW * (1 - (padL + padR) / W)) / 80))) : 8;
+    if (n <= fit) {
       for (let i = 0; i < n; i++) set.add(i);
       return set;
     }
@@ -329,12 +426,12 @@ export function AreaChart({
      * dates in adjacent slots touch. Cap the count so consecutive ticks are
      * always at least two slots apart, then take whichever is smaller.
      */
-    const count = Math.max(2, Math.min(8, Math.floor((n - 1) / 2) + 1));
+    const count = Math.max(2, Math.min(fit, Math.floor((n - 1) / 2) + 1));
     for (let k = 0; k < count; k++) {
       set.add(Math.round((k * (n - 1)) / (count - 1)));
     }
     return set;
-  }, [labels]);
+  }, [labels, boxW]);
 
   const pointCount = Math.max(...series.map((s) => s.data.length), 0);
   const stepX = pointCount > 1 ? (W - padL - padR) / (pointCount - 1) : 0;
@@ -349,191 +446,369 @@ export function AreaChart({
     setHover(Math.min(Math.max(idx, 0), pointCount - 1));
   }
 
+  /*
+   * The same read-out from the keyboard. A chart that only answers a mouse
+   * hides every exact value from anyone tabbing through the console: focus
+   * lands on the latest point, the arrows walk the days, Escape lets go.
+   */
+  function handleKey(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (pointCount === 0) return;
+    const at = hover ?? pointCount - 1;
+    let next: number | null = null;
+    if (e.key === "ArrowRight") next = Math.min(at + 1, pointCount - 1);
+    else if (e.key === "ArrowLeft") next = Math.max(at - 1, 0);
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = pointCount - 1;
+    else if (e.key === "Escape") {
+      setHover(null);
+      return;
+    }
+    if (next !== null) {
+      e.preventDefault();
+      setHover(next);
+    }
+  }
+
+  const solid = series.filter((s) => s.variant !== "compare");
+  const compare = series.find((s) => s.variant === "compare");
+  const primary = solid[0];
+
+  /* The single best point, when asked for. Only a strictly positive peak is
+     marked: labelling "Best day ₹0" on an empty range is noise, not a fact. */
+  let peakIdx: number | null = null;
+  if (annotatePeak && primary) {
+    let bestV = 0;
+    primary.data.forEach((v, i) => {
+      if (v > bestV) {
+        bestV = v;
+        peakIdx = i;
+      }
+    });
+  }
+
   const hoverX = hover !== null ? padL + hover * stepX : 0;
   // Keep the card inside the chart: flip it to the left of the guide once the
   // guide passes the midpoint, instead of letting it run off the edge.
   const hoverPct = W > 0 ? (hoverX / W) * 100 : 0;
   const flip = hoverPct > 55;
+  const pctX = (x: number) => `${(x / W) * 100}%`;
+  const fmt = (v: number) => (formatY ? formatY(v) : v.toLocaleString("en-IN"));
+
+  /* Change against the previous period at the hovered day, when both lines
+     have a value there and the earlier one is not zero. */
+  const hoverDelta =
+    hover !== null && primary && compare
+      ? compareFigures(primary.data[hover] ?? 0, compare.data[hover])
+      : null;
 
   return (
     <div
       ref={wrapRef}
-      className={cn("relative w-full", className)}
+      className={cn(
+        "relative w-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ng-leaf/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ng-admin-core)]",
+        className,
+      )}
       onPointerMove={handlePointer}
       onPointerLeave={() => setHover(null)}
+      tabIndex={pointCount > 0 ? 0 : undefined}
+      role="group"
+      aria-roledescription="chart"
+      aria-label={label ? `${label}. Use the arrow keys to read each day.` : undefined}
+      onKeyDown={handleKey}
+      onFocus={() => setHover((h) => h ?? (pointCount > 0 ? pointCount - 1 : null))}
+      onBlur={() => setHover(null)}
     >
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height }}>
-        <defs>
+      {/* A legend whenever there is more than one line, so which line is which
+          never rests on colour alone. One series needs none: the card title
+          already names it. */}
+      {series.length > 1 ? (
+        <div className="mb-2 flex flex-wrap justify-end gap-x-4 gap-y-1 text-[11.5px] font-medium text-ng-ink-muted">
           {series.map((s) => (
-            <linearGradient key={s.name} id={`area-${s.name.replace(/\s/g, "")}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={TONE_STROKE[s.tone]} stopOpacity="0.20" />
-              <stop offset="100%" stopColor={TONE_STROKE[s.tone]} stopOpacity="0" />
-            </linearGradient>
+            <span key={s.name} className="flex items-center gap-1.5">
+              {s.variant === "compare" ? (
+                <span aria-hidden className="w-4 border-t-[1.5px] border-dashed" style={{ borderColor: TONE_STROKE[s.tone] }} />
+              ) : (
+                <span aria-hidden className="h-0.5 w-4 rounded-full" style={{ background: TONE_STROKE[s.tone] }} />
+              )}
+              {s.name}
+            </span>
           ))}
-        </defs>
+        </div>
+      ) : null}
+      <div className="relative" style={{ height }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-hidden>
+          <defs>
+            {solid.map((s) => (
+              <linearGradient key={s.name} id={`area-${s.name.replace(/\W/g, "")}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={TONE_STROKE[s.tone]} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={TONE_STROKE[s.tone]} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
 
-        {/* grid */}
-        {Array.from({ length: gridLines + 1 }).map((_, i) => {
-          const y = padT + (i / gridLines) * (H - padT - padB);
-          const val = niceMax * (1 - i / gridLines);
-          return (
-            <g key={i}>
-              {/* The baseline (i === gridLines) is the axis itself and carries
-                  more weight than the rules above it, which are only there to
-                  help the eye judge height. Drawing all five identically made
-                  the plot look like it floated on ruled paper rather than
-                  sitting on a floor. */}
+          {/* Grid. The baseline (i === gridLines) is the axis itself and carries
+              more weight than the rules above it, which only help the eye judge
+              height. `non-scaling-stroke` because the SVG stretches to the card:
+              without it a 1px rule became 1.4px on a wide screen. */}
+          {Array.from({ length: gridLines + 1 }).map((_, i) => {
+            const y = padT + (i / gridLines) * (H - padT - padB);
+            return (
               <line
+                key={i}
                 x1={padL}
                 y1={y}
                 x2={W - padR}
                 y2={y}
                 stroke={i === gridLines ? "var(--ng-line)" : "var(--ng-line-soft)"}
                 strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
               />
-              {/* Centred on the rule rather than sitting 3px above it, so the
-                  number reads as belonging to that line instead of hovering
-                  between two. `val` is exact by construction now, so there is
-                  nothing to round. */}
-              <text
-                x={labelX}
-                y={y}
-                dominantBaseline="middle"
-                fontSize="11"
-                fill="var(--ng-ink-muted)"
-                className="font-mono font-medium tabular-nums"
-              >
-                {formatY ? formatY(val) : val}
-              </text>
-            </g>
-          );
-        })}
+            );
+          })}
 
-        {/* series
-            `key` carries a signature of the plotted values, so changing the
-            range or bucket remounts the group and replays .ng-chart-in. Keying
-            on the series name alone would reuse the node and the new shape
-            would simply appear, which is the behaviour being fixed. */}
-        {series.map((s) => {
-          const pts = toPts(s.data);
-          const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-          const area = `${pts[0][0]},${H - padB} ${line} ${pts[pts.length - 1][0]},${H - padB}`;
-          return (
-            <g key={`${s.name}-${s.data.length}-${s.data.reduce((a, b) => a + b, 0)}`} className="ng-chart-in">
-              <polygon points={area} fill={`url(#area-${s.name.replace(/\s/g, "")})`} />
-              <polyline
-                points={line}
-                fill="none"
-                stroke={TONE_STROKE[s.tone]}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {pts.map(([x, y], i) => (
-                <circle
-                  key={i}
-                  cx={x}
-                  cy={y}
-                  /* The hovered point grows and fills, so it is obvious which
-                     column the read-out belongs to. */
-                  r={i === hover ? 5 : 3}
-                  fill={i === hover ? TONE_STROKE[s.tone] : "var(--ng-paper)"}
+          {/* The previous period first, so the current line always sits on top
+              of it where they cross. */}
+          {compare ? (
+            <polyline
+              points={toPts(compare.data).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ")}
+              fill="none"
+              stroke={TONE_STROKE[compare.tone]}
+              strokeWidth="1.5"
+              strokeDasharray="5 4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : null}
+
+          {/* `key` carries a signature of the plotted values, so changing the
+              range remounts the group and replays .ng-chart-in. Keying on the
+              series name alone would reuse the node and the new shape would
+              simply appear. */}
+          {solid.map((s) => {
+            const pts = toPts(s.data);
+            if (pts.length === 0) return null;
+            const line = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+            const area = `${pts[0][0]},${H - padB} ${line} ${pts[pts.length - 1][0]},${H - padB}`;
+            return (
+              <g key={`${s.name}-${s.data.length}-${s.data.reduce((a, b) => a + b, 0)}`} className="ng-chart-in">
+                <polygon points={area} fill={`url(#area-${s.name.replace(/\W/g, "")})`} />
+                <polyline
+                  points={line}
+                  fill="none"
                   stroke={TONE_STROKE[s.tone]}
                   strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
                 />
-              ))}
-            </g>
+              </g>
+            );
+          })}
+
+          {/* Vertical guide under the pointer. Drawn after the series so it
+              reads as an overlay. */}
+          {hover !== null ? (
+            <line
+              x1={hoverX}
+              y1={padT}
+              x2={hoverX}
+              y2={H - padB}
+              stroke="var(--ng-ink-soft)"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.6"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : null}
+        </svg>
+
+        {/*
+          Axis labels and point markers are HTML laid over the plot, not SVG.
+
+          The SVG stretches to the card with preserveAspectRatio="none", which
+          stretched everything drawn inside it too: the y-axis numbers came out
+          wider than they were tall, and every point marker was an ellipse.
+          Positioned in percent across and in pixels down (the SVG is exactly
+          `height` pixels tall, so its y units ARE pixels), they stay round and
+          the text stays text.
+
+          Markers are selective. A dot on every point of a 90-day line is 90
+          dots of noise; the hovered day, the latest day and the peak are the
+          three that answer a question.
+        */}
+        {Array.from({ length: gridLines + 1 }).map((_, i) => {
+          const y = padT + (i / gridLines) * (H - padT - padB);
+          const val = niceMax * (1 - i / gridLines);
+          return (
+            <span
+              key={i}
+              aria-hidden
+              className="absolute left-0 -translate-y-1/2 pr-2 text-right font-mono text-[11px] font-medium tabular-nums text-ng-ink-muted"
+              style={{ top: y, width: pctX(padL) }}
+            >
+              {fmt(val)}
+            </span>
           );
         })}
 
-        {/* Vertical guide under the pointer. Drawn after the series so it
-            reads as an overlay, and non-interactive so it never steals the
-            pointer events that drive it. */}
-        {hover !== null ? (
-          <line
-            x1={hoverX}
-            y1={padT}
-            x2={hoverX}
-            y2={H - padB}
-            stroke="var(--ng-forest)"
-            strokeWidth="1"
-            strokeDasharray="3 3"
-            opacity="0.45"
-            pointerEvents="none"
-          />
-        ) : null}
-      </svg>
-
-      {/* The read-out itself.
-          HTML rather than SVG <text>: the SVG is stretched with
-          preserveAspectRatio="none", which would distort any text inside it,
-          and HTML lets the card use the same tokens as the rest of the admin. */}
-      {hover !== null ? (
-        <div
-          className="pointer-events-none absolute top-2 z-10 min-w-[132px] rounded-xl border border-ng-line-soft bg-ng-paper px-3 py-2 shadow-[var(--shadow-ng-card)]"
-          style={{
-            left: `${hoverPct}%`,
-            transform: flip ? "translateX(calc(-100% - 10px))" : "translateX(10px)",
-          }}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-soft">
-            {labels[hover] ?? ""}
-          </div>
-          {series.map((s) => (
-            <div key={s.name} className="flex items-center gap-2 whitespace-nowrap py-0.5">
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ background: TONE_STROKE[s.tone] }}
+        {primary && primary.data.length > 0 ? (
+          <>
+            {peakIdx !== null && peakIdx !== hover ? (
+              <PointMarker
+                left={pctX(padL + peakIdx * stepX)}
+                top={plotY(primary.data[peakIdx])}
+                colour={TONE_STROKE[primary.tone]}
+                label={`Best · ${fmt(primary.data[peakIdx])}`}
+                align={peakIdx / Math.max(1, pointCount - 1) > 0.8 ? "end" : peakIdx / Math.max(1, pointCount - 1) < 0.2 ? "start" : "center"}
               />
-              <span className="text-[11.5px] text-ng-ink-muted">{s.name}</span>
-              <span className="ml-auto text-[12.5px] font-semibold tabular-nums text-ng-ink">
-                {formatY ? formatY(s.data[hover] ?? 0) : (s.data[hover] ?? 0).toLocaleString("en-IN")}
-              </span>
+            ) : null}
+            {hover === null && peakIdx !== primary.data.length - 1 ? (
+              <PointMarker
+                left={pctX(padL + (primary.data.length - 1) * stepX)}
+                top={plotY(primary.data[primary.data.length - 1])}
+                colour={TONE_STROKE[primary.tone]}
+              />
+            ) : null}
+          </>
+        ) : null}
+        {hover !== null
+          ? solid.map((s) =>
+              s.data[hover] !== undefined ? (
+                <PointMarker
+                  key={s.name}
+                  left={pctX(hoverX)}
+                  top={plotY(s.data[hover])}
+                  colour={TONE_STROKE[s.tone]}
+                  emphasis
+                />
+              ) : null,
+            )
+          : null}
+
+        {/* The read-out. HTML so it uses the console's own tokens and type.
+            Values lead and names follow: the number is the answer, the series
+            name only says which answer. */}
+        {hover !== null ? (
+          <div
+            className="pointer-events-none absolute top-2 z-10 min-w-[148px] rounded-xl border border-ng-line-soft bg-ng-paper px-3 py-2 shadow-[var(--shadow-ng-card)]"
+            style={{
+              left: `${hoverPct}%`,
+              transform: flip ? "translateX(calc(-100% - 10px))" : "translateX(10px)",
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-soft">
+              {labels[hover] ?? ""}
             </div>
-          ))}
-        </div>
-      ) : null}
+            {series.map((s) => (
+              <div key={s.name} className="flex items-center gap-2 whitespace-nowrap py-0.5">
+                {s.variant === "compare" ? (
+                  <span
+                    aria-hidden
+                    className="h-0 w-3 shrink-0 border-t-[1.5px] border-dashed"
+                    style={{ borderColor: TONE_STROKE[s.tone] }}
+                  />
+                ) : (
+                  <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: TONE_STROKE[s.tone] }} />
+                )}
+                <span
+                  className={cn(
+                    "text-[12.5px] font-semibold tabular-nums",
+                    s.variant === "compare" ? "text-ng-ink-muted" : "text-ng-ink",
+                  )}
+                >
+                  {fmt(s.data[hover] ?? 0)}
+                </span>
+                <span className="ml-auto pl-3 text-[11.5px] text-ng-ink-soft">{s.name}</span>
+              </div>
+            ))}
+            {hoverDelta ? (
+              <div className="mt-1.5 border-t border-ng-line-soft pt-1.5">
+                <TrendChip delta={hoverDelta.text} direction={hoverDelta.direction} sentiment={hoverDelta.sentiment} />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {/*
         x labels — thinned to fit, with the ticks they belong to.
 
         Rendering one label per point collides as soon as a range covers a
-        couple of weeks. The previous rule printed every Nth, then suppressed
-        any that "crowded" the last one — which left a visible hole near the
-        right-hand end, so the axis read as though a stretch of days were
-        missing rather than merely unlabelled.
-
-        The shown indices are chosen up front instead: evenly spaced across the
-        range, first and last always included, and never two adjacent. Every
-        point still gets a slot, so a label stays directly under its own data
-        point, and a short tick is drawn above each printed one — otherwise a
-        date floats between two points and it is guesswork which it names.
+        couple of weeks. The shown indices are chosen up front: evenly spaced
+        across the range, first and last always included, and never two
+        adjacent. Each label sits under its own point because the row runs over
+        the plot's width only, from padL to the right padding.
       */}
-      <div className="mt-1 flex px-1" aria-hidden>
-        {labels.map((_, i) => (
-          <span key={i} className="flex min-w-0 flex-1 justify-center">
+      <div
+        className="relative mt-1 h-5"
+        aria-hidden
+        style={{ marginLeft: pctX(padL), marginRight: pctX(padR) }}
+      >
+        {labels.map((l, i) =>
+          xTickSet.has(i) ? (
             <span
+              key={i}
               className={cn(
-                "block w-px",
-                xTickSet.has(i) ? "h-1.5 bg-ng-line" : "h-0",
+                "absolute top-0 flex flex-col items-center whitespace-nowrap font-mono text-[10.5px] font-medium text-ng-ink-soft",
+                i === 0 ? "translate-x-0 items-start" : i === labels.length - 1 ? "-translate-x-full items-end" : "-translate-x-1/2",
               )}
-            />
-          </span>
-        ))}
-      </div>
-      <div className="mt-0.5 flex px-1">
-        {labels.map((l, i) => (
-          <span
-            key={i}
-            className="min-w-0 flex-1 whitespace-nowrap text-center font-mono text-[10.5px] font-medium text-ng-ink-soft"
-          >
-            {xTickSet.has(i) ? l : ""}
-          </span>
-        ))}
+              style={{ left: labels.length > 1 ? `${(i / (labels.length - 1)) * 100}%` : "0%" }}
+            >
+              <span className="mb-0.5 block h-1.5 w-px bg-ng-line" />
+              {l}
+            </span>
+          ) : null,
+        )}
       </div>
     </div>
+  );
+}
+
+/** A round point marker laid over a stretched SVG plot, with an optional tag. */
+function PointMarker({
+  left,
+  top,
+  colour,
+  label,
+  emphasis = false,
+  align = "center",
+}: {
+  left: string;
+  top: number;
+  colour: string;
+  label?: string;
+  emphasis?: boolean;
+  align?: "start" | "center" | "end";
+}) {
+  return (
+    <span aria-hidden className="pointer-events-none absolute z-[1]" style={{ left, top }}>
+      <span
+        className={cn(
+          "absolute block -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
+          emphasis ? "size-[11px]" : "size-[9px]",
+        )}
+        style={{
+          borderColor: colour,
+          background: emphasis ? colour : "var(--ng-paper)",
+          /* A ring of card colour so the dot separates from the line it sits
+             on and from the area fill under it. */
+          boxShadow: "0 0 0 2px var(--ng-paper)",
+        }}
+      />
+      {label ? (
+        <span
+          className={cn(
+            "absolute bottom-3 whitespace-nowrap rounded-md border border-ng-line-soft bg-ng-paper px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-ng-ink shadow-[var(--shadow-admin-rest)]",
+            align === "start" ? "left-0 -translate-x-2" : align === "end" ? "right-0 translate-x-2" : "left-0 -translate-x-1/2",
+          )}
+        >
+          {label}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -547,6 +822,7 @@ export function DonutChart({
   thickness = 22,
   centerLabel,
   centerValue,
+  formatValue,
   className,
 }: {
   segments: { label: string; value: number; tone: VizTone }[];
@@ -554,11 +830,22 @@ export function DonutChart({
   thickness?: number;
   centerLabel?: string;
   centerValue?: string;
+  /** How a single segment's value reads in the centre while it is active. */
+  formatValue?: (v: number) => string;
   className?: string;
 }) {
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
+
+  /*
+   * One segment can be "active": hovered on the ring, or hovered or focused in
+   * the legend. The ring and the list are two views of the same numbers, so
+   * pointing at either lights up both, and the centre swaps from the total to
+   * that segment's value and share. The rest dim rather than vanish, so the
+   * part is always seen against the whole it belongs to.
+   */
+  const [active, setActive] = useState<number | null>(null);
 
   /*
    * Percentages by largest remainder, so the column adds up to 100.
@@ -593,6 +880,8 @@ export function DonutChart({
     return acc;
   }, []);
 
+  const current = active !== null ? segments[active] : null;
+
   return (
     /*
      * Wraps rather than squeezes.
@@ -606,21 +895,19 @@ export function DonutChart({
      * anyway in a narrow column. No breakpoint is involved, so it responds to
      * the space the card actually has rather than to the size of the window.
      */
-    <div className={cn("flex flex-wrap items-center gap-6", className)}>
+    <div className={cn("flex flex-wrap items-center gap-6", className)} onPointerLeave={() => setActive(null)}>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ng-line-soft)" strokeWidth={thickness} />
           {segments.map((s, i) => {
             const { len, start } = arcs[i];
             if (len <= 0) return null;
             /*
-             * A hairline of page colour between arcs. Two adjacent segments in
-             * neighbouring greens used to fuse into one band, which is most of
-             * why the ring could not be read against the legend — the boundary
-             * simply was not visible. Only shortened when there is room, so a
-             * thin sliver is never erased by its own gap.
+             * A 2px gap of card colour between arcs, so two neighbouring steps
+             * of one ramp never fuse into a single band. Only cut when there is
+             * room, so a thin sliver is never erased by its own gap.
              */
-            const gap = len > 3 ? 1.5 : 0;
+            const gap = len > 4 ? 2 : 0;
             return (
               <circle
                 key={i}
@@ -633,75 +920,88 @@ export function DonutChart({
                 strokeDasharray={`${len - gap} ${c - len + gap}`}
                 strokeDashoffset={-start}
                 strokeLinecap="butt"
+                className="cursor-default transition-opacity duration-200 ease-out"
+                style={{ opacity: active === null || active === i ? 1 : 0.28 }}
+                onPointerEnter={() => setActive(i)}
               />
             );
           })}
         </svg>
-        {(centerLabel || centerValue) && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            {centerValue ? (
-              <span className="font-display text-[26px] text-ng-forest-deep leading-none tabular-nums">{centerValue}</span>
-            ) : null}
-            {centerLabel ? <span className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-1">{centerLabel}</span> : null}
-          </div>
-        )}
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-3 text-center"
+          aria-live="polite"
+        >
+          {current ? (
+            <>
+              <span className="font-display text-[24px] leading-none text-ng-forest-deep tabular-nums">
+                {formatValue ? formatValue(current.value) : current.value.toLocaleString("en-IN")}
+              </span>
+              <span className="mt-1 max-w-full truncate text-[11px] font-semibold text-ng-ink-muted">
+                {current.label} · {pct[active!]}%
+              </span>
+            </>
+          ) : centerLabel || centerValue ? (
+            <>
+              {centerValue ? (
+                <span className="font-display text-[26px] leading-none text-ng-forest-deep tabular-nums">{centerValue}</span>
+              ) : null}
+              {centerLabel ? (
+                <span className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted">{centerLabel}</span>
+              ) : null}
+            </>
+          ) : null}
+        </div>
       </div>
-      <ul className="min-w-0 flex-1 basis-[180px] space-y-1.5">
+      <ul className="min-w-0 flex-1 basis-[180px] space-y-0.5">
         {segments.map((s, i) => {
           const empty = s.value === 0;
+          const on = active === i;
           return (
-            <li key={s.label} className="flex items-center gap-2.5 text-[12.5px]">
-              {/*
-                A ring, not a disc. The filled dot rendered `forest` as a 10px
-                near-black circle that was indistinguishable from `ink` beside
-                it — the reader could not tell which of two dark rows belonged
-                to which dark arc. A ring shows the same colour along an edge
-                and around a light centre, where a hue is far easier to name.
-
-                Rows with no orders are drawn hollow and dimmed: the status is
-                still listed, because "nothing is packed right now" is worth
-                knowing, but it no longer looks like a segment to hunt for on a
-                ring it does not appear on.
-              */}
-              <span
-                className="size-2.5 shrink-0 rounded-full border-2"
-                style={{
-                  borderColor: TONE_STROKE[s.tone],
-                  opacity: empty ? 0.35 : 1,
-                }}
-              />
-              {/* `min-w-0` is what makes the neighbouring `truncate` work at
-                  all. A flex item will not shrink below its content's intrinsic
-                  width by default, so the label kept its full length, pushed the
-                  count and percentage past the card, and widened the console
-                  instead of ellipsing. */}
-              <span
+            <li key={s.label}>
+              {/* A button, so the legend is the keyboard route into the ring:
+                  focus a row and the centre reads out that segment. */}
+              <button
+                type="button"
+                onPointerEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                onBlur={() => setActive(null)}
+                aria-label={`${s.label}: ${s.value.toLocaleString("en-IN")}, ${pct[i]}%`}
                 className={cn(
-                  "min-w-0 truncate font-medium",
-                  empty ? "text-ng-ink-soft" : "text-ng-ink-muted",
+                  "flex w-full cursor-default items-center gap-2.5 rounded-md px-1.5 py-1 text-left text-[12.5px] outline-none transition-colors duration-150",
+                  "focus-visible:ring-2 focus-visible:ring-ng-leaf/50",
+                  on ? "bg-ng-line-soft" : "",
                 )}
               >
-                {s.label}
-              </span>
-              {/* The count is the unambiguous number. A percentage alone cannot
-                  tell 3 orders of 8 from 3,000 of 8,000, and on a catalogue this
-                  size the raw figure is usually the one being looked for. */}
-              <span
-                className={cn(
-                  "ml-auto pl-3 font-mono tabular-nums",
-                  empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
-                )}
-              >
-                {s.value.toLocaleString("en-IN")}
-              </span>
-              <span
-                className={cn(
-                  "w-10 shrink-0 text-right font-mono tabular-nums font-semibold",
-                  empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
-                )}
-              >
-                {pct[i]}%
-              </span>
+                {/*
+                  A ring, not a disc: a hue is far easier to name along an edge
+                  around a light centre than as a small dark dot. Rows with no
+                  orders are drawn hollow and dimmed. The status is still listed,
+                  because "nothing is packed right now" is worth knowing, but it
+                  no longer looks like a segment to hunt for on the ring.
+                */}
+                <span
+                  aria-hidden
+                  className="size-2.5 shrink-0 rounded-full border-2"
+                  style={{ borderColor: TONE_STROKE[s.tone], opacity: empty ? 0.35 : 1 }}
+                />
+                {/* `min-w-0` is what makes `truncate` work inside a flex row. */}
+                <span className={cn("min-w-0 truncate font-medium", empty ? "text-ng-ink-soft" : "text-ng-ink-muted")}>
+                  {s.label}
+                </span>
+                {/* The count is the unambiguous number. A percentage alone cannot
+                    tell 3 orders of 8 from 3,000 of 8,000. */}
+                <span className={cn("ml-auto pl-3 font-mono tabular-nums", empty ? "text-ng-ink-soft" : "text-ng-forest-deep")}>
+                  {s.value.toLocaleString("en-IN")}
+                </span>
+                <span
+                  className={cn(
+                    "w-10 shrink-0 text-right font-mono font-semibold tabular-nums",
+                    empty ? "text-ng-ink-soft" : "text-ng-forest-deep",
+                  )}
+                >
+                  {pct[i]}%
+                </span>
+              </button>
             </li>
           );
         })}
@@ -810,38 +1110,133 @@ export function Pipeline({
   stages,
   className,
 }: {
-  stages: { label: string; value: number; tone: VizTone }[];
+  stages: { label: string; value: number; tone: VizTone; href?: string }[];
   className?: string;
 }) {
   const max = Math.max(...stages.map((s) => s.value), 1);
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {stages.map((s, i) => {
         const pct = (s.value / max) * 100;
-        return (
-          <div key={s.label} className="flex items-center gap-3">
-            <div className="w-28 shrink-0 text-[12px] font-medium text-ng-ink-muted flex items-center gap-2">
+        const row = (
+          <>
+            <div className="flex w-32 shrink-0 items-center gap-2 text-[12.5px] font-medium text-ng-ink-muted">
               <span className="font-mono text-[11px] font-medium text-ng-ink-soft">{String(i + 1).padStart(2, "0")}</span>
               {s.label}
             </div>
-            <div className="flex-1 h-7 rounded-lg bg-ng-line-soft/60 overflow-hidden">
+            <div className="h-6 flex-1 overflow-hidden rounded-md bg-ng-line-soft/60">
               <div
-                className="h-full rounded-lg flex items-center justify-end pr-2.5 transition-all"
-                style={{ width: `${Math.max(8, pct)}%`, background: TONE_STROKE[s.tone] }}
-              >
-                <span
-                  className="font-mono text-[11.5px] font-bold tabular-nums"
-                  /* Was `text-white`, which failed on every light tone —
-                     2.17:1 on amber, and 1.39:1 on the pale bar in dark. */
-                  style={{ color: TONE_ON[s.tone] }}
-                >
-                  {s.value}
-                </span>
-              </div>
+                className="h-full rounded-md transition-[width] duration-300 ease-out"
+                /* An empty stage keeps no sliver: a 0 drawn as a coloured stub
+                   reads as "a few", which is exactly the wrong message on a
+                   work queue. */
+                style={{ width: s.value > 0 ? `${Math.max(4, pct)}%` : "0%", background: TONE_STROKE[s.tone] }}
+              />
             </div>
+            {/* The count sits beside the bar, in ink, not inside it in the bar's
+                colour. Text on a fill had to be re-contrasted for every tone in
+                both themes; beside it, it is always the console's own ink. */}
+            <span
+              className={cn(
+                "w-10 shrink-0 text-right font-mono text-[13px] font-semibold tabular-nums",
+                s.value > 0 ? "text-ng-forest-deep" : "text-ng-ink-soft",
+              )}
+            >
+              {s.value.toLocaleString("en-IN")}
+            </span>
+          </>
+        );
+        return s.href ? (
+          <a
+            key={s.label}
+            href={s.href}
+            className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-0.5 outline-none transition-colors hover:bg-ng-line-soft/50 focus-visible:ring-2 focus-visible:ring-ng-leaf/50"
+          >
+            {row}
+          </a>
+        ) : (
+          <div key={s.label} className="flex items-center gap-3">
+            {row}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* ShareBar — one quantity split into parts, with a labelled legend    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A single bar split into its parts: booked revenue into collected, pending
+ * and failed, say. Where three separate tiles make the reader add them up, one
+ * bar shows the whole and each part's share of it at a glance.
+ *
+ * Parts are separated by a 2px gap of card colour so neighbours never fuse;
+ * the legend carries every value and share in text, so nothing depends on
+ * colour alone.
+ */
+export function ShareBar({
+  parts,
+  formatValue,
+  className,
+}: {
+  parts: { label: string; value: number; tone: VizTone; note?: string }[];
+  formatValue?: (v: number) => string;
+  className?: string;
+}) {
+  const [active, setActive] = useState<number | null>(null);
+  const total = parts.reduce((s, p) => s + p.value, 0);
+  const fmt = (v: number) => (formatValue ? formatValue(v) : v.toLocaleString("en-IN"));
+  const share = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+
+  return (
+    <div className={className} onPointerLeave={() => setActive(null)}>
+      <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full bg-ng-line-soft">
+        {total > 0
+          ? parts.map((p, i) =>
+              p.value > 0 ? (
+                <div
+                  key={p.label}
+                  className="h-full transition-opacity duration-200 ease-out first:rounded-l-full last:rounded-r-full"
+                  style={{
+                    flexGrow: p.value,
+                    flexBasis: 0,
+                    minWidth: 4,
+                    background: TONE_STROKE[p.tone],
+                    opacity: active === null || active === i ? 1 : 0.3,
+                  }}
+                  onPointerEnter={() => setActive(i)}
+                />
+              ) : null,
+            )
+          : null}
+      </div>
+      <ul className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-3">
+        {parts.map((p, i) => (
+          <li
+            key={p.label}
+            className={cn(
+              "-mx-2 rounded-lg px-2 py-1 transition-colors duration-150",
+              active === i ? "bg-ng-line-soft/60" : "",
+            )}
+            onPointerEnter={() => setActive(i)}
+          >
+            <div className="flex items-center gap-2 text-[12px] font-medium text-ng-ink-muted">
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-full border-2"
+                style={{ borderColor: TONE_STROKE[p.tone], opacity: p.value === 0 ? 0.35 : 1 }}
+              />
+              {p.label}
+              <span className="ml-auto font-mono font-semibold tabular-nums text-ng-ink-soft">{share(p.value)}%</span>
+            </div>
+            <div className="mt-1 font-mono text-[17px] font-semibold tabular-nums text-ng-forest-deep">{fmt(p.value)}</div>
+            {p.note ? <div className="mt-0.5 text-[11.5px] font-medium text-ng-ink-soft">{p.note}</div> : null}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -741,6 +741,36 @@
   --ng-admin-shell:  #E2DCC7;
   --ng-admin-core:   #FCFBF6;
 
+  /* ── Chart palette ─────────────────────────────────────────────────────
+     Data colours are their own tokens, not the UI tokens reused. `--ng-forest`
+     is ink: as a donut slice it read as black (OKLCH L 0.29, chroma 0.05), and
+     beside `--ng-ink` the two dark rows could not be told apart.
+
+     stage-1..5  order status, placed -> delivered. One forest hue stepped in
+                 lightness, because status is a progression, not five unrelated
+                 categories; "done" carries the most ink in both themes.
+     paid / pending / failed  the reserved status trio. Always shipped with a
+                 label: red-green separation under protanopia sits in the 6-8
+                 band, legal only with secondary encoding.
+
+     Every set validated with the dataviz skill's validate_palette.js against
+     this theme's card surface (#FCFBF6); the dark block has its own steps. */
+  --ng-viz-stage-1: #5CB572;
+  --ng-viz-stage-2: #3B9555;
+  --ng-viz-stage-3: #21763C;
+  --ng-viz-stage-4: #15592B;
+  --ng-viz-stage-5: #0F3D1D;
+  --ng-viz-paid:    #66BF73;
+  --ng-viz-pending: #F29E12;
+  --ng-viz-failed:  #C74D33;
+  /* The previous-period line: recessive by design, it is context, not data. */
+  --ng-viz-compare: #8A9489;
+  /* Categorical trio for unordered identities (sign-in provider). Validated
+     with --pairs all, because in a donut every slice touches every other. */
+  --ng-viz-cat-1: #21763C;
+  --ng-viz-cat-2: #B5862F;
+  --ng-viz-cat-3: #2962A3;
+
   /* Ambient, not directional. A dark offset drop shadow under a cream card
      reads as grime; these are wide, low-opacity and tinted with the forest ink
      already in the palette, so a card looks lifted rather than dirty. */
@@ -829,6 +859,23 @@
   /* Deeper than the console ground (#0E1A12) so the rail still reads as a
      distinct plane rather than merging into the page. */
   --ng-chrome-deep: #0A140E;
+
+  /* Chart palette, dark steps. Re-stepped rather than inverted: the light
+     values are too pale here (L above the 0.48-0.67 band) and "shipped" and
+     "delivered" were 9.8 dE apart, below the floor even for full colour
+     vision. Validated against #1B2A1F. */
+  --ng-viz-stage-1: #3F774D;
+  --ng-viz-stage-2: #4D965F;
+  --ng-viz-stage-3: #63B376;
+  --ng-viz-stage-4: #85CF95;
+  --ng-viz-stage-5: #B2E7BC;
+  --ng-viz-paid:    #33854A;
+  --ng-viz-pending: #B38309;
+  --ng-viz-failed:  #A13124;
+  --ng-viz-compare: #6F7F73;
+  --ng-viz-cat-1: #1D7339;
+  --ng-viz-cat-2: #BB881A;
+  --ng-viz-cat-3: #4C82C6;
 
   /*
    * Accent inks re-tuned for a dark ground.

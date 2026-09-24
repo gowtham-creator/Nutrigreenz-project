@@ -71,6 +71,31 @@ export interface VisitorPlaceEntry {
   visits: number;
 }
 
+/** One day of the revenue trend. `day` is the IST calendar date (YYYY-MM-DD). */
+export interface DailyRevenueEntry {
+  day: string;
+  revenuePaise: number;
+  orders: number;
+}
+
+/**
+ * The same headline figures for the period immediately before the report's,
+ * of equal length. Present only when the report has BOTH bounds: "all time"
+ * has no before, and inventing one would put a delta on the page that means
+ * nothing.
+ */
+export interface PreviousPeriod {
+  range: ReportRange;
+  revenuePaise: number;
+  orderCount: number;
+  aovPaise: number;
+  unitsSold: number;
+  paidRevenuePaise: number;
+  newCustomers: number;
+  /** Aligned with the report's `dailyRevenue` by index, day 1 against day 1. */
+  dailyRevenue: DailyRevenueEntry[];
+}
+
 export interface AdminReport {
   range: ReportRange;
   revenuePaise: number;
@@ -104,6 +129,10 @@ export interface AdminReport {
   visitorPlaces: VisitorPlaceEntry[];
   /** Every visit counted in the range, including places outside the top list. */
   visitorTotal: number;
+  /** Revenue and orders per IST day across the range, zero-filled. */
+  dailyRevenue: DailyRevenueEntry[];
+  /** The preceding period of equal length, or null when the range is open. */
+  previous: PreviousPeriod | null;
 }
 
 const PAYMENT_STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed"];
@@ -115,6 +144,7 @@ interface OrderAggRow {
   total_paise: number;
   discount_paise: number;
   coupon_code: string | null;
+  placed_at: string;
 }
 
 interface ItemAggRow {
@@ -144,6 +174,52 @@ function endBound(value: string | null): string | null {
   const v = value.trim();
   if (!v) return null;
   return DATE_ONLY.test(v) ? `${v}T23:59:59.999Z` : v;
+}
+
+/* ── daily series ─────────────────────────────────────────────────────────
+
+   Bucketed by the IST calendar day, not UTC. The business, its customers and
+   its operators are all in India: an order at 1am IST is "today" to everyone
+   who will read the chart, and a UTC bucket would file it under yesterday. */
+
+const IST_OFFSET_MS = 330 * 60 * 1000;
+const DAY_MS = 86_400_000;
+
+/** The IST calendar date of an instant, as YYYY-MM-DD. */
+function istDay(ms: number): string {
+  return new Date(ms + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** Every IST day from `fromDay` to `toDay` inclusive. */
+function dayRange(fromDay: string, toDay: string): string[] {
+  const out: string[] = [];
+  let t = Date.parse(`${fromDay}T00:00:00Z`);
+  const end = Date.parse(`${toDay}T00:00:00Z`);
+  // Bounded so a malformed bound can never spin: ~2 years of days at most.
+  while (t <= end && out.length < 800) {
+    out.push(new Date(t).toISOString().slice(0, 10));
+    t += DAY_MS;
+  }
+  return out;
+}
+
+/** Zero-filled revenue and order counts per IST day over the given days. */
+function dailySeries(
+  orders: { total_paise: number; placed_at: string }[],
+  days: string[],
+): DailyRevenueEntry[] {
+  const byDay = new Map<string, DailyRevenueEntry>(
+    days.map((day) => [day, { day, revenuePaise: 0, orders: 0 }]),
+  );
+  for (const o of orders) {
+    const ms = Date.parse(o.placed_at);
+    if (!Number.isFinite(ms)) continue;
+    const entry = byDay.get(istDay(ms));
+    if (!entry) continue;
+    entry.revenuePaise += o.total_paise;
+    entry.orders += 1;
+  }
+  return days.map((d) => byDay.get(d)!);
 }
 
 /** Split an id array into fixed-size chunks (keeps `.in()` URLs bounded). */
@@ -176,7 +252,7 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
   //    so this keeps every order while honouring the "non-cancelled" contract).
   let orderQuery = db
     .from("orders")
-    .select("id, status, payment_status, total_paise, discount_paise, coupon_code")
+    .select("id, status, payment_status, total_paise, discount_paise, coupon_code, placed_at")
     .neq("status", "cancelled");
   if (from) orderQuery = orderQuery.gte("placed_at", from);
   if (to) orderQuery = orderQuery.lte("placed_at", to);
@@ -312,6 +388,23 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
     .sort((a, b) => b.visits - a.visits)
     .slice(0, 25);
 
+  // 3c. The trend. With an open lower bound ("all time") the series starts at
+  //     the first order rather than at some arbitrary date before the shop
+  //     existed, which would be a long flat line of nothing.
+  const nowMs = Date.now();
+  const firstOrderMs = orders.reduce(
+    (min, o) => Math.min(min, Date.parse(o.placed_at) || min),
+    Number.POSITIVE_INFINITY,
+  );
+  const seriesFromMs = from ? Date.parse(from) : Number.isFinite(firstOrderMs) ? firstOrderMs : nowMs;
+  const seriesToMs = to ? Math.min(Date.parse(to), nowMs) : nowMs;
+  const days = dayRange(istDay(seriesFromMs), istDay(Math.max(seriesFromMs, seriesToMs)));
+  const dailyRevenue = dailySeries(orders, days);
+
+  // 3d. The period before, when there is one to compare against.
+  const previous =
+    from && to ? await buildPreviousPeriod(db, Date.parse(from), Date.parse(to), days.length) : null;
+
   // 4. Assemble the typed report (stable status ordering for the UI).
   const statusBreakdown: StatusBreakdownEntry[] = ORDER_STATUS_FLOW.map((status) => {
     const s = statusMap.get(status) ?? { orders: 0, revenuePaise: 0 };
@@ -346,5 +439,76 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
     newCustomers: newCustomers ?? 0,
     visitorPlaces,
     visitorTotal,
+    dailyRevenue,
+    previous,
+  };
+}
+
+/**
+ * Headline figures for the equal-length period ending just before `fromMs`.
+ *
+ * A second, narrower pass rather than a wider first query: the main report's
+ * breakdowns must describe only its own range, and filtering a combined result
+ * set back apart in JS is where off-by-one-day bugs live.
+ */
+async function buildPreviousPeriod(
+  db: ReturnType<typeof supabaseAdmin>,
+  fromMs: number,
+  toMs: number,
+  dayCount: number,
+): Promise<PreviousPeriod | null> {
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs < fromMs) return null;
+  const spanMs = toMs - fromMs;
+  const prevTo = new Date(fromMs - 1).toISOString();
+  const prevFrom = new Date(fromMs - 1 - spanMs).toISOString();
+
+  const [{ data: orderData }, { count: newCustomers }] = await Promise.all([
+    db
+      .from("orders")
+      .select("id, payment_status, total_paise, placed_at")
+      .neq("status", "cancelled")
+      .gte("placed_at", prevFrom)
+      .lte("placed_at", prevTo),
+    db
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", prevFrom)
+      .lte("created_at", prevTo),
+  ]);
+  const orders =
+    (orderData as { id: string; payment_status: string; total_paise: number; placed_at: string }[] | null) ?? [];
+
+  let revenuePaise = 0;
+  let paidRevenuePaise = 0;
+  for (const o of orders) {
+    revenuePaise += o.total_paise;
+    if (o.payment_status === "paid") paidRevenuePaise += o.total_paise;
+  }
+
+  let unitsSold = 0;
+  const itemChunks = await Promise.all(
+    chunk(orders.map((o) => o.id), 300).map((ids) =>
+      db.from("order_items").select("qty").in("order_id", ids),
+    ),
+  );
+  for (const { data } of itemChunks) {
+    for (const it of (data as { qty: number }[] | null) ?? []) unitsSold += it.qty;
+  }
+
+  // Same number of days as the current series, so the two lines overlay day
+  // for day. The last day ends at prevTo; count back from there.
+  const lastDay = istDay(Date.parse(prevTo));
+  const firstDay = istDay(Date.parse(`${lastDay}T00:00:00Z`) - (dayCount - 1) * DAY_MS);
+  const dailyRevenue = dailySeries(orders, dayRange(firstDay, lastDay));
+
+  return {
+    range: { from: prevFrom, to: prevTo },
+    revenuePaise,
+    orderCount: orders.length,
+    aovPaise: orders.length > 0 ? Math.round(revenuePaise / orders.length) : 0,
+    unitsSold,
+    paidRevenuePaise,
+    newCustomers: newCustomers ?? 0,
+    dailyRevenue,
   };
 }

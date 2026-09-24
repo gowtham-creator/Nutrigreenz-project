@@ -469,15 +469,35 @@ export function StatTile({
   value,
   delta,
   trend,
+  sentiment,
+  note,
 }: {
   label: string;
   value: string;
+  /** The change, or a short fact about the figure when there is no change. */
   delta?: string;
+  /**
+   * Only pass a trend when `delta` IS a comparison. An arrow beside "joined in
+   * range" claims a movement nobody measured; without a trend the line is
+   * plain context text, with no arrow at all.
+   */
   trend?: "up" | "down" | "flat";
+  /** Colour of the change, separate from its direction: more money owed is an
+   *  up-arrow in the bad colour. Defaults to up good, down bad. */
+  sentiment?: "good" | "bad" | "neutral";
+  /** What the change is measured against, e.g. "vs ₹48,200 previous 30 days". */
+  note?: string;
 }) {
-  const trendColor =
-    trend === "up" ? "text-ng-success" : trend === "down" ? "text-ng-terracotta" : "text-ng-ink-soft";
-  const trendArrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+  const tone =
+    sentiment ?? (trend === "up" ? "good" : trend === "down" ? "bad" : "neutral");
+  const trendColor = !trend
+    ? "text-ng-ink-soft"
+    : tone === "good"
+      ? "text-ng-success"
+      : tone === "bad"
+        ? "text-ng-terracotta"
+        : "text-ng-ink-soft";
+  const trendArrow = trend === "up" ? "↑ " : trend === "down" ? "↓ " : trend === "flat" ? "→ " : "";
   return (
     <div className="ng-surface h-full">
       <div className="ng-surface-core flex h-full flex-col p-5">
@@ -495,9 +515,17 @@ export function StatTile({
         <div className="mt-3 font-display text-[36px] leading-[0.95] tracking-[-0.02em] tabular-nums text-ng-forest-deep">
           <CountUp value={value} />
         </div>
-        {delta ? (
-          <div className={cn("mt-auto pt-3 text-[12px] font-semibold tabular-nums", trendColor)}>
-            {trendArrow} {delta}
+        {delta || note ? (
+          <div className="mt-auto pt-3">
+            {delta ? (
+              <div className={cn("text-[12px] font-semibold tabular-nums", trendColor)}>
+                {trendArrow}
+                {delta}
+              </div>
+            ) : null}
+            {note ? (
+              <div className="mt-0.5 text-[11.5px] font-medium tabular-nums text-ng-ink-soft">{note}</div>
+            ) : null}
           </div>
         ) : null}
       </div>

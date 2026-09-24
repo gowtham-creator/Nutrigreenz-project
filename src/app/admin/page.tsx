@@ -1,14 +1,18 @@
 "use client";
 
 /**
- * Operator overview.
+ * Operator overview: what needs doing now.
  *
- * Real dashboard: KPI tiles, the order pipeline, payment mix, top products and
- * the recent-orders feed all come from the admin APIs — `/api/admin/reports`
- * (aggregates over orders/order_items/customers) and `/api/admin/orders` (the
- * latest orders). The shared `StatTile` primitive is used for the KPI tiles so
- * sizing matches the rest of the console. Everything degrades gracefully to an
- * empty state when Supabase is unconfigured or the roster is fresh.
+ * This is the staff screen, left open all day, and it answers one question
+ * before any other. So it leads with the open-order queue and the payments to
+ * chase, then how today is going against the same time yesterday, then the
+ * latest orders. How the business is doing over weeks is the owner's question
+ * and lives in Reports.
+ *
+ * Everything comes from the admin APIs: `/api/admin/reports` twice (all orders,
+ * for the queue as it stands; and today in IST, for the pulse) and
+ * `/api/admin/orders` for the feed. Degrades to empty states when Supabase is
+ * unconfigured or the roster is fresh.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +21,7 @@ import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { AdminStagger, AdminStaggerItem } from "@/components/ng/admin/admin-motion";
 import { BellIcon } from "@/components/ui/bell-icon";
-import { DonutChart, HBars, Pipeline, type VizTone } from "@/components/ng/admin/viz";
+import { HBars, Pipeline, STAGE_TONE, compareFigures } from "@/components/ng/admin/viz";
 import { UiIcon } from "@/components/ui/ui-icon";
 
 /* ── API shapes (JSON only — no server modules imported client-side) ─────── */
@@ -47,10 +51,26 @@ interface AdminReport {
   aovPaise: number;
   unitsSold: number;
   paidRevenuePaise: number;
+  pendingRevenuePaise: number;
+  pendingOrderCount: number;
+  failedRevenuePaise: number;
+  failedOrderCount: number;
   statusBreakdown: StatusBreakdownEntry[];
   paymentBreakdown: PaymentBreakdownEntry[];
   topProducts: TopProductEntry[];
   newCustomers: number;
+  previous: { revenuePaise: number; orderCount: number; aovPaise: number; newCustomers: number } | null;
+}
+
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+/** Today in IST as an instant range: midnight to now. The report measures the
+ *  equal span before it, which is yesterday up to this same clock time. */
+function todayWindow(): { from: string; to: string } {
+  const now = Date.now();
+  const istToday = new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+  const start = Date.parse(`${istToday}T00:00:00Z`) - IST_OFFSET_MS;
+  return { from: new Date(start).toISOString(), to: new Date(now).toISOString() };
 }
 
 interface OrderItem {
@@ -101,7 +121,6 @@ function relativeTime(iso: string): string {
   return new Date(then).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-const STATUS_FLOW: OrderStatus[] = ["placed", "confirmed", "packed", "shipped", "delivered"];
 const STATUS_LABEL: Record<OrderStatus, string> = {
   placed: "Placed",
   confirmed: "Confirmed",
@@ -116,33 +135,36 @@ const STATUS_PILL: Record<OrderStatus, PillTone> = {
   shipped: "success",
   delivered: "success",
 };
-const STATUS_TONE: Record<OrderStatus, VizTone> = {
-  placed: "amber",
-  confirmed: "leaf",
-  packed: "blue",
-  shipped: "clay",
-  delivered: "forest",
-};
-const PAYMENT_ORDER: PaymentStatus[] = ["paid", "pending", "failed"];
-const PAYMENT_LABEL: Record<PaymentStatus, string> = { paid: "Paid", pending: "Pending", failed: "Failed" };
-/* `leaf` for paid, not `forest` — see the note in reports-client: forest is
-   near-black at legend size and reads as an unlabelled dark marker. */
-const PAYMENT_TONE: Record<PaymentStatus, VizTone> = { paid: "leaf", pending: "amber", failed: "terracotta" };
+/* The queue, as the next action each stage waits on. "Delivered" is not in it:
+   it is the one stage with nothing left to do, so it is a footnote. */
+const OPEN_STAGES: { status: Exclude<OrderStatus, "delivered">; label: string }[] = [
+  { status: "placed", label: "To confirm" },
+  { status: "confirmed", label: "To pack" },
+  { status: "packed", label: "To ship" },
+  { status: "shipped", label: "In transit" },
+];
 
 export default function AdminOverview() {
   const [report, setReport] = useState<AdminReport | null>(null);
+  const [today, setToday] = useState<AdminReport | null>(null);
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
     try {
-      const [rRes, oRes] = await Promise.all([
+      const t = todayWindow();
+      const [rRes, tRes, oRes] = await Promise.all([
         fetch("/api/admin/reports", { cache: "no-store" }),
+        fetch(`/api/admin/reports?${new URLSearchParams({ from: t.from, to: t.to, topLimit: "1" })}`, { cache: "no-store" }),
         fetch("/api/admin/orders?limit=8", { cache: "no-store" }),
       ]);
       if (rRes.ok) {
         const j = (await rRes.json()) as { report?: AdminReport };
         if (j.report) setReport(j.report);
+      }
+      if (tRes.ok) {
+        const j = (await tRes.json()) as { report?: AdminReport };
+        if (j.report) setToday(j.report);
       }
       if (oRes.ok) {
         const j = (await oRes.json()) as { orders?: AdminOrderRow[] };
@@ -168,29 +190,38 @@ export default function AdminOverview() {
   useLiveRefresh(() => void load({ quiet: true }), { intervalMs: 45_000 });
 
   const statusMap = new Map<OrderStatus, number>();
-  for (const s of report?.statusBreakdown ?? []) statusMap.set(s.status, s.orders);
-  const paymentMap = new Map<PaymentStatus, number>();
-  for (const p of report?.paymentBreakdown ?? []) paymentMap.set(p.paymentStatus, p.orders);
+  for (const st of report?.statusBreakdown ?? []) statusMap.set(st.status, st.orders);
 
-  const orderCount = report?.orderCount ?? 0;
-  const paidOrders = paymentMap.get("paid") ?? 0;
-  const needAttention = (paymentMap.get("pending") ?? 0) + (paymentMap.get("failed") ?? 0);
+  const queue = OPEN_STAGES.map((st) => ({
+    label: st.label,
+    value: statusMap.get(st.status) ?? 0,
+    tone: STAGE_TONE[st.status],
+    href: "/admin/orders",
+  }));
+  const openOrders = queue.reduce((n, q) => n + q.value, 0);
+  const delivered = statusMap.get("delivered") ?? 0;
+  const pendingCount = report?.pendingOrderCount ?? 0;
+  const failedCount = report?.failedOrderCount ?? 0;
 
-  const pipeline = STATUS_FLOW.map((s) => ({
-    label: STATUS_LABEL[s],
-    value: statusMap.get(s) ?? 0,
-    tone: STATUS_TONE[s],
-  }));
-  const paymentSegments = PAYMENT_ORDER.map((p) => ({
-    label: PAYMENT_LABEL[p],
-    value: paymentMap.get(p) ?? 0,
-    tone: PAYMENT_TONE[p],
-  }));
   const topProducts = (report?.topProducts ?? []).slice(0, 5).map((p) => ({
     label: p.title,
     value: p.revenuePaise,
     hint: `${p.qty}u`,
   }));
+
+  /** StatTile props for today against the same time yesterday. */
+  const vsYesterday = (current: number, previous: number | undefined, fmt: (v: number) => string) => {
+    if (previous === undefined) return {};
+    const change = compareFigures(current, previous);
+    if (!change) return { note: previous === 0 ? "none by this time yesterday" : undefined };
+    return {
+      delta: change.text,
+      trend: change.direction,
+      sentiment: change.sentiment,
+      note: `vs ${fmt(previous)} by this time yesterday`,
+    };
+  };
+  const num = (n: number) => n.toLocaleString("en-IN");
   const recent = orders.slice(0, 6);
 
   return (
@@ -201,7 +232,7 @@ export default function AdminOverview() {
           Operator <em className="italic text-ng-clay font-display">overview</em>
         </span>
       }
-      subtitle="Live metrics from production: orders, revenue and fulfilment"
+      subtitle="What needs doing now, and how today is going"
       actions={
         <Link
           href="/admin/reports"
@@ -212,85 +243,115 @@ export default function AdminOverview() {
         </Link>
       }
     >
-      {/* ── attention banner (only when there is something to triage) ─────── */}
-      {needAttention > 0 ? (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-ng-forest/[0.05] border border-ng-forest/15 px-5 py-3.5">
-          {/* Neutral forest surface; the gold bell is the single gold accent. */}
-          <span className="size-8 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
-            <BellIcon size={17} animated className="shrink-0" />
-          </span>
-          <p className="text-[13px] font-medium text-ng-ink">
-            <span className="font-semibold text-ng-forest-deep tabular-nums">{needAttention} order{needAttention === 1 ? "" : "s"}</span>{" "}
-            {needAttention === 1 ? "is" : "are"} awaiting or failed payment and need review.
-          </p>
-          <Link href="/admin/orders" className="ml-auto shrink-0 text-[12.5px] font-semibold text-ng-forest hover:text-ng-forest-deep hover:underline">
-            Triage queue →
-          </Link>
-        </div>
-      ) : null}
+      {/* ── what needs doing ─────────────────────────────────────────────── */}
+      <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Card
+          title="Open orders"
+          action={
+            <Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">
+              Queue →
+            </Link>
+          }
+        >
+          {!report ? (
+            <p className="py-8 text-center text-[13px] font-medium text-ng-ink-soft">{loading ? "Loading…" : "No orders yet."}</p>
+          ) : (
+            <>
+              <Pipeline stages={queue} />
+              <p className="mt-4 border-t border-ng-line-soft pt-3 text-[12px] font-medium text-ng-ink-soft">
+                {openOrders === 0
+                  ? "Nothing waiting. "
+                  : `${num(openOrders)} order${openOrders === 1 ? "" : "s"} in progress. `}
+                {num(delivered)} delivered in all.
+              </p>
+            </>
+          )}
+        </Card>
 
-      {/* ── KPI tiles (shared StatTile primitive) ────────────────────────── */}
-      {/* Staggered so the eye is led across the row in reading order rather
-          than four tiles landing at once. Entry only — see AdminStagger. */}
-      <AdminStagger className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {/* Money to chase. Pending and failed stay separate: a failed payment
+            is not owed, it is an attempt that did not complete, and chasing it
+            as a debt is the wrong conversation with a customer. */}
+        <Card title="Payments to follow up">
+          {!report ? (
+            <p className="py-8 text-center text-[13px] font-medium text-ng-ink-soft">{loading ? "Loading…" : "No payments yet."}</p>
+          ) : pendingCount + failedCount === 0 ? (
+            <div className="flex items-center gap-3 py-6">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ng-success/12 text-ng-success">
+                <UiIcon name="verified" size={17} />
+              </span>
+              <p className="text-[13px] font-medium text-ng-ink-muted">Every order is paid. Nothing to chase.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-ng-line-soft">
+              <li className="flex items-center gap-3 py-3 first:pt-0">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ng-cream">
+                  <BellIcon size={17} animated={pendingCount > 0} className="shrink-0" />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-ng-ink">Awaiting payment</div>
+                  <div className="text-[12px] font-medium text-ng-ink-soft">
+                    {pendingCount > 0 ? `${rupees(report.pendingRevenuePaise)} owed` : "none"}
+                  </div>
+                </div>
+                <span className="ml-auto font-mono text-[18px] font-semibold tabular-nums text-ng-forest-deep">{num(pendingCount)}</span>
+              </li>
+              <li className="flex items-center gap-3 py-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ng-terracotta/10 text-ng-terracotta">
+                  <UiIcon name="caution" size={17} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-ng-ink">Failed payments</div>
+                  <div className="text-[12px] font-medium text-ng-ink-soft">
+                    {failedCount > 0 ? `${rupees(report.failedRevenuePaise)} did not go through` : "none"}
+                  </div>
+                </div>
+                <span className="ml-auto font-mono text-[18px] font-semibold tabular-nums text-ng-forest-deep">{num(failedCount)}</span>
+              </li>
+              <li className="pt-3">
+                <Link href="/admin/orders" className="text-[12.5px] font-semibold text-ng-forest hover:text-ng-forest-deep hover:underline">
+                  Open the triage queue →
+                </Link>
+              </li>
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      {/* ── today, against the same time yesterday ─────────────────────────
+          Same clock time, not all of yesterday: at 11am, "today vs yesterday"
+          would compare a morning with a whole day and always read as a fall.
+          Staggered in reading order; entry only, see AdminStagger. */}
+      <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">Today so far</div>
+      <AdminStagger className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AdminStaggerItem>
           <StatTile
             label="Revenue"
-            value={report ? rupees(report.revenuePaise) : "—"}
-            delta={report ? `${rupees(report.paidRevenuePaise)} settled` : undefined}
+            value={today ? rupees(today.revenuePaise) : "—"}
+            {...(today ? vsYesterday(today.revenuePaise, today.previous?.revenuePaise, rupees) : {})}
           />
         </AdminStaggerItem>
         <AdminStaggerItem>
           <StatTile
             label="Orders"
-            value={report ? orderCount.toLocaleString("en-IN") : "—"}
-            delta={report ? `${paidOrders.toLocaleString("en-IN")} paid` : undefined}
+            value={today ? num(today.orderCount) : "—"}
+            {...(today ? vsYesterday(today.orderCount, today.previous?.orderCount, num) : {})}
           />
         </AdminStaggerItem>
         <AdminStaggerItem>
           <StatTile
-            label="Avg order value"
-            value={report ? rupees(report.aovPaise) : "—"}
-            delta={report ? `${report.unitsSold.toLocaleString("en-IN")} units sold` : undefined}
+            label="Average order"
+            value={today && today.orderCount > 0 ? rupees(today.aovPaise) : "—"}
+            {...(today && today.orderCount > 0 ? vsYesterday(today.aovPaise, today.previous?.aovPaise, rupees) : {})}
           />
         </AdminStaggerItem>
         <AdminStaggerItem>
           <StatTile
             label="New customers"
-            value={report ? report.newCustomers.toLocaleString("en-IN") : "—"}
-            delta="in this period"
+            value={today ? num(today.newCustomers) : "—"}
+            {...(today ? vsYesterday(today.newCustomers, today.previous?.newCustomers, num) : {})}
           />
         </AdminStaggerItem>
       </AdminStagger>
-
-      {/* ── pipeline + payment mix ───────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-6 mb-6">
-        <Card title="Order pipeline" action={<Link href="/admin/orders" className="text-[12px] font-semibold text-ng-forest hover:underline">Queue →</Link>}>
-          <Pipeline stages={pipeline} />
-          <div className="mt-5 pt-4 border-t border-ng-line-soft grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div className="font-display text-[20px] text-ng-forest-deep tabular-nums">{orderCount.toLocaleString("en-IN")}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Orders</div>
-            </div>
-            <div>
-              <div className="font-display text-[20px] text-ng-success tabular-nums">{paidOrders.toLocaleString("en-IN")}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Paid</div>
-            </div>
-            <div>
-              <div className="font-display text-[20px] text-ng-clay tabular-nums">{needAttention.toLocaleString("en-IN")}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mt-0.5">Unpaid</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Payments" action={<span className="text-[11px] font-semibold text-ng-ink-muted uppercase tracking-wider">by order</span>}>
-          <DonutChart
-            segments={paymentSegments}
-            centerValue={orderCount.toLocaleString("en-IN")}
-            centerLabel="orders"
-          />
-        </Card>
-      </div>
 
       {/* ── recent orders + top products ─────────────────────────────────── */}
       <div className="grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-6">

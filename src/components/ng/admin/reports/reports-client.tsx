@@ -23,13 +23,17 @@ import { useLiveRefresh } from "@/hooks/use-live-refresh";
 import { VisitorPlaces } from "@/components/ng/admin/reports/visitor-places";
 import { AdminShell, Card, StatTile } from "@/components/ng/admin/admin-shell";
 import { UiIcon } from "@/components/ui/ui-icon";
-import { DonutChart, HBars, type VizTone } from "@/components/ng/admin/viz";
 import {
-  PAYMENT_LABEL,
-  STATUS_LABEL,
-  type OrderStatus,
-  type PaymentStatus,
-} from "@/app/admin/orders/portal-data";
+  AreaChart,
+  DonutChart,
+  HBars,
+  PAYMENT_TONE,
+  STAGE_TONE,
+  ShareBar,
+  TrendChip,
+  compareFigures,
+} from "@/components/ng/admin/viz";
+import { PAYMENT_LABEL, STATUS_LABEL } from "@/app/admin/orders/portal-data";
 import type { AdminReport } from "@/lib/reports";
 import { downloadCsv, downloadCsvBundle, type CsvRow } from "@/components/ng/admin/reports/csv";
 
@@ -39,25 +43,9 @@ import { downloadCsv, downloadCsvBundle, type CsvRow } from "@/components/ng/adm
 
 /** Integer paise → a whole-rupee "₹1,23,456" string. */
 const INR = (paise: number) => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+const NUM = (n: number) => n.toLocaleString("en-IN");
 /** Integer paise → whole rupees as a number (for CSV cells). */
 const rupees = (paise: number) => Math.round(paise / 100);
-
-const STATUS_TONE: Record<OrderStatus, VizTone> = {
-  placed: "amber",
-  confirmed: "blue",
-  packed: "clay",
-  shipped: "leaf",
-  delivered: "forest",
-};
-
-const PAYMENT_TONE: Record<PaymentStatus, VizTone> = {
-  pending: "amber",
-  /* Leaf, not forest. Forest renders near-black at legend size, so the paid
-     row read as an unnamed dark marker sitting next to an amber one — green
-     for money received is also the reading anyone expects. */
-  paid: "leaf",
-  failed: "terracotta",
-};
 
 const DATE_RANGES = [
   { id: "all", label: "All time", days: null },
@@ -67,12 +55,28 @@ const DATE_RANGES = [
 ] as const;
 type RangeId = (typeof DATE_RANGES)[number]["id"];
 
-/** A date-only (YYYY-MM-DD) `from`/`to` window for the selected range. */
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+/**
+ * The selected range as exact instants: IST midnight `days - 1` days ago, up
+ * to now. "Last 7 days" is today and the six before it, as an operator in
+ * Hyderabad counts them.
+ *
+ * These were UTC calendar dates, so an order placed at 1am IST landed in
+ * yesterday's bucket. Sending instants also lets the report compare against
+ * the period just before, which needs both ends of the range to be real.
+ */
 function rangeWindow(days: number | null): { from: string | null; to: string | null } {
   if (days == null) return { from: null, to: null };
-  const to = new Date();
-  const from = new Date(to.getTime() - days * 86_400_000);
-  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+  const now = Date.now();
+  const istToday = new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+  const startMs = Date.parse(`${istToday}T00:00:00Z`) - IST_OFFSET_MS - (days - 1) * 86_400_000;
+  return { from: new Date(startMs).toISOString(), to: new Date(now).toISOString() };
+}
+
+/** "2026-09-24" → "24 Sep", for axis labels and read-outs. */
+function dayLabel(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
 /* section header inline Export button ------------------------------- */
@@ -216,6 +220,16 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
     })),
   });
 
+  const dailyCsv = (r: AdminReport): { rows: CsvRow[]; headers: string[] } => ({
+    headers: ["Day (IST)", "Orders", "Revenue (INR)", "Previous period (INR)"],
+    rows: r.dailyRevenue.map((d, i) => ({
+      "Day (IST)": d.day,
+      Orders: d.orders,
+      "Revenue (INR)": rupees(d.revenuePaise),
+      "Previous period (INR)": r.previous ? rupees(r.previous.dailyRevenue[i]?.revenuePaise ?? 0) : "",
+    })),
+  });
+
   const exportAll = () => {
     if (!report) return;
     const sm = summaryCsv(report);
@@ -225,6 +239,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
     const cp = couponsCsv(report);
     downloadCsvBundle(`nutrigreenz-reports-${range.id}`, [
       { title: `Summary (${range.label})`, rows: sm.rows, headers: sm.headers },
+      { title: "Revenue by day", rows: dailyCsv(report).rows, headers: dailyCsv(report).headers },
       { title: "Orders by status", rows: st.rows, headers: st.headers },
       { title: "Orders by payment", rows: pm.rows, headers: pm.headers },
       { title: "Top products by revenue", rows: pr.rows, headers: pr.headers },
@@ -235,6 +250,29 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
   /* ----------------------------------------------------------------- */
 
   const hasOrders = (report?.orderCount ?? 0) > 0;
+  const prev = report?.previous ?? null;
+  const periodDays = report?.dailyRevenue.length ?? 0;
+  const firstDay = report?.dailyRevenue[0]?.day ?? null;
+  const revenueChange = report ? compareFigures(report.revenuePaise, prev?.revenuePaise) : null;
+  const bestDay = (report?.dailyRevenue ?? []).reduce<{ day: string; revenuePaise: number } | null>(
+    (best, d) => (d.revenuePaise > (best?.revenuePaise ?? 0) ? d : best),
+    null,
+  );
+
+  /** StatTile comparison props for one KPI: a real change when there is a
+   *  previous period to measure against, plain context when there is not. */
+  const kpi = (current: number, previous: number | undefined, fmt: (v: number) => string) => {
+    // All time: no comparison, and no caption repeating the range selector.
+    if (previous === undefined) return {};
+    const change = compareFigures(current, previous);
+    if (!change) return { note: `none in the previous ${periodDays} days` };
+    return {
+      delta: change.text,
+      trend: change.direction,
+      sentiment: change.sentiment,
+      note: `vs ${fmt(previous)} previous ${periodDays} days`,
+    };
+  };
 
   return (
     <AdminShell
@@ -247,14 +285,17 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
       subtitle="Revenue, fulfilment, products & coupons. Computed live from real orders"
       actions={
         <>
-          <div className="hidden sm:flex gap-1 bg-ng-paper border border-ng-line-soft rounded-full p-1">
+          {/* Visible on phones too. It was `hidden sm:flex`, so on a phone the
+              report was stuck on "All time" with no way to change it; now the
+              pills scroll sideways when they do not fit. */}
+          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-ng-line-soft bg-ng-paper p-1 [scrollbar-width:none]">
             {DATE_RANGES.map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => setRangeId(r.id)}
                 aria-pressed={rangeId === r.id}
-                className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors cursor-pointer ${
+                className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors cursor-pointer ${
                   rangeId === r.id
                     ? "bg-ng-forest-deep text-ng-cream font-semibold"
                     : "text-ng-ink-muted hover:text-ng-forest"
@@ -282,54 +323,142 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
         </div>
       ) : (
         <>
-          {/* Headline KPIs ------------------------------------------- */}
-          {/* Money first: what was booked, what has landed, what is still owed.
-              "Collected" and "Pending" were previously a single subtitle under
-              Revenue, which meant the one figure an operator chases — money
-              still to come in — had no number of its own on the page. */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            <StatTile
-              label="Revenue booked"
-              value={INR(report.revenuePaise)}
-              delta={`${report.orderCount.toLocaleString("en-IN")} orders · AOV ${INR(report.aovPaise)}`}
-              trend="up"
-            />
-            <StatTile
-              label="Collected"
-              value={INR(report.paidRevenuePaise)}
-              delta={`${report.paidOrderCount.toLocaleString("en-IN")} orders settled${
-                report.revenuePaise > 0
-                  ? ` · ${Math.round((report.paidRevenuePaise / report.revenuePaise) * 100)}% of booked`
-                  : ""
-              }`}
-              trend="up"
-            />
-            <StatTile
-              label="Pending collection"
-              value={INR(report.pendingRevenuePaise)}
-              delta={
-                report.pendingOrderCount > 0
-                  ? `${report.pendingOrderCount.toLocaleString("en-IN")} orders awaiting payment`
-                  : "nothing outstanding"
-              }
-              /* Not "up". Money owed rising is not good news, and a green
-                 up-arrow beside it would say the opposite of what it means. */
-              trend={report.pendingRevenuePaise > 0 ? "down" : "flat"}
-            />
-          </div>
+          {/* REVENUE ------------------------------------------------------
+              The owner's question first: how much, which way it is moving,
+              and how much of it has actually landed. One card, read top to
+              bottom, instead of seven tiles the reader has to add up. */}
+          <Card
+            title="Revenue"
+            className="mb-6"
+            action={
+              <div className="flex items-center gap-3">
+                <ExportButton
+                  label="Daily CSV"
+                  onClick={() => {
+                    const d = dailyCsv(report);
+                    downloadCsv(`revenue-by-day-${range.id}`, d.rows, d.headers);
+                  }}
+                />
+              </div>
+            }
+          >
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-display text-[34px] leading-none tracking-[-0.02em] tabular-nums text-ng-forest-deep">
+                    {INR(report.revenuePaise)}
+                  </span>
+                  {revenueChange ? (
+                    <TrendChip
+                      delta={revenueChange.text}
+                      direction={revenueChange.direction}
+                      sentiment={revenueChange.sentiment}
+                    />
+                  ) : null}
+                </div>
+                <p className="mt-2 text-[12.5px] font-medium text-ng-ink-soft">
+                  {prev
+                    ? `Booked, against ${INR(prev.revenuePaise)} in the previous ${periodDays} days`
+                    : firstDay
+                      ? `Booked since ${dayLabel(firstDay)}, the first order`
+                      : "Nothing booked yet"}
+                </p>
+              </div>
+              {/* Three facts the line cannot state exactly on its own. */}
+              <dl className="flex flex-wrap gap-x-8 gap-y-3">
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ng-ink-soft">Best day</dt>
+                  <dd className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ng-forest-deep">
+                    {bestDay ? INR(bestDay.revenuePaise) : "—"}
+                    {bestDay ? (
+                      <span className="ml-1.5 font-sans text-[11.5px] font-medium text-ng-ink-soft">{dayLabel(bestDay.day)}</span>
+                    ) : null}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ng-ink-soft">Daily average</dt>
+                  <dd className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ng-forest-deep">
+                    {periodDays > 0 ? INR(report.revenuePaise / periodDays) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ng-ink-soft">Average order</dt>
+                  <dd className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ng-forest-deep">
+                    {report.orderCount > 0 ? INR(report.aovPaise) : "—"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatTile label="Orders" value={report.orderCount.toLocaleString("en-IN")} delta={`AOV ${INR(report.aovPaise)}`} trend="up" />
-            <StatTile label="Units sold" value={report.unitsSold.toLocaleString("en-IN")} delta="items shipped in range" trend="up" />
-            <StatTile label="New customers" value={report.newCustomers.toLocaleString("en-IN")} delta="joined in range" trend="up" />
-            {/* Failed attempts are NOT money owed — they are shown apart from
-                Pending so nobody chases a payment that already bounced. */}
-            <StatTile
-              label="Failed payments"
-              value={INR(report.failedRevenuePaise)}
-              delta={`${report.failedOrderCount.toLocaleString("en-IN")} attempts failed`}
-              trend="flat"
-            />
+            {hasOrders || (prev?.revenuePaise ?? 0) > 0 ? (
+              <AreaChart
+                label={`Revenue by day, ${range.label.toLowerCase()}`}
+                height={240}
+                labels={report.dailyRevenue.map((d) => dayLabel(d.day))}
+                formatY={(v) => INR(v)}
+                annotatePeak
+                series={[
+                  { name: "This period", data: report.dailyRevenue.map((d) => d.revenuePaise), tone: "forest" },
+                  ...(prev
+                    ? [
+                        {
+                          name: `Previous ${periodDays} days`,
+                          data: prev.dailyRevenue.map((d) => d.revenuePaise),
+                          tone: "compare" as const,
+                          variant: "compare" as const,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            ) : (
+              <p className="rounded-xl bg-ng-line-soft/50 px-5 py-10 text-center text-[13px] font-medium text-ng-ink-muted">
+                No orders in this range, so there is no trend to draw yet. Try a longer range.
+              </p>
+            )}
+
+            {/* Of the revenue booked: what landed, what is still owed, what
+                bounced. Pending and failed stay apart, so nobody chases a
+                payment that already failed. */}
+            <div className="mt-6 border-t border-ng-line-soft pt-5">
+              <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">Collection</div>
+              <ShareBar
+                formatValue={(v) => INR(v)}
+                parts={[
+                  {
+                    label: "Collected",
+                    value: report.paidRevenuePaise,
+                    tone: "paid",
+                    note: `${NUM(report.paidOrderCount)} order${report.paidOrderCount === 1 ? "" : "s"} settled`,
+                  },
+                  {
+                    label: "Pending",
+                    value: report.pendingRevenuePaise,
+                    tone: "pending",
+                    note:
+                      report.pendingOrderCount > 0
+                        ? `${NUM(report.pendingOrderCount)} awaiting payment`
+                        : "nothing outstanding",
+                  },
+                  {
+                    label: "Failed",
+                    value: report.failedRevenuePaise,
+                    tone: "failed",
+                    note: `${NUM(report.failedOrderCount)} attempt${report.failedOrderCount === 1 ? "" : "s"} failed`,
+                  },
+                ]}
+              />
+            </div>
+          </Card>
+
+          {/* The four counts that explain the revenue, each against the
+              previous period when there is one. No arrow without a
+              comparison behind it. */}
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatTile label="Orders" value={NUM(report.orderCount)} {...kpi(report.orderCount, prev?.orderCount, NUM)} />
+            <StatTile label="Average order" value={INR(report.aovPaise)} {...kpi(report.aovPaise, prev?.aovPaise, INR)} />
+            <StatTile label="Units sold" value={NUM(report.unitsSold)} {...kpi(report.unitsSold, prev?.unitsSold, NUM)} />
+            <StatTile label="New customers" value={NUM(report.newCustomers)} {...kpi(report.newCustomers, prev?.newCustomers, NUM)} />
           </div>
 
           {/* 1 · ORDERS BY STATUS & PAYMENT -------------------------- */}
@@ -354,7 +483,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                   segments={report.statusBreakdown.map((s) => ({
                     label: STATUS_LABEL[s.status],
                     value: s.orders,
-                    tone: STATUS_TONE[s.status],
+                    tone: STAGE_TONE[s.status],
                   }))}
                 />
               </div>
@@ -363,8 +492,8 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
                 <DonutChart
                   size={150}
                   thickness={20}
-                  centerValue={INR(report.paidRevenuePaise)}
-                  centerLabel="paid"
+                  centerValue={NUM(report.orderCount)}
+                  centerLabel="orders"
                   segments={report.paymentBreakdown.map((p) => ({
                     label: PAYMENT_LABEL[p.paymentStatus],
                     value: p.orders,
@@ -419,9 +548,9 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
             className="mb-6"
           >
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <StatTile label="Redemptions" value={couponTotals.redemptions.toLocaleString("en-IN")} delta="orders with a coupon" trend="up" />
-              <StatTile label="Discount given" value={INR(couponTotals.discountPaise)} delta="across all coupons" trend="flat" />
-              <StatTile label="Codes used" value={couponTotals.codes.toLocaleString("en-IN")} delta="distinct coupons" trend="flat" />
+              <StatTile label="Redemptions" value={NUM(couponTotals.redemptions)} delta="orders with a coupon" />
+              <StatTile label="Discount given" value={INR(couponTotals.discountPaise)} delta="across all coupons" />
+              <StatTile label="Codes used" value={NUM(couponTotals.codes)} delta="distinct coupons" />
             </div>
 
             {report.couponUsage.length === 0 ? (
@@ -467,8 +596,8 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
 
           <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             {hasOrders
-              ? `Figures computed live from real orders (${range.label}). Charts are hand-authored CSS/SVG, no chart libraries.`
-              : `No orders in this range yet. Charts are hand-authored CSS/SVG, no chart libraries.`}
+              ? `Computed live from real orders · ${range.label} · days in IST`
+              : `No orders in this range yet · ${range.label}`}
           </p>
         </>
       )}

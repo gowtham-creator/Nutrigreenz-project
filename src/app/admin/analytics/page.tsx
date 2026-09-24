@@ -102,7 +102,9 @@ function rangeWindow(days: number | null): { from: string | null; to: string | n
 }
 
 const PROVIDER_LABEL: Record<string, string> = { google: "Google", phone: "Phone", other: "Other" };
-const PROVIDER_TONE: Record<string, VizTone> = { google: "forest", phone: "clay", other: "blue" };
+/* The validated categorical trio: forest read as black at slice size and
+   failed the lightness and chroma checks as a data colour. */
+const PROVIDER_TONE: Record<string, VizTone> = { google: "cat1", phone: "cat2", other: "cat3" };
 
 /* sortable per-product table --------------------------------------- */
 
@@ -229,10 +231,10 @@ export default function AdminAnalytics() {
         <>
           {/* Headline KPIs ------------------------------------------- */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatTile label="Units sold" value={NUM(totals?.unitsSold ?? 0)} delta={INR(totals?.revenuePaise ?? 0)} trend="up" />
-            <StatTile label="Product views" value={NUM(totals?.views ?? 0)} delta="PDP pings in range" trend="up" />
-            <StatTile label="Wishlist saves" value={NUM(totals?.wishlistCount ?? 0)} delta="latent demand" trend="up" />
-            <StatTile label="Sign-ins" value={NUM(signins?.total ?? 0)} delta="identities in range" trend="up" />
+            <StatTile label="Units sold" value={NUM(totals?.unitsSold ?? 0)} delta={`${INR(totals?.revenuePaise ?? 0)} revenue`} />
+            <StatTile label="Product views" value={NUM(totals?.views ?? 0)} delta="product pages opened" />
+            <StatTile label="Wishlist saves" value={NUM(totals?.wishlistCount ?? 0)} delta="saved, not yet bought" />
+            <StatTile label="Sign-ins" value={NUM(signins?.total ?? 0)} delta="customers signed in" />
           </div>
 
           {/* 1 · TREND ----------------------------------------------- */}
@@ -256,24 +258,39 @@ export default function AdminAnalytics() {
                 like a data bug rather than two charts covering the same range.
                 A rule and a wider gutter say plainly that the axis starts again.
               */
-              <div className="grid gap-8 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-ng-line-soft">
-                <div className="lg:pr-8">
-                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Units &amp; views</div>
+              <div className="space-y-8">
+                <div>
+                  <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">Revenue</div>
                   <AreaChart
-                    labels={labels}
-                    series={[
-                      { name: "Units", data: analytics.series.map((p) => p.unitsSold), tone: "leaf" },
-                      { name: "Views", data: analytics.series.map((p) => p.views), tone: "blue" },
-                    ]}
-                  />
-                </div>
-                <div className="lg:pl-8">
-                  <div className="text-[12px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">Revenue (₹)</div>
-                  <AreaChart
+                    label="Revenue over time"
                     labels={labels}
                     formatY={(v) => `₹${NUM(v)}`}
+                    annotatePeak
                     series={[{ name: "Revenue", data: analytics.series.map((p) => Math.round(p.revenuePaise / 100)), tone: "forest" }]}
                   />
+                </div>
+                {/* Views and units were one chart on one axis. Views run many
+                    times higher than units, so the units line was pressed flat
+                    along the floor: two different scales, two charts. */}
+                <div className="grid gap-8 border-t border-ng-line-soft pt-8 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-ng-line-soft">
+                  <div className="lg:pr-8">
+                    <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">Product views</div>
+                    <AreaChart
+                      label="Product views over time"
+                      labels={labels}
+                      height={180}
+                      series={[{ name: "Views", data: analytics.series.map((p) => p.views), tone: "forest" }]}
+                    />
+                  </div>
+                  <div className="lg:pl-8">
+                    <div className="mb-3 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">Units sold</div>
+                    <AreaChart
+                      label="Units sold over time"
+                      labels={labels}
+                      height={180}
+                      series={[{ name: "Units", data: analytics.series.map((p) => p.unitsSold), tone: "forest" }]}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -395,8 +412,8 @@ export default function AdminAnalytics() {
                     }))}
                   />
                   <div className="mt-5 grid grid-cols-2 gap-3">
-                    <StatTile label="Google" value={NUM(providerCount(signins.providers, "google"))} delta="Google sign-in" trend="flat" />
-                    <StatTile label="Phone" value={NUM(providerCount(signins.providers, "phone"))} delta="Phone OTP" trend="flat" />
+                    <StatTile label="Google" value={NUM(providerCount(signins.providers, "google"))} delta="Google sign-in" />
+                    <StatTile label="Phone" value={NUM(providerCount(signins.providers, "phone"))} delta="Phone OTP" />
                   </div>
                 </div>
                 <div>
@@ -406,9 +423,10 @@ export default function AdminAnalytics() {
                   ) : (
                     <AreaChart
                       labels={signins.series.map((p) => p.label)}
+                      label="Sign-ins over time, by provider"
                       series={[
-                        { name: "Google", data: signins.series.map((p) => p.google), tone: "forest" },
-                        { name: "Phone", data: signins.series.map((p) => p.phone), tone: "clay" },
+                        { name: "Google", data: signins.series.map((p) => p.google), tone: PROVIDER_TONE.google },
+                        { name: "Phone", data: signins.series.map((p) => p.phone), tone: PROVIDER_TONE.phone },
                       ]}
                     />
                   )}
