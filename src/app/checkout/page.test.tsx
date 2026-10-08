@@ -105,7 +105,22 @@ vi.mock("@/components/ng/button", () => ({
 }));
 vi.mock("@/components/ng/checkout/address-picker", () => ({ AddressPicker: () => null }));
 vi.mock("@/components/ng/checkout/slot-picker", () => ({ SlotPicker: () => null }));
-vi.mock("@/components/ng/checkout/rewards-panel", () => ({ RewardsPanel: () => null }));
+vi.mock("@/components/ng/checkout/rewards-panel", () => ({
+  RewardsPanel: ({
+    onApplyCoupon,
+  }: {
+    onApplyCoupon: (coupon: unknown, discount: number) => void;
+  }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onApplyCoupon({ code: "WELCOME50", description: "", type: "flat", value: 50 }, 50)
+      }
+    >
+      apply coupon
+    </button>
+  ),
+}));
 vi.mock("@/components/ng/checkout/no-cancellation", () => ({ NoCancellationAck: () => null }));
 vi.mock("@/components/ng/checkout/order-summary", () => ({ OrderSummary: () => null }));
 vi.mock("@/components/ng/checkout/payment-picker", () => ({
@@ -163,7 +178,11 @@ vi.mock("@/lib/addresses", () => ({
   useAddresses: () => ({ addresses: [fx.address], defaultAddress: fx.address }),
 }));
 vi.mock("@/lib/serviceability", () => ({ fetchServiceable: async () => true }));
-vi.mock("@/lib/rewards-client", () => ({ fetchRewards: async () => ({ balance: 0 }) }));
+vi.mock("@/lib/rewards-client", async (importOriginal) => ({
+  // The real coupon-reason copy, so the test pins what the customer reads.
+  ...(await importOriginal<typeof import("@/lib/rewards-client")>()),
+  fetchRewards: async () => ({ balance: 0 }),
+}));
 
 import CheckoutPage from "./page";
 
@@ -312,16 +331,100 @@ describe("checkout — Cash on Delivery", () => {
     expect(m.toastError).not.toHaveBeenCalled();
   });
 
-  it("still confirms client-side when the order route returns 500 (existing behaviour)", async () => {
-    fetchMock.mockResolvedValue(jsonResponse(500, { ok: false, error: "create-failed" }));
+  /*
+   * A COD order the server did not create must not end on the success page.
+   * This used to fall through to "Order confirmed" with a client-made order
+   * number, clearing the cart, for every non-OK answer but 401.
+   */
+  it.each([
+    ["the order route returns 500", () => Promise.resolve(jsonResponse(500, { ok: false, error: "create-failed" }))],
+    ["the order route is unavailable (503)", () => Promise.resolve(jsonResponse(503, { ok: false, error: "unavailable" }))],
+    ["the request fails on the network", () => Promise.reject(new TypeError("Failed to fetch"))],
+    [
+      "the response carries no order number",
+      () => Promise.resolve(jsonResponse(201, { ok: true, payment: null })),
+    ],
+  ])("stays on checkout with the cart intact when %s", async (_label, respond) => {
+    fetchMock.mockImplementation(respond);
 
-    await placeOrderWith("cod");
+    const pay = await placeOrderWith("cod");
 
     await waitFor(() =>
-      expect(m.push).toHaveBeenCalledWith(expect.stringMatching(/^\/checkout\/success\?order=NG-/)),
+      expect(m.toastError).toHaveBeenCalledWith(
+        expect.stringMatching(/^We couldn't place your order/),
+      ),
     );
-    expect(m.clear).toHaveBeenCalledTimes(1);
-    expect(m.toastError).not.toHaveBeenCalled();
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    expect(m.saveReceipt).not.toHaveBeenCalled();
+    expect(m.clearCheckoutDraft).not.toHaveBeenCalled();
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+  });
+
+  it("names the out-of-stock item on 409 and keeps the cart", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(409, { ok: false, error: "out-of-stock", variantIds: ["v1"] }),
+    );
+
+    const pay = await placeOrderWith("cod");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(expect.stringMatching(/A2 Ghee.*out of stock/)),
+    );
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    expect(m.saveReceipt).not.toHaveBeenCalled();
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+  });
+
+  it("explains a rejected coupon, drops it, and keeps the cart", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(400, { ok: false, error: "coupon-invalid", reason: "expired" }),
+    );
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByRole("button", { name: "apply coupon" }));
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Pay / }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(postedBody().couponCode).toBe("WELCOME50");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(
+        expect.stringMatching(/WELCOME50.*This coupon has expired\./),
+      ),
+    );
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    expect(m.saveReceipt).not.toHaveBeenCalled();
+
+    // The next attempt goes out without the coupon.
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(201, { ok: true, orderNumber: "NG-26-1002", payment: null }),
+    );
+    const pay = await screen.findByRole("button", { name: /^Pay / });
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(pay);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const retried = JSON.parse(String(fetchMock.mock.calls[1][1]?.body)) as Record<string, unknown>;
+    expect(retried.couponCode).toBeNull();
+    expect(retried.discountPaise).toBe(0);
+  });
+});
+
+describe("checkout — rejected before payment, either method", () => {
+  it("names the out-of-stock item for an online order too, instead of a gateway error", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(409, { ok: false, error: "out-of-stock", variantIds: ["v1"] }),
+    );
+
+    await placeOrderWith("upi");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(expect.stringMatching(/A2 Ghee.*out of stock/)),
+    );
+    expect(m.navigate).not.toHaveBeenCalled();
+    expect(m.clear).not.toHaveBeenCalled();
   });
 });
 

@@ -16,8 +16,8 @@ import { useCommerceRules } from "@/lib/commerce";
 import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
 import { fetchServiceable } from "@/lib/serviceability";
-import { fetchRewards } from "@/lib/rewards-client";
-import type { Coupon } from "@/types/nutrigreenz";
+import { couponReasonMessage, fetchRewards } from "@/lib/rewards-client";
+import type { CartItem, Coupon } from "@/types/nutrigreenz";
 import { FloatIn, MagneticHover, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { AddressPicker } from "@/components/ng/checkout/address-picker";
 import { SlotPicker } from "@/components/ng/checkout/slot-picker";
@@ -35,7 +35,6 @@ import {
 } from "@/components/ng/checkout/checkout-draft";
 import {
   computeTotals,
-  generateOrderId,
   INR,
   maxRedeemableRupees,
   pointsEarned,
@@ -49,6 +48,43 @@ const CHECKOUT_STEPS = [
   { label: "Payment", icon: "wallet" },
   { label: "Review", icon: "shield-check-bold" },
 ] as const;
+
+/** The parts of a rejected order POST that checkout can act on. */
+async function readRejection(
+  res: Response,
+): Promise<{ error?: string; reason?: string; variantIds?: string[] }> {
+  try {
+    const body = (await res.json()) as unknown;
+    if (typeof body !== "object" || body === null) return {};
+    const b = body as Record<string, unknown>;
+    return {
+      error: typeof b.error === "string" ? b.error : undefined,
+      reason: typeof b.reason === "string" ? b.reason : undefined,
+      variantIds: Array.isArray(b.variantIds)
+        ? b.variantIds.filter((v): v is string => typeof v === "string")
+        : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+/** "A2 Ghee is out of stock…", naming the cart lines the server refused. */
+function outOfStockMessage(items: CartItem[], variantIds: string[] = []): string {
+  const names = [
+    ...new Set(
+      items
+        .filter((i) => i.variantId && variantIds.includes(i.variantId))
+        .map((i) => (i.variantLabel ? `${i.title} (${i.variantLabel})` : i.title)),
+    ),
+  ];
+  if (names.length === 0) {
+    return "Some items in your bag just went out of stock. Please review your bag and try again.";
+  }
+  const list =
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return `${list} ${names.length === 1 ? "is" : "are"} out of stock. Remove ${names.length === 1 ? "it" : "them"} or lower the quantity in your bag, then try again.`;
+}
 
 /**
  * Horizontal step indicator — and the navigation itself.
@@ -355,7 +391,8 @@ export default function CheckoutPage() {
     // Persist the order server-side. The backend re-prices every line from the
     // catalog + live commerce rules (client totals are ignored) and returns the
     // canonical NG-YY-XXXX order number. Money crosses the wire as integer paise.
-    let orderNumber = generateOrderId();
+    // There is no order without that number: the success page looks it up.
+    let orderNumber: string | null = null;
     // Where to send the customer to pay, when the order is paid online. Set only
     // from the server's response: SBI issues the link per order.
     let gateway: { action: string; fields: Record<string, string> } | null = null;
@@ -367,6 +404,13 @@ export default function CheckoutPage() {
       toast.error("We couldn't open the payment page. Please try again, or choose Cash on Delivery.");
       setPlacing(false);
     };
+    const placeFailed = () => {
+      // Same rule for Cash on Delivery: an order the server did not create must
+      // not end on "Order confirmed". Keep the cart so they can try again.
+      toast.error("We couldn't place your order. Please check your connection and try again.");
+      setPlacing(false);
+    };
+    const failed = () => (wantsOnline ? onlineFailed() : placeFailed());
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -411,20 +455,38 @@ export default function CheckoutPage() {
         setPlacing(false);
         router.replace("/auth?next=/checkout");
         return;
-      } else if (wantsOnline) {
-        onlineFailed();
+      } else {
+        // Rejected before anything was created or charged. Two of these the
+        // customer can fix from here, so say exactly what; anything else is a
+        // plain failure. Never the success page, whatever the method.
+        const rejection = await readRejection(res);
+        if (res.status === 409 && rejection.error === "out-of-stock") {
+          toast.error(outOfStockMessage(items, rejection.variantIds));
+          setPlacing(false);
+          return;
+        }
+        if (res.status === 400 && rejection.error === "coupon-invalid") {
+          const code = applied?.coupon.code;
+          const why = couponReasonMessage(rejection.reason ?? "");
+          toast.error(
+            `${code ? `We removed coupon ${code}` : "We removed your coupon"}. ${why} Check your new total and place the order again.`,
+          );
+          setApplied(null);
+          setPlacing(false);
+          return;
+        }
+        failed();
         return;
       }
-      // For any other non-OK on a Cash on Delivery order (503 Supabase-
-      // unconfigured, 500…), fall through: we still confirm the order
-      // client-side so the UX never dead-ends. The success page reads the local
-      // receipt; payment stays pending regardless.
     } catch {
-      if (wantsOnline) {
-        onlineFailed();
-        return;
-      }
-      // Network error on COD — keep the purchase flow intact via the receipt.
+      // Network error: nothing confirms the order exists.
+      failed();
+      return;
+    }
+
+    if (!orderNumber) {
+      failed();
+      return;
     }
 
     // The order exists but no payment link came back: the gateway refused it.
