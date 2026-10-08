@@ -297,8 +297,9 @@ export function PaymentGatewayPanel() {
                 </button>
               </div>
               <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
-                Authenticates against SBI without creating an order or moving money.
-                Refuses to run against the live gateway.
+                Gets a token from SBI and sends one encrypted search for an order
+                that does not exist. Creates nothing and moves no money, so it is
+                safe on the live gateway.
               </p>
 
               {selftest ? (

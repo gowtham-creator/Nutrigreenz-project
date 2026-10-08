@@ -139,6 +139,11 @@ async function accessToken(force = false): Promise<string> {
   return value;
 }
 
+/** The merchant id in the current token, for diagnostics. Never the token itself. */
+export function currentSbiepayMerchantId(): string | null {
+  return token?.mId ?? null;
+}
+
 /** Discard the cached token. Used after a 401 so the next call re-authenticates. */
 export function resetSbiepayToken(): void {
   token = null;

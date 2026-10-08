@@ -3,7 +3,6 @@ import {
   isOnlinePaymentAvailable,
   missingSbiepayConfig,
   sbiepayEnv,
-  isLiveGateway,
   sbiepayEncryptionKey,
 } from "@/lib/payments";
 import { isProxyConfigured, checkProxy } from "@/lib/sbiepay-fetch";
@@ -31,8 +30,10 @@ export const dynamic = "force-dynamic";
  * bank's system, and a diagnostic that leaves debris behind stops being safe to
  * run.
  *
- * Refuses to run against LIVE. Authenticating against production to check a
- * config is not worth the risk of anyone believing a live test is routine.
+ * Safe against LIVE as well: it creates nothing and moves no money. It gets a
+ * token and searches for an order reference that cannot exist. That search is
+ * an ENCRYPTED request, so on live it answers the question SBI support asks
+ * first: can the bank decrypt what we send for this merchant?
  */
 
 interface Check {
@@ -50,13 +51,6 @@ export async function GET(): Promise<Response> {
     checks.push({ step, ok: false, detail });
     return Response.json({ ok: false, environment: sbiepayEnv(), checks });
   };
-
-  if (isLiveGateway()) {
-    return fail(
-      "environment",
-      "Refusing to self-test against LIVE. Set SBIEPAY_ENV=integration first.",
-    );
-  }
 
   // 1 · configuration
   const missing = missingSbiepayConfig();
@@ -102,34 +96,49 @@ export async function GET(): Promise<Response> {
     detail: `reached SBI via ${probe.ip}${probe.matchesWhitelist ? " (whitelisted)" : ""}`,
   });
 
-  // 4 · authentication against SBI
+  // 4 · token, then 5 · an encrypted request, against SBI
+  const { sbiepayCall, resetSbiepayToken, currentSbiepayMerchantId } = await import(
+    "@/lib/sbiepay-client"
+  );
+  // Force a fresh token so this tests the credentials, not a warm cache.
+  resetSbiepayToken();
   try {
-    const { sbiepayCall, resetSbiepayToken } = await import("@/lib/sbiepay-client");
-    // Force a fresh token so this tests the credentials, not a warm cache.
-    resetSbiepayToken();
     /*
-     * Query a reference that cannot exist. A well-formed authenticated request
-     * for a missing order proves auth and transport; either an empty result or
-     * a "not found" error is a pass, because both mean SBI read the request.
+     * Search for a reference that cannot exist. SBI must authenticate us AND
+     * decrypt the payload before it can say "not found", so an empty result or
+     * a business error is a pass for both steps.
      */
-    await sbiepayCall("order/status", { orderRefNumber: `SELFTEST-${Date.now()}` });
-    checks.push({ step: "authentication", ok: true, detail: "SBI accepted the credentials" });
+    await sbiepayCall("order/status", { orderRefNumber: `SELFTEST-${Date.now()}`, orderAmount: 1 });
+    checks.push({ step: "token", ok: true, detail: `issued for mId ${currentSbiepayMerchantId() ?? "?"}` });
+    checks.push({ step: "encrypted request", ok: true, detail: "SBI decrypted and answered the request" });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown";
     const code = (err as { code?: string })?.code ?? "";
+    const mId = currentSbiepayMerchantId();
 
-    // Reaching a business error means auth and transport already succeeded.
-    const authWorked = !/not-configured|auth|1003|401/i.test(`${code} ${message}`);
-    checks.push({
-      step: "authentication",
-      ok: authWorked,
-      detail: authWorked
-        ? `SBI responded: ${message} (auth ok: the reference does not exist, as expected)`
-        : `rejected: ${message}`,
-    });
-    if (!authWorked) {
+    // The token step failed: the key id / secret were refused.
+    if (message.startsWith("token/access:") || /not-configured|1003|401/.test(`${code} ${message}`)) {
+      checks.push({ step: "token", ok: false, detail: `rejected: ${message}` });
       return Response.json({ ok: false, environment: sbiepayEnv(), checks });
     }
+    checks.push({ step: "token", ok: true, detail: `issued for mId ${mId ?? "?"}` });
+
+    // 905: SBI could not decrypt our payload with the key it holds for this mId.
+    if (code === "905") {
+      checks.push({
+        step: "encrypted request",
+        ok: false,
+        detail: `SBI error 905 for mId ${mId ?? "?"}: ${message}. The bank cannot decrypt our request with the encryption key it has on file for this merchant.`,
+      });
+      return Response.json({ ok: false, environment: sbiepayEnv(), checks });
+    }
+
+    // Any other business error means SBI decrypted and read the request.
+    checks.push({
+      step: "encrypted request",
+      ok: true,
+      detail: `SBI decrypted the request and answered: ${message} (expected: the reference does not exist)`,
+    });
   }
 
   return Response.json({
