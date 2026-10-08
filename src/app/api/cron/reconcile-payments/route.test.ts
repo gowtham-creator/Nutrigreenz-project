@@ -81,7 +81,12 @@ describe("reconcile sweep", () => {
     const res = await GET(cronRequest());
 
     expect(await res.json()).toMatchObject({ ok: true, checked: 1, paid: 1 });
-    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "paid", "SBI-REF-1");
+    expect(m.transitionOrderPayment).toHaveBeenCalledWith(
+      "ord-1",
+      ["pending", "failed"],
+      "paid",
+      "SBI-REF-1",
+    );
     expect(m.afterResponse).toHaveBeenCalledTimes(1);
     expect(m.afterResponse.mock.calls[0][0]).toBe("order NG-26-1001 placed notification");
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);

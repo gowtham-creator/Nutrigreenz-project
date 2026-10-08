@@ -903,20 +903,36 @@ export async function advanceOrderStatus(
  * number, a stock decrement) happens twice. At one order a minute nobody
  * notices; at a thousand concurrent checkouts it is routine.
  *
- * The `.eq("payment_status", expected)` turns the whole thing into a single
+ * The `.in("payment_status", from)` turns the whole thing into a single
  * atomic compare-and-set in Postgres. Exactly one caller gets a row back and
  * exactly one may act on the transition; the losers get `null` and stop. This
  * is the guarantee the callback needs, and it costs one extra clause.
+ *
+ * ── Source states ─────────────────────────────────────────────────────────
+ *
+ * `expected` is one state or a set. The set exists for recovery: an order can be
+ * 'failed' (a decline recorded earlier) and then be paid on a retry or late, and
+ * the bank is the authority — so the paid transition is `{pending, failed} →
+ * paid`. It is still ONE conditional UPDATE, so exactly one caller wins it.
+ *
+ * 'paid' is terminal. It can never be a source state: a late failure
+ * notification must not walk back a settled payment, and a payment that was
+ * confirmed must stay confirmed. A request that names it is refused outright.
  *
  * @returns the updated order for the caller that won, `null` for everyone else
  *          (and for an order that was already in the target state).
  */
 export async function transitionOrderPayment(
   idOrNumber: string,
-  expected: PaymentStatus,
+  expected: PaymentStatus | readonly PaymentStatus[],
   next: PaymentStatus,
   paymentRef?: string | null,
 ): Promise<OrderWithDetail | null> {
+  const from: PaymentStatus[] = Array.isArray(expected)
+    ? [...(expected as readonly PaymentStatus[])]
+    : [expected as PaymentStatus];
+  if (from.length === 0 || from.includes("paid") || from.includes(next)) return null;
+
   const order = await getOrder(idOrNumber);
   if (!order) return null;
 
@@ -932,7 +948,7 @@ export async function transitionOrderPayment(
     // "failed" orders, so flipping one would make a real order vanish.
     .eq("payment_method", "upi")
     // The guard. No row matches if another request already moved it.
-    .in("payment_status", [expected])
+    .in("payment_status", from)
     .select("id");
 
   if (error) return null;

@@ -75,8 +75,9 @@ function orderStore(initial: "pending" | "paid" | "failed" = "pending") {
   const row = { paymentStatus: initial as string };
   m.getOrder.mockImplementation(async () => ({ ...ORDER, paymentStatus: row.paymentStatus }));
   m.transitionOrderPayment.mockImplementation(
-    async (_id: string, expected: string, next: string) => {
-      if (row.paymentStatus !== expected) return null;
+    async (_id: string, expected: string | string[], next: string) => {
+      const from = Array.isArray(expected) ? expected : [expected];
+      if (!from.includes(row.paymentStatus)) return null;
       row.paymentStatus = next;
       return { ...ORDER, paymentStatus: next };
     },
@@ -137,7 +138,12 @@ describe("callback — verified payment", () => {
       params: { order: ORDER_NUMBER },
     });
     expect(row.paymentStatus).toBe("paid");
-    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "paid", "SBI-REF-1");
+    expect(m.transitionOrderPayment).toHaveBeenCalledWith(
+      "ord-1",
+      ["pending", "failed"],
+      "paid",
+      "SBI-REF-1",
+    );
     expect(m.afterResponse).toHaveBeenCalledTimes(1);
     expect(m.afterResponse.mock.calls[0][0]).toBe(`order ${ORDER_NUMBER} placed notification`);
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);
@@ -213,6 +219,82 @@ describe("callback — verified payment", () => {
     expect(m.transitionOrderPayment).not.toHaveBeenCalled();
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
     expect(m.afterResponse).not.toHaveBeenCalled();
+  });
+});
+
+describe("callback — recovering a payment that was marked failed", () => {
+  /*
+   * An order can be 'failed' (a decline recorded earlier) and then be paid by
+   * the customer on a retry or late. The bank is the authority: when it says
+   * PAID, a failed order must become paid, or the customer is charged for goods
+   * that are never dispatched.
+   */
+  it("moves a failed order to paid when the bank says PAID, emailing once", async () => {
+    const row = orderStore("failed");
+    m.confirmGatewayPayment.mockResolvedValue(PAID);
+
+    const res = await POST(browserReturn());
+
+    expect(redirectOf(res)).toEqual({
+      path: "/checkout/success",
+      params: { order: ORDER_NUMBER },
+    });
+    expect(row.paymentStatus).toBe("paid");
+    expect(m.transitionOrderPayment).toHaveBeenCalledWith(
+      "ord-1",
+      ["pending", "failed"],
+      "paid",
+      "SBI-REF-1",
+    );
+    expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);
+    expect(m.sendOrderPlacedEmail).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("emails exactly once when the browser return and server notification both recover it", async () => {
+    const row = orderStore("failed");
+    let arrivals = 0;
+    let release!: () => void;
+    const bothVerifying = new Promise<void>((resolve) => (release = resolve));
+    m.confirmGatewayPayment.mockImplementation(async () => {
+      arrivals += 1;
+      if (arrivals === 2) release();
+      await bothVerifying;
+      return PAID;
+    });
+
+    const [a, b] = await Promise.all([POST(browserReturn()), POST(serverNotification())]);
+
+    expect(row.paymentStatus).toBe("paid");
+    expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);
+    expect(redirectOf(a).path).toBe("/checkout/success");
+    expect(redirectOf(b).path).toBe("/checkout/success");
+  });
+
+  it("leaves a failed order failed when the bank still says it failed", async () => {
+    const row = orderStore("failed");
+    m.confirmGatewayPayment.mockResolvedValue({
+      ok: false,
+      reference: "SBI-REF-1",
+      capturedPaise: 0,
+      reason: "failed",
+    });
+
+    const res = await POST(browserReturn());
+
+    expect(redirectOf(res).path).toBe("/checkout/failed");
+    expect(row.paymentStatus).toBe("failed");
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it("does not recover a failed order whose captured amount is short", async () => {
+    const row = orderStore("failed");
+    m.confirmGatewayPayment.mockResolvedValue({ ok: true, reference: "SBI-REF-1", capturedPaise: 100 });
+
+    const res = await POST(browserReturn());
+
+    expect(redirectOf(res).params.reason).toBe("amount-mismatch");
+    expect(row.paymentStatus).toBe("failed");
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
   });
 });
 

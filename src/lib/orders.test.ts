@@ -137,3 +137,55 @@ describe("transitionOrderPayment — online orders only", () => {
     expect(await transitionOrderPayment("ord-1", "pending", "failed")).toBeNull();
   });
 });
+
+describe("transitionOrderPayment — failed → paid recovery", () => {
+  it("accepts a SET of source states, still as one atomic compare-and-set", async () => {
+    const fake = useDb((op) =>
+      op.table === "orders" && op.action === "update" ? { data: [{ id: "ord-1" }] } : undefined,
+    );
+
+    const won = await transitionOrderPayment("ord-1", ["pending", "failed"], "paid", "SBI-REF-1");
+
+    expect(won).not.toBeNull();
+    const updates = updatesTo(fake.ops, "orders");
+    expect(updates).toHaveLength(1);
+    expect(filterOn(updates[0], "payment_status", "in")?.value).toEqual(["pending", "failed"]);
+    expect((updates[0].payload as Record<string, unknown>).payment_status).toBe("paid");
+  });
+
+  it("lets only one of two concurrent recoveries win (the loser's guard matches no row)", async () => {
+    // The database applies the guard; model that: the first update finds a
+    // 'failed' row, the second finds it already 'paid'.
+    let status = "failed";
+    useDb((op) => {
+      if (op.table !== "orders" || op.action !== "update") return undefined;
+      const from = filterOn(op, "payment_status", "in")?.value as string[];
+      if (!from.includes(status)) return { data: [] };
+      status = "paid";
+      return { data: [{ id: "ord-1" }] };
+    });
+
+    const [a, b] = await Promise.all([
+      transitionOrderPayment("ord-1", ["pending", "failed"], "paid", "SBI-REF-1"),
+      transitionOrderPayment("ord-1", ["pending", "failed"], "paid", "SBI-REF-1"),
+    ]);
+
+    expect([a, b].filter((r) => r !== null)).toHaveLength(1);
+  });
+
+  it("never moves an order OUT of paid, whatever the caller asks for", async () => {
+    const fake = useDb();
+
+    expect(await transitionOrderPayment("ord-1", "paid", "failed")).toBeNull();
+    expect(await transitionOrderPayment("ord-1", ["pending", "paid"], "failed")).toBeNull();
+    expect(updatesTo(fake.ops, "orders")).toHaveLength(0);
+  });
+
+  it("refuses an empty source set and a no-op transition without querying", async () => {
+    const fake = useDb();
+
+    expect(await transitionOrderPayment("ord-1", [], "paid")).toBeNull();
+    expect(await transitionOrderPayment("ord-1", "failed", "failed")).toBeNull();
+    expect(fake.ops).toHaveLength(0);
+  });
+});

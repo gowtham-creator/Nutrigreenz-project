@@ -115,7 +115,9 @@ export async function GET(request: Request): Promise<Response> {
         }
         const won = await transitionOrderPayment(
           order.id,
-          "pending",
+          // Same recovery rule as the callback: the bank says PAID, so a
+          // 'failed' order (declined earlier, paid since) becomes paid too.
+          ["pending", "failed"],
           "paid",
           result.reference ?? null,
         );

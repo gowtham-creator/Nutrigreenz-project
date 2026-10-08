@@ -276,7 +276,14 @@ async function handle(request: Request): Promise<Response> {
    * Losing the race is a success, not an error — it means the other request
    * already confirmed this payment, so the customer still goes to the receipt.
    */
-  const won = await transitionOrderPayment(order.id, "pending", "paid", result.reference ?? null);
+  const won = await transitionOrderPayment(
+    order.id,
+    // A 'failed' order is recoverable: the customer may have paid on a retry, or
+    // late, after a decline was recorded. The bank says PAID, so it is paid.
+    ["pending", "failed"],
+    "paid",
+    result.reference ?? null,
+  );
   // The order-placed email for an online order is sent here, on payment, not
   // when it was created. Only the caller that won the transition sends it, so
   // the browser return and the server notification cannot both email.
