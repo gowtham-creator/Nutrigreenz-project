@@ -173,10 +173,16 @@ export async function POST(request: Request): Promise<Response> {
     // operator takes, and has its own email. Sending the confirmation here meant
     // the customer was told it was confirmed before anyone had looked at it, then
     // received the identical mail again when it actually was.
-    afterResponse(
-      `order ${order.orderNumber} placed notification`,
-      sendOrderPlacedEmail(order.id),
-    );
+    //
+    // Cash on Delivery only. An online order is not placed until SBI confirms
+    // payment, so its email goes from the gateway callback instead; sending it
+    // here told customers "order received" for payments that then failed.
+    if (order.paymentMethod !== "upi") {
+      afterResponse(
+        `order ${order.orderNumber} placed notification`,
+        sendOrderPlacedEmail(order.id),
+      );
+    }
 
     /*
      * Hand the order to the gateway when one is configured AND the customer

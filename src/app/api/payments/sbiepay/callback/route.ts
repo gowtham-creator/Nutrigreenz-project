@@ -2,6 +2,8 @@ import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { recordCallback, decryptCallback, flattenDecrypted } from "@/lib/sbiepay-callback-log";
 import { getOrder, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
+import { sendOrderPlacedEmail } from "@/lib/order-emails";
+import { afterResponse } from "@/lib/after-response";
 
 export const runtime = "nodejs";
 // Never cached: this is the moment money is confirmed.
@@ -242,7 +244,16 @@ async function handle(request: Request): Promise<Response> {
    * Losing the race is a success, not an error — it means the other request
    * already confirmed this payment, so the customer still goes to the receipt.
    */
-  await transitionOrderPayment(order.id, "pending", "paid", result.reference ?? null);
+  const won = await transitionOrderPayment(order.id, "pending", "paid", result.reference ?? null);
+  // The order-placed email for an online order is sent here, on payment, not
+  // when it was created. Only the caller that won the transition sends it, so
+  // the browser return and the server notification cannot both email.
+  if (won) {
+    afterResponse(
+      `order ${order.orderNumber} placed notification`,
+      sendOrderPlacedEmail(order.id),
+    );
+  }
   return redirectTo("/checkout/success", { order: order.orderNumber });
 }
 
