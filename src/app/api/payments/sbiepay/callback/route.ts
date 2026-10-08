@@ -34,6 +34,18 @@ export const dynamic = "force-dynamic";
  * customer who has just been charged staring at a stack trace.
  */
 
+/**
+ * The bank's own words for a payment that is over and did not succeed.
+ *
+ * Only these close an order as failed here. `confirmGatewayPayment` also
+ * returns ok:false when it could not get an answer at all — a network error,
+ * no matching record yet, a status that is not final — and none of those mean
+ * the money was not taken. The reconcile sweep keeps the same rule (its own
+ * set adds "not-found", which is only conclusive once the payment window has
+ * closed, as it has for every order the sweep looks at).
+ */
+const BANK_DECLINED = new Set(["failed", "cancel", "expired", "attempt_fail"]);
+
 /** Where to send the customer, given what we concluded. */
 function redirectTo(path: string, params: Record<string, string>): Response {
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
@@ -210,9 +222,18 @@ async function handle(request: Request): Promise<Response> {
   );
 
   if (!result.ok) {
-    // Only from pending. A payment already confirmed must never be walked back
-    // by a late-arriving failure notification for the same order.
-    await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
+    /*
+     * Close the order only when the bank itself said no. Anything else leaves
+     * it pending: the reconcile sweep revisits pending orders and nothing else,
+     * so marking an unanswered check "failed" wrote off a payment that may well
+     * have been taken, and nothing would ever look at it again.
+     *
+     * Only from pending. A payment already confirmed must never be walked back
+     * by a late-arriving failure notification for the same order.
+     */
+    if (result.reason && BANK_DECLINED.has(result.reason)) {
+      await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
+    }
     return redirectTo("/checkout/failed", {
       order: order.orderNumber,
       reason: result.reason ?? "declined",

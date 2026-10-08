@@ -239,18 +239,50 @@ describe("callback — payment not accepted", () => {
     expect(m.afterResponse).not.toHaveBeenCalled();
   });
 
-  it("passes the bank's own status word through as the reason (cancelled)", async () => {
-    orderStore("pending");
+  it.each(["cancel", "expired", "attempt_fail"])(
+    "marks the order failed on the bank's final word %s and passes it through as the reason",
+    async (reason) => {
+      const row = orderStore("pending");
+      m.confirmGatewayPayment.mockResolvedValue({
+        ok: false,
+        reference: "SBI-REF-1",
+        capturedPaise: 0,
+        reason,
+      });
+
+      const res = await POST(browserReturn());
+
+      expect(redirectOf(res).params).toEqual({ order: ORDER_NUMBER, reason });
+      expect(row.paymentStatus).toBe("failed");
+      expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  /*
+   * confirmGatewayPayment returns ok:false for "the bank said no" AND for "we
+   * could not get an answer". The second must not close the order: the
+   * reconcile sweep only revisits `pending` orders, so a captured payment
+   * marked failed here would never be looked at again.
+   */
+  it.each([
+    ["the status call failed on the network", "fetch failed"],
+    ["the bank has no matching record yet", "not-found"],
+    ["the lookup returned someone else's order", "reference-mismatch"],
+    ["the bank's status is not final yet", "pending"],
+  ])("leaves the order pending for the sweep when %s", async (_label, reason) => {
+    const row = orderStore("pending");
     m.confirmGatewayPayment.mockResolvedValue({
       ok: false,
-      reference: "SBI-REF-1",
-      capturedPaise: 0,
-      reason: "cancel",
+      reference: null,
+      capturedPaise: null,
+      reason,
     });
 
     const res = await POST(browserReturn());
 
-    expect(redirectOf(res).params).toEqual({ order: ORDER_NUMBER, reason: "cancel" });
+    expect(redirectOf(res).path).toBe("/checkout/failed");
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+    expect(row.paymentStatus).toBe("pending");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
   });
 
