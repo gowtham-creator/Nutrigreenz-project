@@ -105,7 +105,9 @@ async function accessToken(force = false): Promise<string> {
   if (body.status !== 1 || !value) {
     const err = body.errors?.[0];
     throw new SbiepayError(
-      err?.errorMessage ?? "Could not obtain an access token",
+      // Name the step: SBI answers token and order failures in the same shape,
+      // and "which call failed" is the first thing their support asks.
+      `token/access: ${err?.errorMessage ?? "Could not obtain an access token"}`,
       err?.errorCode ?? "auth-failed",
       res.status,
     );
@@ -220,7 +222,7 @@ export async function sbiepayCall<T>(
     exchange.error = err?.errorMessage ?? `${endpoint} failed`;
     capture?.(exchange);
     throw new SbiepayError(
-      err?.errorMessage ?? `${endpoint} failed`,
+      `${endpoint}: ${err?.errorMessage ?? "failed"}`,
       err?.errorCode ?? "call-failed",
       res.status,
     );
