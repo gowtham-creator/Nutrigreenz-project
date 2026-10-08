@@ -228,6 +228,24 @@ export async function POST(request: Request): Promise<Response> {
         { status: 400 },
       );
     }
+    /*
+     * Everything else is a 500, and the customer sees only "create-failed" —
+     * so without this line the cause never reaches anyone. The gateway refusing
+     * a handoff looks identical from outside to the database being down, and a
+     * checkout that fails silently is the one failure worth paying a log line
+     * for. Fields only, never the error object: a thrown fetch error can carry
+     * request headers, and those hold the bank credentials.
+     */
+    const detail = (() => {
+      if (!(err instanceof Error)) return String(err);
+      // Read by shape rather than importing SbiepayError: the gateway client is
+      // loaded lazily by beginPayment, and a static import here would pull it
+      // into every order request whether or not one is paid online.
+      const e = err as Error & { code?: string; httpStatus?: number };
+      const extra = e.code ? ` code=${e.code} http=${e.httpStatus ?? "-"}` : "";
+      return `${err.name}${extra}: ${err.message}`;
+    })();
+    console.error(`order-create-failed: ${detail}`);
     return Response.json({ ok: false, error: "create-failed" }, { status: 500 });
   }
 }
