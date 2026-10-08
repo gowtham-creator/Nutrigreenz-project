@@ -158,7 +158,7 @@ export async function sbiepayCall<T>(
   retryOnAuthFailure = true,
   capture?: (exchange: SbiepayExchange) => void,
 ): Promise<T> {
-  const { encKey } = credentials();
+  const { keyId, keySecret, encKey } = credentials();
   const bearer = await accessToken();
 
   const encryptedRequest = await encryptPayload(encKey, payload);
@@ -166,7 +166,19 @@ export async function sbiepayCall<T>(
   const res = await sbiepayFetch({
     path: `${API_PREFIX}/${endpoint}`,
     method: "POST",
-    headers: { authorization: `Bearer ${bearer}` },
+    /*
+     * The key pair goes on EVERY call, not just the token request. SBI's own
+     * Node SDK (epay_nodejs_sdk) sets both headers on its axios instance, so
+     * they ride along with order/create too. LIVE uses the key id to find which
+     * merchant's encryption key to decrypt the payload with; without it the
+     * order fails with 905 "Encryption Decryption Service Failed" even though
+     * the token call succeeded. UAT tolerated the omission, LIVE does not.
+     */
+    headers: {
+      authorization: `Bearer ${bearer}`,
+      "Merchant-API-Key-Id": keyId,
+      "Merchant-API-Key-Secret": keySecret,
+    },
     body: JSON.stringify({ encryptedRequest }),
     timeoutMs: 25_000,
   });
