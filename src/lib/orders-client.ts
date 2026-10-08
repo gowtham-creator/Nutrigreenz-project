@@ -17,6 +17,9 @@ export type OrderStatus =
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
+/** How the order is paid: 'upi' (online, via the gateway) or 'cod'. */
+export type PaymentMethod = "upi" | "cod";
+
 export interface OrderItemView {
   id: string;
   productId: string | null;
@@ -42,6 +45,11 @@ export interface OrderView {
   orderNumber: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  /**
+   * Decides what `paymentStatus: "pending"` means: normal for Cash on Delivery,
+   * "not yet confirmed by the bank" for an online order.
+   */
+  paymentMethod: PaymentMethod;
   paymentProvider: string;
   subtotalPaise: number;
   discountPaise: number;
