@@ -132,7 +132,8 @@ async function accessToken(force = false): Promise<string> {
 
   token = { value, expiresAt: expiryOf(value), mId: merchantIdOf(value) };
   console.info(
-    `sbiepay token issued: mId=${token.mId} at ${new Date().toISOString()} ` +
+    `sbiepay token issued: http=${res.status} status=${body.status} mId=${token.mId} ` +
+      `at ${new Date().toISOString()} ` +
       `expires ${new Date(token.expiresAt).toISOString()}`,
   );
   return value;
