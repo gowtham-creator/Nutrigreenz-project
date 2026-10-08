@@ -202,6 +202,17 @@ export interface PayableOrder {
   currency: string;
   customerEmail?: string | null;
   customerPhone?: string | null;
+  /**
+   * When the order was created (ISO). Used to start the date-range fallback at
+   * the order's own creation time, so an order of any age the sweep still looks
+   * at falls inside the window.
+   */
+  createdAt?: string | null;
+  /**
+   * SBI's own reference for this order (`sbiOrderRefNumber`), saved at handoff.
+   * When present the status lookup is direct and needs no date-range scan.
+   */
+  gatewayRef?: string | null;
 }
 
 /**
@@ -294,6 +305,17 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
   };
 }
 
+/** Clock-skew allowance when a date-range search starts at an order's creation. */
+const WINDOW_LEAD_MS = 5 * 60_000;
+/** Look-back when the order's creation time is unknown — matches the sweep's reach. */
+const DEFAULT_WINDOW_MS = 48 * 3_600_000;
+
+/** Start (epoch ms) of the date-range fallback for an order created at `createdAt`. */
+function windowStart(createdAt: string | null | undefined): number {
+  const created = createdAt ? Date.parse(createdAt) : Number.NaN;
+  return Number.isFinite(created) ? created - WINDOW_LEAD_MS : Date.now() - DEFAULT_WINDOW_MS;
+}
+
 /**
  * Verify a gateway response and report what was actually captured.
  *
@@ -323,13 +345,23 @@ export async function confirmGatewayPayment(
      *
      * SBI does not accept our `orderRefNumber` as a lookup key on its own — the
      * accepted keys are sbiOrderRefNumber, atrnNumber, arrnNumber, or a date
-     * range. The callback carries the bank reference, so use it; when it is
-     * absent (a customer who paid and closed the tab, swept up later) fall back
-     * to a date window wide enough to contain the 30-minute payment link, then
-     * match on our own reference.
+     * range. In order of preference:
+     *
+     *   1. what the callback carried (decrypted, so authentic);
+     *   2. the sbiOrderRefNumber saved on the order when it was handed to the
+     *      gateway — this is what the sweep uses, and it makes the lookup a
+     *      direct one that cannot miss because of how busy the day was;
+     *   3. only for an order with neither (the handoff never completed, or the
+     *      reference could not be saved), a date-range scan matched on our own
+     *      reference.
      */
-    const sbiRef = payload.sbiOrderRefNumber?.trim() || payload.sbiorderrefnumber?.trim();
+    const sbiRef =
+      payload.sbiOrderRefNumber?.trim() ||
+      payload.sbiorderrefnumber?.trim() ||
+      order.gatewayRef?.trim() ||
+      undefined;
     const atrn = payload.atrnNumber?.trim() || payload.atrn?.trim();
+    const direct = Boolean(sbiRef || atrn);
 
     /*
      * Rupees, and not optional. SBI rejects a status request without it —
@@ -344,9 +376,13 @@ export async function confirmGatewayPayment(
         : atrn
           ? { atrnNumber: atrn, orderAmount }
           : {
-              // 24 hours back covers the link's 30-minute life plus any delay
-              // before a sweep runs, without pulling the whole ledger.
-              fromDate: Date.now() - 24 * 60 * 60_000,
+              /*
+               * From the order's own creation (less a few minutes for clock
+               * skew) to now. A fixed "last 24 hours" window silently excluded
+               * any order the sweep still chases that was older than a day —
+               * the sweep looks back 48h, and a late callback can be older.
+               */
+              fromDate: windowStart(order.createdAt),
               toDate: Date.now(),
               orderRefNumber: order.orderNumber,
               orderAmount,
@@ -369,7 +405,15 @@ export async function confirmGatewayPayment(
         ok: false,
         reference: null,
         capturedPaise: null,
-        reason: wrongOrder ? "reference-mismatch" : "not-found",
+        /*
+         * "not-found" is only conclusive after a DIRECT lookup: the bank was
+         * asked about one specific order and has no record of it. A miss in a
+         * date-range scan proves much less — the client has no pagination, so a
+         * result set the bank truncated is indistinguishable from an empty one.
+         * That case gets its own reason so callers can keep waiting instead of
+         * writing off a payment that may simply have been beyond the first page.
+         */
+        reason: wrongOrder ? "reference-mismatch" : direct ? "not-found" : "not-found-in-window",
       };
     }
 

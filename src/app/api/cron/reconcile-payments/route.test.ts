@@ -44,6 +44,8 @@ const ORDER = {
   userPhone: "+919800000000",
   paymentMethod: "upi",
   paymentStatus: "pending",
+  paymentRef: "SBI-REF-1",
+  createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
 };
 
 function cronRequest(secret = SECRET): Request {
@@ -138,6 +140,70 @@ describe("reconcile sweep", () => {
     expect(m.confirmGatewayPayment).not.toHaveBeenCalled();
     expect(m.transitionOrderPayment).not.toHaveBeenCalled();
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it("looks the order up by the SBI reference saved at handoff and by its creation time", async () => {
+    m.confirmGatewayPayment.mockResolvedValue({ ok: true, reference: "SBI-REF-1", capturedPaise: 220_000 });
+    m.transitionOrderPayment.mockResolvedValue({ ...ORDER, paymentStatus: "paid" });
+
+    await GET(cronRequest());
+
+    const [payable, payload] = m.confirmGatewayPayment.mock.calls[0];
+    expect(payable).toMatchObject({
+      id: "ord-1",
+      gatewayRef: "SBI-REF-1",
+      createdAt: ORDER.createdAt,
+    });
+    expect(payload).toEqual({});
+  });
+
+  it("closes an order as failed when the bank has no record of its own reference", async () => {
+    m.confirmGatewayPayment.mockResolvedValue({
+      ok: false,
+      reference: null,
+      capturedPaise: null,
+      reason: "not-found",
+    });
+
+    const res = await GET(cronRequest());
+
+    expect(await res.json()).toMatchObject({ failed: 1 });
+    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", null);
+  });
+
+  it("does NOT close a young order on a date-window miss - the window can truncate", async () => {
+    m.confirmGatewayPayment.mockResolvedValue({
+      ok: false,
+      reference: null,
+      capturedPaise: null,
+      reason: "not-found-in-window",
+    });
+
+    const res = await GET(cronRequest());
+
+    expect(await res.json()).toMatchObject({ stillPending: 1, failed: 0 });
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+  });
+
+  it("closes an old order that a date-window search has repeatedly failed to find", async () => {
+    // Otherwise an order with no stored reference (the handoff never completed)
+    // would sit pending, holding stock, until it aged out of the sweep.
+    m.getOrder.mockResolvedValue({
+      ...ORDER,
+      paymentRef: null,
+      createdAt: new Date(Date.now() - 30 * 3_600_000).toISOString(),
+    });
+    m.confirmGatewayPayment.mockResolvedValue({
+      ok: false,
+      reference: null,
+      capturedPaise: null,
+      reason: "not-found-in-window",
+    });
+
+    const res = await GET(cronRequest());
+
+    expect(await res.json()).toMatchObject({ failed: 1 });
+    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", null);
   });
 
   it("leaves an order pending when the bank could not be asked", async () => {

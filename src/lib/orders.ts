@@ -937,7 +937,10 @@ export async function transitionOrderPayment(
   if (!order) return null;
 
   const patch: Record<string, string | null> = { payment_status: next };
-  if (paymentRef !== undefined) patch.payment_ref = paymentRef;
+  // Only ever SET a reference. Callers pass `result.reference ?? null`, and a
+  // status lookup that returned nothing must not erase the sbiOrderRefNumber
+  // saved at handoff.
+  if (paymentRef) patch.payment_ref = paymentRef;
 
   const { data, error } = await supabaseAdmin()
     .from("orders")
@@ -955,6 +958,50 @@ export async function transitionOrderPayment(
   if (!data || data.length === 0) return null;
 
   return getOrder(order.id);
+}
+
+/** The online payment provider recorded on an order that went through the gateway. */
+export const GATEWAY_PROVIDER = "sbiepay";
+
+/**
+ * Remember SBI's own reference for an order at the moment it is handed to the
+ * gateway.
+ *
+ * Stored in `payment_ref` (the gateway's transaction reference, already read by
+ * the admin order page and used for settlement reconciliation) and
+ * `payment_provider`. With it, the callback and the sweep can ask the bank about
+ * this order DIRECTLY by `sbiOrderRefNumber` instead of scanning a date range
+ * for it — see confirmGatewayPayment.
+ *
+ * Best-effort: the customer is already being sent to the bank, and an order with
+ * no stored reference is still reconcilable by the date-range fallback, so a
+ * failed write here is reported (returns false) but never aborts checkout.
+ */
+export async function recordGatewayHandoff(
+  idOrNumber: string,
+  reference: string | null | undefined,
+): Promise<boolean> {
+  const ref = reference?.trim();
+  if (!ref) return false;
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("orders")
+      .update({ payment_ref: ref, payment_provider: GATEWAY_PROVIDER })
+      .eq("id", idOrNumber)
+      // Only an order that is still waiting on the gateway: never rewrite the
+      // reference of an order that has since been settled.
+      .eq("payment_status", "pending")
+      .eq("payment_method", "upi")
+      .select("id");
+    if (error || !data || data.length === 0) {
+      console.warn(`[orders] could not save the gateway reference for ${idOrNumber}`);
+      return false;
+    }
+    return true;
+  } catch {
+    console.warn(`[orders] could not save the gateway reference for ${idOrNumber}`);
+    return false;
+  }
 }
 
 /**

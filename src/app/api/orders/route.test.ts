@@ -10,6 +10,7 @@ const m = vi.hoisted(() => ({
   getCustomerSession: vi.fn(),
   getCustomerById: vi.fn(),
   createOrder: vi.fn(),
+  recordGatewayHandoff: vi.fn(),
   beginPayment: vi.fn(),
   isOnlinePaymentAvailable: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -27,7 +28,12 @@ vi.mock("@/lib/orders", () => {
       super("out-of-stock");
     }
   }
-  return { createOrder: m.createOrder, listOrdersForCustomer: vi.fn(), OutOfStockError };
+  return {
+    createOrder: m.createOrder,
+    recordGatewayHandoff: m.recordGatewayHandoff,
+    listOrdersForCustomer: vi.fn(),
+    OutOfStockError,
+  };
 });
 vi.mock("@/lib/rewards", () => {
   class CouponInvalidError extends Error {
@@ -84,6 +90,7 @@ beforeEach(() => {
     paymentMethod: input.paymentMethod,
   }));
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
+  m.recordGatewayHandoff.mockResolvedValue(true);
   consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -113,6 +120,40 @@ describe("POST /api/orders — online (UPI) order", () => {
       customerEmail: "asha@example.com",
       customerPhone: "+919800000000",
     });
+  });
+
+  it("saves SBI's order reference on the order so the sweep can look it up directly", async () => {
+    m.beginPayment.mockResolvedValue({
+      action: "https://sbi.example/pay/abc",
+      fields: {},
+      reference: "SBI-REF-1",
+    });
+
+    await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(m.recordGatewayHandoff).toHaveBeenCalledWith("ord-1", "SBI-REF-1");
+  });
+
+  it("still returns the payment action when saving the reference fails", async () => {
+    // Best-effort: the customer must reach the bank page; the sweep falls back
+    // to a date-window lookup for an order with no stored reference.
+    m.beginPayment.mockResolvedValue({
+      action: "https://sbi.example/pay/abc",
+      fields: {},
+      reference: "SBI-REF-1",
+    });
+    m.recordGatewayHandoff.mockResolvedValue(false);
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(201);
+    expect((await res.json()).payment.action).toBe("https://sbi.example/pay/abc");
+  });
+
+  it("does not record a handoff for a COD order", async () => {
+    await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(m.recordGatewayHandoff).not.toHaveBeenCalled();
   });
 
   it("does not send the order-placed email at creation — that waits for payment", async () => {

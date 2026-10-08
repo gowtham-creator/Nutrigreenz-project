@@ -50,6 +50,8 @@ const ORDER = {
   userEmail: "asha@example.com",
   userPhone: "+919800000000",
   paymentMethod: "upi",
+  paymentRef: "SBI-REF-1",
+  createdAt: "2026-10-01T10:00:00Z",
 };
 
 /** What SBI's ciphertext decrypts to: the order reference is only in here. */
@@ -165,6 +167,8 @@ describe("callback — verified payment", () => {
       currency: "INR",
       customerEmail: "asha@example.com",
       customerPhone: "+919800000000",
+      createdAt: "2026-10-01T10:00:00Z",
+      gatewayRef: "SBI-REF-1",
     });
     expect(fields).toMatchObject({
       orderRefNumber: ORDER_NUMBER,

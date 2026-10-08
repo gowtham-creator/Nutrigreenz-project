@@ -16,6 +16,7 @@ import { getCustomerById } from "@/lib/customer-identity";
 import {
   createOrder,
   listOrdersForCustomer,
+  recordGatewayHandoff,
   OutOfStockError,
   type OrderLineInput,
 } from "@/lib/orders";
@@ -206,6 +207,15 @@ export async function POST(request: Request): Promise<Response> {
             customerPhone: order.userPhone,
           })
         : null;
+
+    /*
+     * Remember SBI's reference for this order so the callback and the reconcile
+     * sweep can ask the bank about it directly. Best-effort: a failure here must
+     * not stop the customer reaching the payment page — see recordGatewayHandoff.
+     */
+    if (payment?.reference) {
+      await recordGatewayHandoff(order.id, payment.reference);
+    }
 
     return Response.json(
       {

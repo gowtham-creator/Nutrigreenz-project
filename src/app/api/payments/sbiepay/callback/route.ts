@@ -234,16 +234,18 @@ async function handle(request: Request): Promise<Response> {
       currency: order.currency,
       customerEmail: order.userEmail,
       customerPhone: order.userPhone,
+      createdAt: order.createdAt,
+      gatewayRef: order.paymentRef,
     },
     /*
      * The decrypted fields, not the raw two.
      *
      * confirmGatewayPayment prefers a direct lookup on sbiOrderRefNumber or
-     * atrnNumber and only falls back to a 24-hour date-range sweep when it has
-     * neither. Both live inside the ciphertext, so passing the plaintext
-     * payload meant every real payment took the slow path and matched by
-     * scanning a window of orders — more work at the bank, and more ways to
-     * come back empty.
+     * atrnNumber and only falls back to a date-range scan when it has neither
+     * (the order's saved gatewayRef counts as one). Both bank references live
+     * inside the ciphertext, so passing the plaintext payload meant every real
+     * payment took the slow path and matched by scanning a window of orders —
+     * more work at the bank, and more ways to come back empty.
      */
     fields,
   );

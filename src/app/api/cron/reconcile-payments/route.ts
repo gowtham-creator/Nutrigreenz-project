@@ -35,6 +35,9 @@ export const maxDuration = 300;
  * Schedule: see `crons` in `vercel.json`.
  */
 
+/** A date-range miss is final only for an order at least this old. */
+const WINDOW_MISS_FINAL_AFTER_MS = 24 * 3_600_000;
+
 interface Outcome {
   orderNumber: string;
   result: "paid" | "failed" | "still-pending" | "error";
@@ -83,9 +86,10 @@ export async function GET(request: Request): Promise<Response> {
       if (!order || order.paymentStatus !== "pending" || order.paymentMethod !== "upi") continue;
 
       /*
-       * No payload — there was never a callback. `confirmGatewayPayment` falls
-       * back to a date-range lookup keyed on our own order reference, which is
-       * exactly the case this sweep is for.
+       * No payload — there was never a callback. The lookup goes straight to
+       * the sbiOrderRefNumber saved on the order at handoff; only an order with
+       * no saved reference falls back to a date-range scan (from the order's
+       * own creation), which is exactly the case this sweep is for.
        */
       const result = await confirmGatewayPayment(
         {
@@ -95,6 +99,8 @@ export async function GET(request: Request): Promise<Response> {
           currency: order.currency,
           customerEmail: order.userEmail,
           customerPhone: order.userPhone,
+          createdAt: order.createdAt,
+          gatewayRef: order.paymentRef,
         },
         {},
       );
@@ -153,7 +159,19 @@ export async function GET(request: Request): Promise<Response> {
        * run, which is the recoverable direction.
        */
       const terminal = new Set(["failed", "cancel", "expired", "attempt_fail", "not-found"]);
-      if (result.reason && terminal.has(result.reason)) {
+      /*
+       * A miss in a date-range scan ("not-found-in-window") is NOT conclusive
+       * for a young order: our client has no pagination, so a result the bank
+       * truncated looks exactly like an empty one. It is only treated as final
+       * once the order is old enough that it can no longer be a payment in
+       * flight, and the sweep has had several chances to find it by reference.
+       * Without that, an order whose handoff never completed (so it has no saved
+       * reference to look up) would hold its stock until it aged out of the sweep.
+       */
+      const ageMs = Date.now() - Date.parse(order.createdAt);
+      const windowMissIsFinal =
+        result.reason === "not-found-in-window" && ageMs >= WINDOW_MISS_FINAL_AFTER_MS;
+      if ((result.reason && terminal.has(result.reason)) || windowMissIsFinal) {
         await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
         outcomes.push({ orderNumber: order.orderNumber, result: "failed", detail: result.reason });
       } else {

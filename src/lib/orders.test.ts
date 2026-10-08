@@ -36,7 +36,11 @@ vi.mock("@/lib/rewards", () => {
   };
 });
 
-import { listStalePendingPayments, transitionOrderPayment } from "@/lib/orders";
+import {
+  listStalePendingPayments,
+  recordGatewayHandoff,
+  transitionOrderPayment,
+} from "@/lib/orders";
 
 /** A raw `orders` row, the way PostgREST returns it. */
 function orderRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -186,6 +190,69 @@ describe("transitionOrderPayment — failed → paid recovery", () => {
 
     expect(await transitionOrderPayment("ord-1", [], "paid")).toBeNull();
     expect(await transitionOrderPayment("ord-1", "failed", "failed")).toBeNull();
+    expect(fake.ops).toHaveLength(0);
+  });
+});
+
+describe("transitionOrderPayment — the stored gateway reference", () => {
+  it("records the reference it is given", async () => {
+    const fake = useDb((op) =>
+      op.table === "orders" && op.action === "update" ? { data: [{ id: "ord-1" }] } : undefined,
+    );
+
+    await transitionOrderPayment("ord-1", "pending", "failed", "SBI-REF-1");
+
+    expect((updatesTo(fake.ops, "orders")[0].payload as Record<string, unknown>).payment_ref).toBe(
+      "SBI-REF-1",
+    );
+  });
+
+  it("never blanks the stored reference when the caller has none to give", async () => {
+    // The callback and sweep pass `result.reference ?? null`; a status lookup
+    // that returned nothing must not erase the reference saved at handoff.
+    const fake = useDb((op) =>
+      op.table === "orders" && op.action === "update" ? { data: [{ id: "ord-1" }] } : undefined,
+    );
+
+    await transitionOrderPayment("ord-1", "pending", "failed", null);
+    await transitionOrderPayment("ord-1", "pending", "failed");
+
+    for (const update of updatesTo(fake.ops, "orders")) {
+      expect(update.payload).not.toHaveProperty("payment_ref");
+    }
+  });
+});
+
+describe("recordGatewayHandoff", () => {
+  it("saves SBI's order reference on the still-pending online order", async () => {
+    const fake = useDb((op) =>
+      op.table === "orders" && op.action === "update" ? { data: [{ id: "ord-1" }] } : undefined,
+    );
+
+    const ok = await recordGatewayHandoff("ord-1", "SBI-REF-1");
+
+    expect(ok).toBe(true);
+    const [update] = updatesTo(fake.ops, "orders");
+    expect(update.payload).toMatchObject({ payment_ref: "SBI-REF-1", payment_provider: "sbiepay" });
+    expect(filterOn(update, "id", "eq")?.value).toBe("ord-1");
+    expect(filterOn(update, "payment_status", "eq")?.value).toBe("pending");
+    expect(filterOn(update, "payment_method", "eq")?.value).toBe("upi");
+  });
+
+  it("is best-effort: a failed write is reported, not thrown (the order is still payable)", async () => {
+    useDb((op) =>
+      op.table === "orders" && op.action === "update"
+        ? { error: { message: "connection reset" } }
+        : undefined,
+    );
+
+    await expect(recordGatewayHandoff("ord-1", "SBI-REF-1")).resolves.toBe(false);
+  });
+
+  it("does nothing when the gateway gave no reference", async () => {
+    const fake = useDb();
+
+    await expect(recordGatewayHandoff("ord-1", undefined)).resolves.toBe(false);
     expect(fake.ops).toHaveLength(0);
   });
 });
