@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCart } from "@/lib/cart";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
@@ -22,6 +23,17 @@ const NOOP = () => () => {};
 function SuccessContent() {
   const params = useSearchParams();
   const orderId = params.get("order") ?? "NG-25-0000";
+
+  // An online order keeps its cart until SBI confirms payment, so the
+  // customer can retry from /checkout/failed. Landing here means it is paid
+  // (or was Cash on Delivery, already cleared): empty the cart once.
+  const { clear } = useCart();
+  const cartCleared = useRef(false);
+  useEffect(() => {
+    if (cartCleared.current) return;
+    cartCleared.current = true;
+    clear();
+  }, [clear]);
   // Cache the receipt read per orderId so getSnapshot returns a stable
   // reference (avoids the useSyncExternalStore infinite-loop guard).
   const getSnapshot = useMemo(() => {

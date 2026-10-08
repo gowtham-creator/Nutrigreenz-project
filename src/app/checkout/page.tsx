@@ -356,6 +356,17 @@ export default function CheckoutPage() {
     // catalog + live commerce rules (client totals are ignored) and returns the
     // canonical NG-YY-XXXX order number. Money crosses the wire as integer paise.
     let orderNumber = generateOrderId();
+    // Where to send the customer to pay, when the order is paid online. Set only
+    // from the server's response: SBI issues the link per order.
+    let gateway: { action: string; fields: Record<string, string> } | null = null;
+    const wantsOnline = payment?.category === "upi";
+    const onlineFailed = () => {
+      // An online order that never reached the gateway must NOT end on the
+      // success page: the customer would believe they had paid. Keep the cart
+      // so they can retry, or switch to Cash on Delivery.
+      toast.error("We couldn't open the payment page. Please try again, or choose Cash on Delivery.");
+      setPlacing(false);
+    };
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -386,20 +397,40 @@ export default function CheckoutPage() {
         }),
       });
       if (res.ok) {
-        const data = (await res.json()) as { orderNumber?: string };
+        const data = (await res.json()) as {
+          orderNumber?: string;
+          payment?: { action?: string; fields?: Record<string, string> } | null;
+        };
         if (data?.orderNumber) orderNumber = data.orderNumber;
+        if (data?.payment?.action) {
+          gateway = { action: data.payment.action, fields: data.payment.fields ?? {} };
+        }
       } else if (res.status === 401) {
         // Session expired between gate and submit — send them to re-auth.
         toast.error("Please sign in again to place your order.");
         setPlacing(false);
         router.replace("/auth?next=/checkout");
         return;
+      } else if (wantsOnline) {
+        onlineFailed();
+        return;
       }
-      // For any other non-OK (503 Supabase-unconfigured, 500…), fall through:
-      // we still confirm the order client-side so the UX never dead-ends. The
-      // success page reads the local receipt; payment stays pending regardless.
+      // For any other non-OK on a Cash on Delivery order (503 Supabase-
+      // unconfigured, 500…), fall through: we still confirm the order
+      // client-side so the UX never dead-ends. The success page reads the local
+      // receipt; payment stays pending regardless.
     } catch {
-      // Network error — keep the customer's purchase flow intact via the receipt.
+      if (wantsOnline) {
+        onlineFailed();
+        return;
+      }
+      // Network error on COD — keep the purchase flow intact via the receipt.
+    }
+
+    // The order exists but no payment link came back: the gateway refused it.
+    if (wantsOnline && !gateway) {
+      onlineFailed();
+      return;
     }
 
     // Local receipt powers the confirmation, history-detail and invoice views.
@@ -423,8 +454,33 @@ export default function CheckoutPage() {
       pointsToEarn: pointsEarned(totals.total),
     });
 
-    clear();
     clearCheckoutDraft();
+
+    if (gateway) {
+      // Hand off to SBI's payment page. The cart is kept until payment is
+      // confirmed: SBI returns the customer to the callback, which lands on
+      // /checkout/success (that page clears the cart) or /checkout/failed
+      // (whose "Try again" needs the cart intact).
+      if (Object.keys(gateway.fields).length === 0) {
+        window.location.assign(gateway.action);
+      } else {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = gateway.action;
+        for (const [name, value] of Object.entries(gateway.fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+      }
+      return;
+    }
+
+    clear();
     router.push(`/checkout/success?order=${orderNumber}`);
   }
 
