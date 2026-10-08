@@ -49,10 +49,27 @@ export class SbiepayError extends Error {
  * Module scope, so it survives between requests on a warm Vercel instance and
  * is simply re-fetched on a cold one.
  */
-let token: { value: string; expiresAt: number } | null = null;
+let token: { value: string; expiresAt: number; mId: string } | null = null;
 
 /** Seconds of headroom, so a token cannot expire mid-flight. */
 const EXPIRY_SKEW_MS = 120_000;
+
+/**
+ * The merchant id SBI put in the token. Not a secret: it is the id their
+ * support asks for, and it names which encryption key they will decrypt with.
+ * The token itself is never logged; it is a bearer credential for an hour.
+ */
+function merchantIdOf(jwt: string): string {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(jwt.split(".")[1] ?? "", "base64url").toString("utf8"),
+    ) as { mId?: unknown; sub?: unknown };
+    const id = payload.mId ?? payload.sub;
+    return typeof id === "string" || typeof id === "number" ? String(id) : "unknown";
+  } catch {
+    return "unreadable";
+  }
+}
 
 /** Read `exp` from the JWT rather than assuming an hour. */
 function expiryOf(jwt: string): number {
@@ -113,7 +130,11 @@ async function accessToken(force = false): Promise<string> {
     );
   }
 
-  token = { value, expiresAt: expiryOf(value) };
+  token = { value, expiresAt: expiryOf(value), mId: merchantIdOf(value) };
+  console.info(
+    `sbiepay token issued: mId=${token.mId} at ${new Date().toISOString()} ` +
+      `expires ${new Date(token.expiresAt).toISOString()}`,
+  );
   return value;
 }
 
@@ -222,7 +243,7 @@ export async function sbiepayCall<T>(
     exchange.error = err?.errorMessage ?? `${endpoint} failed`;
     capture?.(exchange);
     throw new SbiepayError(
-      `${endpoint}: ${err?.errorMessage ?? "failed"}`,
+      `${endpoint} (mId=${token?.mId ?? "?"}): ${err?.errorMessage ?? "failed"}`,
       err?.errorCode ?? "call-failed",
       res.status,
     );
