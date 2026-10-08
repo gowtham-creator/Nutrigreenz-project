@@ -255,7 +255,20 @@ export async function sbiepayCall<T>(
     );
   }
 
-  const decrypted = JSON.parse(await decryptPayload(encKey, body.data[0])) as T;
+  /*
+   * data[0] may be the envelope itself or `{ encryptedResponse: envelope }`.
+   * SBI's SDK reads `data[0].encryptedResponse || data[0]`, so accept both.
+   */
+  const first: unknown = body.data[0];
+  const sealed =
+    typeof first === "string" ? first : (first as { encryptedResponse?: unknown }).encryptedResponse;
+  if (typeof sealed !== "string") {
+    exchange.error = `${endpoint} returned no encrypted payload`;
+    capture?.(exchange);
+    throw new SbiepayError(exchange.error, "bad-response", res.status);
+  }
+
+  const decrypted = JSON.parse(await decryptPayload(encKey, sealed)) as T;
   exchange.decrypted = decrypted;
   capture?.(exchange);
   return decrypted;
