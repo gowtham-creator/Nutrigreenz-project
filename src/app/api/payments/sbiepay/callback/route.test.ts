@@ -466,17 +466,83 @@ describe("callback — cannot identify the order", () => {
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
   });
 
-  it("falls back to a plaintext reference on a GET, matched case-insensitively", async () => {
-    m.decryptCallback.mockResolvedValue({ decrypted: null, encField: null, note: null });
+  /*
+   * Anyone can type GET /api/payments/sbiepay/callback?orderRefNumber=NG-… into a
+   * browser. Only the decrypted payload is authenticated (GCM), so only it may
+   * say which order a callback is about — otherwise the endpoint is an oracle
+   * (and a trigger) for any order number.
+   */
+  it("does not act on an order reference taken from the raw query string when decryption fails", async () => {
+    m.decryptCallback.mockResolvedValue({ decrypted: null, encField: null, note: "bad ciphertext" });
     orderStore("pending");
     m.confirmGatewayPayment.mockResolvedValue(PAID);
 
     const res = await GET(
-      new Request(`${SITE}/api/payments/sbiepay/callback?OrderRefNumber=${ORDER_NUMBER}`),
+      new Request(`${SITE}/api/payments/sbiepay/callback?orderRefNumber=${ORDER_NUMBER}`),
     );
 
+    expect(redirectOf(res)).toEqual({
+      path: "/checkout/failed",
+      params: { reason: "no-reference" },
+    });
+    expect(m.getOrder).not.toHaveBeenCalled();
+    expect(m.confirmGatewayPayment).not.toHaveBeenCalled();
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+    // Still on file for diagnosis, but with no order attributed to it.
+    expect(m.recordCallback).toHaveBeenCalledWith(expect.objectContaining({ orderNumber: null }));
+  });
+
+  it.each([
+    ["a POST body", () =>
+      new Request(`${SITE}/api/payments/sbiepay/callback`, {
+        method: "POST",
+        body: new URLSearchParams({ orderRefNumber: ORDER_NUMBER, merchantOrderNo: ORDER_NUMBER }),
+      })],
+    ["a JSON notification", () =>
+      new Request(`${SITE}/api/payments/sbiepay/callback`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ orderRefNumber: ORDER_NUMBER }),
+      })],
+  ])("ignores a plaintext order reference in %s that did not decrypt", async (_label, build) => {
+    m.decryptCallback.mockResolvedValue({ decrypted: null, encField: null, note: null });
+    const row = orderStore("pending");
+
+    const res = await POST(build());
+
+    expect(redirectOf(res).params.reason).toBe("no-reference");
+    expect(m.getOrder).not.toHaveBeenCalled();
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+    expect(row.paymentStatus).toBe("pending");
+  });
+
+  it("takes the order from the decrypted payload even when the plaintext names a different one", async () => {
+    orderStore("pending");
+    m.confirmGatewayPayment.mockResolvedValue(PAID);
+
+    const res = await GET(
+      new Request(`${SITE}/api/payments/sbiepay/callback?orderRefNumber=NG-26-9999`),
+    );
+
+    expect(m.getOrder).toHaveBeenCalledTimes(1);
     expect(m.getOrder).toHaveBeenCalledWith(ORDER_NUMBER);
-    expect(redirectOf(res).path).toBe("/checkout/success");
+    expect(redirectOf(res).params.order).toBe(ORDER_NUMBER);
+  });
+
+  it("verifies with the decrypted bank references only, never plaintext ones a caller could supply", async () => {
+    orderStore("pending");
+    m.confirmGatewayPayment.mockResolvedValue(PAID);
+
+    await GET(
+      new Request(
+        `${SITE}/api/payments/sbiepay/callback?sbiOrderRefNumber=SOMEONE-ELSE&atrnNumber=EVIL&extra=1`,
+      ),
+    );
+
+    const [, fields] = m.confirmGatewayPayment.mock.calls[0];
+    expect(fields).toMatchObject({ sbiOrderRefNumber: "SBI-REF-1", atrnNumber: "ATRN-1" });
+    expect(fields).not.toHaveProperty("extra");
   });
 
   it("redirects with unavailable when online payment is switched off", async () => {

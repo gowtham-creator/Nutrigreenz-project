@@ -82,9 +82,16 @@ async function readPayload(request: Request): Promise<Record<string, string>> {
 /**
  * Which order this callback is about.
  *
- * Read from the payload only to LOOK UP the order. Several field names are
- * tried because the browser leg and the server notification do not always agree
- * on spelling, and failing to find the order would strand a real payment.
+ * Called ONLY with fields lifted out of the decrypted payload. The plaintext
+ * query string and form body are attacker-controlled — anyone can request
+ * `GET /api/payments/sbiepay/callback?orderRefNumber=NG-…` — whereas the
+ * ciphertext is GCM-authenticated, so a successful decryption is the proof that
+ * SBI produced the payload. Taking the reference from anywhere else would let a
+ * stranger point this route at any order.
+ *
+ * Several field names are tried because the browser leg and the server
+ * notification do not always agree on spelling, and failing to find the order
+ * would strand a real payment.
  */
 function orderNumberFrom(payload: Record<string, string>): string | null {
   /*
@@ -156,13 +163,20 @@ async function handle(request: Request): Promise<Response> {
    * reconcile cron picks the order up within fifteen minutes, so the money is
    * not lost, but the shopper has already been told it failed.
    *
-   * Merging the decrypted fields over the raw ones gives the lookup and the
-   * confirmation step the flat names they already expect — orderRefNumber for
-   * the order, sbiOrderRefNumber and atrnNumber for the status query — so
-   * neither has to change.
+   * Flattening the decrypted fields gives the lookup and the confirmation step
+   * the flat names they already expect — orderRefNumber for the order,
+   * sbiOrderRefNumber and atrnNumber for the status query — so neither has to
+   * change.
    */
   const decryption = await decryptCallback(payload);
-  const fields = { ...payload, ...flattenDecrypted(decryption.decrypted) };
+  /*
+   * ONLY the decrypted fields. The raw payload is not merged in: it is
+   * unauthenticated, so neither the order reference nor the bank references
+   * (sbiOrderRefNumber, atrnNumber) used for the status lookup may come from it.
+   * If decryption failed this is empty, and we stop below without touching any
+   * order — see the no-reference redirect.
+   */
+  const fields = flattenDecrypted(decryption.decrypted);
 
   const orderNumber = orderNumberFrom(fields);
 
@@ -178,7 +192,9 @@ async function handle(request: Request): Promise<Response> {
   void recordCallback({ method: request.method, orderNumber, payload, decryption });
 
   if (!orderNumber) {
-    console.warn("[sbiepay-callback] no order reference in callback");
+    // Either the payload did not decrypt (a forged or corrupted request) or it
+    // named no order. Neutral result, no lookup, no state change.
+    console.warn("[sbiepay-callback] no authenticated order reference in callback");
     return redirectTo("/checkout/failed", { reason: "no-reference" });
   }
 
