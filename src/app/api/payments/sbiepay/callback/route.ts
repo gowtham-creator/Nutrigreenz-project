@@ -189,6 +189,17 @@ async function handle(request: Request): Promise<Response> {
   }
 
   /*
+   * Online orders only. A cash-on-delivery order sits at payment_status
+   * "pending" by design, and order dispatch drops "failed" orders, so acting on
+   * a callback that names one could make a real order vanish. A genuine gateway
+   * payment is always for an order we opened a gateway session for.
+   */
+  if (order.paymentMethod !== "upi") {
+    console.warn("[sbiepay-callback] callback names a non-online order, ignoring");
+    return redirectTo("/checkout/failed", { reason: "unknown-order" });
+  }
+
+  /*
    * Already settled: stop here and send them to the receipt.
    *
    * The browser return and the server notification both land on this route, and

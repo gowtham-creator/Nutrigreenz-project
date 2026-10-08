@@ -927,8 +927,12 @@ export async function transitionOrderPayment(
     .from("orders")
     .update(patch)
     .eq("id", order.id)
+    // Gateway transitions apply to ONLINE orders only. A cash-on-delivery order
+    // sits at "pending" by design until cash is collected; order dispatch drops
+    // "failed" orders, so flipping one would make a real order vanish.
+    .eq("payment_method", "upi")
     // The guard. No row matches if another request already moved it.
-    .eq("payment_status", expected)
+    .in("payment_status", [expected])
     .select("id");
 
   if (error) return null;
@@ -964,6 +968,10 @@ export async function listStalePendingPayments(options?: {
     .from("orders")
     .select("id, order_number, total_paise, created_at")
     .eq("payment_status", "pending")
+    // Online orders only. COD orders are "pending" by design (cash is collected
+    // at the door) and have nothing to reconcile with a bank; the sweep marking
+    // one failed would drop it from dispatch (order-bundles.ts).
+    .eq("payment_method", "upi")
     .lt("created_at", new Date(now - olderThan * 60_000).toISOString())
     .gt("created_at", new Date(now - within * 3_600_000).toISOString())
     .order("created_at", { ascending: true })

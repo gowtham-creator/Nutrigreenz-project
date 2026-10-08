@@ -120,6 +120,21 @@ describe("reconcile sweep", () => {
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
   });
 
+  it("never asks the bank about, or flips, a cash-on-delivery order", async () => {
+    // Defence in depth: the list query already excludes COD, but a COD order
+    // must not be flipped even if one slipped through (it sits at "pending" by
+    // design, and a failed order is dropped from dispatch).
+    m.getOrder.mockResolvedValue({ ...ORDER, paymentMethod: "cod" });
+    m.confirmGatewayPayment.mockResolvedValue({ ok: false, reference: null, capturedPaise: null, reason: "not-found" });
+
+    const res = await GET(cronRequest());
+
+    expect(await res.json()).toMatchObject({ checked: 1, paid: 0, failed: 0 });
+    expect(m.confirmGatewayPayment).not.toHaveBeenCalled();
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
   it("leaves an order pending when the bank could not be asked", async () => {
     m.confirmGatewayPayment.mockResolvedValue({
       ok: false,

@@ -77,8 +77,10 @@ export async function GET(request: Request): Promise<Response> {
   for (const candidate of stale) {
     try {
       const order = await getOrder(candidate.id);
-      // Re-read: a callback may have settled it between the list and here.
-      if (!order || order.paymentStatus !== "pending") continue;
+      // Re-read: a callback may have settled it between the list and here. And
+      // online orders only — a COD order is "pending" by design, and flipping
+      // one to failed would drop it from dispatch.
+      if (!order || order.paymentStatus !== "pending" || order.paymentMethod !== "upi") continue;
 
       /*
        * No payload — there was never a callback. `confirmGatewayPayment` falls

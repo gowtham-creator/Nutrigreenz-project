@@ -322,6 +322,35 @@ describe("callback — payment not accepted", () => {
   });
 });
 
+describe("callback — online orders only", () => {
+  /*
+   * A COD order sits at payment_status "pending" by design (cash is collected at
+   * the door). Order-dispatch drops failed orders, so flipping one to "failed"
+   * because a callback named it would make a real order vanish from dispatch.
+   */
+  it.each([
+    ["a bank-declined payment", { ok: false, reference: "SBI-REF-1", capturedPaise: 0, reason: "failed" }],
+    ["a verified payment", PAID],
+    ["a short capture", { ok: true, reference: "SBI-REF-1", capturedPaise: 100 }],
+  ])("does not touch a cash-on-delivery order, even for %s", async (_label, outcome) => {
+    const row = orderStore("pending");
+    m.getOrder.mockImplementation(async () => ({
+      ...ORDER,
+      paymentMethod: "cod",
+      paymentStatus: row.paymentStatus,
+    }));
+    m.confirmGatewayPayment.mockResolvedValue(outcome);
+
+    const res = await POST(browserReturn());
+
+    expect(redirectOf(res).path).toBe("/checkout/failed");
+    expect(m.confirmGatewayPayment).not.toHaveBeenCalled();
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
+    expect(row.paymentStatus).toBe("pending");
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+});
+
 describe("callback — cannot identify the order", () => {
   it("redirects with no-reference when neither the ciphertext nor the plaintext names an order", async () => {
     m.decryptCallback.mockResolvedValue({ decrypted: null, encField: null, note: "no key" });
