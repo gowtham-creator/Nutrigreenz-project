@@ -109,11 +109,21 @@ function addressLine(order: OrderWithDetail): string {
   return parts.length ? parts.join(", ") : "—";
 }
 
-/** The recipient name on the order, when the snapshot carries one. */
+/**
+ * The recipient name on the order, when the snapshot carries one.
+ *
+ * Saved addresses store it as `fullName` (see the Address type). Reading only
+ * `name` left this blank on every alert; `name` is kept as a fallback for any
+ * older snapshot written in that shape.
+ */
 function customerName(order: OrderWithDetail): string {
   const a = order.addressSnapshot;
-  const name = a && typeof a.name === "string" ? a.name.trim() : "";
-  return name || "—";
+  if (!a) return "—";
+  for (const key of ["fullName", "name"]) {
+    const value = a[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "—";
 }
 
 /**
