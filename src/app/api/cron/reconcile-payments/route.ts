@@ -1,6 +1,8 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listStalePendingPayments, getOrder, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
+import { sendOrderPlacedEmail } from "@/lib/order-emails";
+import { afterResponse } from "@/lib/after-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,6 +117,19 @@ export async function GET(request: Request): Promise<Response> {
           "paid",
           result.reference ?? null,
         );
+        /*
+         * An online order's order-placed email (the customer's confirmation
+         * and the operators' new-order alert) is sent on payment, not on
+         * creation. When the sweep is what confirms the payment, the callback
+         * never ran, so nobody else will send it. Winner only, exactly as the
+         * callback does, so the two can never both email.
+         */
+        if (won) {
+          afterResponse(
+            `order ${order.orderNumber} placed notification`,
+            sendOrderPlacedEmail(order.id),
+          );
+        }
         outcomes.push({
           orderNumber: order.orderNumber,
           result: "paid",
