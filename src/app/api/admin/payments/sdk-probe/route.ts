@@ -52,6 +52,48 @@ export async function GET(request: Request): Promise<Response> {
 
   const started = Date.now();
   const ref = `SDKPROBE${started}`;
+
+  /*
+   * ?client=ours runs order/create through OUR client (the one checkout uses),
+   * which is known to authenticate on live. Used to test the payment page
+   * itself: the link SBI returns, with or without expiry.
+   */
+  if (params.get("client") === "ours" && action === "create") {
+    try {
+      const { createSbiepayOrder } = await import("@/lib/sbiepay-client");
+      const created = (await createSbiepayOrder({
+        orderAmount: 1,
+        currencyCode: "INR",
+        orderRefNumber: ref,
+        returnUrl: "https://nutrigreenz.farm/api/payments/sbiepay/callback",
+        ...(expiry === undefined || Number.isNaN(expiry) ? {} : { expiry }),
+      } as Parameters<typeof createSbiepayOrder>[0])) as unknown as Record<string, unknown>;
+      console.info(`sdk-probe: client=ours action=create outcome=success expiry=${expiry ?? "omitted"}`);
+      return Response.json({
+        ok: true,
+        ...base,
+        client: "ours",
+        outcome: "success",
+        sentExpiry: expiry ?? "omitted",
+        sbiStatus: created.status,
+        sbiExpiry: created.expiry,
+        sbiOrderRefNumber: created.sbiOrderRefNumber,
+        transactionUrl: typeof created.transactionUrl === "string" ? created.transactionUrl : undefined,
+        elapsedMs: Date.now() - started,
+      });
+    } catch (err) {
+      const e = err as { code?: unknown; message?: unknown };
+      return Response.json({
+        ok: false,
+        ...base,
+        client: "ours",
+        outcome: "sbi-error",
+        sbiErrorCode: e?.code !== undefined ? String(e.code) : undefined,
+        sbiErrorMessage: typeof e?.message === "string" ? redact(e.message).slice(0, 300) : undefined,
+        elapsedMs: Date.now() - started,
+      });
+    }
+  }
   try {
     const [{ SBIEPayClient }, { HttpsProxyAgent }] = await Promise.all([
       import("epay_nodejs_sdk"),
