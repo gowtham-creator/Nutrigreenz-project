@@ -33,9 +33,15 @@ export interface FakeResult {
 
 export type Responder = (op: FakeOp) => FakeResult | undefined;
 
+/** Decides the outcome of an `rpc()` call; return an error to make it fail. */
+export type RpcResponder = (
+  name: string,
+  args: unknown,
+) => { error: { message: string; code?: string } } | undefined;
+
 type Chain = Record<string, (...args: unknown[]) => unknown>;
 
-export function createFakeSupabase(respond: Responder) {
+export function createFakeSupabase(respond: Responder, respondRpc?: RpcResponder) {
   const ops: FakeOp[] = [];
   const rpcCalls: { name: string; args: unknown }[] = [];
 
@@ -94,7 +100,7 @@ export function createFakeSupabase(respond: Responder) {
     from,
     rpc: (name: string, args: unknown) => {
       rpcCalls.push({ name, args });
-      return Promise.resolve({ data: null, error: null });
+      return Promise.resolve({ data: null, error: respondRpc?.(name, args)?.error ?? null });
     },
   };
 

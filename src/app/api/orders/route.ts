@@ -15,6 +15,7 @@ import { getCustomerSession } from "@/lib/customer-session";
 import { getCustomerById } from "@/lib/customer-identity";
 import {
   createOrder,
+  failUnpaidOnlineOrder,
   listOrdersForCustomer,
   recordGatewayHandoff,
   OutOfStockError,
@@ -196,17 +197,33 @@ export async function POST(request: Request): Promise<Response> {
      * marks it paid, because only a verified server-side callback may do that.
      */
     const wantsOnline = order.paymentMethod === "upi";
-    const payment =
-      wantsOnline && isOnlinePaymentAvailable()
-        ? await beginPayment({
-            id: order.id,
-            orderNumber: order.orderNumber,
-            totalPaise: order.totalPaise,
-            currency: order.currency,
-            customerEmail: order.userEmail,
-            customerPhone: order.userPhone,
-          })
-        : null;
+    let payment: Awaited<ReturnType<typeof beginPayment>> = null;
+    if (wantsOnline) {
+      try {
+        payment = isOnlinePaymentAvailable()
+          ? await beginPayment({
+              id: order.id,
+              orderNumber: order.orderNumber,
+              totalPaise: order.totalPaise,
+              currency: order.currency,
+              customerEmail: order.userEmail,
+              customerPhone: order.userPhone,
+            })
+          : null;
+        // An online order that got no payment session cannot be paid.
+        if (!payment) throw new Error("payment-handoff-unavailable");
+      } catch (err) {
+        /*
+         * The order exists and is already holding stock, a coupon use and the
+         * customer's burned points, and it can never be paid (live today: SBI
+         * error 905). Fail it and give those back before reporting the error,
+         * or each failed attempt leaks stock and costs the customer points for
+         * an order that was never placed. failUnpaidOnlineOrder never throws.
+         */
+        await failUnpaidOnlineOrder(order.id);
+        throw err;
+      }
+    }
 
     /*
      * Remember SBI's reference for this order so the callback and the reconcile

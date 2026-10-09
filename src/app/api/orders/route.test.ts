@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   getCustomerById: vi.fn(),
   createOrder: vi.fn(),
   recordGatewayHandoff: vi.fn(),
+  failUnpaidOnlineOrder: vi.fn(),
   beginPayment: vi.fn(),
   isOnlinePaymentAvailable: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock("@/lib/orders", () => {
   return {
     createOrder: m.createOrder,
     recordGatewayHandoff: m.recordGatewayHandoff,
+    failUnpaidOnlineOrder: m.failUnpaidOnlineOrder,
     listOrdersForCustomer: vi.fn(),
     OutOfStockError,
   };
@@ -91,6 +93,7 @@ beforeEach(() => {
   }));
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
   m.recordGatewayHandoff.mockResolvedValue(true);
+  m.failUnpaidOnlineOrder.mockResolvedValue({ id: "ord-1" });
   consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -177,6 +180,53 @@ describe("POST /api/orders — online (UPI) order", () => {
     // No "order received" mail for a payment that never opened.
     expect(m.afterResponse).not.toHaveBeenCalled();
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  /*
+   * createOrder has already reserved stock, recorded the coupon use and burned
+   * the redeemed points by the time the gateway is asked. A handoff that fails
+   * (live today: SBI error 905) would otherwise leave an order nobody can pay
+   * and a customer whose points and coupon are gone.
+   */
+  it("fails the order and releases its holds when the gateway refuses the handoff", async () => {
+    m.beginPayment.mockRejectedValue(
+      new SbiepayError("order/create (mId=1000605): Invalid request", "905", 200),
+    );
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(500);
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledTimes(1);
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1");
+    expect(m.recordGatewayHandoff).not.toHaveBeenCalled();
+  });
+
+  it("treats a gateway that returns no session as a failed handoff too", async () => {
+    // isOnlinePaymentAvailable() can flip between the guard and the handoff.
+    m.beginPayment.mockResolvedValue(null);
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ ok: false, error: "create-failed" });
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("does not fail the order when the handoff succeeds", async () => {
+    m.beginPayment.mockResolvedValue({ action: "https://sbi.example/pay/abc", fields: {} });
+
+    await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(m.failUnpaidOnlineOrder).not.toHaveBeenCalled();
+  });
+
+  it("does not roll back when order CREATION fails (nothing was persisted to release)", async () => {
+    m.createOrder.mockRejectedValue(new Error("db down"));
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(500);
+    expect(m.failUnpaidOnlineOrder).not.toHaveBeenCalled();
   });
 
   it("logs one line naming the error code, HTTP status and failing step — never the error object", async () => {

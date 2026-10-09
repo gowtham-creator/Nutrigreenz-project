@@ -26,6 +26,8 @@ import {
   recordCouponUse,
   redeemPoints,
   earnPointsForOrder,
+  removeCouponUsesForOrder,
+  releaseRedeemedPoints,
   CouponInvalidError,
 } from "@/lib/rewards";
 import {
@@ -1001,6 +1003,127 @@ export async function recordGatewayHandoff(
   } catch {
     console.warn(`[orders] could not save the gateway reference for ${idOrNumber}`);
     return false;
+  }
+}
+
+/* ── releasing what an unpaid online order holds ──────────────────────── */
+
+/**
+ * The stock lines an order reserved, in the shape the stock RPCs take. Product
+ * -only lines (no variant) never reserved anything and are left out.
+ */
+async function heldStockLines(orderId: string): Promise<{ variant_id: string; qty: number }[]> {
+  const { data } = await supabaseAdmin()
+    .from("order_items")
+    .select("variant_id, qty")
+    .eq("order_id", orderId);
+  return ((data as { variant_id: string | null; qty: number }[] | null) ?? [])
+    .filter((l): l is { variant_id: string; qty: number } => Boolean(l.variant_id) && l.qty > 0)
+    .map((l) => ({ variant_id: l.variant_id, qty: l.qty }));
+}
+
+/**
+ * Give back everything a FAILED online order was holding: its stock reservation,
+ * its coupon use and the loyalty points it burned.
+ *
+ * ── Why this exists ───────────────────────────────────────────────────────
+ *
+ * {@link createOrder} takes all three up front, before the customer has paid
+ * anything. An online order that then never gets paid - the gateway refused the
+ * handoff, the customer abandoned, the bank declined - would otherwise keep
+ * stock off the shelf, keep the coupon spent and keep the points gone, for an
+ * order nobody will ever fulfil.
+ *
+ * ── Once only ─────────────────────────────────────────────────────────────
+ *
+ * Releasing stock is NOT idempotent (it subtracts from `reserved`), so it must
+ * happen exactly once. It is gated on a compare-and-set of
+ * `orders.holds_released_at` - the same pattern as the payment transition - so
+ * two callers cannot both release. The marker is also what lets a later
+ * recovery to paid know that the holds need taking again
+ * ({@link reapplyOrderHolds}).
+ *
+ * Only a failed online order qualifies; the claim is scoped to
+ * `payment_status = 'failed'` and `payment_method = 'upi'`.
+ *
+ * Needs migration 20261008100000_order_holds_released.sql. Without it the claim
+ * errors, nothing is released, and this returns false - the same behaviour as
+ * before this existed - rather than risk a release it cannot mark.
+ *
+ * Best-effort after the claim: each of the three is attempted independently, so
+ * one failing does not strand the others.
+ *
+ * @returns true if this call released the holds, false if they were already
+ *          released, the order does not qualify, or the marker is unavailable.
+ */
+export async function releaseOrderHolds(orderId: string): Promise<boolean> {
+  const db = supabaseAdmin();
+  const { data: claimed, error } = await db
+    .from("orders")
+    .update({ holds_released_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .eq("payment_method", "upi")
+    .eq("payment_status", "failed")
+    .is("holds_released_at", null)
+    .select("id, customer_id");
+  if (error) {
+    console.warn(`[orders] could not release holds for ${orderId}: ${error.message}`);
+    return false;
+  }
+  const row = (claimed as { id: string; customer_id: string | null }[] | null)?.[0];
+  if (!row) return false;
+
+  try {
+    const lines = await heldStockLines(orderId);
+    if (lines.length > 0) {
+      const { error: rpcErr } = await db.rpc("release_variant_stock", { p_items: lines });
+      if (rpcErr) {
+        console.error(`[orders] stock release failed for ${orderId}: ${rpcErr.message}`);
+      }
+    }
+  } catch (err) {
+    console.error(`[orders] stock release failed for ${orderId}:`, err);
+  }
+
+  try {
+    await removeCouponUsesForOrder(orderId);
+  } catch (err) {
+    console.error(`[orders] coupon release failed for ${orderId}:`, err);
+  }
+
+  if (row.customer_id) {
+    try {
+      await releaseRedeemedPoints(row.customer_id, orderId);
+    } catch (err) {
+      console.error(`[orders] points release failed for ${orderId}:`, err);
+    }
+  }
+  return true;
+}
+
+/**
+ * Mark an unpaid online order failed and give back what it held.
+ *
+ * `pending → failed` goes through {@link transitionOrderPayment}, so only the
+ * caller that actually wins the transition releases anything - a request that
+ * loses a race to a payment confirmation releases nothing. Never throws: this
+ * runs in error paths, where a second failure must not mask the first.
+ *
+ * Not used for a short capture ("amount-mismatch"): there money WAS taken, the
+ * order is left for a human, and its stock stays held while they decide.
+ */
+export async function failUnpaidOnlineOrder(
+  idOrNumber: string,
+  paymentRef?: string | null,
+): Promise<OrderWithDetail | null> {
+  try {
+    const won = await transitionOrderPayment(idOrNumber, "pending", "failed", paymentRef);
+    if (!won) return null;
+    await releaseOrderHolds(won.id);
+    return won;
+  } catch (err) {
+    console.error(`[orders] could not fail order ${idOrNumber}:`, err);
+    return null;
   }
 }
 
