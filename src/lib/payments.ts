@@ -448,10 +448,13 @@ export async function confirmGatewayPayment(
     return { ok: true, reference, capturedPaise };
   } catch (err) {
     /*
-     * An unreachable gateway is NOT a failed payment. Returning ok:false marks
-     * the order failed, which is the safe direction: money that was taken shows
-     * up in reconciliation and can be corrected, whereas an order marked paid
-     * on a network error ships goods for nothing.
+     * An unreachable gateway is NOT a failed payment. ok:false here means "could
+     * not establish the outcome", and `reason` is the error's own message - not
+     * one of the bank's status words - so the callback and the sweep, which only
+     * close an order on those words, leave it pending and try again. Marking an
+     * order failed on a network error would write off money that may well have
+     * been taken. The message can name the merchant id, so it is for logs only
+     * and is never put in a customer-facing URL.
      */
     return {
       ok: false,
