@@ -30,7 +30,11 @@ export async function GET(request: Request): Promise<Response> {
   const denied = await requireApiPermission("orders");
   if (denied) return denied;
 
-  const action = new URL(request.url).searchParams.get("action") === "create" ? "create" : "search";
+  const params = new URL(request.url).searchParams;
+  const action = params.get("action") === "create" ? "create" : "search";
+  // ?expiry=none omits the field; ?expiry=<n> sends that number (default 25).
+  const expiryParam = params.get("expiry");
+  const expiry = expiryParam === "none" ? undefined : Number(expiryParam ?? 25);
   const env = sbiepayEnv();
   const apiKey = sbiepayKeyId();
   const apiSecret = sbiepayKeySecret();
@@ -74,7 +78,7 @@ export async function GET(request: Request): Promise<Response> {
             currencyCode: "INR",
             orderRefNumber: ref,
             returnUrl: "https://nutrigreenz.farm/api/payments/sbiepay/callback",
-            expiry: 25,
+            ...(expiry === undefined || Number.isNaN(expiry) ? {} : { expiry }),
           })
         : await client.order.search({ orderAmount: 1, orderRefNumber: ref });
 
@@ -90,6 +94,9 @@ export async function GET(request: Request): Promise<Response> {
       sbiErrorCode: sbi?.code,
       sbiErrorMessage: sbi?.message,
       transactionUrlPresent: /transactionUrl/.test(text),
+      // A ₹1 payment link for an SDKPROBE order, admin-only: returned so the
+      // link itself can be opened to see whether SBI's payment page loads.
+      ...(action === "create" ? createDetails(result, expiry) : {}),
       raw: sbi ? redact(text).slice(0, 800) : undefined,
       elapsedMs: Date.now() - started,
     });
@@ -136,4 +143,17 @@ function errorText(err: unknown): string {
 /** Drop anything URL- or credential-shaped before it leaves the server. */
 function redact(text: string): string {
   return text.replace(/https?:\/\/\S+/g, "[url]").replace(/[A-Za-z0-9+/]{30,}={0,2}/g, "[redacted]");
+}
+
+/** The non-secret parts of an order/create answer, for diagnosing the payment page. */
+function createDetails(result: unknown, sentExpiry: number | undefined) {
+  const r = (result ?? {}) as Record<string, unknown>;
+  const order = (Array.isArray(r.data) ? r.data[0] : r.data ?? r) as Record<string, unknown> | undefined;
+  return {
+    sentExpiry: sentExpiry ?? "omitted",
+    sbiStatus: order?.status,
+    sbiExpiry: order?.expiry,
+    sbiOrderRefNumber: order?.sbiOrderRefNumber,
+    transactionUrl: typeof order?.transactionUrl === "string" ? order.transactionUrl : undefined,
+  };
 }
