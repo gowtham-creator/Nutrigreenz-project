@@ -13,6 +13,7 @@ const m = vi.hoisted(() => ({
   getOrder: vi.fn(),
   transitionOrderPayment: vi.fn(),
   onOnlineOrderPaid: vi.fn(),
+  failUnpaidOnlineOrder: vi.fn(),
   confirmGatewayPayment: vi.fn(),
   isOnlinePaymentAvailable: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock("@/lib/orders", () => ({
   getOrder: m.getOrder,
   transitionOrderPayment: m.transitionOrderPayment,
   onOnlineOrderPaid: m.onOnlineOrderPaid,
+  failUnpaidOnlineOrder: m.failUnpaidOnlineOrder,
 }));
 vi.mock("@/lib/payments", () => ({
   confirmGatewayPayment: m.confirmGatewayPayment,
@@ -65,6 +67,7 @@ beforeEach(() => {
   m.getOrder.mockResolvedValue(ORDER);
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
   m.onOnlineOrderPaid.mockResolvedValue(undefined);
+  m.failUnpaidOnlineOrder.mockResolvedValue({ ...ORDER, paymentStatus: "failed" });
 });
 
 describe("reconcile sweep", () => {
@@ -140,6 +143,8 @@ describe("reconcile sweep", () => {
     expect(await res.json()).toMatchObject({ failed: 1 });
     expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", "SBI-REF-1");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+    // Money WAS taken: left for a human with the stock still held.
+    expect(m.failUnpaidOnlineOrder).not.toHaveBeenCalled();
   });
 
   it("never asks the bank about, or flips, a cash-on-delivery order", async () => {
@@ -183,8 +188,26 @@ describe("reconcile sweep", () => {
     const res = await GET(cronRequest());
 
     expect(await res.json()).toMatchObject({ failed: 1 });
-    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", null);
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1", null);
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
   });
+
+  it.each(["failed", "cancel", "expired", "attempt_fail"])(
+    "fails the order and releases its holds on the bank's final word %s",
+    async (reason) => {
+      m.confirmGatewayPayment.mockResolvedValue({
+        ok: false,
+        reference: "SBI-REF-1",
+        capturedPaise: 0,
+        reason,
+      });
+
+      const res = await GET(cronRequest());
+
+      expect(await res.json()).toMatchObject({ failed: 1 });
+      expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1", "SBI-REF-1");
+    },
+  );
 
   it("does NOT close a young order on a date-window miss - the window can truncate", async () => {
     m.confirmGatewayPayment.mockResolvedValue({
@@ -218,7 +241,8 @@ describe("reconcile sweep", () => {
     const res = await GET(cronRequest());
 
     expect(await res.json()).toMatchObject({ failed: 1 });
-    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", null);
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1", null);
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
   });
 
   it("leaves an order pending when the bank could not be asked", async () => {

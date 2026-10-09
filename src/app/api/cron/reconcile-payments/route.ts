@@ -1,6 +1,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
   listStalePendingPayments,
+  failUnpaidOnlineOrder,
   getOrder,
   onOnlineOrderPaid,
   transitionOrderPayment,
@@ -179,7 +180,9 @@ export async function GET(request: Request): Promise<Response> {
       const windowMissIsFinal =
         result.reason === "not-found-in-window" && ageMs >= WINDOW_MISS_FINAL_AFTER_MS;
       if ((result.reason && terminal.has(result.reason)) || windowMissIsFinal) {
-        await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
+        // Fails the order AND gives back the stock, coupon use and points it was
+        // holding (only if this run wins the transition).
+        await failUnpaidOnlineOrder(order.id, result.reference ?? null);
         outcomes.push({ orderNumber: order.orderNumber, result: "failed", detail: result.reason });
       } else {
         outcomes.push({

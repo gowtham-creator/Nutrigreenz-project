@@ -1,6 +1,11 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { recordCallback, decryptCallback, flattenDecrypted } from "@/lib/sbiepay-callback-log";
-import { getOrder, onOnlineOrderPaid, transitionOrderPayment } from "@/lib/orders";
+import {
+  failUnpaidOnlineOrder,
+  getOrder,
+  onOnlineOrderPaid,
+  transitionOrderPayment,
+} from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
@@ -260,8 +265,10 @@ async function handle(request: Request): Promise<Response> {
      * Only from pending. A payment already confirmed must never be walked back
      * by a late-arriving failure notification for the same order.
      */
-    if (result.reason && BANK_DECLINED.has(result.reason)) {
-      await transitionOrderPayment(order.id, "pending", "failed", result.reference ?? null);
+    if (order.paymentStatus === "pending" && result.reason && BANK_DECLINED.has(result.reason)) {
+      // Fails the order AND gives back the stock, coupon use and points it was
+      // holding (only if this request wins the transition).
+      await failUnpaidOnlineOrder(order.id, result.reference ?? null);
     }
     return redirectTo("/checkout/failed", {
       order: order.orderNumber,

@@ -14,6 +14,7 @@ const m = vi.hoisted(() => ({
   getOrder: vi.fn(),
   transitionOrderPayment: vi.fn(),
   onOnlineOrderPaid: vi.fn(),
+  failUnpaidOnlineOrder: vi.fn(),
   decryptCallback: vi.fn(),
   recordCallback: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock("@/lib/orders", () => ({
   getOrder: m.getOrder,
   transitionOrderPayment: m.transitionOrderPayment,
   onOnlineOrderPaid: m.onOnlineOrderPaid,
+  failUnpaidOnlineOrder: m.failUnpaidOnlineOrder,
 }));
 vi.mock("@/lib/payments", () => ({
   confirmGatewayPayment: m.confirmGatewayPayment,
@@ -86,6 +88,12 @@ function orderStore(initial: "pending" | "paid" | "failed" = "pending") {
       return { ...ORDER, paymentStatus: next };
     },
   );
+  // pending -> failed AND release the order's holds; same compare-and-set.
+  m.failUnpaidOnlineOrder.mockImplementation(async () => {
+    if (row.paymentStatus !== "pending") return null;
+    row.paymentStatus = "failed";
+    return { ...ORDER, paymentStatus: "failed" };
+  });
   return row;
 }
 
@@ -319,6 +327,8 @@ describe("callback — recovering a payment that was marked failed", () => {
     expect(redirectOf(res).path).toBe("/checkout/failed");
     expect(row.paymentStatus).toBe("failed");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+    // Already failed (and released): nothing more to fail or release.
+    expect(m.failUnpaidOnlineOrder).not.toHaveBeenCalled();
   });
 
   it("does not recover a failed order whose captured amount is short", async () => {
@@ -349,8 +359,10 @@ describe("callback — payment not accepted", () => {
       path: "/checkout/failed",
       params: { order: ORDER_NUMBER, reason: "failed" },
     });
-    expect(m.transitionOrderPayment).toHaveBeenCalledTimes(1);
-    expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", "SBI-REF-1");
+    // Failed AND its stock / coupon / points released, by the winner only.
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledTimes(1);
+    expect(m.failUnpaidOnlineOrder).toHaveBeenCalledWith("ord-1", "SBI-REF-1");
+    expect(m.transitionOrderPayment).not.toHaveBeenCalled();
     expect(row.paymentStatus).toBe("failed");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
     expect(m.afterResponse).not.toHaveBeenCalled();
@@ -421,6 +433,8 @@ describe("callback — payment not accepted", () => {
     expect(m.transitionOrderPayment).toHaveBeenCalledWith("ord-1", "pending", "failed", "SBI-REF-1");
     expect(row.paymentStatus).toBe("failed");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+    // Money WAS taken: the order is left for a human with its stock still held.
+    expect(m.failUnpaidOnlineOrder).not.toHaveBeenCalled();
   });
 
   it("does not walk back a paid order on a late failure notification", async () => {
