@@ -90,6 +90,7 @@ export async function GET(request: Request): Promise<Response> {
       sbiErrorCode: sbi?.code,
       sbiErrorMessage: sbi?.message,
       transactionUrlPresent: /transactionUrl/.test(text),
+      raw: sbi ? redact(text).slice(0, 800) : undefined,
       elapsedMs: Date.now() - started,
     });
   } catch (err) {
@@ -102,18 +103,25 @@ export async function GET(request: Request): Promise<Response> {
       ...base,
       outcome,
       sbiErrorCode: sbi?.code,
-      sbiErrorMessage: sbi?.message ?? (sbi ? undefined : redact(text).slice(0, 200)),
+      sbiErrorMessage: sbi?.message,
+      raw: redact(text).slice(0, 800),
       elapsedMs: Date.now() - started,
     });
   }
 }
 
-/** The SDK wraps SBI's errors as JSON strings inside its own exception. */
+/**
+ * The SDK wraps SBI's errors as JSON inside its own exception, sometimes two
+ * levels deep (its catch-all "400" around SBI's own list). Unescape fully and
+ * take the LAST errorCode/errorMessage pair: that is SBI's own, innermost one.
+ */
 function parseSbiError(text: string): { code: string; message: string } | null {
-  const m = /"errorCode"\s*:\s*"?([^",}\\]+)"?[^}]*?"errorMessage"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(
-    text.replace(/\\"/g, '"'),
-  );
-  return m ? { code: m[1], message: m[2] } : null;
+  let flat = text;
+  for (let i = 0; i < 4; i++) flat = flat.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, " ");
+  const re = /"errorCode"\s*:\s*"?([^",}]+)"?\s*,\s*"errorMessage"\s*:\s*"([^"]*)"/g;
+  let last: { code: string; message: string } | null = null;
+  for (let m = re.exec(flat); m; m = re.exec(flat)) last = { code: m[1], message: m[2] };
+  return last;
 }
 
 function errorText(err: unknown): string {
