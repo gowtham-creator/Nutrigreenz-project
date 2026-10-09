@@ -897,6 +897,9 @@ export async function advanceOrderStatus(
  * the next person to reach for the shorter name. Use the transition below.
  */
 
+/** The online payment provider recorded on an order that went through the gateway. */
+export const GATEWAY_PROVIDER = "sbiepay";
+
 /**
  * Move an order's payment status only if it is still what we think it is.
  *
@@ -951,6 +954,15 @@ export async function transitionOrderPayment(
   // status lookup that returned nothing must not erase the sbiOrderRefNumber
   // saved at handoff.
   if (paymentRef) patch.payment_ref = paymentRef;
+  if (next === "paid") {
+    // When the money was actually confirmed - distinct from updated_at, which
+    // moves for any edit, and what a settlement window is reconciled against.
+    patch.paid_at = new Date().toISOString();
+    // These transitions are driven only by the gateway, so the order was settled
+    // by it. Without this the column kept its default 'none' and the receipt
+    // read "Paid · none".
+    patch.payment_provider = GATEWAY_PROVIDER;
+  }
 
   const { data, error } = await supabaseAdmin()
     .from("orders")
@@ -969,9 +981,6 @@ export async function transitionOrderPayment(
 
   return getOrder(order.id);
 }
-
-/** The online payment provider recorded on an order that went through the gateway. */
-export const GATEWAY_PROVIDER = "sbiepay";
 
 /**
  * Remember SBI's own reference for an order at the moment it is handed to the

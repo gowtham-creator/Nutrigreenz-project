@@ -244,6 +244,41 @@ describe("transitionOrderPayment — the stored gateway reference", () => {
   });
 });
 
+describe("transitionOrderPayment — settling a payment", () => {
+  const settle = async (next: "paid" | "failed", from: "pending" | "failed" = "pending") => {
+    const fake = installDb((op) =>
+      op.table === "orders" && op.action === "update" ? { data: [{ id: "ord-1" }] } : undefined,
+    );
+    await transitionOrderPayment("ord-1", from, next, "SBI-REF-1");
+    return updatesTo(fake.ops, "orders")[0].payload as Record<string, unknown>;
+  };
+
+  it("stamps paid_at when the gateway confirms payment", async () => {
+    const before = Date.now();
+
+    const patch = await settle("paid");
+
+    expect(patch.payment_status).toBe("paid");
+    expect(Date.parse(String(patch.paid_at))).toBeGreaterThanOrEqual(before - 1000);
+    expect(Date.parse(String(patch.paid_at))).toBeLessThanOrEqual(Date.now() + 1000);
+  });
+
+  it("stamps paid_at when a failed order is recovered to paid", async () => {
+    expect((await settle("paid", "failed")).paid_at).toEqual(expect.any(String));
+  });
+
+  it("records the gateway as the provider of an order it settled, so receipts do not say 'none'", async () => {
+    expect((await settle("paid")).payment_provider).toBe("sbiepay");
+  });
+
+  it("does not stamp paid_at, or touch the provider, when the order fails", async () => {
+    const patch = await settle("failed");
+
+    expect(patch).not.toHaveProperty("paid_at");
+    expect(patch).not.toHaveProperty("payment_provider");
+  });
+});
+
 describe("recordGatewayHandoff", () => {
   it("saves SBI's order reference on the still-pending online order", async () => {
     const fake = installDb((op) =>

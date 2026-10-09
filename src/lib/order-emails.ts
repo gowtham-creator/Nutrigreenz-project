@@ -16,6 +16,7 @@ import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
 import { billingAttachments } from "@/lib/invoice-pdf";
 import { gstFor } from "@/lib/gst";
+import { paymentMethodLabel } from "@/lib/payment-label";
 import { sendAdminOrderAlert } from "@/lib/admin-order-alerts";
 
 /**
@@ -261,7 +262,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               ${meta("Order number", escapeHtml(order.orderNumber))}
               ${paid ? meta("Receipt number", `${escapeHtml(order.orderNumber)}-R`) : ""}
-              ${meta("Payment", paid ? `Paid${order.paymentProvider ? ` · ${escapeHtml(order.paymentProvider)}` : ""}` : "Pending")}
+              ${meta("Payment", paid ? `Paid · ${escapeHtml(paymentMethodLabel(order))}` : "Pending")}
               ${meta("Status", escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1)))}
             </table>
           </td>

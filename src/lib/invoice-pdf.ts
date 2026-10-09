@@ -4,6 +4,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { OrderWithDetail } from "@/lib/orders";
 import { NOTO_SANS_REGULAR_B64, NOTO_SANS_BOLD_B64 } from "@/lib/invoice-fonts";
 import { gstFor } from "@/lib/gst";
+import { paymentMethodLabel } from "@/lib/payment-label";
 
 /**
  * Server-side INVOICE and RECEIPT PDFs.
@@ -228,8 +229,8 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     ? [
         ["Invoice number", order.orderNumber],
         ["Receipt number", `${order.orderNumber}-R`],
-        ["Date paid", longDate(order.placedAt ?? order.createdAt)],
-        ["Payment method", order.paymentProvider ? order.paymentProvider.toUpperCase() : "Online"],
+        ["Date paid", longDate(order.paidAt ?? order.placedAt ?? order.createdAt)],
+        ["Payment method", paymentMethodLabel(order)],
       ]
     : [
         ["Invoice number", order.orderNumber],
