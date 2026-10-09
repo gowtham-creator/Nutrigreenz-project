@@ -7,7 +7,7 @@
  * customer is sent to the bank, sent to the receipt, or left on checkout with
  * their cart intact.
  */
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -186,7 +186,7 @@ vi.mock("@/lib/rewards-client", async (importOriginal) => ({
 
 import CheckoutPage from "./page";
 
-const GATEWAY_URL = "https://sbi.example/pay/abc";
+const GATEWAY_URL = "https://sbiepay.sbi.bank.in/secure/AggregatorHostedListener";
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -248,6 +248,8 @@ describe("checkout — online payment (UPI)", () => {
     expect(m.toastError).not.toHaveBeenCalled();
     // The receipt is keyed by the server's order number, ready for the success page.
     expect(m.saveReceipt).toHaveBeenCalledWith(expect.objectContaining({ id: "NG-26-1001" }));
+    // Not paid yet: if the bank sends them back, checkout must still be filled in.
+    expect(m.clearCheckoutDraft).not.toHaveBeenCalled();
   });
 
   it("POSTs a hidden form when the gateway hands back form fields", async () => {
@@ -316,6 +318,103 @@ describe("checkout — online payment (UPI)", () => {
   });
 });
 
+describe("checkout — only SBIePay may receive the customer", () => {
+  it.each([
+    "https://sbiepay.sbi.bank.in/secure/AggregatorHostedListener",
+    "https://integration.sbiepay.sbiuat.bank.in/secure/AggregatorHostedListener",
+    "https://pay.sbi.bank.in/listener",
+  ])("follows %s", async (action) => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, { ok: true, orderNumber: "NG-26-1001", payment: { action, fields: {} } }),
+    );
+
+    await placeOrderWith("upi");
+
+    await waitFor(() => expect(m.navigate).toHaveBeenCalledWith(action));
+    expect(m.toastError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a non-SBI host", "https://evil.example/pay"],
+    ["plain http", "http://sbiepay.sbi.bank.in/secure/AggregatorHostedListener"],
+    ["a look-alike host", "https://sbiepay.sbi.bank.in.evil.example/pay"],
+    ["a suffix that is not a subdomain", "https://notsbi.bank.in/pay"],
+    ["a javascript: URL", "javascript:alert(1)"],
+    ["a relative path", "/checkout/success?order=NG-26-1001"],
+  ])("refuses %s and shows the payment error instead", async (_label, action) => {
+    const submit = vi
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(function (this: HTMLFormElement) {});
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, {
+        ok: true,
+        orderNumber: "NG-26-1001",
+        payment: { action, fields: { encData: "abc" } },
+      }),
+    );
+
+    const pay = await placeOrderWith("upi");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(
+        expect.stringMatching(/^We couldn't open the payment page/),
+      ),
+    );
+    expect(submit).not.toHaveBeenCalled();
+    expect(m.navigate).not.toHaveBeenCalled();
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+  });
+});
+
+describe("checkout — coming back from the bank's page", () => {
+  function pageshow(persisted: boolean) {
+    const event = new Event("pageshow");
+    Object.defineProperty(event, "persisted", { value: persisted });
+    window.dispatchEvent(event);
+  }
+
+  it("re-enables the pay button when the page is restored from the back/forward cache", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, {
+        ok: true,
+        orderNumber: "NG-26-1001",
+        payment: { action: GATEWAY_URL, fields: {} },
+      }),
+    );
+
+    await placeOrderWith("upi");
+    await waitFor(() => expect(m.navigate).toHaveBeenCalledWith(GATEWAY_URL));
+    // Frozen mid-submit, exactly as the customer left it.
+    expect(
+      (screen.getByRole("button", { name: /Placing order/ }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    act(() => pageshow(true));
+
+    const pay = await screen.findByRole("button", { name: /^Pay / });
+    expect((pay as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("ignores an ordinary (non-restored) pageshow", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, {
+        ok: true,
+        orderNumber: "NG-26-1001",
+        payment: { action: GATEWAY_URL, fields: {} },
+      }),
+    );
+
+    await placeOrderWith("upi");
+    await waitFor(() => expect(m.navigate).toHaveBeenCalledWith(GATEWAY_URL));
+
+    act(() => pageshow(false));
+
+    expect(screen.getByRole("button", { name: /Placing order/ })).toBeTruthy();
+  });
+});
+
 describe("checkout — Cash on Delivery", () => {
   it("clears the cart and goes to the success page with the server's order number", async () => {
     fetchMock.mockResolvedValue(
@@ -327,6 +426,8 @@ describe("checkout — Cash on Delivery", () => {
     await waitFor(() => expect(m.push).toHaveBeenCalledWith("/checkout/success?order=NG-26-1001"));
     expect(postedBody().paymentMethod).toBe("cod");
     expect(m.clear).toHaveBeenCalledTimes(1);
+    // A COD order is placed the moment the server creates it.
+    expect(m.clearCheckoutDraft).toHaveBeenCalledTimes(1);
     expect(m.navigate).not.toHaveBeenCalled();
     expect(m.toastError).not.toHaveBeenCalled();
   });

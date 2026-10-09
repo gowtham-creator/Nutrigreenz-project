@@ -49,6 +49,29 @@ const CHECKOUT_STEPS = [
   { label: "Review", icon: "shield-check-bold" },
 ] as const;
 
+/**
+ * SBIePay's hosts: live and UAT, and subdomains of either bank domain.
+ *
+ * The payment URL comes from our own API, but it is where the customer is
+ * about to type card or UPI details, so it is checked rather than trusted. A
+ * misconfigured base URL, or anything that tampers with the response, must
+ * not be able to send them to a look-alike page.
+ */
+const SBIEPAY_HOSTS = new Set(["sbiepay.sbi.bank.in", "integration.sbiepay.sbiuat.bank.in"]);
+const SBIEPAY_PARENT_DOMAINS = [".sbi.bank.in", ".sbiuat.bank.in"];
+
+function isSbiePayUrl(action: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(action);
+  } catch {
+    return false; // relative or malformed
+  }
+  if (url.protocol !== "https:" || url.username || url.password) return false;
+  const host = url.hostname.toLowerCase();
+  return SBIEPAY_HOSTS.has(host) || SBIEPAY_PARENT_DOMAINS.some((d) => host.endsWith(d));
+}
+
 /** The parts of a rejected order POST that checkout can act on. */
 async function readRejection(
   res: Response,
@@ -212,6 +235,18 @@ export default function CheckoutPage() {
   // Wizard position for the mobile/tablet stepped flow (ignored on desktop,
   // where the whole form renders at once). 0 = Address … 4 = Review.
   const [step, setStep] = useState(0);
+
+  // Pressing Back on the bank's page can restore this page from the
+  // back/forward cache exactly as it was left: mid-submit, button disabled on
+  // "Placing order…", with nothing in flight any more. Without this the
+  // customer is stuck until they reload.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) setPlacing(false);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   // Gate: require sign-in BEFORE checkout. If auth has settled and the visitor
   // isn't signed in, bounce them to /auth and bring them right back here.
@@ -495,6 +530,13 @@ export default function CheckoutPage() {
       return;
     }
 
+    // The customer is about to hand card or UPI details to whatever this URL
+    // points at. Only SBIePay is ever acceptable, whatever the response says.
+    if (gateway && !isSbiePayUrl(gateway.action)) {
+      onlineFailed();
+      return;
+    }
+
     // Local receipt powers the confirmation, history-detail and invoice views.
     // Keyed by the SAME order number the backend persisted, so they line up.
     saveReceipt({
@@ -516,13 +558,12 @@ export default function CheckoutPage() {
       pointsToEarn: pointsEarned(totals.total),
     });
 
-    clearCheckoutDraft();
-
     if (gateway) {
-      // Hand off to SBI's payment page. The cart is kept until payment is
-      // confirmed: SBI returns the customer to the callback, which lands on
-      // /checkout/success (that page clears the cart) or /checkout/failed
-      // (whose "Try again" needs the cart intact).
+      // Hand off to SBI's payment page. The cart AND the checkout draft are
+      // kept until payment is confirmed: SBI returns the customer to the
+      // callback, which lands on /checkout/success (that page clears both once
+      // the server says paid) or /checkout/failed (whose "Try again" needs the
+      // cart and selections intact). Back from the bank lands here, filled in.
       if (Object.keys(gateway.fields).length === 0) {
         window.location.assign(gateway.action);
       } else {
@@ -542,6 +583,8 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Cash on Delivery: the server created it, so it is placed.
+    clearCheckoutDraft();
     clear();
     router.push(`/checkout/success?order=${orderNumber}`);
   }
