@@ -135,19 +135,41 @@ export async function recordCallback(input: {
  * the rest of the payment code the flat field names it already looks for.
  * Nothing downstream has to know the response was ever encrypted.
  */
-export function flattenDecrypted(decrypted: Record<string, unknown> | null): Record<string, string> {
+export function flattenDecrypted(decrypted: unknown): Record<string, string> {
   if (!decrypted) return {};
   const first = Array.isArray(decrypted) ? decrypted[0] : decrypted;
   if (!first || typeof first !== "object") return {};
+  const envelope = first as Record<string, unknown>;
 
   const out: Record<string, string> = {};
-  for (const group of ["orderInfo", "paymentInfo"]) {
-    const section = (first as Record<string, unknown>)[group];
-    if (!section || typeof section !== "object") continue;
+  const lift = (section: unknown) => {
+    if (!section || typeof section !== "object" || Array.isArray(section)) return;
     for (const [k, v] of Object.entries(section as Record<string, unknown>)) {
       if (v === null || v === undefined || typeof v === "object") continue;
       out[k] = String(v);
     }
+  };
+
+  lift(envelope.orderInfo);
+
+  /*
+   * `paymentInfo` is an ARRAY in the real response - one entry per attempt - not
+   * the single object this used to assume. Skipping anything that is not a plain
+   * object silently dropped it, and with it the atrnNumber: the bank's own
+   * transaction reference, which the direct status lookup and any settlement
+   * dispute are keyed on.
+   *
+   * A customer who fails and then pays has several entries. The SUCCESS one is
+   * the payment; otherwise the first attempt is the best description we have.
+   */
+  const payments = envelope.paymentInfo;
+  if (Array.isArray(payments)) {
+    const attempts = payments.filter(
+      (p): p is Record<string, unknown> => !!p && typeof p === "object",
+    );
+    lift(attempts.find((p) => p.transactionStatus === "SUCCESS") ?? attempts[0]);
+  } else {
+    lift(payments);
   }
   return out;
 }

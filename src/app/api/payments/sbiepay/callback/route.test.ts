@@ -66,7 +66,8 @@ const DECRYPTED = [
       sbiOrderRefNumber: "SBI-REF-1",
       orderStatus: "PAID",
     },
-    paymentInfo: { atrnNumber: "ATRN-1", transactionStatus: "SUCCESS" },
+    // An array in the real response - one entry per payment attempt.
+    paymentInfo: [{ atrnNumber: "ATRN-1", transactionStatus: "SUCCESS" }],
   },
 ];
 
