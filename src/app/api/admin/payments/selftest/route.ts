@@ -113,7 +113,10 @@ export async function GET(): Promise<Response> {
     checks.push({ step: "encrypted request", ok: true, detail: "SBI decrypted and answered the request" });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown";
-    const code = (err as { code?: string })?.code ?? "";
+    // Stringified: the code is read out of the bank's JSON, where it can be a
+    // number (905) as easily as a string ("905"), and the comparison below is
+    // strict. Missing the number form reported a key mismatch as a pass.
+    const code = String((err as { code?: unknown })?.code ?? "");
     const mId = currentSbiepayMerchantId();
 
     // The token step failed: the key id / secret were refused.
