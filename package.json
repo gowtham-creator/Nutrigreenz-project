@@ -25,7 +25,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --exclude \"src/lib/__tests__/sbiepay/**\" && node --conditions=react-server --import tsx --test \"src/lib/__tests__/sbiepay/*.test.ts\"",
+    "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
@@ -88,9 +88,7 @@
     "exceljs": "^4.4.0",
     "jsdom": "^29.1.1",
     "playwright": "^1.55.0",
-    "server-only": "^0.0.1",
     "tailwindcss": "^4",
-    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.3"
   },

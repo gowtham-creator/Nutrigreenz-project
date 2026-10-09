@@ -16,7 +16,7 @@
  *
  * Run: npm test
  */
-import { after, before, beforeEach, describe, test } from "node:test";
+import { afterAll, beforeAll, beforeEach, describe, test, vi } from "vitest";
 import assert from "node:assert/strict";
 import net from "node:net";
 import { SBIEPayClient } from "epay_nodejs_sdk";
@@ -36,6 +36,10 @@ import {
   type MockSbi,
   type RecordedRequest,
 } from "./helpers";
+
+// The libraries under test are `import "server-only"`; Next resolves that to a
+// no-op on the server, so do the same here.
+vi.mock("server-only", () => ({}));
 
 const creds = makeTestCredentials(32);
 const SITE = "https://nutrigreenz.farm";
@@ -57,7 +61,7 @@ let guard: ReturnType<typeof installNetworkGuard>;
 let unmute: () => void;
 const savedEnv = new Map<string, string | undefined>();
 
-before(async () => {
+beforeAll(async () => {
   guard = installNetworkGuard();
   unmute = muteSbiDebugLogs();
   mock = await startMockSbi(creds.encKey);
@@ -67,7 +71,7 @@ before(async () => {
   }
 });
 
-after(async () => {
+afterAll(async () => {
   for (const [k, v] of savedEnv) {
     if (v === undefined) delete process.env[k];
     else process.env[k] = v;
@@ -157,7 +161,7 @@ describe("wire: token/access + order/create, ours vs SBIEPayClient('LIVE')", () 
     expiry: 25,
   };
 
-  test("same endpoints, methods, contract headers, auth format and body shape", async (t) => {
+  test("same endpoints, methods, contract headers, auth format and body shape", async ({ annotate }) => {
     const sdk = newSdk();
     const { oursResult, oursReqs, sdkResult, sdkReqs } = await capturePair(
       () => createSbiepayOrder(input),
@@ -216,12 +220,12 @@ describe("wire: token/access + order/create, ours vs SBIEPayClient('LIVE')", () 
     assert.deepEqual(oursResult, mockOrderResponse(input as unknown as Record<string, unknown>));
 
     // Informational: every non-contract header difference, and raw name casing.
-    for (const line of headerDiff(oursTok, sdkTok)) t.diagnostic(`token/access  ${line}`);
-    for (const line of headerDiff(oursOrd, sdkOrd)) t.diagnostic(`order/create  ${line}`);
+    for (const line of headerDiff(oursTok, sdkTok)) await annotate(`token/access  ${line}`);
+    for (const line of headerDiff(oursOrd, sdkOrd)) await annotate(`order/create  ${line}`);
     const contractNames = (r: RecordedRequest) =>
       r.rawHeaderNames.filter((n) => (CONTRACT_HEADERS as readonly string[]).includes(n.toLowerCase())).sort();
-    t.diagnostic(`order/create raw header names  ours=${contractNames(oursOrd).join(",")}`);
-    t.diagnostic(`order/create raw header names  sdk=${contractNames(sdkOrd).join(",")}`);
+    await annotate(`order/create raw header names  ours=${contractNames(oursOrd).join(",")}`);
+    await annotate(`order/create raw header names  sdk=${contractNames(sdkOrd).join(",")}`);
   });
 
   test("the key-id/secret pair rides on order/create too, as in the SDK", async () => {

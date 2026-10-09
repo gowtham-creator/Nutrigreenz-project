@@ -5,7 +5,7 @@
  *
  * Run: npm test
  */
-import { after, before, describe, test } from "node:test";
+import { afterAll, beforeAll, describe, test, vi } from "vitest";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { SBIEPayClient } from "epay_nodejs_sdk";
@@ -20,6 +20,10 @@ import {
   withFixedRandom,
 } from "./helpers";
 
+// The libraries under test are `import "server-only"`; Next resolves that to a
+// no-op on the server, so do the same here.
+vi.mock("server-only", () => ({}));
+
 const creds = makeTestCredentials(32);
 const sdkFor = (encKey: string, responseType: "STRING" | "JSON") =>
   new SBIEPayClient(
@@ -30,10 +34,10 @@ const sdkFor = (encKey: string, responseType: "STRING" | "JSON") =>
   );
 
 let unmute: () => void;
-before(() => {
+beforeAll(() => {
   unmute = muteSbiDebugLogs();
 });
-after(() => unmute());
+afterAll(() => unmute());
 
 /* ── Payload corpus ───────────────────────────────────────────────────── */
 
@@ -157,7 +161,7 @@ describe("crypto: ours <-> SBI SDK 1.2.0 <-> SBI Crypto.ts", () => {
     await assert.rejects(sdk.crypto.decrypt(tampered));
   });
 
-  test("1 MB payload: ours encrypts it and the SDK decrypts it", async (t) => {
+  test("1 MB payload: ours encrypts it and the SDK decrypts it", async ({ annotate }) => {
     const big = "₹".repeat(350_000); // ~1 MB of UTF-8
     const envelope = await encryptPayload(creds.encKey, big);
     assert.equal(await sdk.crypto.decrypt(envelope), big);
@@ -165,9 +169,9 @@ describe("crypto: ours <-> SBI SDK 1.2.0 <-> SBI Crypto.ts", () => {
     // String.fromCharCode(...) and overflows the stack well before this size.
     try {
       await sdk.crypto.encrypt(big);
-      t.diagnostic("SDK encrypt handled 1 MB on this runtime");
+      await annotate("SDK encrypt handled 1 MB on this runtime");
     } catch {
-      t.diagnostic("SDK encrypt cannot handle 1 MB (call-stack overflow in its btoa helper); ours can");
+      await annotate("SDK encrypt cannot handle 1 MB (call-stack overflow in its btoa helper); ours can");
     }
   });
 });
