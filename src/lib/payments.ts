@@ -1,3 +1,4 @@
+import { toSbiepayRef } from "@/lib/sbiepay-ref";
 import "server-only";
 
 /**
@@ -266,7 +267,7 @@ export async function beginPayment(order: PayableOrder): Promise<GatewayHandoff 
      */
     orderAmount: order.totalPaise / 100,
     currencyCode: order.currency || "INR",
-    orderRefNumber: order.orderNumber,
+    orderRefNumber: toSbiepayRef(order.orderNumber),
     returnUrl: `${site}/api/payments/sbiepay/callback`,
     /*
      * Minutes. Not a timestamp, whatever the documentation says.
@@ -384,7 +385,7 @@ export async function confirmGatewayPayment(
                */
               fromDate: windowStart(order.createdAt),
               toDate: Date.now(),
-              orderRefNumber: order.orderNumber,
+              orderRefNumber: toSbiepayRef(order.orderNumber),
               orderAmount,
             },
     );
@@ -397,7 +398,9 @@ export async function confirmGatewayPayment(
      * worst failure this function has. Even a single-reference lookup is
      * verified, because the cost of the check is nothing.
      */
-    const remote = results.find((r) => r.orderInfo?.orderRefNumber === order.orderNumber);
+    // Either form: references sent before the alphanumeric fix kept the hyphens.
+    const sentRefs = new Set([toSbiepayRef(order.orderNumber), order.orderNumber]);
+    const remote = results.find((r) => sentRefs.has(r.orderInfo?.orderRefNumber ?? ""));
 
     if (!remote) {
       const wrongOrder = results.length > 0;
@@ -464,3 +467,5 @@ export async function confirmGatewayPayment(
     };
   }
 }
+
+export { toSbiepayRef, fromSbiepayRef } from "@/lib/sbiepay-ref";

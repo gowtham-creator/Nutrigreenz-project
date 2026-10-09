@@ -24,7 +24,7 @@ const ORDER: PayableOrder = {
 };
 
 /** A status-API record for our order, in the given bank state. */
-function record(orderStatus: string, orderRefNumber = ORDER.orderNumber) {
+function record(orderStatus: string, orderRefNumber = ORDER.orderNumber.replace(/[^A-Za-z0-9]/g, "")) {
   return {
     orderInfo: { sbiOrderRefNumber: "SBI-REF-1", orderRefNumber, orderStatus },
     paymentInfo: [{ transactionStatus: "SUCCESS", orderAmount: 2200 }],
@@ -82,7 +82,7 @@ describe("confirmGatewayPayment — lookup key", () => {
 
     const criteria = m.searchSbiepayOrder.mock.calls[0][0];
     expect(criteria.sbiOrderRefNumber).toBeUndefined();
-    expect(criteria.orderRefNumber).toBe("NG-26-1001");
+    expect(criteria.orderRefNumber).toBe("NG261001");
     expect(criteria.toDate).toBe(NOW);
     // Starts just before creation (clock skew), so the whole life is covered.
     expect(criteria.fromDate).toBeLessThan(Date.parse(createdAt));

@@ -279,7 +279,8 @@ describe("serialisation: beginPayment's encrypted plaintext == SDK order.create 
       const sameObject = {
         orderAmount: totalPaise / 100,
         currencyCode: currency || "INR",
-        orderRefNumber: orderNumber,
+        // LIVE accepts letters and digits only: "NG-SER-100" goes out as "NGSER100".
+        orderRefNumber: orderNumber.replace(/[^A-Za-z0-9]/g, ""),
         returnUrl: `${SITE}/api/payments/sbiepay/callback`,
         expiry: 25,
       };

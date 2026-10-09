@@ -7,6 +7,7 @@ import {
   transitionOrderPayment,
 } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
+import { fromSbiepayRef } from "@/lib/sbiepay-ref";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
 
@@ -205,7 +206,9 @@ async function handle(request: Request): Promise<Response> {
    */
   const fields = flattenDecrypted(decryption.decrypted);
 
-  const orderNumber = orderNumberFrom(fields);
+  // SBI echoes the alphanumeric reference we sent ("NG261042"); map it back.
+  const sbiRef = orderNumberFrom(fields);
+  const orderNumber = sbiRef ? fromSbiepayRef(sbiRef) : null;
 
   /*
    * Record the arrival verbatim — encrypted as received, and decrypted.

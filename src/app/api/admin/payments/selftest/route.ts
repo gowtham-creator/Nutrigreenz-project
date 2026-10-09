@@ -108,7 +108,7 @@ export async function GET(): Promise<Response> {
      * decrypt the payload before it can say "not found", so an empty result or
      * a business error is a pass for both steps.
      */
-    await sbiepayCall("order/status", { orderRefNumber: `SELFTEST-${Date.now()}`, orderAmount: 1 });
+    await sbiepayCall("order/status", { orderRefNumber: `SELFTEST${Date.now()}`, orderAmount: 1 });
     checks.push({ step: "token", ok: true, detail: `issued for mId ${currentSbiepayMerchantId() ?? "?"}` });
     checks.push({ step: "encrypted request", ok: true, detail: "SBI decrypted and answered the request" });
   } catch (err) {
