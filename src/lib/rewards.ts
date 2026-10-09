@@ -593,11 +593,113 @@ export async function earnPointsForOrder(
   // earnPointsPerRupee is points per ₹1 (= per 100 paise).
   const points = Math.floor((Math.max(0, Math.round(totalPaise)) * config.earnPointsPerRupee) / 100);
   if (points <= 0) return 0;
+  // Idempotent per order. An online order earns when it is PAID, and a payment
+  // can be confirmed from more than one place (callback, server notification,
+  // sweep); the transition winner is the only caller, but a second credit is
+  // money-shaped enough to be worth one more guard.
+  const { data: already } = await supabaseAdmin()
+    .from("loyalty_ledger")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("reason", "order_earn")
+    .limit(1);
+  if (already && already.length > 0) return 0;
   const { error } = await supabaseAdmin().from("loyalty_ledger").insert({
     customer_id: customerId,
     order_id: orderId,
     delta_points: points,
     reason: "order_earn",
+  });
+  return error ? 0 : points;
+}
+
+/**
+ * Give back the coupon an unpaid order had used. Deletes the order's
+ * `coupon_uses` rows (the source of truth for per-customer limits) and re-counts
+ * `coupons.used_count`, so the customer can use the code again. Returns how many
+ * redemptions were removed.
+ */
+export async function removeCouponUsesForOrder(orderId: string): Promise<number> {
+  if (!orderId || !isSupabaseConfigured) return 0;
+  const db = supabaseAdmin();
+  const { data } = await db.from("coupon_uses").select("coupon_id").eq("order_id", orderId);
+  const couponIds = Array.from(
+    new Set(((data as { coupon_id: string }[] | null) ?? []).map((r) => r.coupon_id)),
+  );
+  if (couponIds.length === 0) return 0;
+
+  const { error } = await db.from("coupon_uses").delete().eq("order_id", orderId);
+  if (error) throw new Error(error.message);
+
+  for (const couponId of couponIds) {
+    const { count } = await db
+      .from("coupon_uses")
+      .select("id", { count: "exact", head: true })
+      .eq("coupon_id", couponId);
+    await db.from("coupons").update({ used_count: count ?? 0 }).eq("id", couponId);
+  }
+  return couponIds.length;
+}
+
+/**
+ * Credit back the points an unpaid order burned.
+ *
+ * The ledger is append-only, so this adds a compensating `adjust` row rather than
+ * deleting the `order_redeem` one - the history still shows what happened. It is
+ * idempotent: the amount is the order's NET ledger effect (redeem rows plus any
+ * earlier compensation), so a second call finds nothing left to restore.
+ * Returns the points credited.
+ */
+export async function releaseRedeemedPoints(customerId: string, orderId: string): Promise<number> {
+  if (!customerId || !orderId || !isSupabaseConfigured) return 0;
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("loyalty_ledger")
+    .select("delta_points, reason")
+    .eq("customer_id", customerId)
+    .eq("order_id", orderId)
+    .in("reason", ["order_redeem", "adjust"]);
+  const net = ((data as { delta_points: number }[] | null) ?? []).reduce(
+    (sum, r) => sum + r.delta_points,
+    0,
+  );
+  if (net >= 0) return 0;
+  const { error } = await db.from("loyalty_ledger").insert({
+    customer_id: customerId,
+    order_id: orderId,
+    delta_points: -net,
+    reason: "adjust",
+  });
+  return error ? 0 : -net;
+}
+
+/**
+ * Take back the points {@link releaseRedeemedPoints} gave back - for an order
+ * that was released as unpaid and then turned out to be paid after all.
+ * Clamped to the live balance so the ledger can never go negative; the customer
+ * has had the discount either way. Returns the points burned.
+ */
+export async function reburnReleasedPoints(customerId: string, orderId: string): Promise<number> {
+  if (!customerId || !orderId || !isSupabaseConfigured) return 0;
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("loyalty_ledger")
+    .select("delta_points, reason")
+    .eq("customer_id", customerId)
+    .eq("order_id", orderId)
+    .eq("reason", "adjust");
+  const released = ((data as { delta_points: number }[] | null) ?? [])
+    .filter((r) => r.delta_points > 0)
+    .reduce((sum, r) => sum + r.delta_points, 0);
+  if (released <= 0) return 0;
+
+  const points = Math.min(released, Math.max(0, await loyaltyBalance(customerId)));
+  if (points <= 0) return 0;
+  const { error } = await db.from("loyalty_ledger").insert({
+    customer_id: customerId,
+    order_id: orderId,
+    delta_points: -points,
+    reason: "order_redeem",
   });
   return error ? 0 : points;
 }

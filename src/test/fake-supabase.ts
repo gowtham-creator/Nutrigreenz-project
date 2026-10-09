@@ -20,6 +20,8 @@ export interface FakeOp {
   filters: FakeFilter[];
   payload?: unknown;
   columns?: string;
+  /** `select(cols, { head: true })` - a count-only query. */
+  head?: boolean;
   single?: "single" | "maybeSingle";
 }
 
@@ -55,8 +57,9 @@ export function createFakeSupabase(respond: Responder) {
         return chain;
       };
     }
-    chain.select = (columns: unknown) => {
+    chain.select = (columns: unknown, options?: unknown) => {
       op.columns = typeof columns === "string" ? columns : undefined;
+      if ((options as { head?: boolean } | undefined)?.head) op.head = true;
       return chain;
     };
     chain.insert = (payload: unknown) => {
