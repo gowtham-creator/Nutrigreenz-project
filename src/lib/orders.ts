@@ -28,6 +28,7 @@ import {
   earnPointsForOrder,
   removeCouponUsesForOrder,
   releaseRedeemedPoints,
+  reburnReleasedPoints,
   CouponInvalidError,
 } from "@/lib/rewards";
 import {
@@ -524,8 +525,9 @@ async function applyPromotionsToPricedLines(
  * loyalty redemption server-side (the client's claimed amounts are ignored),
  * recompute the totals from the live commerce rules, insert the order + its
  * items, write the initial `placed` status event, then commit the reward
- * side-effects (coupon use, points burn, points earn) now that the order id
- * exists. Returns the full order with detail.
+ * side-effects (coupon use, points burn, and - for COD only - points earn) now
+ * that the order id exists. An online order earns its points when it is PAID
+ * ({@link onOnlineOrderPaid}). Returns the full order with detail.
  *
  * Throws {@link CouponInvalidError} when a claimed coupon fails re-validation so
  * the caller can answer 400 with the concrete reason. Payment stays `pending` —
@@ -710,10 +712,16 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
       }
     }
     // Accrue earn points on the PAYABLE total (post-discount, incl shipping/tax).
-    try {
-      await earnPointsForOrder(input.customerId, order.id, totalPaise);
-    } catch {
-      /* best-effort — the order is already placed */
+    // Cash on delivery earns now, as it always has. An ONLINE order earns when it
+    // is PAID (see onOnlineOrderPaid): crediting at creation handed out points
+    // for orders that were then never paid, and clawing them back is harder than
+    // not giving them.
+    if (order.paymentMethod !== "upi") {
+      try {
+        await earnPointsForOrder(input.customerId, order.id, totalPaise);
+      } catch {
+        /* best-effort — the order is already placed */
+      }
     }
   }
 
@@ -1124,6 +1132,103 @@ export async function failUnpaidOnlineOrder(
   } catch (err) {
     console.error(`[orders] could not fail order ${idOrNumber}:`, err);
     return null;
+  }
+}
+
+/**
+ * Take back what {@link releaseOrderHolds} gave back, for an order that was
+ * released as unpaid and then turned out to be paid (the bank said PAID for a
+ * 'failed' order).
+ *
+ * Only acts on an order whose release marker is set. An order that was failed
+ * before releases existed, or left held on purpose (a short capture), still
+ * holds its stock, coupon and points - reserving again would hold them twice.
+ * Clearing the marker is the same compare-and-set as releasing it, so this runs
+ * once.
+ *
+ * The customer has already paid, so nothing here can fail the order: if the
+ * stock has since sold out the reservation is not taken, the order stays paid,
+ * and the shortfall is logged for a human (an oversold paid order has to be
+ * handled by a person, not undone by code).
+ *
+ * @returns true if this call re-took the holds.
+ */
+export async function reapplyOrderHolds(orderId: string): Promise<boolean> {
+  const db = supabaseAdmin();
+  const { data: claimed, error } = await db
+    .from("orders")
+    .update({ holds_released_at: null })
+    .eq("id", orderId)
+    .eq("payment_method", "upi")
+    .eq("payment_status", "paid")
+    .not("holds_released_at", "is", null)
+    .select("id, customer_id, coupon_code");
+  if (error) {
+    console.warn(`[orders] could not re-take holds for ${orderId}: ${error.message}`);
+    return false;
+  }
+  const row = (
+    claimed as { id: string; customer_id: string | null; coupon_code: string | null }[] | null
+  )?.[0];
+  if (!row) return false;
+
+  try {
+    const lines = await heldStockLines(orderId);
+    if (lines.length > 0) {
+      const { error: rpcErr } = await db.rpc("reserve_variant_stock", { p_items: lines });
+      if (rpcErr) {
+        console.error(
+          `[orders] PAID order ${orderId} could not re-reserve its stock (${rpcErr.message}); ` +
+            "it is paid and needs a human to fulfil or refund",
+        );
+      }
+    }
+  } catch (err) {
+    console.error(`[orders] stock re-reservation failed for paid order ${orderId}:`, err);
+  }
+
+  if (row.customer_id) {
+    if (row.coupon_code) {
+      try {
+        await recordCouponUse(row.coupon_code, row.customer_id, orderId);
+      } catch (err) {
+        console.error(`[orders] coupon re-record failed for paid order ${orderId}:`, err);
+      }
+    }
+    try {
+      await reburnReleasedPoints(row.customer_id, orderId);
+    } catch (err) {
+      console.error(`[orders] points re-burn failed for paid order ${orderId}:`, err);
+    }
+  }
+  return true;
+}
+
+/**
+ * Everything that follows a confirmed online payment, for the caller that WON the
+ * paid transition (callback or sweep) and nobody else:
+ *
+ *  - re-take any holds that had been released while the order was failed
+ *    ({@link reapplyOrderHolds});
+ *  - credit the loyalty points the order earns. Online orders earn here, on
+ *    payment, rather than at creation. Idempotent per order.
+ *
+ * Never throws: the payment is already confirmed, and a bookkeeping failure must
+ * not turn into an error page for a customer who has paid.
+ */
+export async function onOnlineOrderPaid(
+  order: Pick<OrderRecord, "id" | "customerId" | "totalPaise">,
+): Promise<void> {
+  try {
+    await reapplyOrderHolds(order.id);
+  } catch (err) {
+    console.error(`[orders] re-taking holds failed for paid order ${order.id}:`, err);
+  }
+  if (!order.customerId) return;
+  try {
+    await earnPointsForOrder(order.customerId, order.id, order.totalPaise);
+  } catch (err) {
+    console.error(`[orders] earning points failed for paid order ${order.id}:`, err);
   }
 }
 

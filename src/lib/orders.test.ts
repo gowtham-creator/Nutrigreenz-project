@@ -46,9 +46,14 @@ vi.mock("@/lib/rewards", () => {
 });
 
 import * as rewards from "@/lib/rewards";
+import { getCommerceRules } from "@/lib/commerce-rules";
+import { getActivePromotions } from "@/lib/promotions";
 import {
+  createOrder,
   failUnpaidOnlineOrder,
   listStalePendingPayments,
+  onOnlineOrderPaid,
+  reapplyOrderHolds,
   recordGatewayHandoff,
   releaseOrderHolds,
   transitionOrderPayment,
@@ -280,9 +285,12 @@ const ITEMS = [
   { variant_id: null, qty: 1 },
 ];
 
-/** A database where the held-state marker can be claimed (the migration is applied). */
-function holdsDb(extra: Responder = () => undefined, rpc?: RpcResponder) {
-  let released: string | null = null;
+/**
+ * A database where the held-state marker can be claimed (the migration is
+ * applied). `released` is the marker's starting state.
+ */
+function holdsDb(extra: Responder = () => undefined, rpc?: RpcResponder, released = false) {
+  let marker: string | null = released ? "2026-10-01T10:30:00Z" : null;
   return installDb(
     (op) => {
       const custom = extra(op);
@@ -294,9 +302,9 @@ function holdsDb(extra: Responder = () => undefined, rpc?: RpcResponder) {
           // Compare-and-set on the marker: release claims it while null; re-apply
           // claims it while set.
           const claimingRelease = payload.holds_released_at !== null;
-          if (claimingRelease === (released === null)) {
-            released = claimingRelease ? String(payload.holds_released_at) : null;
-            return { data: [{ id: "ord-1", customer_id: "cust-1" }] };
+          if (claimingRelease === (marker === null)) {
+            marker = claimingRelease ? String(payload.holds_released_at) : null;
+            return { data: [{ id: "ord-1", customer_id: "cust-1", coupon_code: "HARVEST10" }] };
           }
           return { data: [] };
         }
@@ -451,5 +459,200 @@ describe("failUnpaidOnlineOrder", () => {
     );
 
     await expect(failUnpaidOnlineOrder("ord-1")).resolves.not.toBeNull();
+  });
+});
+
+describe("reapplyOrderHolds — an order released as unpaid turns out to be paid", () => {
+  it("takes the stock, coupon use and points again", async () => {
+    vi.mocked(rewards.reburnReleasedPoints).mockResolvedValue(300);
+    const fake = holdsDb(undefined, undefined, true);
+
+    expect(await reapplyOrderHolds("ord-1")).toBe(true);
+
+    expect(fake.rpcCalls).toEqual([
+      {
+        name: "reserve_variant_stock",
+        args: {
+          p_items: [
+            { variant_id: "var-1", qty: 2 },
+            { variant_id: "var-2", qty: 1 },
+          ],
+        },
+      },
+    ]);
+    expect(rewards.recordCouponUse).toHaveBeenCalledWith("HARVEST10", "cust-1", "ord-1");
+    expect(rewards.reburnReleasedPoints).toHaveBeenCalledWith("cust-1", "ord-1");
+  });
+
+  it("clears the marker with a compare-and-set, scoped to a paid online order that was released", async () => {
+    const fake = holdsDb(undefined, undefined, true);
+
+    await reapplyOrderHolds("ord-1");
+
+    const claim = updatesTo(fake.ops, "orders")[0];
+    expect(claim.payload).toEqual({ holds_released_at: null });
+    expect(filterOn(claim, "payment_status", "eq")?.value).toBe("paid");
+    expect(filterOn(claim, "payment_method", "eq")?.value).toBe("upi");
+    expect(filterOn(claim, "holds_released_at", "not")).toBeDefined();
+  });
+
+  it("does nothing for an order that was never released (failed earlier, still holds everything)", async () => {
+    // Reserving again would hold the stock twice. This is the population the
+    // recovery exists for: orders a callback marked failed before releases existed.
+    const fake = holdsDb(undefined, undefined, false);
+
+    expect(await reapplyOrderHolds("ord-1")).toBe(false);
+
+    expect(fake.rpcCalls).toHaveLength(0);
+    expect(rewards.recordCouponUse).not.toHaveBeenCalled();
+    expect(rewards.reburnReleasedPoints).not.toHaveBeenCalled();
+  });
+
+  it("is once-only: a second call finds the marker already cleared", async () => {
+    const fake = holdsDb(undefined, undefined, true);
+
+    expect(await reapplyOrderHolds("ord-1")).toBe(true);
+    expect(await reapplyOrderHolds("ord-1")).toBe(false);
+
+    expect(fake.rpcCalls).toHaveLength(1);
+  });
+
+  it("still records the coupon and points if the stock has since sold out (the customer has paid)", async () => {
+    const fake = holdsDb(
+      undefined,
+      (name) =>
+        name === "reserve_variant_stock"
+          ? { error: { message: "out_of_stock:var-1", code: "P0001" } }
+          : undefined,
+      true,
+    );
+
+    await expect(reapplyOrderHolds("ord-1")).resolves.toBe(true);
+
+    expect(fake.rpcCalls).toHaveLength(1);
+    expect(rewards.recordCouponUse).toHaveBeenCalled();
+    expect(rewards.reburnReleasedPoints).toHaveBeenCalled();
+    // An oversold paid order is something a human must see.
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("ord-1"));
+  });
+});
+
+describe("onOnlineOrderPaid — what a confirmed online payment triggers", () => {
+  const paid = { id: "ord-1", customerId: "cust-1", totalPaise: 220_000 };
+
+  it("credits the loyalty points the order earns, now that it is paid", async () => {
+    vi.mocked(rewards.earnPointsForOrder).mockResolvedValue(2200);
+    holdsDb();
+
+    await onOnlineOrderPaid(paid);
+
+    expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 220_000);
+  });
+
+  it("re-takes the holds first when the order had been released", async () => {
+    vi.mocked(rewards.earnPointsForOrder).mockResolvedValue(2200);
+    const fake = holdsDb(undefined, undefined, true);
+
+    await onOnlineOrderPaid(paid);
+
+    expect(fake.rpcCalls.map((c) => c.name)).toEqual(["reserve_variant_stock"]);
+  });
+
+  it("earns nothing for a guest order", async () => {
+    holdsDb();
+
+    await onOnlineOrderPaid({ ...paid, customerId: null });
+
+    expect(rewards.earnPointsForOrder).not.toHaveBeenCalled();
+  });
+
+  it("never throws - a bookkeeping failure must not undo a confirmed payment", async () => {
+    vi.mocked(rewards.earnPointsForOrder).mockRejectedValue(new Error("db down"));
+    vi.mocked(rewards.reburnReleasedPoints).mockRejectedValue(new Error("db down"));
+    holdsDb(undefined, undefined, true);
+
+    await expect(onOnlineOrderPaid(paid)).resolves.toBeUndefined();
+  });
+});
+
+describe("createOrder — loyalty points are earned when an online order is PAID, not placed", () => {
+  const RULES = {
+    shippingType: "zero",
+    freeDeliveryThresholdPaise: 0,
+    shippingSlabs: [],
+    shippingFlatPaise: 0,
+    taxMode: "inclusive",
+    taxRateBps: 0,
+    currency: "INR",
+  };
+
+  /** A database that can place one order for one variant priced at Rs 1,000. */
+  function placeDb() {
+    return installDb((op) => {
+      if (op.table === "product_variants") return { data: [{ id: "var-1", price_paise: 100_000 }] };
+      if (op.table === "products") return { data: [] };
+      if (op.table === "orders" && op.action === "insert") {
+        const payload = op.payload as Record<string, unknown>;
+        return {
+          data: orderRow({
+            payment_method: payload.payment_method,
+            total_paise: payload.total_paise,
+            coupon_code: payload.coupon_code,
+            loyalty_redeemed_paise: payload.loyalty_redeemed_paise,
+          }),
+        };
+      }
+      if (op.table === "orders" && op.action === "select") return { data: null };
+      if (op.table === "order_items" || op.table === "order_status_events") return { data: [] };
+      return undefined;
+    });
+  }
+
+  const input = {
+    customerId: "cust-1",
+    items: [{ productId: "p1", variantId: "var-1", title: "A2 Ghee", qty: 1 }],
+    couponCode: "HARVEST10",
+    loyaltyPoints: 300,
+  };
+
+  beforeEach(() => {
+    vi.mocked(getCommerceRules).mockResolvedValue(RULES as never);
+    vi.mocked(getActivePromotions).mockResolvedValue([]);
+    vi.mocked(rewards.validateCouponServer).mockResolvedValue({
+      valid: true,
+      discountPaise: 10_000,
+      reason: null,
+      coupon: { code: "HARVEST10" },
+    } as never);
+    vi.mocked(rewards.quoteLoyaltyRedemption).mockResolvedValue({ points: 300, discountPaise: 3_000 });
+    vi.mocked(rewards.redeemPoints).mockResolvedValue({ points: 300, discountPaise: 3_000 });
+    vi.mocked(rewards.earnPointsForOrder).mockResolvedValue(870);
+    vi.mocked(rewards.recordCouponUse).mockResolvedValue(undefined);
+  });
+
+  it("does not credit earn points when an ONLINE order is created", async () => {
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "upi" });
+
+    expect(rewards.earnPointsForOrder).not.toHaveBeenCalled();
+  });
+
+  it("still takes the coupon and burns the points at creation for an online order (they are holds)", async () => {
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "upi" });
+
+    expect(rewards.recordCouponUse).toHaveBeenCalledTimes(1);
+    expect(rewards.redeemPoints).toHaveBeenCalledTimes(1);
+  });
+
+  it("credits earn points at creation for COD, as before", async () => {
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "cod" });
+
+    expect(rewards.earnPointsForOrder).toHaveBeenCalledTimes(1);
+    expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 87_000);
   });
 });

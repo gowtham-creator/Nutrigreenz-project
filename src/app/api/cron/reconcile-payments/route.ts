@@ -1,5 +1,10 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { listStalePendingPayments, getOrder, transitionOrderPayment } from "@/lib/orders";
+import {
+  listStalePendingPayments,
+  getOrder,
+  onOnlineOrderPaid,
+  transitionOrderPayment,
+} from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
@@ -135,6 +140,8 @@ export async function GET(request: Request): Promise<Response> {
          * callback does, so the two can never both email.
          */
         if (won) {
+          // Earn the loyalty points (online orders earn on payment).
+          await onOnlineOrderPaid(won);
           afterResponse(
             `order ${order.orderNumber} placed notification`,
             sendOrderPlacedEmail(order.id),

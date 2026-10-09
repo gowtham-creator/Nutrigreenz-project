@@ -1,6 +1,6 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { recordCallback, decryptCallback, flattenDecrypted } from "@/lib/sbiepay-callback-log";
-import { getOrder, transitionOrderPayment } from "@/lib/orders";
+import { getOrder, onOnlineOrderPaid, transitionOrderPayment } from "@/lib/orders";
 import { confirmGatewayPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
@@ -306,6 +306,9 @@ async function handle(request: Request): Promise<Response> {
   // when it was created. Only the caller that won the transition sends it, so
   // the browser return and the server notification cannot both email.
   if (won) {
+    // Earn the loyalty points (online orders earn on payment) and re-take any
+    // stock/coupon/points released while the order was marked failed.
+    await onOnlineOrderPaid(won);
     afterResponse(
       `order ${order.orderNumber} placed notification`,
       sendOrderPlacedEmail(order.id),

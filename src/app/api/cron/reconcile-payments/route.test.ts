@@ -12,6 +12,7 @@ const m = vi.hoisted(() => ({
   listStalePendingPayments: vi.fn(),
   getOrder: vi.fn(),
   transitionOrderPayment: vi.fn(),
+  onOnlineOrderPaid: vi.fn(),
   confirmGatewayPayment: vi.fn(),
   isOnlinePaymentAvailable: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/lib/orders", () => ({
   listStalePendingPayments: m.listStalePendingPayments,
   getOrder: m.getOrder,
   transitionOrderPayment: m.transitionOrderPayment,
+  onOnlineOrderPaid: m.onOnlineOrderPaid,
 }));
 vi.mock("@/lib/payments", () => ({
   confirmGatewayPayment: m.confirmGatewayPayment,
@@ -62,6 +64,7 @@ beforeEach(() => {
   m.listStalePendingPayments.mockResolvedValue([{ id: "ord-1", orderNumber: "NG-26-1001" }]);
   m.getOrder.mockResolvedValue(ORDER);
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
+  m.onOnlineOrderPaid.mockResolvedValue(undefined);
 });
 
 describe("reconcile sweep", () => {
@@ -93,6 +96,18 @@ describe("reconcile sweep", () => {
     expect(m.afterResponse.mock.calls[0][0]).toBe("order NG-26-1001 placed notification");
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("runs the paid-order bookkeeping for a recovered payment, and not when it lost the race", async () => {
+    m.confirmGatewayPayment.mockResolvedValue({ ok: true, reference: "SBI-REF-1", capturedPaise: 220_000 });
+    m.transitionOrderPayment.mockResolvedValueOnce({ ...ORDER, paymentStatus: "paid" });
+    await GET(cronRequest());
+    expect(m.onOnlineOrderPaid).toHaveBeenCalledTimes(1);
+    expect(m.onOnlineOrderPaid).toHaveBeenCalledWith(expect.objectContaining({ id: "ord-1" }));
+
+    m.transitionOrderPayment.mockResolvedValueOnce(null);
+    await GET(cronRequest());
+    expect(m.onOnlineOrderPaid).toHaveBeenCalledTimes(1);
   });
 
   it("does not email when a callback settled the order first (it already did)", async () => {

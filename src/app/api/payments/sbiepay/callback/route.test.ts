@@ -13,6 +13,7 @@ const m = vi.hoisted(() => ({
   confirmGatewayPayment: vi.fn(),
   getOrder: vi.fn(),
   transitionOrderPayment: vi.fn(),
+  onOnlineOrderPaid: vi.fn(),
   decryptCallback: vi.fn(),
   recordCallback: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("@/lib/sbiepay-callback-log", async (importOriginal) => {
 vi.mock("@/lib/orders", () => ({
   getOrder: m.getOrder,
   transitionOrderPayment: m.transitionOrderPayment,
+  onOnlineOrderPaid: m.onOnlineOrderPaid,
 }));
 vi.mock("@/lib/payments", () => ({
   confirmGatewayPayment: m.confirmGatewayPayment,
@@ -126,6 +128,7 @@ beforeEach(() => {
   });
   m.recordCallback.mockResolvedValue(undefined);
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
+  m.onOnlineOrderPaid.mockResolvedValue(undefined);
 });
 
 describe("callback — verified payment", () => {
@@ -150,6 +153,34 @@ describe("callback — verified payment", () => {
     expect(m.afterResponse.mock.calls[0][0]).toBe(`order ${ORDER_NUMBER} placed notification`);
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledTimes(1);
     expect(m.sendOrderPlacedEmail).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("runs the paid-order bookkeeping (earn points, re-take released holds) once, for the winner only", async () => {
+    orderStore("pending");
+    let arrivals = 0;
+    let release!: () => void;
+    const bothVerifying = new Promise<void>((resolve) => (release = resolve));
+    m.confirmGatewayPayment.mockImplementation(async () => {
+      arrivals += 1;
+      if (arrivals === 2) release();
+      await bothVerifying;
+      return PAID;
+    });
+
+    await Promise.all([POST(browserReturn()), POST(serverNotification())]);
+
+    expect(m.onOnlineOrderPaid).toHaveBeenCalledTimes(1);
+    expect(m.onOnlineOrderPaid).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "ord-1", paymentStatus: "paid" }),
+    );
+  });
+
+  it("does not run the paid-order bookkeeping for an already-paid order", async () => {
+    orderStore("paid");
+
+    await POST(browserReturn());
+
+    expect(m.onOnlineOrderPaid).not.toHaveBeenCalled();
   });
 
   it("verifies with the decrypted fields (bank refs), not the two plaintext ones", async () => {
