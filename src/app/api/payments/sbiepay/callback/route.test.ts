@@ -357,7 +357,7 @@ describe("callback — payment not accepted", () => {
 
     expect(redirectOf(res)).toEqual({
       path: "/checkout/failed",
-      params: { order: ORDER_NUMBER, reason: "failed" },
+      params: { order: ORDER_NUMBER, reason: "declined" },
     });
     // Failed AND its stock / coupon / points released, by the winner only.
     expect(m.failUnpaidOnlineOrder).toHaveBeenCalledTimes(1);
@@ -368,8 +368,8 @@ describe("callback — payment not accepted", () => {
     expect(m.afterResponse).not.toHaveBeenCalled();
   });
 
-  it.each(["cancel", "expired", "attempt_fail"])(
-    "marks the order failed on the bank's final word %s and passes it through as the reason",
+  it.each(["failed", "cancel", "expired", "attempt_fail"])(
+    "marks the order failed on the bank's final word %s and shows the customer a fixed 'declined' code",
     async (reason) => {
       const row = orderStore("pending");
       m.confirmGatewayPayment.mockResolvedValue({
@@ -381,7 +381,7 @@ describe("callback — payment not accepted", () => {
 
       const res = await POST(browserReturn());
 
-      expect(redirectOf(res).params).toEqual({ order: ORDER_NUMBER, reason });
+      expect(redirectOf(res).params).toEqual({ order: ORDER_NUMBER, reason: "declined" });
       expect(row.paymentStatus).toBe("failed");
       expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
     },
@@ -409,10 +409,56 @@ describe("callback — payment not accepted", () => {
 
     const res = await POST(browserReturn());
 
-    expect(redirectOf(res).path).toBe("/checkout/failed");
+    // "unconfirmed": we could not tell - the page says so and does not offer a
+    // retry, because the customer may already have paid.
+    expect(redirectOf(res)).toEqual({
+      path: "/checkout/failed",
+      params: { order: ORDER_NUMBER, reason: "unconfirmed" },
+    });
     expect(m.transitionOrderPayment).not.toHaveBeenCalled();
     expect(row.paymentStatus).toBe("pending");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it.each(["created", "attempted", "not-found-in-window", "no-provider"])(
+    "also reports an in-progress or unanswered state (%s) as unconfirmed",
+    async (reason) => {
+      orderStore("pending");
+      m.confirmGatewayPayment.mockResolvedValue({
+        ok: false,
+        reference: null,
+        capturedPaise: null,
+        reason,
+      });
+
+      const res = await POST(browserReturn());
+
+      expect(redirectOf(res).params.reason).toBe("unconfirmed");
+    },
+  );
+
+  /*
+   * confirmGatewayPayment puts err.message into `reason` when the status call
+   * throws. SBIePay's messages name the merchant id ("order/status
+   * (mId=1000605): Invalid request"). That text must never reach a URL the
+   * customer sees, their browser history, or a referrer header.
+   */
+  it("never puts a raw gateway error message into the customer-facing URL", async () => {
+    orderStore("pending");
+    m.confirmGatewayPayment.mockResolvedValue({
+      ok: false,
+      reference: null,
+      capturedPaise: null,
+      reason: "order/status (mId=1000605): Invalid request",
+    });
+
+    const res = await POST(browserReturn());
+
+    const location = res.headers.get("location") ?? "";
+    expect(location).not.toContain("1000605");
+    expect(location).not.toContain("mId");
+    expect(location).not.toContain("Invalid");
+    expect(redirectOf(res).params).toEqual({ order: ORDER_NUMBER, reason: "unconfirmed" });
   });
 
   it("fails a short capture as amount-mismatch and never marks it paid", async () => {

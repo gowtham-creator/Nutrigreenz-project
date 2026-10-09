@@ -51,6 +51,28 @@ export const dynamic = "force-dynamic";
  */
 const BANK_DECLINED = new Set(["failed", "cancel", "expired", "attempt_fail"]);
 
+/**
+ * The ONLY reason codes a customer's URL may carry for a failed verification.
+ *
+ *   declined     the bank itself said the payment is over and did not succeed
+ *                (FAILED / CANCEL / EXPIRED / ATTEMPT_FAIL). The page may offer
+ *                a retry.
+ *   unconfirmed  we could not establish the outcome - the status call failed,
+ *                the bank has no matching record yet, the status is not final.
+ *                The customer may well have paid, so the page says "do not pay
+ *                again" and offers no retry.
+ *
+ * `confirmGatewayPayment` reports a free-form string, and for a thrown error that
+ * string is the error's own message - which for SBIePay names our merchant id
+ * ("order/status (mId=1000605): Invalid request"). It must never be copied into
+ * a redirect URL: it would land in browser history, referrer headers and any
+ * analytics on the failed page. Everything is mapped through here instead.
+ * ("amount-mismatch" is raised explicitly below, not derived from the bank.)
+ */
+function publicReason(reason: string | undefined): "declined" | "unconfirmed" {
+  return reason && BANK_DECLINED.has(reason) ? "declined" : "unconfirmed";
+}
+
 /** Where to send the customer, given what we concluded. */
 function redirectTo(path: string, params: Record<string, string>): Response {
   const site = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
@@ -272,7 +294,7 @@ async function handle(request: Request): Promise<Response> {
     }
     return redirectTo("/checkout/failed", {
       order: order.orderNumber,
-      reason: result.reason ?? "declined",
+      reason: publicReason(result.reason),
     });
   }
 
