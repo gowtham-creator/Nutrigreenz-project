@@ -32,6 +32,15 @@ import { afterResponse } from "@/lib/after-response";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
 export const runtime = "nodejs";
+/*
+ * Placing an online order calls SBIePay twice in sequence - an access token
+ * (15s timeout) then order/create (25s timeout) - on top of the order insert,
+ * stock reservation and reward bookkeeping. Those timeouts alone add up to 40s,
+ * so the platform default can cut the request off mid-handoff, after stock is
+ * reserved and before the customer is told anything. Route segment config:
+ * node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/02-route-segment-config/maxDuration.md
+ */
+export const maxDuration = 60;
 
 function str(value: unknown): string | null {
   if (typeof value !== "string") return null;

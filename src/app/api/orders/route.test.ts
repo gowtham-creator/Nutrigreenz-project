@@ -52,7 +52,7 @@ vi.mock("@/lib/payments", () => ({
 vi.mock("@/lib/order-emails", () => ({ sendOrderPlacedEmail: m.sendOrderPlacedEmail }));
 vi.mock("@/lib/after-response", () => ({ afterResponse: m.afterResponse }));
 
-import { POST } from "./route";
+import { POST, maxDuration } from "./route";
 import { SbiepayError } from "@/lib/sbiepay-client";
 
 const ORDER = {
@@ -291,6 +291,12 @@ describe("POST /api/orders — Cash on Delivery", () => {
 
     expect(m.createOrder).toHaveBeenCalledWith(expect.objectContaining({ paymentMethod: "cod" }));
     expect(m.beginPayment).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/orders - route config", () => {
+  it("allows longer than the platform default: token (15s) + order/create (25s) can exceed it", () => {
+    expect(maxDuration).toBeGreaterThanOrEqual(60);
   });
 });
 
