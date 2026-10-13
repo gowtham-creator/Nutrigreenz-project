@@ -624,7 +624,7 @@ describe("createOrder — loyalty points are earned when an online order is PAID
   /** A database that can place one order for one variant priced at Rs 1,000. */
   function placeDb() {
     return installDb((op) => {
-      if (op.table === "product_variants") return { data: [{ id: "var-1", price_paise: 100_000 }] };
+      if (op.table === "product_variants") return { data: [{ id: "9b2f1c3e-5a6d-4e7f-8a9b-0c1d2e3f4a5b", price_paise: 100_000 }] };
       if (op.table === "products") return { data: [] };
       if (op.table === "orders" && op.action === "insert") {
         const payload = op.payload as Record<string, unknown>;
@@ -645,7 +645,7 @@ describe("createOrder — loyalty points are earned when an online order is PAID
 
   const input = {
     customerId: "cust-1",
-    items: [{ productId: "p1", variantId: "var-1", title: "A2 Ghee", qty: 1 }],
+    items: [{ productId: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", variantId: "9b2f1c3e-5a6d-4e7f-8a9b-0c1d2e3f4a5b", title: "A2 Ghee", qty: 1 }],
     couponCode: "HARVEST10",
     loyaltyPoints: 300,
   };

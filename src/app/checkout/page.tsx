@@ -75,7 +75,7 @@ function isSbiePayUrl(action: string): boolean {
 /** The parts of a rejected order POST that checkout can act on. */
 async function readRejection(
   res: Response,
-): Promise<{ error?: string; reason?: string; variantIds?: string[] }> {
+): Promise<{ error?: string; reason?: string; variantIds?: string[]; titles?: string[] }> {
   try {
     const body = (await res.json()) as unknown;
     if (typeof body !== "object" || body === null) return {};
@@ -85,6 +85,9 @@ async function readRejection(
       reason: typeof b.reason === "string" ? b.reason : undefined,
       variantIds: Array.isArray(b.variantIds)
         ? b.variantIds.filter((v): v is string => typeof v === "string")
+        : undefined,
+      titles: Array.isArray(b.titles)
+        ? b.titles.filter((v): v is string => typeof v === "string")
         : undefined,
     };
   } catch {
@@ -495,6 +498,14 @@ export default function CheckoutPage() {
         // customer can fix from here, so say exactly what; anything else is a
         // plain failure. Never the success page, whatever the method.
         const rejection = await readRejection(res);
+        if (res.status === 409 && rejection.error === "item-unavailable") {
+          const names = (rejection.titles ?? []).filter(Boolean);
+          toast.error(
+            `${names.length ? names.join(", ") : "Some items"} in your cart ${names.length === 1 ? "is" : "are"} no longer available. Please remove ${names.length === 1 ? "it" : "them"} from your cart and add ${names.length === 1 ? "it" : "them"} again from the shop.`,
+          );
+          setPlacing(false);
+          return;
+        }
         if (res.status === 409 && rejection.error === "out-of-stock") {
           toast.error(outOfStockMessage(items, rejection.variantIds));
           setPlacing(false);

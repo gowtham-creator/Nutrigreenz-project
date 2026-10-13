@@ -19,6 +19,7 @@ import {
   listOrdersForCustomer,
   recordGatewayHandoff,
   OutOfStockError,
+  UnpricedItemsError,
   type OrderLineInput,
 } from "@/lib/orders";
 import {
@@ -256,6 +257,13 @@ export async function POST(request: Request): Promise<Response> {
     // Insufficient stock is a client-actionable conflict, not a 500 — the order
     // was rejected BEFORE persistence (no oversell), so the cart can be adjusted
     // and retried.
+    // Lines the catalog cannot price (an old cart): nothing was created.
+    if (err instanceof UnpricedItemsError) {
+      return Response.json(
+        { ok: false, error: "item-unavailable", titles: err.titles },
+        { status: 409 },
+      );
+    }
     if (err instanceof OutOfStockError) {
       return Response.json(
         { ok: false, error: "out-of-stock", variantIds: err.variantIds },

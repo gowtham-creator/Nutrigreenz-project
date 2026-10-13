@@ -29,12 +29,18 @@ vi.mock("@/lib/orders", () => {
       super("out-of-stock");
     }
   }
+  class UnpricedItemsError extends Error {
+    constructor(readonly titles: string[]) {
+      super("item-unavailable");
+    }
+  }
   return {
     createOrder: m.createOrder,
     recordGatewayHandoff: m.recordGatewayHandoff,
     failUnpaidOnlineOrder: m.failUnpaidOnlineOrder,
     listOrdersForCustomer: vi.fn(),
     OutOfStockError,
+    UnpricedItemsError,
   };
 });
 vi.mock("@/lib/rewards", () => {
@@ -315,5 +321,34 @@ describe("POST /api/orders — guards", () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ ok: false, error: "empty-cart" });
+  });
+});
+
+describe("POST /api/orders — items the catalog cannot price", () => {
+  it("answers 409 item-unavailable with the item names and never opens a payment", async () => {
+    const { UnpricedItemsError } = await import("@/lib/orders");
+    m.createOrder.mockRejectedValue(new UnpricedItemsError(["Groundnut Oil 1L"]));
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: "item-unavailable",
+      titles: ["Groundnut Oil 1L"],
+    });
+    expect(m.beginPayment).not.toHaveBeenCalled();
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it("refuses a Cash on Delivery order with an unpriced item the same way", async () => {
+    const { UnpricedItemsError } = await import("@/lib/orders");
+    m.createOrder.mockRejectedValue(new UnpricedItemsError(["Old item"]));
+
+    const res = await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("item-unavailable");
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
   });
 });

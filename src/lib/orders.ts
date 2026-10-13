@@ -55,6 +55,21 @@ export class OutOfStockError extends Error {
   }
 }
 
+/**
+ * A cart line the catalog cannot price: its product or variant no longer
+ * exists (a cart kept from before the catalog was rebuilt), or it carries an id
+ * that is not one of ours. Thrown BEFORE anything is reserved or inserted, so
+ * an order can never be created at a price of zero.
+ */
+export class UnpricedItemsError extends Error {
+  readonly titles: string[];
+  constructor(titles: string[] = []) {
+    super("item-unavailable");
+    this.name = "UnpricedItemsError";
+    this.titles = titles;
+  }
+}
+
 /* ── status model ─────────────────────────────────────────────────────── */
 
 /** Fulfilment lifecycle — forward-only, no cancelled/refunded (§3.9). */
@@ -374,11 +389,19 @@ async function priceLines(
   lines: OrderLineInput[],
 ): Promise<{ line: OrderLineInput; unitPricePaise: number }[]> {
   const db = supabaseAdmin();
+  /*
+   * Only real ids reach the query. `.in("id", …)` on a uuid column fails as a
+   * WHOLE when any value is not a uuid, and the failure surfaced as "no rows":
+   * one stale line from an old cart priced EVERY line at zero, and the order
+   * went out at ₹0 (SBI refused it; a COD order would have been accepted).
+   */
+  const isUuid = (v: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
   const variantIds = Array.from(
-    new Set(lines.map((l) => l.variantId).filter((v): v is string => !!v)),
+    new Set(lines.map((l) => l.variantId).filter((v): v is string => !!v && isUuid(v))),
   );
   const productIds = Array.from(
-    new Set(lines.map((l) => l.productId).filter((p): p is string => !!p)),
+    new Set(lines.map((l) => l.productId).filter((p): p is string => !!p && isUuid(p))),
   );
 
   const variantPrice = new Map<string, number>();
@@ -403,10 +426,37 @@ async function priceLines(
     }
   }
 
+  /*
+   * A variant line whose id is gone is matched by its SKU, which survives a
+   * catalog rebuild. A variant line is never priced from its PRODUCT: that is
+   * a different (often "from") price.
+   */
+  const missingSkus = Array.from(
+    new Set(
+      lines
+        .filter((l) => l.variantId && !variantPrice.has(l.variantId) && l.variantSku)
+        .map((l) => l.variantSku as string),
+    ),
+  );
+  const skuPrice = new Map<string, number>();
+  if (missingSkus.length > 0) {
+    const { data } = await db
+      .from("product_variants")
+      .select("sku, price_paise")
+      .in("sku", missingSkus);
+    for (const row of (data as { sku: string; price_paise: number }[] | null) ?? []) {
+      skuPrice.set(row.sku, row.price_paise);
+    }
+  }
+
   return lines.map((line) => {
     let unitPricePaise = 0;
-    if (line.variantId && variantPrice.has(line.variantId)) {
-      unitPricePaise = variantPrice.get(line.variantId) ?? 0;
+    if (line.variantId) {
+      if (variantPrice.has(line.variantId)) {
+        unitPricePaise = variantPrice.get(line.variantId) ?? 0;
+      } else if (line.variantSku && skuPrice.has(line.variantSku)) {
+        unitPricePaise = skuPrice.get(line.variantSku) ?? 0;
+      }
     } else if (line.productId && productPrice.has(line.productId)) {
       unitPricePaise = productPrice.get(line.productId) ?? 0;
     }
@@ -540,6 +590,10 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   //    LIVE occasion/seasonal promotion BEFORE coupon + loyalty run, so the
   //    subtotal those compose on already reflects the sale (no double-counting).
   const priced = await priceLines(input.items.filter((l) => l.qty > 0));
+  const unpriced = priced.filter((p) => p.unitPricePaise <= 0);
+  if (unpriced.length > 0) {
+    throw new UnpricedItemsError(unpriced.map((p) => p.line.title));
+  }
   const promoPriced = await applyPromotionsToPricedLines(priced);
   const lineTotals = promoPriced.map(({ line, unitPricePaise }) => ({
     line,
