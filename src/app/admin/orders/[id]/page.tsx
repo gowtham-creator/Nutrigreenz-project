@@ -134,8 +134,26 @@ export default function AdminOrderDetail({
   }
 
   const { order } = state;
-  const addressRows = snapshotRows(order.addressSnapshot);
+  // "Default address" says nothing about where this order goes.
+  const addressRows = snapshotRows(order.addressSnapshot).filter(
+    (r) => r.label !== "Default address",
+  );
   const slotRows = snapshotRows(order.slotSnapshot);
+  // The whole address as one block, the way it goes on a parcel, plus a map
+  // link built from the same text so the rider finds the right gate.
+  const addressValue = (label: string) => addressRows.find((r) => r.label === label)?.value ?? "";
+  const fullAddress = [
+    addressValue("Address"),
+    addressValue("Area"),
+    [addressValue("City"), addressValue("State")].filter(Boolean).join(", "),
+    addressValue("PIN code"),
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const mapsHref = fullAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
+    : null;
+  const contactPhone = order.userPhone ?? (addressValue("Phone") || null);
   const onAdvanced = (updated: Order) => setState({ phase: "ready", order: updated });
 
 
@@ -199,11 +217,22 @@ export default function AdminOrderDetail({
 
           {/* Customer + delivery snapshot */}
           <div className="grid md:grid-cols-2 gap-6">
-            <Card title="Customer">
+            <Card title="Ordered by">
               <dl className="space-y-2.5 text-[13px]">
-                <Row label="Name" value={customerLabel(order)} />
-                <Row label="Email" value={order.userEmail ?? "—"} mono />
-                <Row label="Phone" value={order.userPhone ?? "—"} mono />
+                <Row label="Name" value={customerLabel(order)} wrap />
+                <Row
+                  label="Phone"
+                  value={contactPhone ?? "—"}
+                  href={contactPhone ? `tel:${contactPhone.replace(/\s+/g, "")}` : undefined}
+                  mono
+                />
+                <Row
+                  label="Email"
+                  value={order.userEmail ?? "—"}
+                  href={order.userEmail ? `mailto:${order.userEmail}` : undefined}
+                  mono
+                  wrap
+                />
                 <Row
                   label="Account"
                   value={order.customerId ? "Registered" : "Guest"}
@@ -217,11 +246,39 @@ export default function AdminOrderDetail({
                   No address snapshot on this order.
                 </p>
               ) : (
-                <dl className="space-y-2.5 text-[13px]">
-                  {addressRows.map((r) => (
-                    <Row key={r.label} label={r.label} value={r.value} />
-                  ))}
-                </dl>
+                <>
+                  {fullAddress ? (
+                    <div className="mb-4 rounded-xl bg-ng-cream/60 border border-ng-line-soft px-4 py-3">
+                      <p className="text-[13.5px] font-semibold text-ng-ink">
+                        {addressValue("Recipient") || customerLabel(order)}
+                      </p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-ng-ink break-words">
+                        {fullAddress}
+                      </p>
+                      {mapsHref ? (
+                        <a
+                          href={mapsHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors"
+                        >
+                          Open in Google Maps →
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <dl className="space-y-2.5 text-[13px]">
+                    {addressRows.map((r) => (
+                      <Row
+                        key={r.label}
+                        label={r.label}
+                        value={r.value}
+                        wrap
+                        href={r.label === "Phone" ? `tel:${r.value.replace(/\s+/g, "")}` : undefined}
+                      />
+                    ))}
+                  </dl>
+                </>
               )}
             </Card>
           </div>
@@ -369,23 +426,36 @@ function Row({
   value,
   mono,
   valueClass,
+  wrap,
+  href,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   valueClass?: string;
+  /** Show the whole value on as many lines as it needs, never "…". */
+  wrap?: boolean;
+  /** Make the value a link (tel:, mailto:). */
+  href?: string;
 }) {
   return (
     <div className="flex justify-between gap-4">
       <dt className="font-medium text-ng-ink-muted shrink-0">{label}</dt>
       <dd
         className={[
-          "text-right min-w-0 truncate",
+          "text-right min-w-0",
+          wrap ? "break-words [overflow-wrap:anywhere]" : "truncate",
           mono ? "font-mono text-[12px] text-ng-ink" : "text-ng-ink",
           valueClass ?? "",
         ].join(" ")}
       >
-        {value}
+        {href ? (
+          <a href={href} className="hover:text-ng-forest underline-offset-2 hover:underline">
+            {value}
+          </a>
+        ) : (
+          value
+        )}
       </dd>
     </div>
   );

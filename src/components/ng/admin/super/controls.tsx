@@ -35,6 +35,17 @@ export function NumberField({
 }) {
   const fieldId = React.useId();
   const inputId = id ?? fieldId;
+  /*
+   * What the admin is typing, as text, while the field has focus.
+   *
+   * Bound straight to the number, the field showed "0", and typing 5 left
+   * "05" on screen (then "051"): the browser keeps the typed text when it
+   * parses to the same number React already holds. Editing a string draft,
+   * stripped of leading zeros, and selecting the value on focus so the first
+   * keystroke replaces it, makes the field behave like a normal input.
+   */
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const shown = draft ?? (Number.isFinite(value) ? String(value) : "0");
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={inputId} className="text-[12.5px] font-semibold text-ng-ink-muted">
@@ -48,8 +59,19 @@ export function NumberField({
           inputMode="numeric"
           min={min}
           step={step}
-          value={Number.isFinite(value) ? value : 0}
-          onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+          value={shown}
+          onFocus={(e) => {
+            setDraft(Number.isFinite(value) ? String(value) : "0");
+            e.currentTarget.select();
+          }}
+          onChange={(e) => {
+            // "05" -> "5", "0.5" stays, "" stays empty while typing.
+            const text = e.target.value.replace(/^0+(?=\d)/, "");
+            setDraft(text);
+            const n = Number(text);
+            onChange(text === "" || !Number.isFinite(n) ? 0 : n);
+          }}
+          onBlur={() => setDraft(null)}
           className="flex-1 w-full bg-transparent outline-none text-[15px] font-semibold text-ng-ink tabular-nums placeholder:text-ng-ink-soft"
         />
         {suffix ? <span className="text-[12.5px] font-medium text-ng-ink-soft shrink-0">{suffix}</span> : null}

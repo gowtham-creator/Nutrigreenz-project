@@ -123,6 +123,83 @@ function addressLines(order: OrderWithDetail): string[] {
  * Mail force-inverting it, which previously turned the body near-black and left
  * the text unreadable in dark mode.
  */
+type Palette = { INK: string; MUTED: string; LINE: string; GREEN: string };
+
+const TRACK_STEPS: { kind: Kind; label: string }[] = [
+  { kind: "confirmed", label: "Confirmed" },
+  { kind: "packed", label: "Packed" },
+  { kind: "shipped", label: "Shipped" },
+  { kind: "delivered", label: "Delivered" },
+];
+
+/**
+ * Four-step progress line for the delivery-update emails, so packed, shipped
+ * and delivered read differently at a glance. Table cells only: email clients
+ * drop flex and pseudo-elements.
+ */
+function progressTracker(kind: Kind, p: Palette): string {
+  const current = TRACK_STEPS.findIndex((s) => s.kind === kind);
+  const cells = TRACK_STEPS.map((s, i) => {
+    const done = i <= current;
+    const dot = done
+      ? `background:${p.GREEN};border:2px solid ${p.GREEN};`
+      : `background:#FFFFFF;border:2px solid ${p.LINE};`;
+    const bar = i < TRACK_STEPS.length - 1
+      ? `<td style="height:2px;padding:0;background:${i < current ? p.GREEN : p.LINE}"></td>`
+      : "";
+    return `<td style="padding:0;width:14px"><div style="width:10px;height:10px;border-radius:999px;${dot}"></div></td>${bar}`;
+  }).join("");
+  const labels = TRACK_STEPS.map((s, i) => {
+    const align = i === 0 ? "left" : i === TRACK_STEPS.length - 1 ? "right" : "center";
+    const style = i === current ? `color:${p.INK};font-weight:700;` : `color:${p.MUTED};`;
+    return `<td style="padding:8px 0 0;font-size:11.5px;${style}text-align:${align};width:25%">${s.label}</td>`;
+  }).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr style="vertical-align:middle">${cells}</tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${labels}</tr></table>`;
+}
+
+/** The part of a delivery-update email that differs by stage. */
+function logisticsBody(
+  kind: Kind,
+  order: OrderWithDetail,
+  p: Palette & { address: string[]; isCod: boolean },
+): string {
+  const block = (title: string, html: string) => `<tr>
+          <td style="padding:28px 0 0">
+            <div style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:${p.MUTED};margin-bottom:8px">${title}</div>
+            <div style="font-size:14px;color:${p.INK};line-height:1.65">${html}</div>
+          </td>
+        </tr>`;
+  const items = order.items
+    .map((it) => `${escapeHtml(it.title)} <span style="color:${p.MUTED}">× ${it.qty}</span>`)
+    .join("<br />");
+  const address = p.address.map(escapeHtml).join("<br />");
+  const codNote = p.isCod
+    ? block(
+        "Payment on delivery",
+        `Please keep <strong>${rupees(order.totalPaise)}</strong> ready. You can pay in cash or by UPI at the door.`,
+      )
+    : "";
+
+  if (kind === "packed") {
+    return `${block("What's in the box", items)}${address ? block("Delivering to", address) : ""}${codNote}`;
+  }
+  if (kind === "shipped") {
+    return `${address ? block("On its way to", address) : ""}${block(
+      "Before it arrives",
+      "Please keep your phone handy. Our delivery partner may call when they are close.",
+    )}${codNote}`;
+  }
+  // delivered
+  return `${block(
+    "Keep it fresh",
+    "Store oils and ghee in a cool, dark place with the cap tight, away from the stove. Honey never needs the fridge; if it crystallises, warm the jar gently in water.",
+  )}${block(
+    "Not perfect?",
+    "Just reply to this email. A real person reads every one, and we'll make it right.",
+  )}`;
+}
+
 function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const c = COPY[kind];
   const INK = "#141414";
@@ -141,6 +218,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
    */
   const isReceipt = kind === "placed" || kind === "confirmed";
   const paid = order.paymentStatus === "paid";
+  const isCod = order.paymentMethod === "cod";
   const gst = gstFor(order);
 
   const when = new Date(order.placedAt ?? order.createdAt).toLocaleDateString("en-IN", {
@@ -226,11 +304,12 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           </td>
         </tr>
 
-        <!-- Amount, front and centre -->
-        <tr>
-          <td style="padding:0 0 6px;font-size:13.5px;color:${MUTED}">
-            ${isReceipt ? "Order from Nutri Greenz" : c.heading}
-          </td>
+        <!-- Hero: a receipt leads with the amount; a delivery update leads with
+             where the order is, since the customer was already billed. -->
+        ${
+          isReceipt
+            ? `<tr>
+          <td style="padding:0 0 6px;font-size:13.5px;color:${MUTED}">Order from Nutri Greenz</td>
         </tr>
         <tr>
           <td style="padding:0;font-size:38px;line-height:1.1;font-weight:700;color:${INK}">
@@ -241,7 +320,22 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           <td style="padding:6px 0 0;font-size:13.5px;color:${MUTED}">
             ${paid ? `Paid ${when}` : `Placed ${when}`}
           </td>
+        </tr>`
+            : `<tr>
+          <td style="padding:0 0 6px;font-size:13.5px;color:${MUTED}">Order ${escapeHtml(order.orderNumber)}</td>
         </tr>
+        <tr>
+          <td style="padding:0;font-size:32px;line-height:1.15;font-weight:700;color:${INK}">
+            ${escapeHtml(c.heading)}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0 0;font-size:14.5px;line-height:1.6;color:${MUTED}">${c.intro}</td>
+        </tr>
+        <tr>
+          <td style="padding:26px 0 0">${progressTracker(kind, { INK, MUTED, LINE, GREEN })}</td>
+        </tr>`
+        }
 
         <!-- Documents ride with the email as attachments, so a link that
              demands a sign-in first would be the slower path. -->
@@ -260,23 +354,40 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
         <tr>
           <td style="padding:26px 0 0">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              ${meta("Order number", escapeHtml(order.orderNumber))}
-              ${paid ? meta("Receipt number", `${escapeHtml(order.orderNumber)}-R`) : ""}
-              ${meta("Payment", paid ? `Paid · ${escapeHtml(paymentMethodLabel(order))}` : "Pending")}
-              ${meta("Status", escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1)))}
+              ${isReceipt ? meta("Order number", escapeHtml(order.orderNumber)) : ""}
+              ${isReceipt && paid ? meta("Receipt number", `${escapeHtml(order.orderNumber)}-R`) : ""}
+              ${meta(
+                "Payment",
+                paid
+                  ? `Paid · ${escapeHtml(paymentMethodLabel(order))}`
+                  : isCod
+                    ? `Pay ${rupees(order.totalPaise)} on delivery`
+                    : "Pending",
+              )}
+              ${isReceipt ? meta("Status", escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1))) : ""}
+              ${!isReceipt && slotLabel ? meta("Delivery slot", escapeHtml(slotLabel)) : ""}
             </table>
           </td>
         </tr>
 
         <!-- Items + totals -->
-        <tr>
-          <td style="padding:34px 0 0;font-size:15px;font-weight:700;color:${INK}">
-            ${isReceipt ? "Order summary" : c.heading}
-          </td>
+        ${
+          isReceipt
+            ? `<tr>
+          <td style="padding:34px 0 0;font-size:15px;font-weight:700;color:${INK}">Order summary</td>
         </tr>
         <tr>
           <td style="padding:4px 0 0;font-size:14px;line-height:1.6;color:${MUTED}">${c.intro}</td>
-        </tr>
+        </tr>`
+            : logisticsBody(kind, order, {
+                INK,
+                MUTED,
+                LINE,
+                GREEN,
+                address,
+                isCod: isCod && !paid,
+              })
+        }
         ${
           isReceipt
             ? `<tr>
@@ -332,9 +443,9 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           <td style="padding:32px 0 0">
             <table role="presentation" cellpadding="0" cellspacing="0"><tr>
               <td style="background:${GREEN};border-radius:999px">
-                <a href="${SITE}/orders/${order.id}"
+                <a href="${kind === "delivered" ? `${SITE}/shop` : `${SITE}/orders/${order.id}`}"
                    style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none">
-                  Track your order
+                  ${kind === "delivered" ? "Shop again" : "Track your order"}
                 </a>
               </td>
             </tr></table>

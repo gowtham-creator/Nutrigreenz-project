@@ -26,14 +26,34 @@ export interface OrdersInitialData {
   total: number;
 }
 
-/** Status filter chips: "all" plus each fulfilment stage. */
-type StatusFilter = "all" | OrderStatus;
+/**
+ * Filter chips: "all", "paid" (every order whose payment has been received,
+ * whatever its fulfilment stage), then each fulfilment stage.
+ */
+type StatusFilter = "all" | "paid" | OrderStatus;
 const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All orders" },
+  { key: "paid", label: "Paid" },
   ...ORDER_STATUS_FLOW.map((s) => ({ key: s, label: STATUS_LABEL[s] })),
 ];
 
-const COLS = "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.8fr)_minmax(0,0.6fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] gap-4";
+const COLS = "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,0.5fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.6fr)] gap-4";
+
+/** Where an order is going, from its address snapshot: area, then "City · PIN". */
+function orderLocation(o: Order): { area: string; place: string } {
+  const a = (o.addressSnapshot ?? {}) as Record<string, unknown>;
+  const pick = (...keys: string[]) => {
+    for (const k of keys) {
+      const v = a[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return "";
+  };
+  const area = pick("areaLandmark", "area", "locality", "line2", "landmark", "roadStreet");
+  const city = pick("city", "region");
+  const pin = pick("pincode", "pinCode", "postalCode");
+  return { area, place: [city, pin].filter(Boolean).join(" · ") };
+}
 
 export function OrdersClient({ initialData }: { initialData: OrdersInitialData | null }) {
   const [orders, setOrders] = useState<Order[]>(initialData?.orders ?? []);
@@ -48,7 +68,9 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
 
   const load = useCallback(async () => {
     const params = new URLSearchParams();
-    if (statusFilter !== "all") params.set("status", statusFilter);
+    // "Paid" filters on payment, not on the fulfilment stage.
+    if (statusFilter === "paid") params.set("paymentStatus", "paid");
+    else if (statusFilter !== "all") params.set("status", statusFilter);
     if (search.trim()) params.set("search", search.trim());
     params.set("limit", "100");
     const res = await fetch(`/api/admin/orders?${params.toString()}`);
@@ -151,7 +173,7 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
       {/* Orders table */}
       <Card className="!p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[760px]">
+          <div className="min-w-[960px]">
         <div
           className={cn(
             COLS,
@@ -160,6 +182,7 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
         >
           <span>Order</span>
           <span>Customer</span>
+          <span>Location</span>
           <span>Items</span>
           <span>Total</span>
           <span>Status</span>
@@ -197,6 +220,14 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
                   <div className="truncate font-semibold text-ng-ink">{customerLabel(o)}</div>
                   <div className="text-[11.5px] font-medium text-ng-ink-muted truncate">
                     {customerContact(o) || "—"}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-ng-ink">
+                    {orderLocation(o).place || "—"}
+                  </div>
+                  <div className="text-[11.5px] font-medium text-ng-ink-muted truncate">
+                    {orderLocation(o).area}
                   </div>
                 </div>
                 <span className="tabular-nums font-semibold text-ng-ink">{itemCount(o)}</span>
