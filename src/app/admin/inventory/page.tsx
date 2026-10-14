@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getAdminRole } from "@/lib/admin-auth";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
@@ -367,8 +367,8 @@ export default function AdminInventory() {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[1080px]">
-        <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(150px,1.4fr)_76px_96px_210px] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+          <div className="lg:min-w-[1080px]">
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(150px,1.4fr)_76px_96px_210px] gap-3 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>Product</span>
           <span>SKU</span>
           <span>Category</span>
@@ -393,9 +393,66 @@ export default function AdminInventory() {
               const tone = eStock <= 0 ? "neutral" : eStock <= LOW_STOCK_THRESHOLD ? "danger" : "success";
               const label = eStock <= 0 ? "Out" : eStock <= LOW_STOCK_THRESHOLD ? "Low" : "OK";
               return (
+                <Fragment key={p.id}>
+                {/* Phone and tablet: one card per product. */}
+                <li className="lg:hidden px-4 py-3.5 border-b border-ng-line-soft last:border-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[14px] text-ng-ink truncate">{p.name}</div>
+                      <div className="text-[12px] font-medium text-ng-ink-muted truncate">
+                        {[p.categoryName, p.sku].filter(Boolean).join(" · ") || "—"}
+                      </div>
+                    </div>
+                    <Pill tone={STATUS_TONE[p.status]}>{p.status}</Pill>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="font-mono text-[12.5px] tabular-nums text-ng-ink">
+                      {hasVariants
+                        ? p.variantMinPricePaise === p.variantMaxPricePaise
+                          ? formatPaise(p.variantMinPricePaise ?? 0)
+                          : `from ${formatPaise(p.variantMinPricePaise ?? 0)}`
+                        : formatPaise(p.pricePaise)}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <StockMeter stock={eStock} threshold={LOW_STOCK_THRESHOLD} />
+                      <Pill tone={tone}>{label}</Pill>
+                    </span>
+                    {hasVariants ? (
+                      <span className="text-[11.5px] font-medium text-ng-ink-soft">{p.variantCount} variants</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setVariantProduct(p)}
+                      className="inline-flex items-center gap-1 text-[12.5px] font-bold text-ng-clay-deep cursor-pointer"
+                    >
+                      <Icon name="layers-minimalistic-bold" size={13} />
+                      Variants
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      className="inline-flex items-center gap-1 text-[12.5px] font-bold text-ng-forest cursor-pointer"
+                    >
+                      <UiIcon name="edit" size={13} />
+                      Edit
+                    </button>
+                    {isSuper && (
+                      <button
+                        type="button"
+                        onClick={() => void removeProduct(p)}
+                        aria-label={`Delete ${p.name}`}
+                        className="ml-auto text-ng-terracotta cursor-pointer"
+                      >
+                        <Icon name="trash-bin-trash-bold" size={15} />
+                      </button>
+                    )}
+                  </div>
+                </li>
+                {/* Laptop and up: the table row. */}
                 <li
-                  key={p.id}
-                  className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(150px,1.4fr)_76px_96px_210px] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
+                  className="hidden lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(150px,1.4fr)_76px_96px_210px] gap-3 px-6 py-3.5 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors"
                 >
                   <span className="truncate font-semibold text-ng-ink">{p.name}</span>
                   <span className="font-mono text-[11.5px] font-medium text-ng-ink-muted truncate">{p.sku ?? "—"}</span>
@@ -482,6 +539,7 @@ export default function AdminInventory() {
                     )}
                   </div>
                 </li>
+                </Fragment>
               );
             })}
           </ul>

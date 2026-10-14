@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
@@ -173,11 +173,11 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
       {/* Orders table */}
       <Card className="!p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[960px]">
+          <div className="lg:min-w-[960px]">
         <div
           className={cn(
             COLS,
-            "px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold",
+            "hidden lg:grid px-5 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold",
           )}
         >
           <span>Order</span>
@@ -201,11 +201,36 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
         ) : (
           <ul>
             {orders.map((o) => (
+              <Fragment key={o.id}>
+              {/* Phone and tablet: one card per order. */}
+              <li className="lg:hidden border-b border-ng-line-soft last:border-0">
+                <Link href={`/admin/orders/${o.orderNumber}`} className="block px-4 py-3.5 active:bg-ng-cream/50">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-mono font-semibold text-[13px] text-ng-forest-deep truncate">
+                      {o.orderNumber}
+                    </span>
+                    <span className="font-semibold text-[14px] text-ng-ink tabular-nums">
+                      {formatPaise(o.totalPaise)}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 text-[13.5px] font-semibold text-ng-ink truncate">{customerLabel(o)}</div>
+                  <div className="text-[12px] font-medium text-ng-ink-muted truncate">
+                    {[customerContact(o), orderLocation(o).place].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <Pill tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Pill>
+                    <Pill tone={PAYMENT_TONE[o.paymentStatus]}>{PAYMENT_LABEL[o.paymentStatus]}</Pill>
+                    <span className="ml-auto text-[11.5px] font-medium text-ng-ink-soft">
+                      {itemCount(o)} items · {relativeTime(o.placedAt)}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+              {/* Laptop and up: the table row. */}
               <li
-                key={o.id}
                 className={cn(
                   COLS,
-                  "px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors",
+                  "hidden lg:grid px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors",
                 )}
               >
                 <div className="min-w-0">
@@ -249,6 +274,7 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
                   Open →
                 </Link>
               </li>
+              </Fragment>
             ))}
           </ul>
         )}

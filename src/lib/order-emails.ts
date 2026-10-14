@@ -139,23 +139,35 @@ const TRACK_STEPS: { kind: Kind; label: string }[] = [
  */
 function progressTracker(kind: Kind, p: Palette): string {
   const current = TRACK_STEPS.findIndex((s) => s.kind === kind);
-  const cells = TRACK_STEPS.map((s, i) => {
-    const done = i <= current;
-    const dot = done
+  const last = TRACK_STEPS.length - 1;
+  /*
+   * Each step is a quarter of the width: a dot centred between two half-lines,
+   * with its label centred underneath, so labels always sit under their dot.
+   * The lines are 2px DIVs inside cells, not cell backgrounds: a cell grows to
+   * the height of the dot beside it, which drew the line as a thick bar.
+   */
+  const line = (colour: string) =>
+    `<div style="height:2px;line-height:2px;font-size:0;background:${colour}">&nbsp;</div>`;
+  const steps = TRACK_STEPS.map((s, i) => {
+    const reached = i <= current;
+    const leftColour = i === 0 ? "transparent" : reached ? p.GREEN : p.LINE;
+    const rightColour = i === last ? "transparent" : i < current ? p.GREEN : p.LINE;
+    const dot = reached
       ? `background:${p.GREEN};border:2px solid ${p.GREEN};`
       : `background:#FFFFFF;border:2px solid ${p.LINE};`;
-    const bar = i < TRACK_STEPS.length - 1
-      ? `<td style="height:2px;padding:0;background:${i < current ? p.GREEN : p.LINE}"></td>`
-      : "";
-    return `<td style="padding:0;width:14px"><div style="width:10px;height:10px;border-radius:999px;${dot}"></div></td>${bar}`;
+    const label = i === current ? `color:${p.INK};font-weight:700;` : `color:${p.MUTED};`;
+    return `<td width="25%" style="width:25%;padding:0;vertical-align:top;text-align:center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding:0;vertical-align:middle">${line(leftColour)}</td>
+          <td width="12" style="width:12px;padding:0;vertical-align:middle">
+            <div style="width:8px;height:8px;border-radius:999px;${dot}font-size:0;line-height:0">&nbsp;</div>
+          </td>
+          <td style="padding:0;vertical-align:middle">${line(rightColour)}</td>
+        </tr></table>
+        <div style="padding-top:8px;font-size:12px;line-height:1.3;${label}">${s.label}</div>
+      </td>`;
   }).join("");
-  const labels = TRACK_STEPS.map((s, i) => {
-    const align = i === 0 ? "left" : i === TRACK_STEPS.length - 1 ? "right" : "center";
-    const style = i === current ? `color:${p.INK};font-weight:700;` : `color:${p.MUTED};`;
-    return `<td style="padding:8px 0 0;font-size:11.5px;${style}text-align:${align};width:25%">${s.label}</td>`;
-  }).join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr style="vertical-align:middle">${cells}</tr></table>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${labels}</tr></table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed"><tr>${steps}</tr></table>`;
 }
 
 /** The part of a delivery-update email that differs by stage. */
