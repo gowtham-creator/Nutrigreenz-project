@@ -7,7 +7,7 @@ import "server-only";
  * bounces — printing it was sending people to a dead address. This falls
  * back to the inbox that does receive until that mailbox exists.
  */
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "nutrigreenzfarm@gmail.com";
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "nutrigreenzfarmtech@gmail.com";
 
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { getOrder, type OrderWithDetail } from "@/lib/orders";

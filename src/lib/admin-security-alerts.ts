@@ -33,7 +33,7 @@ function recipients(): string[] {
       .map((e) => e.trim())
       .filter(Boolean);
   }
-  return ["gowtham5.gr15@gmail.com", "nutrigreenzfarm@gmail.com"];
+  return ["gowtham5.gr15@gmail.com", "nutrigreenzfarmtech@gmail.com"];
 }
 
 /** Which factor was being attacked. */

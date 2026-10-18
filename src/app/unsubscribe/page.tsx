@@ -62,10 +62,10 @@ export default async function UnsubscribePage({
       <p className="mt-3 text-[13px] text-ng-ink-soft">
         Changed your mind? Email us at{" "}
         <a
-          href="mailto:nutrigreenzfarm@gmail.com"
+          href="mailto:nutrigreenzfarmtech@gmail.com"
           className="font-medium text-ng-forest underline underline-offset-2"
         >
-          nutrigreenzfarm@gmail.com
+          nutrigreenzfarmtech@gmail.com
         </a>{" "}
         and we&rsquo;ll switch offers back on.
       </p>
