@@ -252,8 +252,17 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
         */}
         <div className="relative min-h-[min(clamp(440px,60dvh,600px),74dvh)]">
           {/* Invisible sizer: keeps the tallest reasonable banner height reserved. */}
-          <div aria-hidden className="invisible">
-            <PromoSlide slide={SLIDES[0]} priority />
+          {/* Every slide in one grid cell, so the stage takes the tallest one.
+              Stacked on a phone, slides differ in height with their copy; a
+              first-slide sizer would clip the CTA off a longer one. */}
+          <div aria-hidden className="invisible grid [&>*]:[grid-area:1/1]">
+            {items.map((item) =>
+              item.kind === "promo" ? (
+                <PromoBannerSlide key={item.key} promo={item.promo} />
+              ) : (
+                <PromoSlide key={item.key} slide={item.slide} />
+              ),
+            )}
           </div>
 
           {/* Swipe layer: only the slides translate with the finger; the sizer and
@@ -431,43 +440,33 @@ function desktopWash(slide: PromoSlideDef): string {
   return `linear-gradient(to right, ${w}${alphaHex(a)} 0%, ${w}${alphaHex(a * 0.72)} 42%, transparent 68%)`;
 }
 
-/**
- * Mobile legibility fade. Carries roughly 0.4 more alpha than desktop: the
- * 21:9 banner is zoom-cropped on a narrow viewport, so the copy lands on busier
- * pixels than the desktop measurement assumed.
- */
-function mobileWash(slide: PromoSlideDef): string {
-  const w = slide.wash;
-  const a = slide.washAlpha;
-  if (a == null) {
-    return `linear-gradient(to right, ${w}F7 0%, ${w}EE 38%, ${w}99 60%, transparent 82%)`;
-  }
-  /* +0.72, not +0.4. Desktop legibility is a contrast problem and the measured
-     alpha solves it. Mobile is a BUSYNESS problem: the 21:9 crop drags the
-     product and its claim badges under the copy, so the headline crosses a hard
-     badge edge. Mean contrast there still measured 7.08:1 — it was the stdev of
-     74 that made it unreadable, and averages cannot see that. Only more cover
-     fixes it. */
-  const m = Math.min(0.92, a + 0.72);
-  return `linear-gradient(to right, ${w}${alphaHex(m)} 0%, ${w}${alphaHex(m * 0.92)} 38%, ${w}${alphaHex(m * 0.55)} 60%, transparent 82%)`;
-}
-
 function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {
   return (
-    <div className="relative flex h-full min-h-[inherit] overflow-hidden" style={{ backgroundColor: slide.wash }}>
-      {/* object-position: on mobile the wide 21:9 art is zoom-cropped hard, so we
-          bias the crop toward the product (centre-right) instead of the far-right
-          edge — otherwise only the badge/props survive. Desktop shows the full
-          right composition. */}
-      <Image
-        src={slide.img}
-        alt={slide.alt}
-        fill
-        priority={priority}
-        quality={90}
-        sizes="100vw"
-        className="object-cover object-[62%_center] sm:object-right"
-      />
+    <div className="relative flex h-full min-h-[inherit] flex-col overflow-hidden lg:flex-row" style={{ backgroundColor: slide.wash }}>
+      {/* Phones: the wide 21:9 art cannot fit a tall frame with copy on top of
+          it; the crop lost the product and left the text on a blur. Below md
+          the art gets its own band, cropped to keep the product (it sits right
+          of centre in every banner), and the copy sits on a solid panel
+          underneath. Tablets too: the honey art centres its jar with badges
+          on the left, so copy over it collided at 820px. From lg up the art
+          fills the frame behind the copy. The band is capped at 46dvh so a
+          phone held sideways still shows the button. */}
+      <div className="relative aspect-[4/3] max-h-[46dvh] w-full shrink-0 sm:aspect-[16/9] lg:absolute lg:inset-0 lg:aspect-auto lg:max-h-none">
+        <Image
+          src={slide.img}
+          alt={slide.alt}
+          fill
+          priority={priority}
+          quality={90}
+          sizes="100vw"
+          className="object-cover object-[85%_center] lg:object-right"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-1/4 lg:hidden"
+          style={{ background: `linear-gradient(to bottom, transparent, ${slide.wash})` }}
+        />
+      </div>
       {/* Left legibility wash.
           Over a photographic ground this is deliberately light: the alpha is the
           measured minimum that clears WCAG AA against the headline ink (see
@@ -478,13 +477,8 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
           over busier pixels. */}
       <div
         aria-hidden
-        className="absolute inset-0 hidden sm:block"
+        className="absolute inset-0 hidden lg:block"
         style={{ background: desktopWash(slide) }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 sm:hidden"
-        style={{ background: mobileWash(slide) }}
       />
 
       <CornerTag label={slide.tag} />
@@ -501,7 +495,9 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
         in BOTH directions and walks up under the tag. Padding alone could not
         have fixed that; the content had to fit as well.
       */}
-      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-3 p-6 pt-[72px] sm:gap-3.5 sm:p-12 sm:pt-[76px] md:p-14 md:pt-[76px] lg:pl-16">
+      {/* Stacked (below lg) the corner tag sits on the art, so the copy needs
+          no tag clearance, only room at the bottom for the slider controls. */}
+      <div className="relative z-10 flex w-full flex-1 flex-col justify-center gap-2.5 px-5 pb-16 pt-3 sm:gap-3 sm:px-8 sm:pb-[4.5rem] md:px-12 lg:max-w-xl lg:gap-3.5 lg:p-14 lg:pt-[76px] lg:pl-16 xl:max-w-2xl">
         <FloatIn delay={0.05}>
           <p className="font-sans text-[clamp(14px,1.5vw,20px)] font-semibold text-ng-forest">{slide.kicker}</p>
           <h2 className="mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep">
@@ -554,26 +550,29 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
   // use, just with one shared colour since the artwork varies per promotion.
   const wash = "#F5F2E0";
   return (
-    <div className="relative flex h-full min-h-[inherit] overflow-hidden" style={{ backgroundColor: wash }}>
-      <Image
-        src={`/images/banners/sale-${promo.bannerKey}.webp`}
-        alt={promo.title}
-        fill
-        priority={priority}
-        quality={90}
-        sizes="100vw"
-        className="object-cover object-[62%_center] sm:object-right"
-      />
-      {/* Left legibility wash — desktop gentle fade, mobile heavier under the copy. */}
+    <div className="relative flex h-full min-h-[inherit] flex-col overflow-hidden lg:flex-row" style={{ backgroundColor: wash }}>
+      {/* Same stacking as the static slides: art in its own band below lg. */}
+      <div className="relative aspect-[4/3] max-h-[46dvh] w-full shrink-0 sm:aspect-[16/9] lg:absolute lg:inset-0 lg:aspect-auto lg:max-h-none">
+        <Image
+          src={`/images/banners/sale-${promo.bannerKey}.webp`}
+          alt={promo.title}
+          fill
+          priority={priority}
+          quality={90}
+          sizes="100vw"
+          className="object-cover object-[85%_center] lg:object-right"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-1/4 lg:hidden"
+          style={{ background: `linear-gradient(to bottom, transparent, ${wash})` }}
+        />
+      </div>
+      {/* Left legibility wash, lg and up where the copy sits on the art. */}
       <div
         aria-hidden
-        className="absolute inset-0 hidden sm:block"
+        className="absolute inset-0 hidden lg:block"
         style={{ background: `linear-gradient(to right, ${wash}F2 0%, ${wash}B3 42%, transparent 68%)` }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 sm:hidden"
-        style={{ background: `linear-gradient(to right, ${wash}F7 0%, ${wash}EE 38%, ${wash}99 60%, transparent 82%)` }}
       />
 
       <CornerTag label={promo.title} />
@@ -585,7 +584,7 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
         inset — less than the 69px corner tag standing in front of it. The
         clearance is now stated per breakpoint so no shorthand can undercut it.
       */}
-      <div className="relative z-10 flex w-full max-w-[17rem] sm:max-w-md md:max-w-xl lg:max-w-2xl flex-col justify-center gap-3.5 p-6 pt-[72px] sm:gap-4 sm:p-12 sm:pt-[76px] md:p-14 md:pt-[76px] lg:pl-16">
+      <div className="relative z-10 flex w-full flex-1 flex-col justify-center gap-3 px-5 pb-16 pt-3 sm:px-8 sm:pb-[4.5rem] md:px-12 lg:max-w-xl lg:gap-4 lg:p-14 lg:pt-[76px] lg:pl-16 xl:max-w-2xl">
         <FloatIn delay={0.05}>
           {/*
             Sized DOWN, deliberately. At clamp(…,60px) the headline set larger
