@@ -81,7 +81,7 @@ export function PageHero({
      both greens. See the note on `.ng-eyebrow` in globals.css for why this
      prop had no effect at all until now. */
   const eyebrowColor = tone === "forest" ? "text-ng-clay-light" : "text-ng-forest";
-  const descColor = tone === "forest" ? "text-ng-cream/70" : "text-ng-ink-muted";
+  const descColor = tone === "forest" ? "text-ng-cream/85" : "text-ng-ink-muted";
   return (
     <section
       className={cn(
@@ -101,9 +101,22 @@ export function PageHero({
             sizes="100vw"
             className="object-cover object-center"
           />
-          {/* Left→right cream scrim so the left-aligned dark text stays legible. */}
+          {/* Phones + tablets: the text runs the full width, so shade the whole
+              photo — a left-only fade left the right half of each line on bare
+              image and unreadable. */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 lg:hidden"
+            style={{
+              background:
+                tone === "forest"
+                  ? "linear-gradient(180deg, rgba(11,33,20,0.84) 0%, rgba(11,33,20,0.88) 55%, rgba(11,33,20,0.94) 100%)"
+                  : "linear-gradient(180deg, rgba(244,241,232,0.9) 0%, rgba(244,241,232,0.93) 55%, rgba(244,241,232,0.97) 100%)",
+            }}
+          />
+          {/* Laptops: text sits in the left column, so a left→right fade keeps it
+              legible while the photo shows through on the right. */}
+          <div
+            className="absolute inset-0 hidden lg:block"
             style={{
               background:
                 tone === "forest"

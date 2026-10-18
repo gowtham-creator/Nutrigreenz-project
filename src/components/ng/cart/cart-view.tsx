@@ -10,16 +10,17 @@ import { useCommerceRules } from "@/lib/commerce";
 import { CartLineItem } from "./cart-line-item";
 import { CartEmpty } from "./cart-empty";
 import { OrderSummary } from "./order-summary";
+import { freeDeliveryOver } from "@/lib/free-delivery-copy";
 
 /** Cart page body — empty state, or line items + order summary. */
 export function CartView() {
   const { items, count } = useCart();
   const { freeDeliveryThreshold } = useCommerceRules();
-  const freeDeliveryLabel = `₹${freeDeliveryThreshold.toLocaleString("en-IN")}`;
+  const freeDeliveryText = freeDeliveryOver(freeDeliveryThreshold);
   const trust: { icon: UiIconName; label: string }[] = [
     { icon: "lock" as const, label: "Secure payment" },
     { icon: "qr" as const, label: "Lot-traceable" },
-    { icon: "shipping" as const, label: `Free delivery over ${freeDeliveryLabel}` },
+    { icon: "shipping" as const, label: `Free delivery ${freeDeliveryText}` },
   ];
 
   if (items.length === 0) {
@@ -48,7 +49,7 @@ export function CartView() {
           </em>
         </>
       }
-      description={`Review your items, then proceed to checkout. Free delivery above ${freeDeliveryLabel}.`}
+      description={`Review your items, then proceed to checkout. Free delivery ${freeDeliveryText}.`}
     >
       <div className="grid gap-8 pb-24 lg:grid-cols-[1fr_380px] lg:gap-10 lg:pb-0">
         <div className="space-y-5">

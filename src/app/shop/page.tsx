@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
+import { freeDeliveryThreshold } from "@/lib/free-delivery";
+import { freeDeliveryOver } from "@/lib/free-delivery-copy";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
@@ -21,7 +22,7 @@ export const revalidate = 60;
 
 export default async function ShopPage() {
   const { products, categories, categoryTags } = await getStorefrontCatalog();
-  const freeFrom = await freeDeliveryThresholdLabel();
+  const freeFrom = await freeDeliveryThreshold();
   const avgRating =
     products.length > 0
       ? (products.reduce((sum, p) => sum + p.rating, 0) / products.length).toFixed(1)
@@ -58,7 +59,7 @@ export default async function ShopPage() {
             { icon: "star" as const, label: `${avgRating} avg rating` },
             { icon: "flask" as const, label: "Lab-tested every lot" },
             { icon: "qr" as const, label: "Traceable to the farm" },
-            { icon: "shipping" as const, label: `Free delivery over ${freeFrom}` },
+            { icon: "shipping" as const, label: `Free delivery ${freeDeliveryOver(freeFrom)}` },
           ] as { label: string; icon: UiIconName }[]).map((s) => (
             <div
               key={s.label}

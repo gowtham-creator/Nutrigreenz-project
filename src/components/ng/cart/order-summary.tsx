@@ -36,7 +36,8 @@ export function OrderSummary() {
   const total = subtotal + shipping + tax;
 
   const amountToFreeDelivery = Math.max(0, freeDeliveryThreshold - subtotal);
-  const freeDeliveryProgress = Math.min(100, (subtotal / freeDeliveryThreshold) * 100);
+  const freeDeliveryProgress =
+    freeDeliveryThreshold > 0 ? Math.min(100, (subtotal / freeDeliveryThreshold) * 100) : 100;
 
   const movMet = subtotal >= minOrderValue;
   const amountToMov = Math.max(0, minOrderValue - subtotal);
@@ -220,7 +221,10 @@ export function OrderSummary() {
               { icon: "qr", label: "Lot-traceable" },
               {
                 icon: "delivery",
-                label: `Free over ₹${freeDeliveryThreshold.toLocaleString("en-IN")}`,
+                label:
+                  freeDeliveryThreshold > 0
+                    ? `Free over ₹${freeDeliveryThreshold.toLocaleString("en-IN")}`
+                    : "Free delivery",
               },
             ] as { icon: UiIconName; label: string }[]).map((r) => (
               <li key={r.label} className="flex flex-col items-center gap-1.5">

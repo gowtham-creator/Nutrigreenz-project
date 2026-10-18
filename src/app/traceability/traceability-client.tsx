@@ -59,11 +59,11 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
             placeholder="e.g. ANT-24-051"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="bg-ng-cream/10 text-ng-cream placeholder:text-ng-cream/40 border-ng-cream/20"
+            className="h-12 bg-ng-paper text-ng-ink placeholder:text-ng-ink-soft border-transparent shadow-sm"
           />
           <Button variant="gold" onClick={() => setShown(true)}>Trace</Button>
         </div>
-        <p className="text-[12px] text-ng-cream/50 mt-3">
+        <p className="text-[12px] text-ng-cream/75 mt-3">
           Demo:{" "}
           <button onClick={() => { setCode(SAMPLE.code); setShown(true); }} className="underline text-ng-clay">
             ANT-24-051

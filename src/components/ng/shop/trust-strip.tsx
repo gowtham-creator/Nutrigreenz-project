@@ -1,6 +1,6 @@
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { FSSAI_LICENCE, FssaiMark } from "../fssai-mark";
-import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
+import { freeDeliveryThreshold } from "@/lib/free-delivery";
 
 /**
  * ShopTrustStrip — the four storefront guarantees, between the hero and the
@@ -33,7 +33,7 @@ import { freeDeliveryThresholdLabel } from "@/lib/free-delivery";
  * away for a tidier row.
  */
 
-const pillars = (freeFrom: string): { icon: UiIconName | "fssai"; title: string; note: string }[] => [
+const pillars = (freeFrom: number): { icon: UiIconName | "fssai"; title: string; note: string }[] => [
   {
     /* The real regulator mark, drawn by <FssaiMark> so it cannot be shown
        without the licence number beside it. */
@@ -53,13 +53,13 @@ const pillars = (freeFrom: string): { icon: UiIconName | "fssai"; title: string;
   },
   {
     icon: "shipping",
-    title: `Free delivery ${freeFrom}+`,
+    title: freeFrom > 0 ? `Free delivery ₹${freeFrom.toLocaleString("en-IN")}+` : "Free delivery",
     note: "Cold-chain where needed",
   },
 ];
 
 export async function ShopTrustStrip() {
-  const PILLARS = pillars(await freeDeliveryThresholdLabel());
+  const PILLARS = pillars(await freeDeliveryThreshold());
   return (
     <div className="border-y border-ng-line-soft bg-ng-paper">
       <div className="mx-auto grid max-w-7xl grid-cols-1 px-5 sm:grid-cols-2 md:grid-cols-4 md:px-8">
