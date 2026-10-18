@@ -58,7 +58,11 @@ async function customerCell(addressSnapshot: Record<string, unknown> | null): Pr
 }
 
 beforeEach(() => {
+  m.sendEmail.mockReset();
   m.sendEmail.mockResolvedValue(undefined);
+  // The customer-name tests read the single roster email; the always-list
+  // has its own tests below.
+  process.env.ORDER_ALERT_ALWAYS = "";
 });
 
 describe("admin order alert — customer name", () => {
@@ -92,5 +96,30 @@ describe("admin order alert — customer name", () => {
     expect(await customerCell({ fullName: '<img src=x onerror="x">' })).toBe(
       "&lt;img src=x onerror=&quot;x&quot;&gt;",
     );
+  });
+});
+
+describe("admin order alert — always-notify inboxes", () => {
+  const sentTo = () => m.sendEmail.mock.calls.map((c) => (c[0] as { to: string }).to);
+
+  it("also emails the owner's inbox by default, alongside the admin roster", async () => {
+    delete process.env.ORDER_ALERT_ALWAYS;
+    m.getOrder.mockResolvedValue(orderWith({ fullName: "Asha Rao" }));
+    await sendAdminOrderAlert("ord-1");
+    expect(sentTo()).toEqual(["ops@nutrigreenz.farm", "nutrigreenzfarmtech@gmail.com"]);
+  });
+
+  it("takes the list from ORDER_ALERT_ALWAYS and sends each inbox one copy", async () => {
+    process.env.ORDER_ALERT_ALWAYS = "Owner@Example.com, ops@nutrigreenz.farm, not-an-email";
+    m.getOrder.mockResolvedValue(orderWith({ fullName: "Asha Rao" }));
+    await sendAdminOrderAlert("ord-1");
+    expect(sentTo()).toEqual(["ops@nutrigreenz.farm", "Owner@Example.com"]);
+  });
+
+  it("can be switched off with an empty ORDER_ALERT_ALWAYS", async () => {
+    process.env.ORDER_ALERT_ALWAYS = "";
+    m.getOrder.mockResolvedValue(orderWith({ fullName: "Asha Rao" }));
+    await sendAdminOrderAlert("ord-1");
+    expect(sentTo()).toEqual(["ops@nutrigreenz.farm"]);
   });
 });

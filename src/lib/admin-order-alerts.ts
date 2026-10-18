@@ -70,6 +70,39 @@ const DEFAULT_ALERT_EXCLUDE = [
   "sam214800@gmail.com",
 ];
 
+/**
+ * Inboxes that get EVERY new-order alert, whoever the operators are.
+ *
+ * The owner (Ramakrishna) reads orders at nutrigreenzfarmtech@gmail.com, which
+ * is not an admin login, so the roster above never reaches it. Env-overridable
+ * (comma-separated) so it can change without a deploy; ORDER_ALERT_ALWAYS=""
+ * turns it off.
+ */
+const DEFAULT_ALERT_ALWAYS = ["nutrigreenzfarmtech@gmail.com"];
+
+function alwaysRecipients(): string[] {
+  const raw = process.env.ORDER_ALERT_ALWAYS;
+  const list =
+    raw === undefined
+      ? DEFAULT_ALERT_ALWAYS
+      : raw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+  return list.filter((e) => e.includes("@"));
+}
+
+/** Roster first, then the always-list; one copy per inbox. */
+function mergeRecipients(...lists: string[][]): string[] {
+  const out = new Map<string, string>();
+  for (const list of lists) {
+    for (const to of list) {
+      if (!out.has(to.toLowerCase())) out.set(to.toLowerCase(), to);
+    }
+  }
+  return [...out.values()];
+}
+
 function excludedLogins(): Set<string> {
   const raw = process.env.ORDER_ALERT_EXCLUDE;
   const list =
@@ -246,7 +279,7 @@ export async function sendAdminOrderAlert(orderId: string): Promise<void> {
     const order = await getOrder(orderId);
     if (!order) return;
 
-    const recipients = await alertRecipients();
+    const recipients = mergeRecipients(await alertRecipients(), alwaysRecipients());
     if (recipients.length === 0) return;
 
     const subject = `New order ${order.orderNumber} · ${rupees(order.totalPaise)}`;
