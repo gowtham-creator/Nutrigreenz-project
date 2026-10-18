@@ -856,9 +856,21 @@ export default function CheckoutPage() {
                 <p className="mt-3 text-center text-[12px] text-ng-danger">
                   We don&apos;t deliver to {selectedAddress.pincode} yet.
                 </p>
+              ) : belowMinimum ? (
+                // Said here, under the button, not only in the banner at the top:
+                // on a phone the last step shows just this card, and a greyed-out
+                // button with no reason reads as a broken checkout.
+                <p className="mt-3 text-center text-[12px] font-medium text-ng-danger">
+                  Add {INR(rules.minOrderValue - subtotal)} more to reach the{" "}
+                  {INR(rules.minOrderValue)} minimum order value.
+                </p>
               ) : !acknowledged ? (
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
                   Acknowledge the no-cancellation policy to continue.
+                </p>
+              ) : !canPlace ? (
+                <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
+                  Choose a delivery address, slot and payment method to continue.
                 </p>
               ) : (
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">

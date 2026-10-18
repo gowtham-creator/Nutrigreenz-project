@@ -465,8 +465,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </Parallax>
         </div>
 
-        <div className="relative z-10 grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
-          <div className="md:sticky md:top-24 md:self-start">
+        {/* grid-cols-1 is minmax(0,1fr): a bare grid sizes its one column to the
+            widest child, and the 10-thumbnail strip made it ~900px on a phone,
+            pushing the whole page sideways. min-w-0 holds both columns too. */}
+        <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10 lg:gap-14">
+          <div className="min-w-0 md:sticky md:top-24 md:self-start">
             <Reveal>
               <Gallery images={images} nutritionBySize={nutritionBySize} badge={p.badge} badgeTone={p.badgeTone} discount={discount} promoLabel={p.promoLabel} promoPercent={p.promoPercent} produceIcon={content.produceIcon} theme={theme} />
             </Reveal>
@@ -485,7 +488,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             panel ended, and the product vanished exactly when the copy started
             arguing for it.
           */}
-          <div className="flex flex-col gap-8">
+          <div className="flex min-w-0 flex-col gap-8">
             <Reveal delay={0.08}>
               <BuyPanel
                 product={p}
