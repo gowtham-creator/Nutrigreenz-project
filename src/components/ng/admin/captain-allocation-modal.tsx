@@ -112,15 +112,15 @@ export function CaptainAllocationModal({
         }),
       });
       if (!res.ok) throw new Error("save");
-      toast.success("Products allocated", {
+      toast.success("Products saved", {
         description:
           selected.size === 0
-            ? `${captainName} can't sell anything until products are assigned.`
-            : `${captainName} can sell ${selected.size} SKU${selected.size === 1 ? "" : "s"}.`,
+            ? `${captainName} cannot sell anything until you assign products.`
+            : `${captainName} can now sell ${selected.size} product${selected.size === 1 ? "" : "s"}.`,
       });
       onClose();
     } catch {
-      toast.error("Not saved", { description: "Couldn't save the allocation. Try again." });
+      toast.error("Products not saved", { description: "Check your connection, then save again." });
     } finally {
       setSaving(false);
     }
@@ -142,19 +142,20 @@ export function CaptainAllocationModal({
         onClick={onClose}
         className="fixed inset-0 cursor-pointer bg-ng-forest-deep/30 backdrop-blur-[1px]"
       />
-      <div className="relative flex min-h-full items-center justify-center p-4">
+      <div className="relative flex min-h-full items-center justify-center p-2 sm:p-4">
         <div
           role="dialog"
           aria-modal="true"
+          aria-label={`Stall products for ${captainName}`}
           className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl border border-ng-line-soft bg-ng-cream shadow-[var(--shadow-ng-modal)]"
         >
-          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-ng-line-soft bg-ng-paper px-6 py-5">
+          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-ng-line-soft bg-ng-paper px-4 sm:px-6 py-5">
             <div className="min-w-0">
               <h2 className="font-display text-[20px] leading-tight text-ng-forest-deep">
                 Stall products
               </h2>
               <p className="mt-1 text-[12px] font-medium text-ng-ink-soft">
-                What {captainName} may sell in the field.
+                Choose what {captainName} can sell at the stall.
               </p>
             </div>
             <button
@@ -167,11 +168,11 @@ export function CaptainAllocationModal({
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 sm:px-6 py-5">
             {failed ? (
               <p className="rounded-xl border border-ng-danger/40 bg-ng-danger/5 px-3 py-2.5 text-[12.5px] text-ng-danger">
-                Couldn&rsquo;t load the catalogue. Close and reopen. Saving now would clear
-                this captain&rsquo;s existing allocation.
+                The product list did not load. Close this and open it again. Saving is
+                turned off so this captain&rsquo;s current products are not cleared.
               </p>
             ) : variants === null ? (
               <p className="text-[13px] text-ng-ink-muted">Loading products…</p>
@@ -182,10 +183,12 @@ export function CaptainAllocationModal({
                     <UiIcon name="search" size={15} />
                   </span>
                   <input
+                    type="search"
+                    aria-label="Search products"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search a product, size or SKU…"
-                    className="h-10 w-full rounded-xl border border-ng-line-soft bg-ng-paper pl-9 pr-3 text-[13px] text-ng-ink outline-none transition-colors placeholder:text-ng-ink-soft focus:border-ng-forest"
+                    placeholder="Search by product, size or SKU"
+                    className="h-11 w-full rounded-xl border border-ng-line-soft bg-ng-paper pl-9 pr-3 text-[13px] text-ng-ink outline-none transition-colors placeholder:text-ng-ink-soft focus:border-ng-forest"
                   />
                 </div>
 
@@ -206,13 +209,14 @@ export function CaptainAllocationModal({
                           onClick={() => toggle(v.id)}
                           aria-pressed={on}
                           className={cn(
-                            "flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors",
+                            "flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left transition-colors cursor-pointer",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ng-forest",
                             on ? "bg-ng-forest/10" : "hover:bg-ng-sage/25",
                           )}
                         >
                           <span
                             className={cn(
-                              "grid size-4 shrink-0 place-items-center rounded border",
+                              "grid size-5 shrink-0 place-items-center rounded border",
                               on ? "border-ng-forest bg-ng-forest text-ng-cream" : "border-ng-line",
                             )}
                           >
@@ -224,16 +228,19 @@ export function CaptainAllocationModal({
                               <span className="text-ng-ink-muted"> · {v.pack}</span>
                             ) : null}
                           </span>
-                          <span className="shrink-0 text-[12px] font-semibold tabular-nums text-ng-forest">
-                            ₹{Math.round(v.pricePaise / 100)}
+                          <span className="shrink-0 text-[12.5px] font-semibold tabular-nums text-ng-forest">
+                            ₹{(v.pricePaise / 100).toLocaleString("en-IN", {
+                              minimumFractionDigits: v.pricePaise % 100 === 0 ? 0 : 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </span>
                           <span
                             className={cn(
-                              "w-16 shrink-0 text-right text-[11px] tabular-nums",
+                              "w-[5.5rem] shrink-0 text-right text-[11.5px] tabular-nums",
                               v.available === 0 ? "text-ng-danger" : "text-ng-ink-soft",
                             )}
                           >
-                            {v.available === 0 ? "no stock" : `${v.available} left`}
+                            {v.available === 0 ? "None in stock" : `${v.available} in stock`}
                           </span>
                         </button>
                       );
@@ -244,17 +251,17 @@ export function CaptainAllocationModal({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-ng-line-soft bg-ng-paper px-6 py-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-ng-line-soft bg-ng-paper px-4 sm:px-6 py-4">
             <p className="text-[12px] text-ng-ink-muted">
               {selected.size === 0
-                ? "Nothing selected. This captain will sell nothing."
+                ? "Nothing selected. This captain will not be able to sell anything."
                 : `${selected.size} SKU${selected.size === 1 ? "" : "s"} selected`}
             </p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer rounded-full border border-ng-line px-4 py-2 text-[12.5px] font-medium text-ng-ink transition-colors hover:bg-ng-paper"
+                className="min-h-10 cursor-pointer rounded-full border border-ng-line px-4 text-[12.5px] font-medium text-ng-ink transition-colors hover:bg-ng-paper"
               >
                 Cancel
               </button>
@@ -262,10 +269,10 @@ export function CaptainAllocationModal({
                 type="button"
                 disabled={saving || failed || variants === null}
                 onClick={() => void save()}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-ng-forest-deep px-4 py-2 text-[12.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full bg-ng-forest-deep px-4 text-[12.5px] font-semibold text-ng-cream transition-colors hover:bg-ng-forest disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Icon name="save" size={15} />
-                {saving ? "Saving…" : "Save allocation"}
+                {saving ? "Saving…" : "Save products"}
               </button>
             </div>
           </div>

@@ -1,6 +1,5 @@
-import { requireCaptain } from "@/lib/captain-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { upsertSettlement } from "@/lib/captains";
+import { requireActiveCaptain, upsertSettlement } from "@/lib/captains";
 
 /**
  * POST /api/captain/settlements  { cashCounted }
@@ -12,7 +11,7 @@ import { upsertSettlement } from "@/lib/captains";
  * per day — a re-submit overwrites. The response is all integer paise.
  */
 export async function POST(request: Request): Promise<Response> {
-  const gate = await requireCaptain();
+  const gate = await requireActiveCaptain();
   if (gate instanceof Response) return gate;
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
@@ -26,7 +25,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const cashCounted = Number(body.cashCounted);
-  if (!Number.isFinite(cashCounted) || cashCounted < 0) {
+  if (!Number.isFinite(cashCounted) || cashCounted < 0 || cashCounted > 10_000_000) {
     return Response.json({ ok: false, error: "invalid_cash_counted" }, { status: 400 });
   }
 

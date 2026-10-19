@@ -10,18 +10,19 @@ import {
   CaptainRing,
   CaptainStat,
   CaptainEmpty,
+  CaptainStatusChip,
 } from "@/components/ng/captain/captain-shell";
-import { Icon } from "@/components/ui/icon";
 import {
   useCaptain,
   formatCaptainDate,
+  formatInr,
   formatPickupWhen,
   fetchCaptainPickups,
 } from "@/components/ng/captain/captain-store";
 import type { CaptainPickup } from "@/types/nutrigreenz";
 import { UiIcon } from "@/components/ui/ui-icon";
 
-/** Captain's daily capture target — the "mission" the dashboard tracks toward. */
+/** Captain's daily target: customers served, tracked by the ring on Today. */
 const DAILY_GOAL = 15;
 
 function greeting(): string {
@@ -35,15 +36,14 @@ export default function CaptainHome() {
   const { captain, stats, todayCustomers } = useCaptain();
   const today = formatCaptainDate();
   const remaining = Math.max(0, DAILY_GOAL - stats.count);
-  const goalPct = Math.min(100, Math.round((stats.count / DAILY_GOAL) * 100));
 
-  // Real community pickups due today (managed on the Pickups tab).
+  // Community pickups still due today (managed on the Pickups tab).
   const [duePickups, setDuePickups] = useState<CaptainPickup[]>([]);
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const list = await fetchCaptainPickups();
-      if (!cancelled) setDuePickups(list.filter((p) => p.status === "due"));
+      if (!cancelled && list) setDuePickups(list.filter((p) => p.status === "due"));
     })();
     return () => {
       cancelled = true;
@@ -59,205 +59,120 @@ export default function CaptainHome() {
       title={
         <>
           {greeting()}
-          {firstName ? `, ${firstName}` : ""}.
+          {firstName ? `, ${firstName}` : ""}
         </>
       }
-      subtitle={
-        <>
-          Your stall is live at{" "}
-          <span className="text-ng-forest font-semibold">{captain?.stall ?? "your community stall"}</span>. Let&apos;s
-          capture the day.
-        </>
-      }
+      subtitle={captain?.stall ? `Your stall today: ${captain.stall}` : undefined}
     >
-      {/* ===== Mission hero ===== */}
+      {/* ===== Today's figures + the one main action ===== */}
       <CaptainHero className="p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
-            <UiIcon name="target" size={12} />
-            Daily mission
-          </div>
-          <span className="text-[11px] text-ng-cream/55">Goal · {DAILY_GOAL}</span>
-        </div>
-
-        <div className="mt-4 flex items-center gap-4">
-          <CaptainRing value={stats.count} max={DAILY_GOAL} size={96} stroke={9} className="text-ng-cream">
-            <span className="font-display text-[30px] text-ng-cream leading-none">{stats.count}</span>
-            <span className="text-[9px] uppercase tracking-[0.12em] text-ng-leaf-soft mt-0.5">captured</span>
+        <div className="flex items-center gap-4">
+          <CaptainRing value={stats.count} max={DAILY_GOAL} size={88} stroke={8}>
+            <span className="font-display text-[30px] text-ng-cream leading-none tabular-nums">{stats.count}</span>
+            <span className="text-[11px] text-ng-cream/70 mt-0.5">of {DAILY_GOAL}</span>
           </CaptainRing>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] text-ng-cream/80 leading-snug">
-              {remaining > 0 ? (
-                <>
-                  <span className="font-display text-ng-cream text-[18px]">{remaining} more</span> to hit today&apos;s
-                  target.
-                </>
-              ) : (
-                <span className="font-display text-ng-cream text-[16px]">Target smashed, keep going.</span>
-              )}
+            <div className="text-[13px] text-ng-cream/75">Sales today</div>
+            <div className="font-display text-[34px] leading-none mt-1 tabular-nums">{formatInr(stats.gmv)}</div>
+            <div className="text-[13px] text-ng-cream/75 mt-2 text-pretty">
+              {remaining > 0
+                ? `${remaining} more customer${remaining === 1 ? "" : "s"} to reach today's goal.`
+                : "You have reached today's goal."}
             </div>
-            <div className="mt-2.5 h-1.5 w-full rounded-full bg-ng-cream/12 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
-                style={{ width: `${goalPct}%` }}
-              />
-            </div>
-            <div className="mt-1.5 text-[10.5px] text-ng-cream/55">{goalPct}% of daily goal</div>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <CaptainStat
-            tone="onForest"
-            icon="bag-smile-bold"
-            label="Stall GMV"
-            value={`₹${stats.gmv.toLocaleString("en-IN")}`}
-          />
-          <CaptainStat tone="onForest" icon="checklist-minimalistic-bold" label="Orders" value={stats.orders} />
+          <CaptainStat tone="onForest" icon="banknote-2-bold" label="Cash" value={formatInr(stats.cash)} />
+          <CaptainStat tone="onForest" icon="smartphone-2-bold" label="UPI" value={formatInr(stats.upi)} />
         </div>
 
         <Link
           href="/captain/intake"
-          className="group mt-4 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3.5 text-[14.5px] cursor-pointer hover:bg-ng-green-bright transition-colors shadow-[0_10px_24px_-8px_rgba(102,191,115,0.7)]"
+          className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold text-[16px] cursor-pointer hover:bg-ng-green-bright transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-cream"
         >
           <UiIcon name="customers" size={18} />
-          Capture a customer
-          <Icon
-            name="arrow-right-linear"
-            size={17}
-            className="motion-safe:transition-transform group-hover:translate-x-0.5"
-          />
+          Record a sale
         </Link>
       </CaptainHero>
 
-      {/* ===== Quick actions ===== */}
-      <div className="grid grid-cols-3 gap-2.5 mt-4">
-        <QuickAction href="/captain/intake" icon="user-plus-bold" label="Intake" tone="forest" />
-        <QuickAction href="/captain/pickups" icon="order" label="Pickups" />
-        <QuickAction href="/captain/settle" icon="wallet" label="Settle" />
-      </div>
-
-      {/* ===== Next stop (route emphasis) ===== */}
+      {/* ===== Next pickup ===== */}
       {nextStop ? (
         <>
           <CaptainSectionHead
             action={
               <Link
                 href="/captain/pickups"
-                className="text-[12px] text-ng-forest font-semibold inline-flex items-center gap-1 cursor-pointer"
+                className="inline-flex min-h-11 items-center text-[14px] text-ng-forest font-semibold cursor-pointer"
               >
-                All pickups <Icon name="arrow-right-linear" size={14} />
+                All pickups
               </Link>
             }
           >
-            Next stop
+            Next pickup
           </CaptainSectionHead>
-          <Link href="/captain/pickups" className="block">
-            <div className="relative overflow-hidden rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-4 cursor-pointer hover:border-ng-leaf transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="size-11 rounded-xl bg-ng-forest ring-1 ring-ng-leaf/30 flex items-center justify-center shrink-0">
-                  <UiIcon name="location" size={22} className="text-ng-leaf" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-ng-forest">Up next</span>
+          <div className="space-y-2.5">
+            {duePickups.slice(0, 3).map((p) => (
+              <Link key={p.id} href="/captain/pickups" className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-forest">
+                <CaptainCard className="flex min-h-16 items-center gap-3 cursor-pointer hover:border-ng-leaf transition-colors">
+                  <div className="size-11 rounded-xl bg-ng-sage/50 flex items-center justify-center shrink-0">
+                    <UiIcon name="ordersBox" size={20} className="text-ng-forest" />
                   </div>
-                  <div className="font-display text-[15px] text-ng-forest-deep truncate leading-tight mt-0.5">
-                    {nextStop.community}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-[15px] text-ng-forest-deep truncate">{p.community}</div>
+                    <div className="text-[13px] text-ng-ink-muted mt-0.5 tabular-nums">{formatPickupWhen(p.dueAt)}</div>
                   </div>
-                  <div className="text-[12px] text-ng-ink-muted mt-0.5">{formatPickupWhen(nextStop.dueAt)}</div>
-                </div>
-                <div className="shrink-0 text-ng-forest">
-                  <Icon name="arrow-right-linear" size={20} />
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          {duePickups.slice(1).length > 0 ? (
-            <div className="space-y-2.5 mt-2.5">
-              {duePickups.slice(1).map((p) => (
-                <Link key={p.id} href="/captain/pickups" className="block">
-                  <CaptainCard className="flex items-center gap-3 cursor-pointer hover:border-ng-leaf transition-colors">
-                    <div className="size-10 rounded-xl bg-ng-cream flex items-center justify-center shrink-0">
-                      <UiIcon name="ordersBox" size={20} className="text-ng-forest" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-[14px] text-ng-forest-deep truncate">{p.community}</div>
-                      <div className="text-[12px] text-ng-ink-muted mt-0.5">{formatPickupWhen(p.dueAt)}</div>
-                    </div>
-                    <div className="shrink-0 text-ng-ink-soft">
-                      <Icon name="arrow-right-linear" size={18} />
-                    </div>
-                  </CaptainCard>
-                </Link>
-              ))}
-            </div>
-          ) : null}
+                  <CaptainStatusChip status={p.status} />
+                </CaptainCard>
+              </Link>
+            ))}
+          </div>
         </>
       ) : null}
 
-      {/* ===== Recent captures ===== */}
+      {/* ===== Latest sales ===== */}
       <CaptainSectionHead
         action={
           todayCustomers.length > 0 ? (
-            <span className="text-[12px] text-ng-ink-soft">{todayCustomers.length} today</span>
+            <span className="text-[13px] text-ng-ink-muted tabular-nums">{todayCustomers.length} today</span>
           ) : undefined
         }
       >
-        Latest captures
+        Latest sales
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
         <CaptainEmpty
           icon="customers"
-          title="No captures yet today"
-          hint="Tap “Capture a customer” to log your first stall sale."
+          title="No sales yet today"
+          hint="Your sales show here as soon as you record them."
+          action={
+            <Link
+              href="/captain/intake"
+              className="inline-flex min-h-11 items-center rounded-full bg-ng-forest px-5 text-[14px] font-semibold text-ng-cream"
+            >
+              Record a sale
+            </Link>
+          }
         />
       ) : (
         <div className="space-y-2.5">
           {todayCustomers.slice(0, 3).map((c) => (
             <CaptainCard key={c.id} className="flex items-center gap-3">
-              <div className="size-9 rounded-full bg-ng-sage/60 text-ng-forest flex items-center justify-center font-display text-[13px] shrink-0">
+              <div className="size-10 rounded-full bg-ng-sage/60 text-ng-forest flex items-center justify-center font-display text-[15px] shrink-0" aria-hidden>
                 {c.name.charAt(0)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-medium text-[13.5px] text-ng-forest-deep truncate">{c.name}</div>
-                <div className="text-[11.5px] text-ng-ink-soft font-mono mt-0.5">+91 {c.mobile}</div>
+                <div className="font-semibold text-[15px] text-ng-forest-deep truncate">{c.name}</div>
+                <div className="text-[13px] text-ng-ink-muted mt-0.5 tabular-nums">+91 {c.mobile}</div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-display text-[15px] text-ng-forest-deep">₹{c.total.toLocaleString("en-IN")}</div>
-                <div className="text-[10px] uppercase tracking-wider text-ng-ink-soft mt-0.5">{c.payMode}</div>
+                <div className="font-display text-[17px] text-ng-forest-deep tabular-nums">{formatInr(c.total)}</div>
+                <div className="text-[12px] text-ng-ink-muted mt-0.5">{c.payMode}</div>
               </div>
             </CaptainCard>
           ))}
         </div>
       )}
     </CaptainShell>
-  );
-}
-
-function QuickAction({
-  href,
-  icon,
-  label,
-  tone = "paper",
-}: {
-  href: string;
-  icon: string;
-  label: string;
-  tone?: "paper" | "forest";
-}) {
-  return (
-    <Link
-      href={href}
-      className={
-        tone === "forest"
-          ? "flex flex-col items-center justify-center gap-1.5 h-full rounded-2xl bg-ng-forest text-ng-cream py-3.5 text-[12.5px] font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors shadow-[0_8px_20px_-10px_rgba(20,51,31,0.6)]"
-          : "flex flex-col items-center justify-center gap-1.5 h-full rounded-2xl bg-ng-white border border-ng-line text-ng-forest-deep py-3.5 text-[12.5px] font-medium cursor-pointer hover:border-ng-leaf hover:bg-ng-sage/20 transition-colors"
-      }
-    >
-      <Icon name={icon} size={22} className={tone === "forest" ? "text-ng-leaf" : "text-ng-forest"} />
-      {label}
-    </Link>
   );
 }

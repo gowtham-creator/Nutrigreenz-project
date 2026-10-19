@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { shortCommunity } from "@/lib/community-label";
@@ -48,9 +48,14 @@ const INLINE_ERRORS = new Set(["name_required", "invalid_phone", "invalid_commis
 
 const GRID = "grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.7fr)_minmax(0,0.5fr)]";
 
-/** INTEGER PAISE → the admin's INR string (rupee-rounded, en-IN grouped). */
+/** INTEGER PAISE → the admin's INR string (en-IN grouped). Paise are shown when
+ *  there are any: rounding to rupees turned a ₹0.40 shortfall into "₹0 short". */
 function inr(paise: number): string {
-  return `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+  const p = Math.round(paise);
+  return `₹${(p / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: p % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 /** 1–2 letter avatar monogram from a captain's name. */
@@ -63,8 +68,9 @@ function initials(name: string): string {
 
 function fmtDateTime(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     hour: "numeric",
@@ -76,7 +82,15 @@ function fmtDateTime(iso: string): string {
 function fmtDay(value: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  // A bare YYYY-MM-DD (a settle_date) parses as UTC midnight; formatting it in
+  // UTC keeps it on its own day. A timestamp is shown in IST.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  return d.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: dateOnly ? "UTC" : "Asia/Kolkata",
+  });
 }
 
 /** "3 items · Spinach, Kale +2" — a compact one-line summary of a capture. */
@@ -154,7 +168,7 @@ export default function AdminCaptains() {
     void load();
   }, [load]);
 
-  const rows = captains ?? [];
+  const rows = useMemo(() => captains ?? [], [captains]);
 
   const stats = useMemo(() => {
     let active = 0;
@@ -217,7 +231,7 @@ export default function AdminCaptains() {
         const code = err instanceof Error ? err.message : "request-failed";
         setSaveError(code);
         if (!INLINE_ERRORS.has(code)) {
-          toast.error("Could not save captain", { description: "Please try again." });
+          toast.error("Captain not saved", { description: "Try again in a moment." });
         }
       } finally {
         setSaving(false);
@@ -230,13 +244,19 @@ export default function AdminCaptains() {
     async (c: Captain) => {
       try {
         await sendJson(`/api/admin/captains/${c.id}`, "DELETE", {});
-        toast.success("Captain removed", { description: c.name });
+        toast.success("Captain deleted", { description: c.name });
         setModalOpen(false);
         setEditing(null);
         if (selectedId === c.id) closeDetail();
         await load();
-      } catch {
-        toast.error("Could not remove captain", { description: "Please try again." });
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "";
+        toast.error("Captain not deleted", {
+          description:
+            code === "has_history"
+              ? `${c.name} has sales or settlements on record. Turn off Active instead, so the records are kept.`
+              : "Try again in a moment.",
+        });
       }
     },
     [load, selectedId],
@@ -252,13 +272,16 @@ export default function AdminCaptains() {
       setCaptains((prev) =>
         prev ? prev.map((x) => (x.id === c.id ? { ...x, active: !next } : x)) : prev,
       );
-      toast.error("Could not update captain", { description: "Please try again." });
+      toast.error(`${c.name} not updated`, { description: "Try again in a moment." });
     } finally {
       setTogglingId(null);
     }
   }, []);
 
+  // Ignores a slower response for a captain the admin has already moved off.
+  const detailRequest = useRef(0);
   const openDetail = useCallback(async (id: string) => {
+    const seq = ++detailRequest.current;
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
@@ -266,11 +289,11 @@ export default function AdminCaptains() {
       const res = await fetch(`/api/admin/captains/${id}`, { cache: "no-store" });
       if (!res.ok) throw new Error("detail-failed");
       const json = (await res.json()) as CaptainDetailResponse;
-      setDetail(json);
+      if (seq === detailRequest.current) setDetail(json);
     } catch {
-      setDetail(null);
+      if (seq === detailRequest.current) setDetail(null);
     } finally {
-      setDetailLoading(false);
+      if (seq === detailRequest.current) setDetailLoading(false);
     }
   }, []);
 
@@ -282,24 +305,20 @@ export default function AdminCaptains() {
   return (
     <AdminShell
       active="/admin/captains"
-      title={
-        <span>
-          Captains <em className="italic text-ng-clay font-display">roster</em>
-        </span>
-      }
-      subtitle="Field-sales captains: their communities, commission, and today's stall sales"
+      title="Captains"
+      subtitle="Your field sales team: where they sell, their commission and today's stall sales"
       actions={
         <>
           <button
             onClick={() => void load()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 text-[13px] hover:bg-ng-paper transition-colors cursor-pointer"
           >
             <Icon name="refresh-bold" size={15} className="text-ng-forest" />
             Refresh
           </button>
           <button
             onClick={openAdd}
-            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 text-[13px] hover:bg-ng-forest transition-colors cursor-pointer"
           >
             <Icon name="add-circle-bold" size={15} />
             Add captain
@@ -311,30 +330,72 @@ export default function AdminCaptains() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatTile label="Captains" value={stats.total.toLocaleString("en-IN")} />
         <StatTile label="Active" value={stats.active.toLocaleString("en-IN")} />
-        <StatTile label="GMV today" value={inr(stats.gmvPaise)} />
-        <StatTile label="Captures today" value={stats.captures.toLocaleString("en-IN")} />
+        <StatTile label="Takings today" value={inr(stats.gmvPaise)} />
+        <StatTile label="Sales today" value={stats.captures.toLocaleString("en-IN")} />
       </div>
 
       <Card
         title="Roster"
         action={
           <label className="relative flex items-center">
+            <span className="sr-only">Search captains</span>
             <UiIcon
               name="search"
               size={15}
               className="absolute left-3 text-ng-ink-muted pointer-events-none"
             />
             <input
+              type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, phone, area or community"
-              className="w-72 max-w-[60vw] rounded-full border border-ng-line bg-ng-cream pl-9 pr-3 py-2 text-[12.5px] font-medium text-ng-ink placeholder:text-ng-ink-muted focus:outline-none focus:border-ng-leaf transition-colors"
+              placeholder="Name, phone, area or community"
+              className="w-72 max-w-[52vw] min-h-10 rounded-full border border-ng-line bg-ng-cream pl-9 pr-3 text-[13px] font-medium text-ng-ink placeholder:text-ng-ink-muted focus:outline-none focus:border-ng-leaf transition-colors"
             />
           </label>
         }
         className="!p-0 overflow-hidden"
       >
-        <div className="overflow-x-auto">
+        {/* Phones: one card per captain. The wide table below takes over from md. */}
+        {!loading && !error && filtered.length > 0 ? (
+          <ul className="md:hidden divide-y divide-ng-line-soft border-t border-ng-line-soft">
+            {filtered.map((c) => (
+              <li key={c.id} className="px-4 py-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-full bg-ng-sage text-ng-forest-deep flex items-center justify-center font-display text-[14px] shrink-0" aria-hidden>
+                    {initials(c.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-[14px] text-ng-ink truncate">{c.name}</div>
+                    <div className="text-[12.5px] tabular-nums font-medium text-ng-ink-soft">
+                      {c.phone}
+                      {c.area ? `, ${c.area}` : ""}
+                    </div>
+                  </div>
+                  <Switch
+                    checked={c.active}
+                    disabled={togglingId === c.id}
+                    onChange={(next) => void toggleActive(c, next)}
+                    label={`${c.active ? "Deactivate" : "Activate"} ${c.name}`}
+                  />
+                </div>
+                <div className="mt-2.5 flex items-center justify-between gap-3">
+                  <div className="text-[12.5px] text-ng-ink-muted tabular-nums">
+                    <span className="font-semibold text-ng-forest-deep">{inr(c.todayStats.gmvPaise)}</span> today from{" "}
+                    {c.todayStats.count} sale{c.todayStats.count === 1 ? "" : "s"}, {c.commissionPercent}% commission
+                  </div>
+                  <button
+                    onClick={() => void openDetail(c.id)}
+                    aria-label={`View ${c.name}`}
+                    className="min-h-10 shrink-0 rounded-full border border-ng-line px-4 text-[12.5px] font-semibold text-ng-forest cursor-pointer"
+                  >
+                    View
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className={cn("overflow-x-auto", !loading && !error && filtered.length > 0 && "hidden md:block")}>
           <div className="min-w-[940px]">
             <div
               className={cn(
@@ -345,9 +406,9 @@ export default function AdminCaptains() {
               <span>Captain</span>
               <span>Area</span>
               <span>Communities</span>
-              <span className="text-right">Comm</span>
-              <span className="text-right">GMV today</span>
-              <span className="text-right">Captures</span>
+              <span className="text-right">Commission</span>
+              <span className="text-right">Takings today</span>
+              <span className="text-right">Sales</span>
               <span className="text-center">Active</span>
               <span></span>
             </div>
@@ -379,16 +440,16 @@ export default function AdminCaptains() {
             ) : error ? (
               <div className="px-6 py-16 text-center">
                 <UiIcon name="caution" size={28} className="text-ng-terracotta mx-auto" />
-                <p className="mt-3 text-[14px] font-semibold text-ng-ink">Couldn&apos;t load captains</p>
+                <p className="mt-3 text-[14px] font-semibold text-ng-ink">Captains did not load</p>
                 <p className="mt-1 text-[12.5px] font-medium text-ng-ink-muted">
-                  Please try again in a moment.
+                  Check your connection, then try again.
                 </p>
                 <button
                   onClick={() => void load()}
                   className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
                 >
                   <Icon name="refresh-bold" size={14} />
-                  Retry
+                  Try again
                 </button>
               </div>
             ) : filtered.length === 0 ? (
@@ -402,7 +463,7 @@ export default function AdminCaptains() {
                 <p className="mt-1.5 text-[12.5px] font-medium text-ng-ink-muted max-w-md mx-auto leading-relaxed">
                   {search
                     ? "Try a different name, phone, area or community."
-                    : "Add your first field-sales captain to start capturing community stall sales."}
+                    : "Add your first captain. Then assign the products they can sell."}
                 </p>
                 {!search ? (
                   <button
@@ -436,7 +497,7 @@ export default function AdminCaptains() {
                       </div>
                     </div>
                     <span className="text-[12.5px] font-medium text-ng-ink-muted truncate">
-                      {c.area || "—"}
+                      {c.area || "-"}
                     </span>
                     <CommunityCell communities={c.communities} />
                     <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep text-right">
@@ -458,9 +519,10 @@ export default function AdminCaptains() {
                     </div>
                     <button
                       onClick={() => void openDetail(c.id)}
-                      className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer text-right"
+                      aria-label={`View ${c.name}`}
+                      className="min-h-10 text-[12.5px] text-ng-forest font-bold hover:text-ng-leaf transition-colors cursor-pointer text-right"
                     >
-                      View →
+                      View
                     </button>
                   </li>
                 ))}
@@ -531,7 +593,7 @@ function CommunityChip({ name, className }: { name: string; className?: string }
 
 function CommunityCell({ communities }: { communities: string[] }) {
   if (communities.length === 0) {
-    return <span className="text-[12px] font-medium text-ng-ink-muted">—</span>;
+    return <span className="text-[12px] font-medium text-ng-ink-muted">-</span>;
   }
   // One chip in the table row — the row has no height to spare, and the drawer
   // lists them all in full.
@@ -568,21 +630,29 @@ function CaptainDrawer({
 }) {
   const c = detail?.captain ?? null;
   const today = detail?.todayStats ?? null;
+  // Escape closes the panel, like the other admin overlays.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
   return (
-    <div className="fixed inset-0 z-30 flex justify-end">
+    <div className="fixed inset-0 z-30 flex justify-end" role="dialog" aria-modal="true" aria-label="Captain details">
       <button
         aria-label="Close"
         onClick={onClose}
         className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-sm cursor-pointer"
       />
-      <aside className="relative w-full max-w-md h-full bg-ng-cream border-l border-ng-line-soft overflow-y-auto shadow-2xl">
-        <header className="sticky top-0 z-10 bg-ng-cream/90 backdrop-blur border-b border-ng-line-soft px-6 py-4 flex items-center justify-between gap-3">
-          <h2 className="font-display text-[18px] text-ng-forest-deep">Captain detail</h2>
+      <aside className="relative w-full max-w-md h-dvh bg-ng-cream border-l border-ng-line-soft overflow-y-auto shadow-2xl">
+        <header className="sticky top-0 z-10 bg-ng-cream border-b border-ng-line-soft px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <h2 className="font-display text-[18px] text-ng-forest-deep">Captain details</h2>
           <div className="flex items-center gap-1.5">
             {c ? (
               <button
                 onClick={() => onAllocate(c)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12px] hover:bg-ng-paper transition-colors cursor-pointer"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
                 <UiIcon name="bag" size={13} className="text-ng-forest" />
                 Products
@@ -591,7 +661,7 @@ function CaptainDrawer({
             {c ? (
               <button
                 onClick={() => onEdit(c)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 py-1.5 text-[12px] hover:bg-ng-paper transition-colors cursor-pointer"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
                 <UiIcon name="edit" size={13} className="text-ng-forest" />
                 Edit
@@ -599,15 +669,15 @@ function CaptainDrawer({
             ) : null}
             <button
               onClick={onClose}
-              className="text-ng-ink-muted hover:text-ng-forest transition-colors cursor-pointer"
-              aria-label="Close detail"
+              className="grid size-10 place-items-center rounded-full text-ng-ink-muted hover:text-ng-forest transition-colors cursor-pointer"
+              aria-label="Close details"
             >
               <Icon name="close-circle-bold" size={22} />
             </button>
           </div>
         </header>
 
-        <div className="px-6 py-6 space-y-6">
+        <div className="px-4 sm:px-6 py-6 space-y-6">
           {loading ? (
             <div className="space-y-3">
               <div className="h-14 w-14 rounded-full bg-ng-line-soft animate-pulse" />
@@ -618,7 +688,7 @@ function CaptainDrawer({
             <div className="text-center py-10">
               <UiIcon name="caution" size={26} className="text-ng-terracotta mx-auto" />
               <p className="mt-3 text-[13px] font-medium text-ng-ink-muted">
-                This captain could not be loaded.
+                This captain did not load. Close the panel and try again.
               </p>
             </div>
           ) : (
@@ -646,9 +716,9 @@ function CaptainDrawer({
               </dl>
 
               {today ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <Mini label="Captures" value={String(today.count)} />
-                  <Mini label="GMV" value={inr(today.gmvPaise)} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <Mini label="Sales today" value={String(today.count)} />
+                  <Mini label="Takings today" value={inr(today.gmvPaise)} />
                   <Mini label="Cash / UPI" value={`${inr(today.cashPaise)} / ${inr(today.upiPaise)}`} />
                 </div>
               ) : null}
@@ -661,13 +731,13 @@ function CaptainDrawer({
                     ))}
                   </div>
                 ) : (
-                  <EmptyLine>No communities assigned.</EmptyLine>
+                  <EmptyLine>No communities assigned yet.</EmptyLine>
                 )}
               </Section>
 
               <Section
                 icon="cart-large-2-bold"
-                title={`Recent captures (${detail?.captures.length ?? 0})`}
+                title={`Recent sales (${detail?.captures.length ?? 0})`}
               >
                 {detail && detail.captures.length > 0 ? (
                   <ul className="space-y-2">
@@ -682,7 +752,7 @@ function CaptainDrawer({
                               <Pill tone={payTone(cap.payMode)}>{cap.payMode}</Pill>
                             </div>
                             <div className="mt-0.5 font-mono text-[11.5px] tabular-nums font-medium text-ng-ink-muted">
-                              {cap.customerMobile || "—"}
+                              {cap.customerMobile || "-"}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
@@ -718,7 +788,7 @@ function CaptainDrawer({
                     ))}
                   </ul>
                 ) : (
-                  <EmptyLine>No captures recorded yet.</EmptyLine>
+                  <EmptyLine>No sales recorded yet.</EmptyLine>
                 )}
               </Section>
 
@@ -748,7 +818,7 @@ function CaptainDrawer({
                     ))}
                   </ul>
                 ) : (
-                  <EmptyLine>No settlements submitted yet.</EmptyLine>
+                  <EmptyLine>No settlements sent yet.</EmptyLine>
                 )}
               </Section>
             </>
@@ -775,7 +845,7 @@ function VarianceValue({ paise }: { paise: number }) {
         short ? "text-ng-terracotta" : "text-ng-success",
       )}
     >
-      {short ? "−" : "+"}
+      {short ? "-" : "+"}
       {inr(Math.abs(paise))} {short ? "short" : "over"}
     </span>
   );
@@ -788,7 +858,7 @@ function Field({ icon, label, value }: { icon: string; label: string; value: str
         <Icon name={icon} size={13} className="text-ng-forest" />
         {label}
       </div>
-      <div className="mt-1 text-[13px] font-semibold text-ng-ink truncate">{value || "—"}</div>
+      <div className="mt-1 text-[13px] font-semibold text-ng-ink truncate">{value || "-"}</div>
     </div>
   );
 }

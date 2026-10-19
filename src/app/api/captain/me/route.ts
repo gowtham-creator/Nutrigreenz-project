@@ -1,6 +1,5 @@
-import { requireCaptain } from "@/lib/captain-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { getCaptainById, toCaptainMe } from "@/lib/captains";
+import { getCaptainById, requireActiveCaptain, toCaptainMe } from "@/lib/captains";
 
 /**
  * GET /api/captain/me — the signed-in captain's identity for the field tool
@@ -9,7 +8,7 @@ import { getCaptainById, toCaptainMe } from "@/lib/captains";
  * or was deactivated since sign-in, the session is treated as invalid (401).
  */
 export async function GET(): Promise<Response> {
-  const gate = await requireCaptain();
+  const gate = await requireActiveCaptain();
   if (gate instanceof Response) return gate;
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });

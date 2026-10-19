@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   CaptainShell,
@@ -8,34 +8,18 @@ import {
   CaptainHero,
   CaptainStat,
   CaptainEmpty,
+  CaptainStatusChip,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
   fetchCaptainPickups,
   advanceCaptainPickup,
   formatPickupWhen,
+  PickupUpdateError,
 } from "@/components/ng/captain/captain-store";
 import type { CaptainPickup, CaptainPickupStatus } from "@/types/nutrigreenz";
 import { UiIcon } from "@/components/ui/ui-icon";
-
-type UiStatus = "Due" | "Collected" | "Handed over";
-
-/** DB status → the label the route UI renders. */
-const UI_STATUS: Record<CaptainPickupStatus, UiStatus> = {
-  due: "Due",
-  collected: "Collected",
-  handed_over: "Handed over",
-};
-
-// Monochrome-green progression: neutral (pending) → leaf (mid) → forest (done).
-const STATUS_STYLE: Record<UiStatus, string> = {
-  Due: "bg-ng-cream-deep text-ng-ink-muted",
-  Collected: "bg-ng-leaf/25 text-ng-forest",
-  "Handed over": "bg-ng-forest text-ng-cream",
-};
-
-/** Progression order for the per-stop stepper. */
-const STAGES: UiStatus[] = ["Due", "Collected", "Handed over"];
 
 /** The natural forward transition, mirroring the server's `nextPickupStatus`. */
 const NEXT: Record<CaptainPickupStatus, CaptainPickupStatus | null> = {
@@ -44,29 +28,49 @@ const NEXT: Record<CaptainPickupStatus, CaptainPickupStatus | null> = {
   handed_over: null,
 };
 
+/** The button for the next step, named for what it does. */
+const NEXT_LABEL: Record<CaptainPickupStatus, string> = {
+  due: "Mark collected",
+  collected: "Mark handed over",
+  handed_over: "",
+};
+
+/** A real directions link (the old Navigate and Route buttons only showed a toast). */
+function mapsHref(p: CaptainPickup): string {
+  const q = [p.address, p.community].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+type Filter = "All" | "Due" | "Done";
+
 export default function CaptainPickups() {
   const [pickups, setPickups] = useState<CaptainPickup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"All" | "Due" | "Done">("All");
+  const [failed, setFailed] = useState(false);
+  const [filter, setFilter] = useState<Filter>("All");
   const [advancing, setAdvancing] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const list = await fetchCaptainPickups();
-      if (!cancelled) {
-        setPickups(list);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async (alive: () => boolean = () => true) => {
+    setLoading(true);
+    setFailed(false);
+    const list = await fetchCaptainPickups();
+    if (!alive()) return;
+    if (list) setPickups(list);
+    else setFailed(true);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    void load(() => alive);
+    return () => {
+      alive = false;
+    };
+  }, [load]);
 
   async function advance(id: string) {
     const current = pickups.find((p) => p.id === id);
-    if (!current) return;
+    if (!current || advancing) return;
     const next = NEXT[current.status];
     if (!next) return;
 
@@ -77,13 +81,21 @@ export default function CaptainPickups() {
       const updated = await advanceCaptainPickup(id, next);
       setPickups((prev) => prev.map((p) => (p.id === id ? updated : p)));
       toast.success(
-        next === "collected" ? `${current.community} marked collected` : `${current.community} handed over`,
-        { description: next === "collected" ? "Picked from the community hub" : "Community pickup complete" },
+        next === "collected" ? `${current.community}: collected` : `${current.community}: handed over`,
       );
-    } catch {
-      // …revert on failure.
-      setPickups((prev) => prev.map((p) => (p.id === id ? current : p)));
-      toast.error("Couldn't update pickup", { description: "Check your connection and try again." });
+    } catch (err) {
+      // The server holds a different status (changed elsewhere): show its row.
+      if (err instanceof PickupUpdateError && err.pickup) {
+        const serverRow = err.pickup;
+        setPickups((prev) => prev.map((p) => (p.id === id ? serverRow : p)));
+        toast.error("This pickup was already updated", {
+          description: "The list now shows its current status.",
+        });
+      } else {
+        // …revert on failure.
+        setPickups((prev) => prev.map((p) => (p.id === id ? current : p)));
+        toast.error("Pickup not updated", { description: "Check your connection and try again." });
+      }
     } finally {
       setAdvancing(null);
     }
@@ -100,197 +112,157 @@ export default function CaptainPickups() {
 
   return (
     <CaptainShell
-      eyebrow="Route · community bundles"
+      eyebrow="Community bundles"
       title="Pickups"
-      subtitle={`${dueCount} due · ${pickups.length} bundles on your route today`}
+      subtitle={
+        loading && pickups.length === 0
+          ? "Loading your route"
+          : `${dueCount} due out of ${pickups.length} on your route today`
+      }
     >
       {/* Route summary */}
       <div className="grid grid-cols-3 gap-2.5 mb-4">
         <CaptainStat label="Due" value={dueCount} icon="order" />
         <CaptainStat label="Collected" value={collectedCount} icon="bag-check-bold" />
-        <CaptainStat label="Done" value={doneCount} icon="verified" />
+        <CaptainStat label="Handed over" value={doneCount} icon="verified" />
       </div>
 
-      {/* Next stop emphasis */}
+      {/* Next stop: the one main action on this screen */}
       {nextStop && filter !== "Done" ? (
         <CaptainHero className="p-5 mb-5">
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-leaf/15 ring-1 ring-ng-leaf/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ng-leaf">
-              <UiIcon name="location" size={12} />
-              Next stop
-            </span>
-            <span className="text-[11px] text-ng-cream/55">{formatPickupWhen(nextStop.dueAt)}</span>
+          <div className="flex items-center justify-between gap-3 text-[13px]">
+            <span className="font-semibold text-ng-leaf">Next stop</span>
+            <span className="text-ng-cream/75 tabular-nums">{formatPickupWhen(nextStop.dueAt)}</span>
           </div>
-          <div className="font-display text-[19px] text-ng-cream mt-2.5 leading-tight">{nextStop.community}</div>
-          <div className="flex items-center gap-1.5 text-[11.5px] text-ng-cream/65 mt-1.5">
-            <UiIcon name="ordersBox" size={13} />
-            {nextStop.address ?? "Community pickup"}
-          </div>
+          <div className="font-display text-[22px] text-ng-cream mt-2 leading-tight text-balance">{nextStop.community}</div>
+          <div className="text-[14px] text-ng-cream/75 mt-1">{nextStop.address ?? "Community pickup"}</div>
           <div className="mt-4 flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => toast.info(`Opening route to ${nextStop.community}`)}
-              className="flex items-center justify-center gap-1.5 rounded-full bg-ng-cream/10 ring-1 ring-ng-cream/15 text-ng-cream px-4 py-3 text-[12.5px] font-semibold cursor-pointer hover:bg-ng-cream/15 transition-colors active:scale-[0.98]"
+            <a
+              href={mapsHref(nextStop)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-full ring-1 ring-ng-cream/30 text-ng-cream px-4 text-[14px] font-semibold"
             >
-              <UiIcon name="location" size={15} />
-              Navigate
-            </button>
+              <UiIcon name="location" size={16} />
+              Directions
+            </a>
             <button
               type="button"
-              onClick={() => advance(nextStop.id)}
+              onClick={() => void advance(nextStop.id)}
               disabled={advancing === nextStop.id}
-              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-3 text-[13.5px] cursor-pointer hover:bg-ng-green-bright transition-colors active:scale-[0.98] disabled:opacity-45 disabled:hover:bg-ng-leaf shadow-[0_8px_20px_-8px_rgba(102,191,115,0.7)]"
+              className="flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold text-[15px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-50"
             >
-              <UiIcon name="ordersBox" size={16} />
-              Collect pickup
+              {advancing === nextStop.id ? "Saving…" : "Mark collected"}
             </button>
           </div>
         </CaptainHero>
       ) : null}
 
-      {/* Filter chips */}
-      <div className="flex gap-2 mb-4">
+      {/* Filter */}
+      <div role="tablist" aria-label="Filter pickups" className="flex gap-2 mb-4">
         {(["All", "Due", "Done"] as const).map((f) => (
           <button
             key={f}
             type="button"
+            role="tab"
+            aria-selected={filter === f}
             onClick={() => setFilter(f)}
-            aria-pressed={filter === f}
-            className={`px-4 py-2.5 rounded-full text-[12.5px] font-semibold cursor-pointer transition-colors active:scale-[0.98] ${
+            className={cn(
+              "min-h-11 px-4 rounded-full text-[14px] font-semibold cursor-pointer transition-colors tabular-nums",
               filter === f
-                ? "bg-ng-forest text-ng-cream shadow-[0_6px_16px_-8px_rgba(20,51,31,0.55)]"
-                : "bg-ng-white border border-ng-line text-ng-ink-muted hover:border-ng-leaf"
-            }`}
+                ? "bg-ng-forest text-ng-cream"
+                : "bg-ng-white border border-ng-line text-ng-ink-muted hover:border-ng-leaf",
+            )}
           >
             {f}
-            {f === "Due" && dueCount > 0 ? <span className="ml-1 opacity-70">·{dueCount}</span> : null}
-            {f === "Done" && doneCount > 0 ? <span className="ml-1 opacity-70">·{doneCount}</span> : null}
+            {f === "Due" && dueCount > 0 ? ` (${dueCount})` : ""}
+            {f === "Done" && collectedCount + doneCount > 0 ? ` (${collectedCount + doneCount})` : ""}
           </button>
         ))}
       </div>
 
-      {/* Route list with connecting rail */}
-      <div className="relative">
-        {visible.length > 1 ? (
-          <div className="absolute left-[19px] top-6 bottom-6 w-px bg-ng-line" aria-hidden />
-        ) : null}
-        <div className="space-y-3">
-          {visible.map((p) => {
-            const ui = UI_STATUS[p.status];
-            const stageIdx = STAGES.indexOf(ui);
-            return (
-              <div key={p.id} className="relative flex gap-3">
-                {/* route node */}
-                <div className="shrink-0 pt-4">
-                  <span
-                    className={`relative z-10 flex size-10 items-center justify-center rounded-full ring-4 ring-ng-paper ${
-                      p.status === "handed_over"
-                        ? "bg-ng-forest text-ng-cream"
-                        : p.status === "collected"
-                          ? "bg-ng-leaf/25 text-ng-forest"
-                          : "bg-ng-cream-deep text-ng-ink-muted"
-                    }`}
-                  >
-                    <Icon
-                      name={p.status === "handed_over" ? "verified" : "order"}
-                      size={19}
-                    />
-                  </span>
+      <div className="space-y-3">
+        {visible.map((p) => {
+          const next = NEXT[p.status];
+          return (
+            <CaptainCard key={p.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[16px] text-ng-forest-deep leading-snug">{p.community}</div>
+                  <div className="text-[14px] text-ng-ink-muted mt-0.5">{p.address ?? "Community pickup"}</div>
+                  <div className="flex items-center gap-1.5 text-[13px] text-ng-ink-muted mt-1.5 tabular-nums">
+                    <UiIcon name="deliveryTime" size={14} />
+                    {formatPickupWhen(p.dueAt)}
+                  </div>
                 </div>
-
-                <CaptainCard className="flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-display text-[15px] text-ng-forest-deep leading-tight">
-                          {p.community}
-                        </span>
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[9.5px] uppercase tracking-wider font-bold ${STATUS_STYLE[ui]}`}
-                        >
-                          {ui}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[12px] text-ng-ink-muted mt-1.5">
-                        <UiIcon name="deliveryTime" size={13} className="text-ng-ink-soft" />
-                        {formatPickupWhen(p.dueAt)}
-                      </div>
-                      <div className="text-[11.5px] text-ng-ink-soft font-mono mt-1">#{p.id.slice(0, 8)}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-start gap-1.5 text-[12px] text-ng-ink-muted">
-                    <UiIcon name="ordersBox" size={14} className="text-ng-ink-soft mt-0.5 shrink-0" />
-                    <span>{p.address ?? "Community pickup"}</span>
-                  </div>
-
-                  {/* stage stepper */}
-                  <div className="mt-3 flex items-center gap-1.5">
-                    {STAGES.map((s, i) => (
-                      <div key={s} className="flex items-center gap-1.5 flex-1 last:flex-none">
-                        <span
-                          className={`h-1.5 rounded-full transition-all ${
-                            i <= stageIdx ? "bg-ng-leaf" : "bg-ng-line"
-                          } ${i === 0 ? "w-2" : "flex-1"}`}
-                        />
-                      </div>
-                    ))}
-                    <span className="text-[10px] text-ng-ink-soft pl-1 shrink-0">
-                      {stageIdx + 1}/3
-                    </span>
-                  </div>
-
-                  <div className="mt-3.5 pt-3 border-t border-ng-line-soft grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toast.info(`Opening route to ${p.community}`)}
-                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
-                    >
-                      <UiIcon name="location" size={15} />
-                      Route
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toast.info("Calling community coordinator")}
-                      className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-paper border border-ng-line text-ng-ink cursor-pointer hover:border-ng-leaf transition-colors active:scale-[0.98]"
-                    >
-                      <Icon name="phone-bold" size={15} />
-                      Call
-                    </button>
-                    {p.status === "handed_over" ? (
-                      <span className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-sage/40 text-ng-forest font-bold">
-                        <UiIcon name="verified" size={15} />
-                        Done
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => advance(p.id)}
-                        disabled={advancing === p.id}
-                        className="inline-flex items-center justify-center gap-1.5 text-[12px] py-2.5 rounded-xl bg-ng-forest text-ng-cream font-bold cursor-pointer hover:bg-ng-forest-deep transition-colors active:scale-[0.98] disabled:opacity-45 disabled:hover:bg-ng-forest"
-                      >
-                        <Icon name={p.status === "due" ? "order" : "hand-stars-bold"} size={15} />
-                        {p.status === "due" ? "Collect" : "Hand over"}
-                      </button>
-                    )}
-                  </div>
-                </CaptainCard>
+                <CaptainStatusChip status={p.status} />
               </div>
-            );
-          })}
 
-          {loading && visible.length === 0 ? (
-            <p className="py-8 text-center text-[12.5px] text-ng-ink-soft">Loading your route…</p>
-          ) : null}
+              <div className="mt-3.5 pt-3 border-t border-ng-line-soft flex gap-2">
+                <a
+                  href={mapsHref(p)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Directions to ${p.community}`}
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-ng-line bg-ng-paper px-4 text-[14px] text-ng-ink"
+                >
+                  <UiIcon name="location" size={16} />
+                  Directions
+                </a>
+                {next ? (
+                  <button
+                    type="button"
+                    onClick={() => void advance(p.id)}
+                    disabled={advancing === p.id}
+                    className="flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-ng-forest text-ng-cream text-[14px] font-semibold cursor-pointer hover:bg-ng-forest-deep transition-colors disabled:opacity-50"
+                  >
+                    <Icon name={p.status === "due" ? "order" : "hand-stars-bold"} size={16} />
+                    {advancing === p.id ? "Saving…" : NEXT_LABEL[p.status]}
+                  </button>
+                ) : (
+                  <span className="flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-ng-sage/40 text-ng-forest-deep text-[14px] font-semibold">
+                    <UiIcon name="verified" size={16} />
+                    Complete
+                  </span>
+                )}
+              </div>
+            </CaptainCard>
+          );
+        })}
 
-          {!loading && visible.length === 0 ? (
-            <CaptainEmpty
-              icon="verified"
-              title={filter === "Due" ? "All caught up" : "Nothing here"}
-              hint="No pickups match this filter."
-            />
-          ) : null}
-        </div>
+        {loading && pickups.length === 0 ? (
+          <div aria-busy="true" aria-label="Loading your route" className="space-y-3">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-[150px] rounded-2xl border border-ng-line bg-ng-white motion-safe:animate-pulse" />
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && failed ? (
+          <CaptainEmpty
+            icon="danger-triangle-bold"
+            title="Your pickups did not load"
+            hint="Check your connection and try again."
+            action={
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ng-forest px-5 text-[14px] font-semibold text-ng-cream cursor-pointer"
+              >
+                <Icon name="refresh-bold" size={16} />
+                Try again
+              </button>
+            }
+          />
+        ) : null}
+
+        {!loading && !failed && visible.length === 0 ? (
+          <CaptainEmpty
+            icon="verified"
+            title={pickups.length === 0 ? "No pickups today" : filter === "Due" ? "Nothing left to collect" : "Nothing here yet"}
+            hint={pickups.length === 0 ? "New pickups show up here when the office assigns them." : "No pickups match this filter."}
+          />
+        ) : null}
       </div>
     </CaptainShell>
   );

@@ -11,52 +11,72 @@ import {
   CaptainEmpty,
 } from "@/components/ng/captain/captain-shell";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
   useCaptain,
   formatCaptainDate,
+  formatInr,
   submitSettlement,
   type CaptainSettlementView,
 } from "@/components/ng/captain/captain-store";
 import { UiIcon } from "@/components/ui/ui-icon";
 
+/** Parse a typed rupee amount ("1,250.5") to integer paise, or null when it isn't one. */
+function parseRupeesToPaise(raw: string): number | null {
+  const clean = raw.replace(/[,\s₹]/g, "");
+  if (!/^\d+(\.\d{0,2})?$/.test(clean)) return null;
+  return Math.round(Number(clean) * 100);
+}
+
 export default function CaptainSettle() {
-  const { stats, todayCustomers, captain } = useCaptain();
-  const [submitted, setSubmitted] = useState(false);
+  const { stats, todayCustomers, pendingCount, signedOut, syncNow } = useCaptain();
   const [submitting, setSubmitting] = useState(false);
   // The server-computed settlement (variance + commission), in rupees.
   const [result, setResult] = useState<CaptainSettlementView | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Captain confirms the physical cash they actually hold. Until they edit it,
   // the field tracks the expected figure (which settles as the day's stats
-  // hydrate); any edit surfaces a variance the captain must own.
-  const [countedInput, setCountedInput] = useState<number | null>(null);
-  const cashCounted = countedInput ?? stats.cash;
-  const cashVariance = cashCounted - stats.cash;
-  const expectedTotal = stats.gmv;
-  const reconciledTotal = cashCounted + stats.upi;
-  const matched = cashVariance === 0;
+  // hydrate); any edit surfaces a variance the captain must own. Kept as text
+  // so the field can be cleared and typed with paise.
+  const [countedInput, setCountedInput] = useState<string | null>(null);
+  const expectedCashPaise = Math.round(stats.cash * 100);
+  const countedText = countedInput ?? String(stats.cash);
+  const countedPaise = parseRupeesToPaise(countedText);
+  const countValid = countedPaise !== null;
+  // All in paise, so a balanced day never shows a 0.0000001 variance.
+  const variancePaise = (countedPaise ?? 0) - expectedCashPaise;
+  const matched = countValid && variancePaise === 0;
+  const reconciledTotal = ((countedPaise ?? 0) + Math.round(stats.upi * 100)) / 100;
 
-  // Read-only day summary derived from store stats (no store changes).
   const avgTicket = stats.count > 0 ? Math.round(stats.gmv / stats.count) : 0;
-  const cashShare = stats.gmv > 0 ? Math.round((stats.cash / stats.gmv) * 100) : 0;
-  const upiShare = stats.gmv > 0 ? 100 - cashShare : 0;
+  const submitted = result !== null;
 
   async function submit() {
-    if (stats.count === 0 || submitting || submitted) return;
+    if (stats.count === 0 || submitting || submitted || !countValid) return;
+    setSubmitError(null);
     setSubmitting(true);
     try {
+      // The server only counts sales it has received. Send any still waiting on
+      // this phone first; settling without them would understate the day.
+      const waiting = pendingCount > 0 ? await syncNow() : 0;
+      if (waiting > 0) {
+        setSubmitError(
+          signedOut
+            ? `Sign in again first. ${waiting} sale${waiting === 1 ? " has" : "s have"} not been sent yet.`
+            : `${waiting} sale${waiting === 1 ? " has" : "s have"} not been sent yet. Connect to the internet, then submit.`,
+        );
+        return;
+      }
       // The server recomputes expected GMV/cash/UPI, variance and commission
       // from today's captures — the client can't game them.
-      const settlement = await submitSettlement(cashCounted);
+      const settlement = await submitSettlement((countedPaise ?? 0) / 100);
       setResult(settlement);
-      setSubmitted(true);
-      toast.success("Settlement submitted to HQ", {
-        description: `₹${(settlement.cashCounted + settlement.upiExpected).toLocaleString("en-IN")} across ${stats.count} customers · ${captain?.area ?? "your area"}`,
+      toast.success("Settlement sent to the office", {
+        description: `${formatInr(settlement.cashCounted + settlement.upiExpected)} from ${stats.count} customer${stats.count === 1 ? "" : "s"}`,
       });
     } catch {
-      toast.error("Couldn't submit settlement", {
-        description: "Check your connection and try again.",
-      });
+      setSubmitError("The settlement was not sent. Check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -66,218 +86,183 @@ export default function CaptainSettle() {
 
   return (
     <CaptainShell
-      eyebrow={`End of day · ${today}`}
+      eyebrow={`End of day, ${today}`}
       title="Settle up"
-      subtitle="Reconcile your stall takings, then submit to HQ."
+      subtitle="Count your cash, check it against today's sales, then send it to the office."
     >
-      {/* ===== Reconciled hero ===== */}
+      {/* ===== Reconciled total ===== */}
       <CaptainHero className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ng-leaf-soft">
-            <UiIcon name="wallet" size={15} />
-            Reconciled today
-          </div>
+          <span className="text-[13px] text-ng-cream/75">Cash counted plus UPI</span>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              matched ? "bg-ng-leaf/20 text-ng-leaf" : "bg-ng-amber/20 text-ng-amber"
-            }`}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold",
+              matched ? "bg-ng-leaf/20 text-ng-leaf" : "bg-ng-amber/25 text-ng-amber",
+            )}
           >
-            <Icon name={matched ? "verified" : "danger-triangle-bold"} size={12} />
-            {matched ? "Balanced" : "Variance"}
+            <Icon name={matched ? "verified" : "danger-triangle-bold"} size={13} />
+            {matched ? "Balanced" : "Does not match"}
           </span>
         </div>
-        <div className="font-display text-[44px] text-ng-cream leading-none mt-2.5">
-          ₹{reconciledTotal.toLocaleString("en-IN")}
+        <div className="font-display text-[44px] text-ng-cream leading-none mt-2.5 tabular-nums">
+          {formatInr(reconciledTotal)}
         </div>
-        <div className="text-[12px] text-ng-cream/70 mt-2.5">
-          {stats.count} customers · {stats.orders} orders captured
+        <div className="text-[13px] text-ng-cream/75 mt-2.5 tabular-nums">
+          {stats.count} customer{stats.count === 1 ? "" : "s"} today
         </div>
-
-        {/* payment mix bar */}
-        {stats.gmv > 0 ? (
-          <div className="mt-4">
-            <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-ng-cream/12">
-              <div
-                className="h-full bg-ng-cream-deep motion-safe:transition-[width] motion-safe:duration-700"
-                style={{ width: `${cashShare}%` }}
-              />
-              <div
-                className="h-full bg-ng-leaf motion-safe:transition-[width] motion-safe:duration-700"
-                style={{ width: `${upiShare}%` }}
-              />
-            </div>
-            <div className="mt-2 flex items-center justify-between text-[10.5px] text-ng-cream/65">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-ng-cream-deep" aria-hidden /> Cash {cashShare}%
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                UPI {upiShare}% <span className="size-2 rounded-full bg-ng-leaf" aria-hidden />
-              </span>
-            </div>
-          </div>
-        ) : null}
       </CaptainHero>
 
       {/* ===== Day summary ===== */}
       <div className="grid grid-cols-3 gap-2.5 mt-4">
-        <CaptainStat icon="customers" label="Customers" value={stats.count} />
-        <CaptainStat icon="bag-smile-bold" label="Stall GMV" value={`₹${stats.gmv.toLocaleString("en-IN")}`} />
-        <CaptainStat icon="tag-price-bold" label="Avg ticket" value={`₹${avgTicket.toLocaleString("en-IN")}`} />
-      </div>
-
-      {/* ===== Per-mode breakdown ===== */}
-      <CaptainSectionHead>Collected by mode</CaptainSectionHead>
-      <div className="grid grid-cols-2 gap-3">
-        <CaptainCard className="h-full">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-ng-cream flex items-center justify-center">
-              <UiIcon name="wallet" size={18} className="text-ng-soil" />
-            </div>
-            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Cash</span>
-          </div>
-          <div className="font-display text-[22px] text-ng-forest-deep mt-2.5">
-            ₹{stats.cash.toLocaleString("en-IN")}
-          </div>
-        </CaptainCard>
-        <CaptainCard className="h-full">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-ng-cream flex items-center justify-center">
-              <Icon name="smartphone-bold" size={18} className="text-ng-forest" />
-            </div>
-            <span className="text-[11px] uppercase tracking-wider text-ng-ink-soft">UPI</span>
-          </div>
-          <div className="font-display text-[22px] text-ng-forest-deep mt-2.5">
-            ₹{stats.upi.toLocaleString("en-IN")}
-          </div>
-        </CaptainCard>
+        <CaptainStat icon="banknote-2-bold" label="Cash sales" value={formatInr(stats.cash)} />
+        <CaptainStat icon="smartphone-2-bold" label="UPI sales" value={formatInr(stats.upi)} />
+        <CaptainStat icon="tag-price-bold" label="Average sale" value={formatInr(avgTicket)} />
       </div>
 
       {/* ===== Cash count / variance ===== */}
-      <CaptainSectionHead>Cash reconciliation</CaptainSectionHead>
+      <CaptainSectionHead>Count your cash</CaptainSectionHead>
       <CaptainCard className="space-y-3">
-        <Row label="Expected (captured)" value={`₹${expectedTotal.toLocaleString("en-IN")}`} />
-        <Row label="UPI (auto-verified)" value={`₹${stats.upi.toLocaleString("en-IN")}`} muted />
-        <label className="block pt-1">
-          <span className="text-[12.5px] font-medium text-ng-ink-muted">Cash in hand (counted)</span>
-          <div className="mt-1.5 flex items-center gap-2 w-full rounded-xl bg-ng-white border border-ng-line px-3.5 py-3 focus-within:border-ng-forest focus-within:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all">
-            <span className="text-[16px] text-ng-ink-soft">₹</span>
+        <Row label="Total sales" value={formatInr(stats.gmv)} />
+        <Row label="UPI, already received" value={formatInr(stats.upi)} muted />
+        <Row label="Cash you should have" value={formatInr(stats.cash)} />
+        <div className="pt-1">
+          <label htmlFor="cash-counted" className="block text-[14px] font-medium text-ng-ink">
+            Cash in hand
+          </label>
+          <div
+            className={cn(
+              "mt-1.5 flex min-h-14 items-center gap-2 w-full rounded-xl bg-ng-white border px-3.5 focus-within:ring-2 focus-within:ring-ng-leaf/50",
+              countValid ? "border-ng-line focus-within:border-ng-forest" : "border-ng-danger",
+            )}
+          >
+            <span className="text-[20px] text-ng-ink-muted" aria-hidden>
+              ₹
+            </span>
             <input
-              type="number"
-              min={0}
-              value={cashCounted}
+              id="cash-counted"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={countedText}
               disabled={submitted}
-              onChange={(e) => setCountedInput(Math.max(0, Number(e.target.value) || 0))}
-              className="flex-1 bg-transparent outline-none font-display text-[19px] text-ng-forest-deep disabled:opacity-60"
+              aria-invalid={!countValid}
+              aria-describedby="cash-counted-status"
+              onChange={(e) => setCountedInput(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent outline-none font-display text-[24px] tabular-nums text-ng-forest-deep disabled:opacity-60"
             />
-            {!submitted && cashVariance !== 0 ? (
+            {!submitted && countedInput !== null && variancePaise !== 0 ? (
               <button
                 type="button"
-                onClick={() => setCountedInput(stats.cash)}
-                className="text-[11px] font-semibold text-ng-forest rounded-full bg-ng-sage/50 px-2.5 py-1 cursor-pointer hover:bg-ng-sage transition-colors"
+                onClick={() => setCountedInput(null)}
+                className="min-h-11 shrink-0 rounded-full bg-ng-sage/50 px-3.5 text-[13px] font-semibold text-ng-forest cursor-pointer hover:bg-ng-sage transition-colors"
               >
                 Reset
               </button>
             ) : null}
           </div>
-        </label>
-        <div
-          className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px] ${
-            matched ? "bg-ng-leaf/15 text-ng-forest" : "bg-ng-amber/15 text-ng-soil"
-          }`}
+        </div>
+        <p
+          id="cash-counted-status"
+          aria-live="polite"
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px]",
+            !countValid
+              ? "bg-ng-danger/10 text-ng-danger"
+              : matched
+                ? "bg-ng-leaf/15 text-ng-forest-deep"
+                : "bg-ng-amber/15 text-ng-soil",
+          )}
         >
           <Icon name={matched ? "verified" : "danger-triangle-bold"} size={16} className="shrink-0" />
-          {matched
-            ? "Cash matches captured total."
-            : `Variance ${cashVariance > 0 ? "+" : ""}₹${cashVariance.toLocaleString("en-IN")}. Note it before submitting.`}
-        </div>
+          {!countValid
+            ? "Enter the amount in rupees, for example 1250 or 1250.50."
+            : matched
+              ? "Your cash matches today's cash sales."
+              : `You have ${formatInr(Math.abs(variancePaise) / 100)} ${variancePaise > 0 ? "more" : "less"} than expected. Count again before you submit.`}
+        </p>
       </CaptainCard>
 
       {/* ===== Submit ===== */}
       <div className="mt-5">
-        {submitted ? (
+        {submitted && result ? (
           <CaptainHero className="p-4">
             <div className="flex items-center gap-3">
               <div className="size-11 rounded-full bg-ng-cream flex items-center justify-center shrink-0">
                 <UiIcon name="verified" size={26} className="text-ng-leaf" />
               </div>
               <div>
-                <div className="font-display text-[15px]">Settlement submitted</div>
-                <div className="text-[12px] text-ng-cream/70 mt-0.5">
-                  ₹{reconciledTotal.toLocaleString("en-IN")} reconciled · synced to HQ
+                <div className="font-display text-[17px]">Settlement sent</div>
+                <div className="text-[13px] text-ng-cream/75 mt-0.5 tabular-nums">
+                  {formatInr(result.cashCounted + result.upiExpected)} received by the office
                 </div>
               </div>
             </div>
-            {result ? (
-              <div className="mt-3 pt-3 border-t border-ng-cream/12 grid grid-cols-2 gap-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-ng-leaf-soft">Commission</div>
-                  <div className="font-display text-[18px] text-ng-cream leading-none mt-1">
-                    ₹{result.commission.toLocaleString("en-IN")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-ng-leaf-soft">Cash variance</div>
-                  <div className="font-display text-[18px] text-ng-cream leading-none mt-1">
-                    {result.variance > 0 ? "+" : ""}₹{result.variance.toLocaleString("en-IN")}
-                  </div>
+            <div className="mt-3 pt-3 border-t border-ng-cream/15 grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-[12px] text-ng-cream/75">Your commission</div>
+                <div className="font-display text-[20px] text-ng-cream leading-none mt-1 tabular-nums">
+                  {formatInr(result.commission)}
                 </div>
               </div>
-            ) : null}
+              <div>
+                <div className="text-[12px] text-ng-cream/75">Cash difference</div>
+                <div className="font-display text-[20px] text-ng-cream leading-none mt-1 tabular-nums">
+                  {result.variance > 0 ? "+" : ""}
+                  {formatInr(result.variance)}
+                </div>
+              </div>
+            </div>
           </CaptainHero>
         ) : (
           <button
             type="button"
-            onClick={submit}
-            disabled={stats.count === 0 || submitting}
-            className="w-full flex items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold py-4 text-[15px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-45 disabled:hover:bg-ng-leaf active:scale-[0.99] shadow-[0_12px_28px_-10px_rgba(102,191,115,0.75)]"
+            onClick={() => void submit()}
+            disabled={stats.count === 0 || submitting || !countValid}
+            className="w-full flex min-h-14 items-center justify-center gap-2 rounded-full bg-ng-leaf text-ng-forest-deep font-bold text-[16px] cursor-pointer hover:bg-ng-green-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="arrow-right-up-linear" size={19} />
-            {submitting ? "Submitting…" : "Submit settlement to HQ"}
+            {submitting ? "Sending…" : "Send settlement"}
           </button>
         )}
-        {stats.count === 0 && !submitted ? (
-          <p className="text-[11.5px] text-ng-ink-soft text-center mt-2">
-            Capture at least one customer before settling.
+        {submitError ? (
+          <p role="alert" className="mt-2 text-[14px] font-medium text-ng-danger text-center text-pretty">
+            {submitError}
+          </p>
+        ) : stats.count === 0 && !submitted ? (
+          <p className="text-[13px] text-ng-ink-muted text-center mt-2">
+            Record at least one sale before you settle.
+          </p>
+        ) : pendingCount > 0 && !submitted ? (
+          <p className="text-[13px] text-ng-ink-muted text-center mt-2 tabular-nums">
+            {pendingCount} sale{pendingCount === 1 ? " is" : "s are"} waiting to send. They go first when you submit.
           </p>
         ) : null}
       </div>
 
       {/* ===== Customer ledger ===== */}
       <CaptainSectionHead
-        action={<span className="text-[12px] text-ng-ink-soft">{todayCustomers.length} entries</span>}
+        action={<span className="text-[13px] text-ng-ink-muted tabular-nums">{todayCustomers.length} sales</span>}
       >
-        Today&apos;s ledger
+        Today&apos;s sales
       </CaptainSectionHead>
       {todayCustomers.length === 0 ? (
         <CaptainEmpty
           icon="bill-list-bold"
-          title="No sales to reconcile yet"
-          hint="Captured sales will be listed here for end-of-day reconciliation."
+          title="No sales to settle yet"
+          hint="Sales you record today are listed here."
         />
       ) : (
         <CaptainCard className="!p-0 overflow-hidden">
           <ul className="divide-y divide-ng-line-soft">
             {todayCustomers.map((c) => (
               <li key={c.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    className={`size-2 rounded-full shrink-0 ${c.payMode === "UPI" ? "bg-ng-leaf" : "bg-ng-soil"}`}
-                    aria-hidden
-                  />
-                  <div className="min-w-0">
-                    <div className="font-medium text-[13.5px] text-ng-forest-deep truncate">{c.name}</div>
-                    <div className="text-[11px] text-ng-ink-soft font-mono mt-0.5">+91 {c.mobile}</div>
-                  </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-[15px] text-ng-forest-deep truncate">{c.name}</div>
+                  <div className="text-[13px] text-ng-ink-muted tabular-nums mt-0.5">+91 {c.mobile}</div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="font-display text-[15px] text-ng-forest-deep">
-                    ₹{c.total.toLocaleString("en-IN")}
-                  </div>
-                  <span
-                    className={`text-[10px] uppercase tracking-wider font-bold ${
-                      c.payMode === "UPI" ? "text-ng-forest" : "text-ng-soil"
-                    }`}
-                  >
+                  <div className="font-display text-[16px] text-ng-forest-deep tabular-nums">{formatInr(c.total)}</div>
+                  <span className={cn("text-[12px] font-semibold", c.payMode === "UPI" ? "text-ng-forest" : "text-ng-soil")}>
                     {c.payMode}
                   </span>
                 </div>
@@ -292,10 +277,9 @@ export default function CaptainSettle() {
 
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div className="flex items-center justify-between text-[13px]">
+    <div className="flex items-center justify-between text-[14px]">
       <span className="text-ng-ink-muted">{label}</span>
-      <span className={muted ? "text-ng-ink-muted" : "font-medium text-ng-forest-deep"}>{value}</span>
+      <span className={cn("tabular-nums", muted ? "text-ng-ink-muted" : "font-semibold text-ng-forest-deep")}>{value}</span>
     </div>
   );
 }
-

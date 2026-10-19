@@ -64,15 +64,18 @@ export async function PUT(
   /*
    * A price override is accepted only as a positive integer of paise. Anything
    * else becomes null, which falls back to the catalogue price — a malformed
-   * override must never become a zero-rupee stall price.
+   * override must never become a zero-rupee stall price. A line that does not
+   * mention a price at all keeps the override it already has (the picker only
+   * toggles products; it used to wipe every override on save).
    */
   const items: AllocationInput[] = [];
   for (const entry of raw) {
     if (typeof entry !== "object" || entry === null) continue;
     const e = entry as { variantId?: unknown; pricePaise?: unknown };
     if (typeof e.variantId !== "string" || !e.variantId) continue;
-    const paise =
-      typeof e.pricePaise === "number" && Number.isFinite(e.pricePaise) && e.pricePaise > 0
+    const paise = !("pricePaise" in e)
+      ? undefined
+      : typeof e.pricePaise === "number" && Number.isFinite(e.pricePaise) && e.pricePaise > 0
         ? Math.round(e.pricePaise)
         : null;
     items.push({ variantId: e.variantId, pricePaise: paise });

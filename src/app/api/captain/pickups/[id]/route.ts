@@ -1,6 +1,5 @@
-import { requireCaptain } from "@/lib/captain-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { advancePickup } from "@/lib/captains";
+import { advancePickup, requireActiveCaptain } from "@/lib/captains";
 import type { CaptainPickupStatus } from "@/types/nutrigreenz";
 
 /**
@@ -9,6 +8,9 @@ import type { CaptainPickupStatus } from "@/types/nutrigreenz";
  * Advance one of the signed-in captain's pickups (due → collected → handed_over).
  * The update is scoped to the caller's own captain id, so a captain can never
  * touch another captain's pickups; an unknown / not-owned id resolves to 404.
+ * Only the next step is accepted; a skip or a step back is 409
+ * `invalid_transition` (with the current pickup), and re-sending the current
+ * status is a harmless 200.
  */
 const STATUSES: readonly CaptainPickupStatus[] = ["due", "collected", "handed_over"];
 
@@ -20,7 +22,7 @@ export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/captain/pickups/[id]">,
 ): Promise<Response> {
-  const gate = await requireCaptain();
+  const gate = await requireActiveCaptain();
   if (gate instanceof Response) return gate;
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
@@ -37,7 +39,15 @@ export async function PATCH(
   }
 
   const { id } = await ctx.params;
-  const pickup = await advancePickup(id, gate.captainId, body.status);
-  if (!pickup) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
-  return Response.json({ ok: true, pickup });
+  const result = await advancePickup(id, gate.captainId, body.status);
+  if (!result.ok && result.reason === "not-found") {
+    return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  }
+  if (!result.ok) {
+    return Response.json(
+      { ok: false, error: "invalid_transition", pickup: result.pickup },
+      { status: 409 },
+    );
+  }
+  return Response.json({ ok: true, pickup: result.pickup });
 }

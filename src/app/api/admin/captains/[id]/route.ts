@@ -5,6 +5,7 @@ import { verifyToken } from "@/lib/admin-session";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import {
+  captainHasHistory,
   captainPhoneExists,
   captainStats,
   deleteCaptain,
@@ -23,7 +24,11 @@ import { withLengthValidation } from "@/lib/input-validation-guard";
  *   GET    /api/admin/captains/[id] → the captain + recent captures + settlements
  *                                     + today's paise figures (drill-in).
  *   PATCH  /api/admin/captains/[id] → edit / activate / deactivate.
- *   DELETE /api/admin/captains/[id] → remove (cascades captures/settlements/pickups).
+ *   DELETE /api/admin/captains/[id] → remove a captain with no sales history.
+ *                                     One with captures or settlements is
+ *                                     refused (409 `has_history`): the delete
+ *                                     cascades, and would erase cash records.
+ *                                     Deactivate them instead.
  *
  * Gated by the signed `ng_admin` session + `requireApiPermission("captains")`.
  * Phone uniqueness (excluding this row) + commission 0..100 are enforced on edit.
@@ -37,8 +42,8 @@ async function adminSession() {
 function sanitizeCommunities(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   const out = new Set<string>();
-  for (const v of input) {
-    const s = String(v ?? "").trim();
+  for (const v of input.slice(0, 50)) {
+    const s = strictText(v ?? "", TEXT_LIMITS.area, "Community");
     if (s) out.add(s);
   }
   return [...out];
@@ -104,7 +109,7 @@ async function PATCHHandler(
     patch.phone = phone;
   }
   if (body.area !== undefined) patch.area = body.area != null ? strictText(body.area, TEXT_LIMITS.area, "Area") : null;
-  if (body.stall !== undefined) patch.stall = body.stall != null ? String(body.stall).trim() : null;
+  if (body.stall !== undefined) patch.stall = body.stall != null ? strictText(body.stall, TEXT_LIMITS.label, "Stall") : null;
   if (body.communities !== undefined) patch.communities = sanitizeCommunities(body.communities);
   if (body.commissionPercent !== undefined) {
     const pct = Number(body.commissionPercent);
@@ -134,6 +139,9 @@ export async function DELETE(
   const { id } = await ctx.params;
   const existing = await getCaptainById(id);
   if (!existing) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  if (await captainHasHistory(id)) {
+    return Response.json({ ok: false, error: "has_history" }, { status: 409 });
+  }
   await deleteCaptain(id);
   return Response.json({ ok: true });
 }

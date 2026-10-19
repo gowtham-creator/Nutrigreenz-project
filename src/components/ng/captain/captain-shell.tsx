@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Logo } from "@/components/ng/logo";
@@ -25,106 +25,100 @@ export function CaptainShell({
   children: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
-  /** Small uppercase kicker above the title. */
+  /** Small context line above the title (date, section). */
   eyebrow?: ReactNode;
 }) {
   const pathname = usePathname();
-  const { captain } = useCaptain();
+  const router = useRouter();
+  const { captain, pendingCount, signedOut } = useCaptain();
   const today = formatCaptainDate();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function signOut() {
+    setSigningOut(true);
+    try {
+      await fetch("/api/captain/logout", { method: "POST" });
+    } catch {
+      /* the cookie expires on its own; still leave the app */
+    }
+    router.replace("/captain/login");
+  }
 
   return (
-    <div className="min-h-screen bg-ng-forest-deep text-ng-cream flex justify-center">
-      {/* Phone-shaped container — full width on mobile, framed on desktop */}
-      <div className="w-full max-w-[460px] min-h-screen bg-ng-paper text-ng-ink relative flex flex-col sm:my-6 sm:min-h-[calc(100vh-3rem)] sm:rounded-[36px] sm:overflow-hidden sm:ring-1 sm:ring-ng-forest-deep/15 sm:shadow-[0_40px_90px_-20px_rgba(10,31,18,0.55)]">
-        {/* ===== On-duty top bar — lush forest gradient ===== */}
-        <header className="relative overflow-hidden bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep text-ng-cream">
-          {/* layered plant-green ambience */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(115% 80% at 85% -12%, rgba(102,191,115,0.30), transparent 58%), radial-gradient(100% 70% at 0% 6%, rgba(76,175,80,0.16), transparent 55%)",
-            }}
-            aria-hidden
-          />
-          <div className="pointer-events-none absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-ng-leaf/45 to-transparent" aria-hidden />
-
-          <div className="relative px-5 pt-[max(1.15rem,env(safe-area-inset-top))] pb-4">
-            {/* Row 1 — brand · role · duty · avatar */}
-            <div className="flex items-center gap-2.5">
-              <Logo variant="full" tone="white" className="!h-[26px]" priority />
-              <span className="inline-flex items-center gap-1 rounded-md bg-ng-leaf/15 ring-1 ring-ng-leaf/35 px-2 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.18em] text-ng-leaf">
-                <UiIcon name="captain" size={11} className="text-ng-leaf" />
-                Captain
-              </span>
-
+    <div className="min-h-dvh bg-ng-forest-deep text-ng-cream flex justify-center">
+      {/* Phone-shaped container: full width on mobile, framed on larger screens */}
+      <div className="w-full max-w-[460px] min-h-dvh bg-ng-paper text-ng-ink relative flex flex-col sm:my-6 sm:min-h-[calc(100dvh-3rem)] sm:rounded-[36px] sm:overflow-hidden sm:ring-1 sm:ring-ng-forest-deep/15 sm:shadow-xl">
+        {/* ===== Top bar: who is signed in, where, and whether sales are saved ===== */}
+        <header className="bg-ng-forest-deep text-ng-cream">
+          <div className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+            <div className="flex items-center gap-3">
+              <Logo variant="full" tone="white" className="!h-[24px]" priority />
               <div className="ml-auto flex items-center gap-2">
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-soft/55 ring-1 ring-ng-leaf/25 px-2.5 py-[5px] text-[10px] font-semibold text-ng-leaf-soft"
-                  title="On duty · captures sync to HQ when you're back online"
+                <SyncChip pending={pendingCount} signedOut={signedOut} />
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  disabled={signingOut}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-ng-cream ring-1 ring-ng-cream/25 cursor-pointer disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ng-cream"
                 >
-                  <span className="relative flex size-2" aria-hidden>
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-ng-leaf opacity-70 motion-safe:animate-ping" />
-                    <span className="relative inline-flex size-2 rounded-full bg-ng-leaf" />
-                  </span>
-                  On duty
-                </span>
-                <div
-                  className="relative size-9 rounded-full bg-ng-leaf text-ng-forest-deep flex items-center justify-center font-display text-[13px] font-semibold ring-2 ring-ng-leaf/30 ring-offset-2 ring-offset-ng-forest-deep"
-                  aria-hidden
-                >
-                  {captain?.initials ?? ""}
-                </div>
+                  <Icon name="login-3-bold" size={16} />
+                  {signingOut ? "Signing out…" : "Sign out"}
+                </button>
               </div>
             </div>
-
-            {/* Row 2 — one grouped context strip (identity + shift), no scattered pills */}
-            <div className="mt-3.5 rounded-2xl bg-ng-forest-soft/30 ring-1 ring-ng-leaf/12 divide-y divide-ng-leaf/10">
-              <div className="flex items-center gap-2 px-3 py-2">
-                <UiIcon name="location" size={14} className="text-ng-leaf shrink-0" />
-                <span className="font-semibold text-ng-cream truncate text-[12px]">{captain?.name ?? ""}</span>
-                <span className="text-ng-cream/30">·</span>
-                <span className="truncate text-[12px] text-ng-cream/70">{captain?.area ?? ""}</span>
-                <span className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[10px] text-ng-cream/60">
-                  <Icon name="cloud-bold" size={12} className="text-ng-leaf-soft" />
-                  Offline-ready
-                </span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2">
-                <UiIcon name="delivery" size={14} className="text-ng-leaf shrink-0" />
-                <span className="text-[11.5px] text-ng-cream/55 shrink-0">Today · {today}</span>
-                <span className="text-ng-cream/25">·</span>
-                <span className="text-[11.5px] font-semibold text-ng-cream truncate">{captain?.stall ?? ""}</span>
-              </div>
+            <div className="mt-3 flex min-w-0 items-center gap-2 text-[13px] text-ng-cream/80">
+              <UiIcon name="location" size={15} className="text-ng-leaf shrink-0" />
+              <span className="truncate">
+                <span className="font-semibold text-ng-cream">{captain?.name ?? "Captain"}</span>
+                {captain?.stall ? `, ${captain.stall}` : ""}
+              </span>
+              <span className="ml-auto shrink-0 tabular-nums text-ng-cream/65">{today}</span>
             </div>
           </div>
         </header>
 
+        {signedOut ? (
+          <div role="alert" className="flex items-start gap-3 border-b border-ng-amber/40 bg-ng-amber/15 px-4 py-3">
+            <Icon name="danger-triangle-bold" size={18} className="mt-0.5 shrink-0 text-ng-soil" />
+            <p className="min-w-0 flex-1 text-[13px] leading-snug text-ng-ink text-pretty">
+              You have been signed out.
+              {pendingCount > 0
+                ? ` ${pendingCount} sale${pendingCount === 1 ? " is" : "s are"} kept on this phone and will be sent after you sign in.`
+                : " Sign in again to keep working."}
+            </p>
+            <Link
+              href={`/captain/login?next=${encodeURIComponent(pathname)}`}
+              className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-ng-forest px-4 text-[13px] font-semibold text-ng-cream"
+            >
+              Sign in
+            </Link>
+          </div>
+        ) : null}
+
         {/* ===== Title block ===== */}
-        <div className="px-5 pt-5 pb-1.5">
+        <div className="px-4 pt-5 pb-1">
           {eyebrow ? (
-            <div className="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-ng-forest font-bold mb-1.5">
-              <span className="inline-block h-[3px] w-3.5 rounded-full bg-ng-leaf" aria-hidden />
-              {eyebrow}
-            </div>
+            <div className="text-[13px] font-medium text-ng-forest mb-1">{eyebrow}</div>
           ) : null}
-          <h1 className="font-display text-[clamp(26px,7vw,33px)] text-ng-forest-deep leading-[1.05] tracking-tight">
+          <h1 className="font-display text-[28px] text-ng-forest-deep leading-[1.1] text-balance">
             {title}
           </h1>
-          {subtitle ? <p className="text-[13px] text-ng-ink-muted mt-2 leading-snug">{subtitle}</p> : null}
+          {subtitle ? (
+            <p className="text-[14px] text-ng-ink-muted mt-1.5 leading-snug text-pretty">{subtitle}</p>
+          ) : null}
         </div>
 
         {/* ===== Content ===== */}
-        <main className="flex-1 px-5 pt-3 pb-[max(7.5rem,calc(6.5rem+env(safe-area-inset-bottom)))]">
+        <main className="flex-1 px-4 pt-3 pb-[max(7rem,calc(6rem+env(safe-area-inset-bottom)))]">
           {children}
         </main>
 
         {/* ===== Bottom tab bar ===== */}
         <nav
           aria-label="Captain sections"
-          className="sticky bottom-0 z-20 border-t border-ng-line bg-ng-paper/92 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+          className="sticky bottom-0 z-20 border-t border-ng-line bg-ng-paper pb-[env(safe-area-inset-bottom)]"
         >
-          <div className="grid grid-cols-4 px-2 py-1.5">
+          <div className="grid grid-cols-4 px-1">
             {TABS.map((t) => {
               const isActive =
                 t.href === "/captain" ? pathname === "/captain" : pathname.startsWith(t.href);
@@ -134,19 +128,18 @@ export function CaptainShell({
                   href={t.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "group relative flex flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[10.5px] cursor-pointer transition-colors",
-                    isActive ? "text-ng-forest font-bold" : "text-ng-ink-soft hover:text-ng-forest",
+                    "flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 text-[12px] cursor-pointer transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ng-forest",
+                    isActive ? "text-ng-forest font-semibold" : "text-ng-ink-muted",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex items-center justify-center rounded-full transition-all duration-200",
-                      isActive
-                        ? "size-9 bg-ng-forest text-ng-cream shadow-[0_6px_16px_-4px_rgba(20,51,31,0.55)]"
-                        : "size-9 text-ng-ink-soft group-hover:bg-ng-sage/40",
+                      "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                      isActive ? "bg-ng-forest text-ng-cream" : "text-ng-ink-muted",
                     )}
                   >
-                    <Icon name={isActive ? t.icon : t.iconLine} size={21} />
+                    <Icon name={isActive ? t.icon : t.iconLine} size={20} />
                   </span>
                   {t.label}
                 </Link>
@@ -156,6 +149,41 @@ export function CaptainShell({
         </nav>
       </div>
     </div>
+  );
+}
+
+/** Whether every sale on this phone has reached the server. */
+function SyncChip({ pending, signedOut }: { pending: number; signedOut: boolean }) {
+  const waiting = pending > 0;
+  return (
+    <span
+      className={cn(
+        "inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold tabular-nums",
+        waiting || signedOut ? "bg-ng-amber/25 text-ng-cream" : "bg-ng-cream/10 text-ng-cream/85",
+      )}
+      aria-live="polite"
+    >
+      <span
+        aria-hidden
+        className={cn("size-2 rounded-full", waiting || signedOut ? "bg-ng-amber" : "bg-ng-leaf")}
+      />
+      {waiting ? `${pending} not sent` : signedOut ? "Signed out" : "All saved"}
+    </span>
+  );
+}
+
+/** Pickup status as a chip. Each status gets its own colour and its own word,
+ *  so it never depends on colour alone. */
+export function CaptainStatusChip({ status }: { status: "due" | "collected" | "handed_over" }) {
+  const map = {
+    due: { label: "Due", cls: "bg-ng-amber/20 text-ng-soil ring-ng-amber/40" },
+    collected: { label: "Collected", cls: "bg-ng-leaf/20 text-ng-forest-deep ring-ng-leaf/50" },
+    handed_over: { label: "Handed over", cls: "bg-ng-forest text-ng-cream ring-ng-forest" },
+  }[status];
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold ring-1", map.cls)}>
+      {map.label}
+    </span>
   );
 }
 
@@ -169,37 +197,21 @@ export function CaptainCard({
   tone?: "paper" | "sage";
 }) {
   const map: Record<"paper" | "sage", string> = {
-    paper: "bg-ng-white border-ng-line text-ng-ink shadow-[0_1px_3px_rgba(10,31,18,0.04)]",
+    paper: "bg-ng-white border-ng-line text-ng-ink",
     sage: "bg-ng-sage/55 border-ng-line text-ng-forest-deep",
   };
   return <div className={cn("rounded-2xl border p-4", map[tone], className)}>{children}</div>;
 }
 
 /**
- * Canonical dark "forest" surface — the single hero/emphasis treatment shared by
- * every captain screen (mission, reconciled total, next stop, submitted). Bakes
- * in the lush gradient + soft plant-green ambience so the surfaces never diverge.
- * Callers set padding via `className` (heroes use `p-5`, inline confirmations `p-4`).
+ * Canonical dark "forest" surface: the single emphasis treatment shared by
+ * every captain screen (today's total, reconciled total, next stop, submitted).
+ * Flat on purpose so figures read in sunlight. Callers set padding via
+ * `className` (heroes use `p-5`, inline confirmations `p-4`).
  */
 export function CaptainHero({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-ng-forest-deep text-ng-cream",
-        "bg-ng-forest-deep bg-gradient-to-br from-ng-forest-deep via-ng-forest to-ng-forest-deep",
-        className,
-      )}
-    >
-      <div
-        className="pointer-events-none absolute -top-14 -right-12 size-44 rounded-full bg-ng-leaf/20 blur-2xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-16 -left-10 size-40 rounded-full bg-ng-green-bright/12 blur-2xl"
-        aria-hidden
-      />
-      <div className="relative">{children}</div>
-    </div>
+    <div className={cn("rounded-2xl bg-ng-forest-deep text-ng-cream", className)}>{children}</div>
   );
 }
 
@@ -213,26 +225,30 @@ export function CaptainEmpty({
   title,
   hint,
   className,
+  action,
 }: {
   icon: string;
   title: string;
   hint?: string;
   className?: string;
+  /** One clear next step, e.g. a link or a retry button. */
+  action?: ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-ng-line bg-ng-sage/45 px-5 py-8 text-center",
+        "rounded-2xl border border-ng-line bg-ng-white px-5 py-7 text-center",
         className,
       )}
     >
-      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-ng-white/70 ring-1 ring-ng-line-soft">
+      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-ng-sage/50">
         <Icon name={icon} size={24} className="text-ng-forest" />
       </div>
-      <p className="mt-3 text-[13.5px] font-semibold text-ng-forest-deep">{title}</p>
+      <p className="mt-3 text-[15px] font-semibold text-ng-forest-deep text-balance">{title}</p>
       {hint ? (
-        <p className="mx-auto mt-1 max-w-[17rem] text-[12px] leading-snug text-ng-ink-muted">{hint}</p>
+        <p className="mx-auto mt-1 max-w-[18rem] text-[13px] leading-snug text-ng-ink-muted text-pretty">{hint}</p>
       ) : null}
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );
 }
@@ -254,7 +270,7 @@ export function CaptainStat({
   tone?: "paper" | "forest" | "sage" | "onForest";
 }) {
   const surface: Record<string, string> = {
-    paper: "bg-ng-white border border-ng-line shadow-[0_1px_3px_rgba(10,31,18,0.04)]",
+    paper: "bg-ng-white border border-ng-line",
     forest: "bg-ng-forest border border-ng-forest",
     sage: "bg-ng-sage/45 border border-ng-line",
     onForest: "bg-ng-forest-soft/40 border border-ng-leaf/12",
@@ -265,7 +281,7 @@ export function CaptainStat({
       <Icon name={icon} size={17} className={onDark ? "text-ng-leaf" : "text-ng-forest"} />
       <div
         className={cn(
-          "font-display text-[19px] leading-none mt-2 truncate",
+          "font-display text-[22px] leading-none mt-2 truncate tabular-nums",
           onDark ? "text-ng-cream" : "text-ng-forest-deep",
         )}
       >
@@ -273,7 +289,7 @@ export function CaptainStat({
       </div>
       <div
         className={cn(
-          "text-[10px] uppercase tracking-wider mt-1",
+          "text-[12px] mt-1.5",
           onDark ? "text-ng-leaf-soft" : "text-ng-ink-soft",
         )}
       >
@@ -294,11 +310,8 @@ export function CaptainSectionHead({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center justify-between gap-3 mt-6 mb-3", className)}>
-      <h2 className="font-display text-[16px] text-ng-forest-deep flex items-center gap-2">
-        <span className="inline-block h-3.5 w-1 rounded-full bg-ng-leaf" aria-hidden />
-        {children}
-      </h2>
+    <div className={cn("flex items-center justify-between gap-3 mt-7 mb-3", className)}>
+      <h2 className="font-display text-[18px] text-ng-forest-deep text-balance">{children}</h2>
       {action}
     </div>
   );

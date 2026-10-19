@@ -33,8 +33,8 @@ async function adminSession() {
 function sanitizeCommunities(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   const out = new Set<string>();
-  for (const v of input) {
-    const s = String(v ?? "").trim();
+  for (const v of input.slice(0, 50)) {
+    const s = strictText(v ?? "", TEXT_LIMITS.area, "Community");
     if (s) out.add(s);
   }
   return [...out];

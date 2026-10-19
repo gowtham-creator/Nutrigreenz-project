@@ -17,8 +17,9 @@
  * of the server's own timezone.
  */
 import "server-only";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 import { findCustomerByPhone } from "@/lib/customer-identity";
+import { requireCaptain, type CaptainSessionPayload } from "@/lib/captain-session";
 import type {
   Captain,
   CaptainCapture,
@@ -54,6 +55,33 @@ function istDayStartUtcIso(now: Date = new Date()): string {
 function istToday(now: Date = new Date()): string {
   const ist = new Date(now.getTime() + IST_OFFSET_MIN * 60_000);
   return ist.toISOString().slice(0, 10);
+}
+
+/**
+ * Commission in paise for a day's GMV. The percent is turned into whole basis
+ * points first so the product stays an exact integer: 500 paise at 0.7% is
+ * 3.5 paise and rounds to 4, where `500 * 0.7 / 100` is 3.4999… and rounds to 3.
+ */
+export function commissionPaiseFor(gmvPaise: number, commissionPercent: number): number {
+  const bps = Math.round((Number(commissionPercent) || 0) * 100);
+  return Math.round((gmvPaise * bps) / 10_000);
+}
+
+/**
+ * {@link requireCaptain} plus a live check that the captain still exists, is
+ * still active and still owns the phone the session was minted for. The signed
+ * cookie alone cannot know that an admin deactivated the captain or moved the
+ * number, so every data route goes through this. When the DB is unconfigured
+ * the plain session result is returned and each route keeps its own degrade path.
+ */
+export async function requireActiveCaptain(): Promise<CaptainSessionPayload | Response> {
+  const gate = await requireCaptain();
+  if (gate instanceof Response || !isSupabaseConfigured) return gate;
+  const captain = await getCaptainById(gate.captainId);
+  if (!captain || !captain.active || captain.phone !== normalizeMobile10(gate.phone)) {
+    return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });
+  }
+  return gate;
 }
 
 /* ── row ⇄ record mappers ─────────────────────────────────────────────────── */
@@ -392,6 +420,19 @@ export async function deactivateCaptain(id: string): Promise<Captain | null> {
   return updateCaptain(id, { active: false });
 }
 
+/** Whether a captain has any recorded sales or settlements. Deleting such a
+ *  captain would cascade away cash records, so the admin route refuses it. */
+export async function captainHasHistory(id: string): Promise<boolean> {
+  const db = supabaseAdmin();
+  const [caps, sets] = await Promise.all([
+    db.from("captain_captures").select("id").eq("captain_id", id).limit(1),
+    db.from("captain_settlements").select("id").eq("captain_id", id).limit(1),
+  ]);
+  // A failed read counts as "has history": fail closed on a destructive action.
+  if (caps.error || sets.error) return true;
+  return (caps.data?.length ?? 0) > 0 || (sets.data?.length ?? 0) > 0;
+}
+
 /** Permanently delete a captain (cascades to captures/settlements/pickups). */
 export async function deleteCaptain(id: string): Promise<void> {
   await supabaseAdmin().from("captains").delete().eq("id", id);
@@ -407,6 +448,30 @@ export interface NewCaptureInput {
   items: CaptainCaptureItem[];
   payMode: CaptainPayMode;
   notes?: string | null;
+  /**
+   * The client's id for this sale (the offline outbox's temp id). A retry after
+   * a lost response sends the same ref, and the stored capture is returned
+   * instead of recording the sale twice.
+   */
+  clientRef?: string | null;
+}
+
+/** PostgREST / Postgres "column does not exist", i.e. the client_ref migration
+ *  has not been applied yet. Captures still record; they just are not deduped. */
+function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "PGRST204" || error.code === "42703" || /client_ref/.test(error.message ?? "");
+}
+
+async function findCaptureByClientRef(captainId: string, clientRef: string): Promise<CaptureRow | null> {
+  const { data, error } = await supabaseAdmin()
+    .from("captain_captures")
+    .select(CAPTURE_COLS)
+    .eq("captain_id", captainId)
+    .eq("client_ref", clientRef)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as CaptureRow;
 }
 
 /**
@@ -420,6 +485,14 @@ export async function addCapture(
   input: NewCaptureInput,
 ): Promise<CaptainCapture> {
   const mobile10 = normalizeMobile10(input.customerMobile) ?? "";
+  const clientRef = input.clientRef || null;
+
+  // A retried POST for a sale that already landed: hand back the stored row.
+  if (clientRef) {
+    const existing = await findCaptureByClientRef(captainId, clientRef);
+    if (existing) return toCapture(existing);
+  }
+
   const items = input.items.map((it) => ({
     sku: it.sku,
     title: it.title,
@@ -446,21 +519,28 @@ export async function addCapture(
     }
   }
 
-  const { data, error } = await supabaseAdmin()
-    .from("captain_captures")
-    .insert({
-      captain_id: captainId,
-      customer_name: input.customerName.trim(),
-      customer_mobile: mobile10,
-      community: input.community?.trim() || null,
-      items,
-      total_paise: totalPaise,
-      pay_mode: input.payMode,
-      notes: input.notes?.trim() || null,
-      linked_customer_id: linkedCustomerId,
-    })
-    .select(CAPTURE_COLS)
-    .single();
+  const row: Record<string, unknown> = {
+    captain_id: captainId,
+    customer_name: input.customerName.trim(),
+    customer_mobile: mobile10,
+    community: input.community?.trim() || null,
+    items,
+    total_paise: totalPaise,
+    pay_mode: input.payMode,
+    notes: input.notes?.trim() || null,
+    linked_customer_id: linkedCustomerId,
+  };
+  const insert = (values: Record<string, unknown>) =>
+    supabaseAdmin().from("captain_captures").insert(values).select(CAPTURE_COLS).single();
+
+  let { data, error } = await insert(clientRef ? { ...row, client_ref: clientRef } : row);
+  if (error && clientRef && isMissingColumn(error)) {
+    ({ data, error } = await insert(row));
+  } else if (error && clientRef && error.code === "23505") {
+    // Two retries raced past the lookup; the unique index kept one. Return it.
+    const existing = await findCaptureByClientRef(captainId, clientRef);
+    if (existing) return toCapture(existing);
+  }
   if (error || !data) throw new Error(error?.message || "Failed to record capture.");
 
   /*
@@ -554,7 +634,7 @@ export async function upsertSettlement(
   ]);
   const counted = Math.round(cashCountedPaise) || 0;
   const commissionPct = captain ? captain.commissionPercent : 0;
-  const commissionPaise = Math.round((stats.gmvPaise * commissionPct) / 100);
+  const commissionPaise = commissionPaiseFor(stats.gmvPaise, commissionPct);
   const variancePaise = counted - stats.cashPaise;
 
   const { data, error } = await supabaseAdmin()
@@ -613,23 +693,47 @@ export async function listPickupsForCaptain(captainId: string): Promise<CaptainP
   return ((data as PickupRow[] | null) ?? []).map(toPickup);
 }
 
+export type AdvancePickupResult =
+  | { ok: true; pickup: CaptainPickup }
+  | { ok: false; reason: "not-found" | "invalid_transition"; pickup?: CaptainPickup };
+
 /**
  * Advance a pickup to `status`, scoped to its owning captain (a captain can only
- * touch their OWN pickups). Returns the fresh row, or null when the pickup does
- * not exist or is not owned by that captain.
+ * touch their OWN pickups). Only the next step is allowed (due → collected →
+ * handed_over): no skipping, no going back. Asking for the status it already
+ * has is a no-op success, so a double tap or a retried request is harmless.
+ * The update is conditional on the status we read, so two racing requests
+ * cannot both advance it.
  */
 export async function advancePickup(
   pickupId: string,
   captainId: string,
   status: CaptainPickupStatus,
-): Promise<CaptainPickup | null> {
+): Promise<AdvancePickupResult> {
+  const { data: currentRow, error: readErr } = await supabaseAdmin()
+    .from("captain_pickups")
+    .select(PICKUP_COLS)
+    .eq("id", pickupId)
+    .eq("captain_id", captainId)
+    .maybeSingle();
+  if (readErr) throw new Error(readErr.message);
+  if (!currentRow) return { ok: false, reason: "not-found" };
+  const current = toPickup(currentRow as PickupRow);
+
+  if (current.status === status) return { ok: true, pickup: current };
+  if (nextPickupStatus(current.status) !== status) {
+    return { ok: false, reason: "invalid_transition", pickup: current };
+  }
+
   const { data, error } = await supabaseAdmin()
     .from("captain_pickups")
     .update({ status })
     .eq("id", pickupId)
     .eq("captain_id", captainId)
+    .eq("status", current.status)
     .select(PICKUP_COLS)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? toPickup(data as PickupRow) : null;
+  if (!data) return { ok: false, reason: "invalid_transition", pickup: current };
+  return { ok: true, pickup: toPickup(data as PickupRow) };
 }

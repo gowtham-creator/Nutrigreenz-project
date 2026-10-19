@@ -27,8 +27,11 @@ export interface AllocatedItem {
   unit: string;
   /** Pack material, when the variant distinguishes one, e.g. "glass". */
   pack: string | null;
-  /** Stall price in RUPEES: the override when set, else the catalogue price. */
+  /** Stall price in RUPEES (exact, may carry paise): the override when set,
+   *  else the catalogue price. */
   price: number;
+  /** The same stall price in integer paise, the figure a capture is checked against. */
+  pricePaise: number;
   /** True when the stall price differs from the catalogue price. */
   overridden: boolean;
   /** Sellable stock, so a captain is not offered what the warehouse cannot supply. */
@@ -85,7 +88,10 @@ export async function allocationsForCaptain(captainId: string): Promise<Allocate
     if (!v || !v.is_active) continue;
     const product = firstOf(v.products);
     const available = Math.max(0, v.stock - v.reserved);
-    const pricePaise = row.price_paise ?? v.price_paise;
+    const pricePaise = Math.round(Number(row.price_paise ?? v.price_paise));
+    // Fail-closed on price as well: a variant still at the ₹0 default (or a
+    // broken value) is not offered, rather than sold for nothing.
+    if (!Number.isFinite(pricePaise) || pricePaise <= 0) continue;
     items.push({
       variantId: v.id,
       productId: v.product_id,
@@ -93,7 +99,9 @@ export async function allocationsForCaptain(captainId: string): Promise<Allocate
       title: product?.name ?? "Product",
       unit: v.label,
       pack: v.pack,
-      price: Math.round(pricePaise / 100),
+      // Exact rupees. Rounding here charged ₹150 for a ₹149.50 stall price.
+      price: pricePaise / 100,
+      pricePaise,
       overridden: row.price_paise != null && row.price_paise !== v.price_paise,
       available,
     });
@@ -106,7 +114,11 @@ export async function allocationsForCaptain(captainId: string): Promise<Allocate
 
 export interface AllocationInput {
   variantId: string;
-  /** Stall price in paise; null/undefined uses the catalogue price. */
+  /**
+   * Stall price in paise. `null` clears the override (catalogue price).
+   * `undefined` leaves an existing override as it is: the admin picker only
+   * toggles products, and saving it used to wipe every override.
+   */
   pricePaise?: number | null;
 }
 
@@ -129,22 +141,35 @@ export async function setAllocations(
 
   // Remove anything no longer allocated.
   const del = db.from("captain_allocations").delete().eq("captain_id", captainId);
-  await (keep.length > 0 ? del.not("variant_id", "in", `(${keep.join(",")})`) : del);
+  const delRes = await (keep.length > 0 ? del.not("variant_id", "in", `(${keep.join(",")})`) : del);
+  if (delRes.error) throw new Error(delRes.error.message);
 
   if (wanted.length === 0) return;
 
-  const { error } = await db.from("captain_allocations").upsert(
-    wanted.map((i) => ({
-      captain_id: captainId,
-      variant_id: i.variantId,
-      price_paise:
-        i.pricePaise == null ? null : Math.max(0, Math.round(i.pricePaise)),
-      active: true,
-      updated_at: new Date().toISOString(),
+  // Two batches, because an upsert writes every column it is given: rows that
+  // carry a price (or an explicit null) set it, rows without one keep theirs.
+  const now = new Date().toISOString();
+  const base = (i: AllocationInput) => ({
+    captain_id: captainId,
+    variant_id: i.variantId,
+    active: true,
+    updated_at: now,
+  });
+  const priced = wanted.filter((i) => i.pricePaise !== undefined);
+  const unpriced = wanted.filter((i) => i.pricePaise === undefined);
+  for (const batch of [
+    priced.map((i) => ({
+      ...base(i),
+      price_paise: i.pricePaise == null ? null : Math.max(0, Math.round(i.pricePaise)),
     })),
-    { onConflict: "captain_id,variant_id" },
-  );
-  if (error) throw new Error(error.message);
+    unpriced.map(base),
+  ]) {
+    if (batch.length === 0) continue;
+    const { error } = await db
+      .from("captain_allocations")
+      .upsert(batch, { onConflict: "captain_id,variant_id" });
+    if (error) throw new Error(error.message);
+  }
 }
 
 /** Variant ids a captain currently holds — for the admin picker's initial state. */

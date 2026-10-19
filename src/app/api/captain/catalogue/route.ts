@@ -1,4 +1,4 @@
-import { requireCaptain } from "@/lib/captain-session";
+import { requireActiveCaptain } from "@/lib/captains";
 import { allocationsForCaptain } from "@/lib/captain-allocations";
 
 // supabase-admin + the signed session need the Node runtime.
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  * an invented one is bad revenue data.
  */
 export async function GET(): Promise<Response> {
-  const gate = await requireCaptain();
+  const gate = await requireActiveCaptain();
   if (gate instanceof Response) return gate;
 
   const items = await allocationsForCaptain(gate.captainId);

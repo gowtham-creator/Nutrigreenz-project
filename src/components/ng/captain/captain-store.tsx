@@ -34,6 +34,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import type { CaptainMe } from "@/lib/captains";
 import type {
   CaptainCapture,
@@ -49,9 +50,12 @@ export interface CapturedLineItem {
   sku: string;
   title: string;
   unit: string;
-  /** Whole-rupee unit price (the store never exposes paise upward). */
+  /** Rupee unit price, exact to the paisa (the store never exposes paise upward). */
   price: number;
   qty: number;
+  /** Catalogue variant the line was sold from. Sent so the server can check it
+   *  against this captain's allocation and join the sale to a real SKU. */
+  variantId?: string;
 }
 
 export interface OfflineCustomer {
@@ -61,7 +65,7 @@ export interface OfflineCustomer {
   mobile: string;
   community: string;
   items: CapturedLineItem[];
-  /** Whole-rupee order total. */
+  /** Rupee order total. */
   total: number;
   payMode: PayMode;
   notes?: string;
@@ -76,6 +80,19 @@ export type CaptainIdentity = CaptainMe;
 
 /** THE paise→rupee conversion. API money is integer paise; screens use rupees. */
 const paiseToRupees = (paise: number): number => Math.round(paise) / 100;
+/** Rupees → integer paise, for sums that must not drift (0.1 + 0.2 ≠ 0.3). */
+const rupeesToPaise = (rupees: number): number => Math.round(rupees * 100);
+
+/** "₹1,349.50" / "₹500": en-IN grouping, paise shown only when there are any. */
+export function formatInr(rupees: number): string {
+  const paise = rupeesToPaise(rupees);
+  const sign = paise < 0 ? "-" : "";
+  const abs = Math.abs(paise) / 100;
+  return `${sign}₹${abs.toLocaleString("en-IN", {
+    minimumFractionDigits: paise % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 /* ── localStorage keys (offline mirror + retry outbox) ────────────────────── */
 
@@ -139,9 +156,11 @@ interface CapturePayload {
   mobile: string;
   community?: string;
   /** Line prices in RUPEES — the server converts to paise + recomputes total. */
-  items: { sku: string; title: string; unit: string; price: number; qty: number }[];
+  items: { sku: string; title: string; unit: string; price: number; qty: number; variantId?: string }[];
   payMode: "cash" | "upi";
   notes?: string;
+  /** Idempotency key (the outbox temp id): a retry never records the sale twice. */
+  clientRef?: string;
 }
 
 interface OutboxItem {
@@ -152,7 +171,10 @@ interface OutboxItem {
 
 type FlushOutcome = "ok" | "retry" | "drop";
 
-function toPayload(input: Omit<OfflineCustomer, "id" | "capturedAt">): CapturePayload {
+function toPayload(
+  input: Omit<OfflineCustomer, "id" | "capturedAt">,
+  clientRef: string,
+): CapturePayload {
   return {
     name: input.name,
     mobile: input.mobile,
@@ -163,9 +185,11 @@ function toPayload(input: Omit<OfflineCustomer, "id" | "capturedAt">): CapturePa
       unit: i.unit,
       price: i.price,
       qty: i.qty,
+      variantId: i.variantId,
     })),
     payMode: input.payMode === "UPI" ? "upi" : "cash",
     notes: input.notes,
+    clientRef,
   };
 }
 
@@ -200,6 +224,16 @@ interface PickupResponse {
   ok: boolean;
   pickup?: CaptainPickup;
   error?: string;
+}
+
+/** A refused pickup update. `pickup` is the server's current row (on a 409). */
+export class PickupUpdateError extends Error {
+  constructor(
+    message: string,
+    readonly pickup?: CaptainPickup,
+  ) {
+    super(message);
+  }
 }
 
 /** Parse JSON without letting `any` escape; null on malformed/empty bodies. */
@@ -278,10 +312,15 @@ function dequeue(tempId: string): void {
   writeOutbox(readOutbox().filter((o) => o.tempId !== tempId));
 }
 
-/** Wipe all captain local data — called on (re)login so a device handoff can
- *  never leak one captain's cache/outbox into another captain's session. */
-export function clearCaptainCache(): void {
+/**
+ * Wipe all captain local data on (re)login so a device handoff can never leak
+ * one captain's cache/outbox into another captain's session. When the SAME
+ * captain signs back in (their session ran out mid-shift) the cache and the
+ * unsynced outbox are kept: wiping them here used to lose those sales.
+ */
+export function clearCaptainCache(signedInCaptainId?: string): void {
   if (typeof window === "undefined") return;
+  if (signedInCaptainId && readIdentityCache()?.id === signedInCaptainId) return;
   try {
     window.localStorage.removeItem(CACHE_KEY);
     window.localStorage.removeItem(IDENTITY_KEY);
@@ -296,6 +335,12 @@ export function clearCaptainCache(): void {
 interface CaptainStore {
   /** Signed-in identity, or null while it hydrates (never redirects on 401). */
   captain: CaptainIdentity | null;
+  /** Sales recorded on this phone that the server has not confirmed yet. */
+  pendingCount: number;
+  /** The server answered 401: the session ended. Queued sales wait for sign-in. */
+  signedOut: boolean;
+  /** Try to send queued sales now; resolves to how many are still waiting. */
+  syncNow: () => Promise<number>;
   /** Effective community rotation — the captain's assigned list, else the default. */
   communities: string[];
   customers: OfflineCustomer[];
@@ -314,14 +359,28 @@ interface CaptainStore {
 
 const Ctx = createContext<CaptainStore | null>(null);
 
+/** IST calendar day of an instant, matching the server's "today" whatever
+ *  timezone the phone is set to. */
+function istDay(d: Date): string {
+  return new Date(d.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+}
 function isToday(iso: string): boolean {
   const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+  return !Number.isNaN(d.getTime()) && istDay(d) === istDay(new Date());
+}
+
+/** What the captain is told when the server refuses a queued sale for good. */
+function dropMessage(error: string | undefined): string {
+  switch (error) {
+    case "price_changed":
+      return "A price changed since your product list loaded. Reload the page and capture the sale again.";
+    case "not_allocated":
+      return "One of the products is no longer on your list. Reload the page and capture the sale again.";
+    case "invalid_mobile":
+      return "The mobile number was not valid. Capture the sale again.";
+    default:
+      return "The sale could not be saved. Capture it again.";
+  }
 }
 
 /** Server captures win on reconcile; still-unsynced optimistic rows ride on top. */
@@ -335,7 +394,10 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<OfflineCustomer[]>([]);
   const [identity, setIdentity] = useState<CaptainIdentity | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [signedOut, setSignedOut] = useState(false);
   const flushingRef = useRef(false);
+  const syncPending = useCallback(() => setPendingCount(readOutbox().length), []);
 
   // POST one queued capture; reconcile the optimistic row with the server row.
   const flushOne = useCallback(async (item: OutboxItem): Promise<FlushOutcome> => {
@@ -352,12 +414,26 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
           setCustomers((prev) => prev.map((c) => (c.id === item.tempId ? server : c)));
         }
         dequeue(item.tempId);
+        setSignedOut(false);
         return "ok";
       }
-      // 5xx / 503 — transient; keep it queued for the next attempt.
-      if (res.status >= 500) return "retry";
-      // 4xx — the payload will never be accepted; stop retrying, keep the local row.
+      // Session ended: keep it queued. It goes up after the captain signs in
+      // again (dropping it here used to lose every sale made after expiry).
+      if (res.status === 401) {
+        setSignedOut(true);
+        return "retry";
+      }
+      // 5xx / 503, timeouts, rate limits: transient; keep it queued.
+      if (res.status >= 500 || res.status === 408 || res.status === 429) return "retry";
+      // Any other 4xx will never be accepted. Take the row off the day (it was
+      // never recorded, so it must not count towards the cash to settle) and
+      // tell the captain, instead of letting it vanish on the next reload.
+      const data = await readJson<CaptureResponse>(res);
       dequeue(item.tempId);
+      setCustomers((prev) => prev.filter((c) => c.id !== item.tempId));
+      toast.error(`Sale for ${item.payload.name} was not saved`, {
+        description: dropMessage(data?.error),
+      });
       return "drop";
     } catch {
       // Network / offline — keep it queued.
@@ -379,8 +455,9 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       flushingRef.current = false;
+      syncPending();
     }
-  }, [flushOne]);
+  }, [flushOne, syncPending]);
 
   // Mount: instant paint from cache, then hydrate identity + today's captures,
   // then drain the outbox. The pre-auth /captain/login route skips the network.
@@ -389,6 +466,7 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
     if (cachedCustomers.length > 0) setCustomers(cachedCustomers);
     const cachedIdentity = readIdentityCache();
     if (cachedIdentity) setIdentity(cachedIdentity);
+    syncPending();
     setHydrated(true);
 
     if (typeof window !== "undefined" && window.location.pathname === "/captain/login") {
@@ -406,7 +484,9 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
           const data = await readJson<MeResponse>(res);
           if (data?.ok && data.captain) setIdentity(data.captain);
         } else if (!cancelled && res.status === 401) {
-          setIdentity(null); // do NOT redirect — the Edge proxy owns auth redirects
+          // Do NOT redirect (the Edge proxy owns auth redirects) and keep the
+          // cached identity on screen; the shell shows a sign-in prompt.
+          setSignedOut(true);
         }
         // 503 / offline: keep the cached identity.
       } catch {
@@ -436,7 +516,7 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [flushOutbox]);
+  }, [flushOutbox, syncPending]);
 
   // Write-through the offline mirror (only after first hydration).
   useEffect(() => {
@@ -462,7 +542,13 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
 
   const addCustomer = useCallback<CaptainStore["addCustomer"]>(
     (input) => {
-      const tempId = `OFF-LOCAL-${Date.now().toString(36).toUpperCase()}`;
+      // Unique per sale (two sales in the same millisecond used to share an id),
+      // and sent as the idempotency key.
+      const rand =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      const tempId = `OFF-LOCAL-${rand}`;
       const record: OfflineCustomer = {
         ...input,
         id: tempId,
@@ -471,26 +557,34 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
       // Optimistic: show it instantly…
       setCustomers((prev) => [record, ...prev]);
       // …then queue + attempt the real POST (retried offline).
-      enqueue({ tempId, payload: toPayload(input) });
+      enqueue({ tempId, payload: toPayload(input, tempId) });
+      syncPending();
       void flushOutbox();
       return record;
     },
-    [flushOutbox],
+    [flushOutbox, syncPending],
   );
+
+  const syncNow = useCallback(async () => {
+    await flushOutbox();
+    return readOutbox().length;
+  }, [flushOutbox]);
 
   const value = useMemo<CaptainStore>(() => {
     const todayCustomers = customers.filter((c) => isToday(c.capturedAt));
-    const gmv = todayCustomers.reduce((s, c) => s + c.total, 0);
-    const cash = todayCustomers
-      .filter((c) => c.payMode === "Cash")
-      .reduce((s, c) => s + c.total, 0);
-    const upi = todayCustomers
-      .filter((c) => c.payMode === "UPI")
-      .reduce((s, c) => s + c.total, 0);
+    // Summed in paise so a day of ₹349.50 sales never shows a 0.0000001 variance.
+    const sumPaise = (list: OfflineCustomer[]) =>
+      list.reduce((s, c) => s + rupeesToPaise(c.total), 0);
+    const gmv = paiseToRupees(sumPaise(todayCustomers));
+    const cash = paiseToRupees(sumPaise(todayCustomers.filter((c) => c.payMode === "Cash")));
+    const upi = paiseToRupees(sumPaise(todayCustomers.filter((c) => c.payMode === "UPI")));
     const communities =
       identity?.communities && identity.communities.length > 0 ? identity.communities : COMMUNITIES;
     return {
       captain: identity,
+      pendingCount,
+      signedOut,
+      syncNow,
       communities,
       customers,
       todayCustomers,
@@ -503,7 +597,7 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
         upi,
       },
     };
-  }, [customers, identity, addCustomer]);
+  }, [customers, identity, addCustomer, pendingCount, signedOut, syncNow]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -535,9 +629,9 @@ export async function submitSettlement(cashCountedRupees: number): Promise<Capta
   return settlementToView(data.settlement);
 }
 
-/** Today's community pickups (due first). Resolves to an empty list on any
- *  failure so the screen degrades to its empty state rather than throwing. */
-export async function fetchCaptainPickups(): Promise<CaptainPickup[]> {
+/** Today's community pickups (due first), or null when they could not be
+ *  loaded. A failure used to look exactly like "no pickups today". */
+export async function fetchCaptainPickups(): Promise<CaptainPickup[] | null> {
   try {
     const res = await fetch("/api/captain/pickups", {
       cache: "no-store",
@@ -545,9 +639,9 @@ export async function fetchCaptainPickups(): Promise<CaptainPickup[]> {
     });
     const data = await readJson<PickupsResponse>(res);
     if (res.ok && data?.ok && Array.isArray(data.pickups)) return data.pickups;
-    return [];
+    return null;
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -564,7 +658,7 @@ export async function advanceCaptainPickup(
   });
   const data = await readJson<PickupResponse>(res);
   if (!res.ok || !data?.ok || !data.pickup) {
-    throw new Error(data?.error ?? "pickup_update_failed");
+    throw new PickupUpdateError(data?.error ?? "pickup_update_failed", data?.pickup);
   }
   return data.pickup;
 }
@@ -597,11 +691,11 @@ export function formatCaptainDate(d: Date = new Date()): string {
 }
 
 /** Friendly pickup timing from an ISO `dueAt` (client-only render, so wall-clock
- *  time is safe). Falls back to "Scheduled" when the pickup has no due time. */
+ *  time is safe). Falls back to "No time set" when the pickup has no due time. */
 export function formatPickupWhen(dueAt: string | null): string {
-  if (!dueAt) return "Scheduled";
+  if (!dueAt) return "No time set";
   const d = new Date(dueAt);
-  if (Number.isNaN(d.getTime())) return "Scheduled";
+  if (Number.isNaN(d.getTime())) return "No time set";
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
@@ -615,7 +709,7 @@ export function formatPickupWhen(dueAt: string | null): string {
   const min = String(d.getMinutes()).padStart(2, "0");
   const ampm = h < 12 ? "AM" : "PM";
   h = h % 12 || 12;
-  return `${dayLabel} · ${h}:${min} ${ampm}`;
+  return `${dayLabel}, ${h}:${min} ${ampm}`;
 }
 
 /** Default community rotation — the fallback when a captain has none assigned. */

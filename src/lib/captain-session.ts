@@ -10,11 +10,14 @@
  * `import("next/headers")`, which keeps `next/headers` out of the proxy's Edge
  * bundle while still letting the route handlers set/clear the cookie.
  *
- * The signed payload is the string `${captainId}|${phone}` (a captain id is a
- * uuid and a phone is 10 digits — neither contains "|"), so both are covered by
- * the HMAC and cannot be tampered with.
+ * The signed payload is the string `${captainId}|${phone}|${expiresAtMs}` (a
+ * captain id is a uuid and a phone is 10 digits — neither contains "|"), so all
+ * three are covered by the HMAC and cannot be tampered with. The expiry lives
+ * INSIDE the token: the cookie's maxAge only tells the browser when to forget
+ * it, so without a signed expiry a copied token would be valid forever. Legacy
+ * two-part tokens (no expiry) are rejected, which signs those captains out once.
  *
- * Token format: `${base64url(`${captainId}|${phone}`)}.${base64url(HMAC_SHA256(...))}`.
+ * Token format: `${base64url(`${captainId}|${phone}|${exp}`)}.${base64url(HMAC_SHA256(...))}`.
  *
  * The signing secret is `CAPTAIN_SESSION_SECRET`, falling back to
  * `ADMIN_SESSION_SECRET` so a single-secret deployment still works. It FAILS
@@ -96,7 +99,8 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 export async function createCaptainToken(captainId: string, phone: string): Promise<string> {
   const secret = getSecret();
   if (!secret) throw new Error("CAPTAIN_SESSION_SECRET (or ADMIN_SESSION_SECRET) is not configured");
-  const claims = `${captainId}|${phone}`;
+  const expiresAt = Date.now() + CAPTAIN_SESSION_TTL_SECONDS * 1000;
+  const claims = `${captainId}|${phone}|${expiresAt}`;
   const mac = await sign(claims, secret);
   return `${toBase64Url(encoder.encode(claims))}.${toBase64Url(mac)}`;
 }
@@ -120,11 +124,12 @@ export async function verifyCaptainSession(
   const expectedSig = await sign(claims, secret);
   if (!timingSafeEqual(providedSig, expectedSig)) return null;
 
-  const sep = claims.indexOf("|");
-  if (sep <= 0 || sep === claims.length - 1) return null;
-  const captainId = claims.slice(0, sep);
-  const phone = claims.slice(sep + 1);
+  const parts = claims.split("|");
+  if (parts.length !== 3) return null;
+  const [captainId, phone, exp] = parts;
+  const expiresAt = Number(exp);
   if (!captainId || !phone) return null;
+  if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
   return { captainId, phone };
 }
 
@@ -221,5 +226,8 @@ export async function requireCaptain(): Promise<CaptainSessionPayload | Response
   if (!payload) {
     return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });
   }
+  // Slide the idle window: a captain working a stall all day stays signed in
+  // while they keep using the tool, and is signed out after TTL of no activity.
+  await mintCaptainSession(payload.captainId, payload.phone);
   return payload;
 }

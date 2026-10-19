@@ -11,7 +11,7 @@ import { CommunityPicker } from "@/components/ng/admin/community-picker";
  *
  * Mirrors the inventory product-modal so the roster editor feels identical to
  * the rest of the admin portal. Money never enters here (commission is a whole
- * percent); the parent converts + calls the API, and passes back any 400/409
+ * percent, fractions allowed); the parent converts + calls the API, and passes back any 400/409
  * error CODE via `error` so we can surface it inline against the right field.
  */
 
@@ -34,8 +34,8 @@ export interface CaptainDraft {
 const ERROR_COPY: Record<string, string> = {
   name_required: "Enter the captain's name.",
   invalid_phone: "Enter a valid 10-digit mobile number.",
-  invalid_commission: "Commission must be a whole number from 0 to 100.",
-  phone_taken: "That mobile already belongs to another captain.",
+  invalid_commission: "Enter a commission from 0 to 100.",
+  phone_taken: "Another captain already uses this mobile number.",
 };
 
 /** Which field an API error code should be shown against. */
@@ -59,7 +59,7 @@ function draftFromCaptain(c: Captain | null): CaptainDraft {
 }
 
 const FIELD =
-  "w-full rounded-xl bg-ng-paper border border-ng-line-soft px-3.5 py-2.5 text-[13px] text-ng-ink outline-none focus:border-ng-forest transition-colors";
+  "w-full min-h-11 rounded-xl bg-ng-paper border border-ng-line-soft px-3.5 py-2.5 text-[14px] text-ng-ink outline-none focus:border-ng-forest transition-colors";
 const FIELD_ERR = "border-ng-danger focus:border-ng-danger";
 const LABEL = "block text-[11px] font-semibold uppercase tracking-wider text-ng-ink-muted mb-1.5";
 
@@ -123,14 +123,17 @@ export function CaptainModal({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Reset the form whenever the modal opens (or the target captain changes) so a
-  // reused instance never shows a previous captain's values.
-  useEffect(() => {
+  // reused instance never shows a previous captain's values. Done while
+  // rendering (React's "adjust state on prop change" pattern), not in an effect.
+  const [shownFor, setShownFor] = useState({ open, captain });
+  if (shownFor.open !== open || shownFor.captain !== captain) {
+    setShownFor({ open, captain });
     if (open) {
       setDraft(draftFromCaptain(captain));
       setTouched(false);
       setConfirmDelete(false);
     }
-  }, [open, captain]);
+  }
 
   // Escape-to-close for keyboard users.
   useEffect(() => {
@@ -186,13 +189,13 @@ export function CaptainModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ng-forest-deep/30 p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ng-forest-deep/30 p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={captain ? "Edit captain" : "Add captain"}
     >
-      <div className="w-full max-w-lg rounded-2xl bg-ng-paper border border-ng-line-soft shadow-[var(--shadow-ng-modal)] max-h-[90vh] overflow-y-auto">
-        <header className="flex items-center justify-between gap-4 px-6 pt-6 pb-4 border-b border-ng-line-soft">
+      <div className="w-full max-w-lg rounded-2xl bg-ng-paper border border-ng-line-soft shadow-[var(--shadow-ng-modal)] max-h-[calc(100dvh-2rem)] overflow-y-auto">
+        <header className="flex items-center justify-between gap-4 px-4 sm:px-6 pt-5 pb-4 border-b border-ng-line-soft">
           <h2 className="font-display text-[19px] text-ng-forest-deep">
             {captain ? "Edit captain" : "Add captain"}
           </h2>
@@ -200,13 +203,13 @@ export function CaptainModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-ng-ink-muted hover:text-ng-ink transition-colors cursor-pointer"
+            className="grid size-10 place-items-center rounded-full text-ng-ink-muted hover:text-ng-ink transition-colors cursor-pointer"
           >
             <Icon name="close-circle-bold" size={20} />
           </button>
         </header>
 
-        <div className="px-6 py-5 grid gap-4">
+        <div className="px-4 sm:px-6 py-5 grid gap-4">
           {serverMessage && !serverField ? (
             <div className="rounded-xl border border-ng-danger/40 bg-ng-danger/10 px-3.5 py-2.5 text-[12.5px] font-semibold text-ng-danger">
               {serverMessage}
@@ -225,9 +228,9 @@ export function CaptainModal({
             {nameHint ? <p className="mt-1 text-[10.5px] font-semibold text-ng-danger">{nameHint}</p> : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL} htmlFor="nc-phone">Mobile (10-digit)</label>
+              <label className={LABEL} htmlFor="nc-phone">Mobile number</label>
               <input
                 id="nc-phone"
                 inputMode="numeric"
@@ -243,11 +246,9 @@ export function CaptainModal({
               <label className={LABEL} htmlFor="nc-commission">Commission (%)</label>
               <input
                 id="nc-commission"
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                className={cn(FIELD, commissionHint && FIELD_ERR)}
+                type="text"
+                inputMode="decimal"
+                className={cn(FIELD, "tabular-nums", commissionHint && FIELD_ERR)}
                 value={draft.commissionPercent}
                 onChange={(e) => set("commissionPercent", e.target.value)}
                 placeholder="4"
@@ -258,7 +259,7 @@ export function CaptainModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={LABEL} htmlFor="nc-area">Area</label>
               <input
@@ -286,8 +287,8 @@ export function CaptainModal({
             onChange={(next) => set("communities", next)}
             hint={
               draft.communities.length > 0
-                ? `${draft.communities.length} assigned. Search to add another, anywhere in India.`
-                : "Search and assign the communities this captain runs stalls in, anywhere in India."
+                ? `${draft.communities.length} assigned. Search to add another.`
+                : "Search for the communities where this captain runs a stall."
             }
           />
 
@@ -295,7 +296,7 @@ export function CaptainModal({
             <div className="min-w-0">
               <div className="text-[13px] font-semibold text-ng-ink">Active</div>
               <div className="text-[11.5px] font-medium text-ng-ink-muted">
-                Inactive captains can no longer sign in to the field tool.
+                When this is off, the captain cannot sign in or record sales.
               </div>
             </div>
             <Switch
@@ -306,33 +307,33 @@ export function CaptainModal({
           </div>
         </div>
 
-        <footer className="flex items-center justify-between gap-2 px-6 py-4 border-t border-ng-line-soft">
+        <footer className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-t border-ng-line-soft">
           <div>
             {captain && onDelete ? (
               confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11.5px] font-semibold text-ng-ink-muted">Delete?</span>
+                  <span className="text-[12px] font-semibold text-ng-ink-muted">Delete for good?</span>
                   <button
                     type="button"
                     onClick={() => onDelete(captain)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-ng-danger text-ng-cream font-semibold px-3 py-1.5 text-[12px] hover:opacity-90 transition-opacity cursor-pointer"
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-ng-danger text-ng-cream font-semibold px-3 text-[12.5px] hover:opacity-90 transition-opacity cursor-pointer"
                   >
                     <Icon name="trash-bin-trash-bold" size={14} />
-                    Confirm
+                    Delete captain
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="text-[12px] font-semibold text-ng-ink-muted hover:text-ng-ink transition-colors cursor-pointer"
+                    className="min-h-10 px-2 text-[12.5px] font-semibold text-ng-ink-muted hover:text-ng-ink transition-colors cursor-pointer"
                   >
-                    Cancel
+                    Keep
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ng-line text-ng-terracotta font-medium px-3 py-2 text-[12.5px] hover:bg-ng-terracotta/10 transition-colors cursor-pointer"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-terracotta font-medium px-3 text-[12.5px] hover:bg-ng-terracotta/10 transition-colors cursor-pointer"
                 >
                   <Icon name="trash-bin-trash-bold" size={14} />
                   Delete
@@ -344,7 +345,7 @@ export function CaptainModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-ng-line text-ng-ink font-medium px-4 py-2 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+              className="min-h-10 rounded-full border border-ng-line text-ng-ink font-medium px-4 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -352,10 +353,10 @@ export function CaptainModal({
               type="button"
               disabled={!canSave}
               onClick={submit}
-              className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="save" size={15} />
-              {saving ? "Saving…" : captain ? "Save changes" : "Create captain"}
+              {saving ? "Saving…" : captain ? "Save changes" : "Add captain"}
             </button>
           </div>
         </footer>

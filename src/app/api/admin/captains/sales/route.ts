@@ -21,7 +21,8 @@ export async function GET(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const captainId = url.searchParams.get("captainId")?.trim() || undefined;
-  const days = Number(url.searchParams.get("days") ?? "");
+  // Capped at a year: an absurd window made `new Date()` invalid and threw.
+  const days = Math.min(366, Number(url.searchParams.get("days") ?? ""));
   const sinceIso =
     Number.isFinite(days) && days > 0
       ? new Date(Date.now() - days * 86_400_000).toISOString()
