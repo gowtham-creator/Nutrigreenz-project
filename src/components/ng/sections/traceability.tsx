@@ -67,7 +67,7 @@ export function Traceability() {
           </Reveal>
           <Reveal delay={0.16}>
             <p className="text-[16px] text-ng-cream/75 mt-5 leading-relaxed max-w-md">
-              Scan the QR or type it below. See the farmer, the harvest date, the lab report, the pressing facility, and the kilometres travelled. No spin. No omissions.
+              Scan the QR or type it below to see the farmer, the harvest date, the lab report, the pressing facility and the kilometres travelled.
             </p>
           </Reveal>
 

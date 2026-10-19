@@ -8,16 +8,16 @@ export const metadata: Metadata = {
 };
 
 const REFUND_TAT: { method: string; source: string; tat: string }[] = [
-  { method: "Net Banking", source: "Source", tat: "5-7 Business Days" },
-  { method: "Debit / Credit Cards", source: "Source", tat: "5-7 Business Days" },
-  { method: "UPI", source: "Source", tat: "2 Hours" },
-  { method: "Amazon Pay (Wallet)", source: "Source", tat: "5-7 Business Days" },
-  { method: "Amazon Pay (CC/DC/NB)", source: "Source", tat: "5-7 Business Days" },
-  { method: "Phone Pe (Wallet)", source: "Source", tat: "5-7 Business Days" },
-  { method: "Phone Pe (CC/DC/NB)", source: "Source", tat: "5-7 Business Days" },
-  { method: "Wallets - Paytm / MobiKwik / Freecharge", source: "Source", tat: "2 Hours" },
-  { method: "Lazy Pay", source: "Source", tat: "2 Hours" },
-  { method: "Sodexo", source: "Source", tat: "5-7 Business Days" },
+  { method: "Net Banking", source: "Source", tat: "5 to 7 business days" },
+  { method: "Debit / Credit Cards", source: "Source", tat: "5 to 7 business days" },
+  { method: "UPI", source: "Source", tat: "2 hours" },
+  { method: "Amazon Pay (Wallet)", source: "Source", tat: "5 to 7 business days" },
+  { method: "Amazon Pay (CC/DC/NB)", source: "Source", tat: "5 to 7 business days" },
+  { method: "Phone Pe (Wallet)", source: "Source", tat: "5 to 7 business days" },
+  { method: "Phone Pe (CC/DC/NB)", source: "Source", tat: "5 to 7 business days" },
+  { method: "Wallets (Paytm / MobiKwik / Freecharge)", source: "Source", tat: "2 hours" },
+  { method: "Lazy Pay", source: "Source", tat: "2 hours" },
+  { method: "Sodexo", source: "Source", tat: "5 to 7 business days" },
 ];
 
 export default function RefundPolicyPage() {
@@ -73,7 +73,7 @@ export default function RefundPolicyPage() {
               </p>
               <p>
                 {
-                  "However, in the unlikely event of an item in an Order being unavailable, Nutrigreenz will contact the Buyer on the phone number provided to us at the time of placing the Order and inform Buyer of such unavailability. In such an event Buyer will be entitled to cancel the entire Order and shall be entitled to a refund to an amount up to 100% of the Order value."
+                  "However, if an item in an Order is unavailable, Nutrigreenz will contact the Buyer on the phone number provided to us at the time of placing the Order and inform Buyer of such unavailability. In such an event Buyer will be entitled to cancel the entire Order and shall be entitled to a refund to an amount up to 100% of the Order value."
                 }
               </p>
               <p>
@@ -123,12 +123,12 @@ export default function RefundPolicyPage() {
             <>
               <p>
                 {
-                  "Buyer may be entitled to a refund for prepaid Orders. Nutrigreenz retains the right to retain the penalty payable by the Buyer from the amount refundable to him/her. The Buyer shall also be entitled to a refund of proportionate value in the event packaging of an item in an Order, or the complete Order, is either tampered or damaged and the Buyer refuses to accept it at the time of delivery for the said reason."
+                  "Buyer may be entitled to a refund for prepaid Orders. Nutrigreenz has the right to retain the penalty payable by the Buyer from the amount refundable to him/her. The Buyer shall also be entitled to a refund of proportionate value in the event packaging of an item in an Order, or the complete Order, is either tampered or damaged and the Buyer refuses to accept it at the time of delivery for the said reason."
                 }
               </p>
               <p>
                 {
-                  "Buyer may be entitled to a refund up to 100% of the Order value if the delivery partner fails to deliver the Order due to a cause attributable to either the delivery partner or Nutrigreenz; however such refunds will be assessed on a case-to-case basis by Nutrigreenz. Our decision on refunds shall be final and binding."
+                  "Buyer may be entitled to a refund up to 100% of the Order value if the delivery partner fails to deliver the Order due to a cause attributable to either the delivery partner or Nutrigreenz; however, such refunds will be assessed by Nutrigreenz case by case. Our decision on refunds shall be final and binding."
                 }
               </p>
               <p>
@@ -142,7 +142,7 @@ export default function RefundPolicyPage() {
                     <tr className="bg-ng-cream/60 text-left text-ng-forest-deep">
                       <th className="px-4 py-3 font-semibold">Payment method</th>
                       <th className="px-4 py-3 font-semibold">Refund source</th>
-                      <th className="px-4 py-3 font-semibold">TAT</th>
+                      <th className="px-4 py-3 font-semibold">Refund time</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -177,7 +177,7 @@ export default function RefundPolicyPage() {
               </ul>
               <p>
                 {
-                  "Provided the same is communicated to Nutrigreenz Customer Care through the Platform before the Order is marked delivered."
+                  "This applies only if the issue is communicated to Nutrigreenz Customer Care through the Platform before the Order is marked delivered."
                 }
               </p>
             </>
@@ -209,7 +209,7 @@ export default function RefundPolicyPage() {
               <p>
                 <strong>{"Refunds: "}</strong>
                 {
-                  "The Buyer may be entitled to a refund for prepaid Orders, post deduction of cancellation fee (if any), for the reasons mentioned above or in a manner as deemed fit by Nutrigreenz in its sole discretion, if refund has been requested due to the following reasons:"
+                  "The Buyer may be entitled to a refund for prepaid Orders, after deducting any cancellation fee, for the reasons mentioned above or in a manner as deemed fit by Nutrigreenz in its sole discretion, if refund has been requested due to the following reasons:"
                 }
               </p>
               <ul className="list-disc pl-5 flex flex-col gap-2">
@@ -234,7 +234,7 @@ export default function RefundPolicyPage() {
               <p>
                 <strong>{"Note 2: "}</strong>
                 {
-                  "In case of the complaint of any spurious product, the liability shall solely lie with the Merchant selling the product. Nutrigreenz is merely facilitating the transactions between the Merchant and the Buyer, and therefore Nutrigreenz shall assume no liability with respect to the products sold by the Merchant. Nutrigreenz strictly discourages dealing with any spurious product on its Platform and shall reserve the right to report such incidents to the concerned authorities for appropriate legal action."
+                  "In case of the complaint of any spurious product, the liability shall solely lie with the Merchant selling the product. Nutrigreenz only facilitates the transactions between the Merchant and the Buyer, and therefore Nutrigreenz shall assume no liability with respect to the products sold by the Merchant. Nutrigreenz strictly discourages dealing with any spurious product on its Platform and shall reserve the right to report such incidents to the concerned authorities for appropriate legal action."
                 }
               </p>
             </>

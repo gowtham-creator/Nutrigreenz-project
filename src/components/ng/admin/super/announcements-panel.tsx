@@ -106,8 +106,8 @@ export function AnnouncementsPanel() {
       if (!res.ok) {
         toast.error(
           json.error === "text-required"
-            ? "Announcement text required."
-            : `Couldn't save${json.error ? ` (${json.error})` : ""}.`,
+            ? "Enter the announcement text."
+            : `Couldn't save the announcement${json.error ? ` (${json.error})` : ""}. Try again.`,
         );
         return;
       }
@@ -134,7 +134,7 @@ export function AnnouncementsPanel() {
     } catch {
       // Revert on failure.
       setRows((prev) => prev.map((r) => (r.id === a.id ? { ...r, active: !active } : r)));
-      toast.error("Couldn't update announcement.");
+      toast.error("Couldn't update the announcement. Try again.");
     }
   }
 
@@ -152,7 +152,7 @@ export function AnnouncementsPanel() {
       toast.success("Announcement deleted");
     } catch {
       setRows(prev);
-      toast.error("Couldn't delete announcement.");
+      toast.error("Couldn't delete the announcement. Try again.");
     }
   }
 
@@ -170,7 +170,7 @@ export function AnnouncementsPanel() {
             Top-bar announcements
           </h2>
           <p className="text-[13px] text-ng-ink-muted">
-            Evergreen lines that scroll in the marquee after any live sale. Edit without a deploy.
+            Standing messages that scroll in the top bar after any live sale. Changes go live without a deploy.
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export function AnnouncementsPanel() {
             className="h-4 w-4 shrink-0 accent-ng-forest"
           />
           <span className="text-[13px] leading-snug text-ng-ink">
-            <span className="font-semibold text-ng-forest-deep">Active</span> — show this line in the
+            <span className="font-semibold text-ng-forest-deep">Active</span>: show this line in the
             storefront top bar
           </span>
         </label>

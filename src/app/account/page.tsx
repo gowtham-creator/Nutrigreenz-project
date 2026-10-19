@@ -109,7 +109,7 @@ export default function AccountPage() {
                 Your harvest, <em className="italic text-ng-leaf">at a glance.</em>
               </h1>
               <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ng-cream/70">
-                Track deliveries, manage subscriptions and watch your wallet grow. All in one place.
+                Track deliveries, manage subscriptions and watch your wallet grow, all in one place.
               </p>
 
               <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">

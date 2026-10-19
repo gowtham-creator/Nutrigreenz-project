@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 export const metadata: Metadata = {
   title: "FAQs · Nutri Greenz",
   description:
-    "Answers to common questions about Nutrigreenz. Payments, wallet recharge and autopay, cashback offers and refunds.",
+    "Answers to common questions about Nutrigreenz payments, wallet recharge and autopay, cashback offers and refunds.",
 };
 
 interface QA {
@@ -26,7 +26,7 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         a: (
           <p>
             {
-              "In case of a payment failure, please retry ensuring correct account details, billing address and password (for net banking), and make sure your Internet connection is not disrupted in the process. If your amount has been debited after a payment failure, it is usually rolled back to your source bank account within 7 business days. You can always contact our Customer Care helpdesk with your concern for any clarification further required."
+              "Try again, and check that your account details, billing address and password (for net banking) are correct and that your internet connection stays up while you pay. If money was taken from your account even though the payment failed, it usually goes back to your bank account within 7 business days. If you need anything else, contact our customer care team."
             }
           </p>
         ),
@@ -53,43 +53,43 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         q: "How do I recharge my wallet?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"Login to the Nutrigreenz app."}</li>
-            <li>{"Select Wallet from the Menu."}</li>
-            <li>{"Enter the amount and make payment from the various wallet / UPI / net banking options."}</li>
+            <li>{"Log in to the Nutrigreenz app."}</li>
+            <li>{"Open the menu and choose Wallet."}</li>
+            <li>{"Enter the amount and pay with a wallet, UPI or net banking."}</li>
           </ol>
         ),
       },
       {
-        q: "How can I recharge my wallet automatically when my balance goes below Rs.100?",
+        q: "How do I set my wallet to recharge automatically when the balance goes below Rs.100?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
             <li>{"Tap the Wallet icon at the top right of the home screen."}</li>
-            <li>{"Select the auto-pay payment option and click Apply."}</li>
-            <li>{"Select the preferable payment method."}</li>
-            <li>{"After making the payment you’ll receive a payment confirmation screen."}</li>
+            <li>{"Choose the auto-pay option and tap Apply."}</li>
+            <li>{"Choose the payment method you want to use."}</li>
+            <li>{"Once you have paid, you’ll see a payment confirmation screen."}</li>
           </ol>
         ),
       },
       {
-        q: "When will autopay be triggered?",
-        a: <p>{"Every time your wallet balance reaches Rs 100, the wallet will be loaded automatically."}</p>,
+        q: "When does autopay run?",
+        a: <p>{"Every time your wallet balance reaches Rs 100, the wallet is topped up automatically."}</p>,
       },
       {
-        q: "Where can I edit or delete the autopay configuration?",
+        q: "Where can I change or delete my autopay setting?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"Login to the Nutrigreenz app."}</li>
-            <li>{"Select Account and Preferences from the Menu section."}</li>
-            <li>{"Select the top-right three dots to edit or delete the autopay feature."}</li>
+            <li>{"Log in to the Nutrigreenz app."}</li>
+            <li>{"Open the menu and choose Account and Preferences."}</li>
+            <li>{"Tap the three dots at the top right to edit or delete autopay."}</li>
           </ol>
         ),
       },
       {
-        q: "What happens in case of low funds in my wallet?",
+        q: "What happens if my wallet balance is low?",
         a: (
           <p>
             {
-              "Due to a low wallet balance, your services get stopped. So you have to maintain the balance to continue delivery."
+              "If your wallet balance is too low, your services are stopped. Keep enough money in your wallet for your deliveries to continue."
             }
           </p>
         ),
@@ -105,17 +105,17 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         a: (
           <p>
             {
-              "Cashback is always credited when you recharge your wallet. If you haven’t received it, please wait for 24 hours for it to reflect in your wallet."
+              "Cashback is always credited when you recharge your wallet. If you haven’t received it, please allow 24 hours for it to show in your wallet."
             }
           </p>
         ),
       },
       {
-        q: "What are the live cashback offers?",
+        q: "Where can I see the current cashback offers?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"Go to Wallet & payment modes from the Menu section in your Nutrigreenz app."}</li>
-            <li>{"Select the auto-pay mode (cashback will be provided one time)."}</li>
+            <li>{"In the Nutrigreenz app, open the menu and go to Wallet & payment modes."}</li>
+            <li>{"Choose the auto-pay mode. The cashback is given one time only."}</li>
           </ol>
         ),
       },
@@ -126,12 +126,12 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
     icon: "shield-check-bold",
     items: [
       {
-        q: "How much time is taken to process a refund?",
+        q: "How long does a refund take?",
         a: (
           <p>
-            {"Refunds will be processed within 5-7 working days. See our "}
+            {"Refunds are processed within 5 to 7 working days. Our "}
             <Link href="/policies/refund">cancellation &amp; refund policy</Link>
-            {" for full details."}
+            {" has the full details."}
           </p>
         ),
       },
@@ -149,7 +149,7 @@ export default function FaqPage() {
             Questions, <em className="italic text-ng-leaf">answered.</em>
           </>
         }
-        description="Everything you need to know about payments, your wallet and autopay, cashback offers and refunds. Can't find it here? Our team is a message away."
+        description="Answers about payments, your wallet and autopay, cashback offers and refunds. If your question isn't here, send our team a message."
         /* A help centre is not a product surface, so the background is stationery
            rather than photography: faint botanical outlines of the things we
            actually sell — groundnut, sesame, wheat, a bee — drawn at watermark
@@ -221,7 +221,7 @@ export default function FaqPage() {
           <div>
             <h2 className="font-display text-[24px] text-ng-cream">Still have a question?</h2>
             <p className="mt-2 text-[15px] text-ng-cream/70 max-w-md">
-              Our Hyderabad support team is happy to help with anything we haven&rsquo;t covered here.
+              Our support team in Hyderabad can help with anything we haven&rsquo;t covered here.
             </p>
           </div>
           <Link

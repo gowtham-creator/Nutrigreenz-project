@@ -26,7 +26,7 @@ const CHANNELS = [
     title: "Phone & WhatsApp",
     value: "+91 94918 93370",
     href: "tel:+919491893370",
-    note: "Mon–Sat, 9 AM – 7 PM IST.",
+    note: "Mon to Sat, 9 AM to 7 PM IST.",
   },
   {
     icon: "location",
@@ -38,8 +38,8 @@ const CHANNELS = [
 ];
 
 const HOURS = [
-  { day: "Monday – Friday", time: "9:00 AM – 7:00 PM" },
-  { day: "Saturday", time: "9:00 AM – 5:00 PM" },
+  { day: "Monday to Friday", time: "9:00 AM to 7:00 PM" },
+  { day: "Saturday", time: "9:00 AM to 5:00 PM" },
   { day: "Sunday", time: "Closed (deliveries continue)" },
 ];
 

@@ -26,9 +26,9 @@ const ACTIVE_BUNDLES = [
 ];
 
 const HOW = [
-  { n: "01", t: "Join a pod near you", b: "Pods are run by a Nutrigreenz Captain. A vetted resident in your neighborhood who consolidates orders." },
-  { n: "02", t: "Order from your pod's inventory", b: "Each pod gets a dedicated lot. Same lot, same quality, but 8–14% cheaper because of zero last-mile cost." },
-  { n: "03", t: "Pick up from the Captain's home", b: "On cycle close day, walk to the Captain's address. No delivery slot to chase. No box waste." },
+  { n: "01", t: "Join a pod near you", b: "Each pod is run by a Nutrigreenz Captain, a vetted resident in your neighbourhood who collects everyone's orders." },
+  { n: "02", t: "Order from your pod's inventory", b: "Each pod gets its own lot. The quality is the same, and the price is 8 to 14% lower because there is no last-mile delivery cost." },
+  { n: "03", t: "Pick up from the Captain's home", b: "When the cycle closes, walk over to the Captain's address. There's no delivery slot to wait for and no box to throw away." },
 ];
 
 export default function CommunityBundleIndex() {
@@ -36,9 +36,9 @@ export default function CommunityBundleIndex() {
     <PageShell>
       <PageHero
         tone="forest"
-        eyebrow="Community Bundle"
-        title={<>Buy together. <em className="italic text-ng-clay">Pay less.</em> Waste nothing.</>}
-        description="A neighborhood pod is 12–32 members ordering from the same lot, picked up from a vetted Captain near you. Saves 8–14%, and eliminates the last-mile cardboard."
+        eyebrow="Community bundle"
+        title={<>Buy together, <em className="italic text-ng-clay">pay less</em> and cut the packaging.</>}
+        description="A neighbourhood pod is 12 to 32 members who order from the same lot and pick it up from a vetted Captain near you. You save 8 to 14% and skip the last-mile cardboard."
       />
 
       <Section>
@@ -79,12 +79,12 @@ export default function CommunityBundleIndex() {
           <aside className="rounded-3xl bg-ng-sage/30 border border-ng-line p-7 self-start lg:sticky lg:top-24">
             <h3 className="font-display text-[20px] text-ng-forest-deep">Become a Captain</h3>
             <p className="text-[14px] text-ng-ink-muted mt-3 leading-relaxed">
-              Run a pod in your apartment, gated community, or co-working. Earn 10% commission. We handle inventory, billing, and logistics.
+              Run a pod in your apartment, gated community or co-working space and earn 10% commission. We handle inventory, billing and logistics.
             </p>
             <ul className="mt-5 space-y-2.5 text-[13px] text-ng-ink-muted">
               <li className="flex gap-2"><span className="text-ng-forest">✓</span>10% commission on every pod cycle</li>
-              <li className="flex gap-2"><span className="text-ng-forest">✓</span>PWA tool. Manage from your phone</li>
-              <li className="flex gap-2"><span className="text-ng-forest">✓</span>No upfront cost, we deliver inventory</li>
+              <li className="flex gap-2"><span className="text-ng-forest">✓</span>Manage your pod from your phone</li>
+              <li className="flex gap-2"><span className="text-ng-forest">✓</span>No upfront cost, and we deliver the stock to you</li>
               <li className="flex gap-2"><span className="text-ng-forest">✓</span>Train 1-on-1 with our community lead</li>
             </ul>
             <Link href="/auth?role=captain" className="block mt-6 text-center rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-6 py-3 text-[14px] hover:bg-ng-forest transition-colors">
@@ -97,7 +97,7 @@ export default function CommunityBundleIndex() {
         <div className="rounded-3xl bg-ng-paper border border-ng-line-soft p-8 md:p-12">
           <span className="ng-eyebrow">How it works</span>
           <h2 className="font-display text-[clamp(26px,3.4vw,36px)] text-ng-forest-deep mt-3 leading-tight">
-            Three steps. Saves both <em className="italic text-ng-leaf">money and packaging.</em>
+            Three steps that save you <em className="italic text-ng-leaf">money and packaging.</em>
           </h2>
           <div className="grid md:grid-cols-3 gap-5 mt-10">
             {HOW.map((h) => (

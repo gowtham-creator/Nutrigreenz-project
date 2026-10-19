@@ -91,7 +91,7 @@ export function BundlesView() {
       {/* Bundle cards */}
       {groups.length === 0 ? (
         <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-10 text-center text-[13px] font-medium text-ng-ink-muted">
-          {loading ? "Loading community bundles…" : "No pre-dispatch orders to bundle for this date."}
+          {loading ? "Loading community bundles…" : "No orders waiting for dispatch on this date."}
         </div>
       ) : (
         <div className="space-y-6">

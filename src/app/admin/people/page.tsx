@@ -22,7 +22,7 @@ export default function AdminPeople() {
           People <em className="italic text-ng-clay font-display">&amp; access</em>
         </span>
       }
-      subtitle="The customer directory, your admin roster, roles, and a live system activity trail"
+      subtitle="Customer directory, admin roster, roles and live system activity"
     >
       {/* Customers — the deduped canonical directory, on its own page. */}
       <Card title="Customers" className="mb-6">
@@ -31,10 +31,10 @@ export default function AdminPeople() {
             <UiIcon name="customer" size={24} className="text-ng-forest" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-display text-[15px] text-ng-forest-deep">Deduped customer directory</p>
+            <p className="font-display text-[15px] text-ng-forest-deep">Customer directory</p>
             <p className="text-[12.5px] font-medium text-ng-ink-muted mt-0.5 leading-relaxed">
-              One canonical row per real person. Google and phone sign-ins folded into a single
-              customer, with linked providers, mobile, email and saved addresses.
+              One row per person. Google and phone sign-ins for the same person are merged into one
+              customer, with sign-in methods, mobile, email and saved addresses.
             </p>
           </div>
           <Link

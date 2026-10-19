@@ -56,12 +56,12 @@ export function StatusStepper({
         throw new Error(data.error || "request-failed");
       }
       onAdvanced(data.order);
-      toast.success(`Order advanced to ${STATUS_LABEL[target]}`);
+      toast.success(`Order moved to ${STATUS_LABEL[target]}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not update status";
       toast.error(
         message === "not-forward"
-          ? "That move isn't allowed, status is forward-only."
+          ? "That status change isn't allowed. Orders can only move forward."
           : "Couldn't update the order status. Try again.",
       );
     } finally {
@@ -122,7 +122,7 @@ export function StatusStepper({
         {target ? (
           <>
             <p className="text-[12.5px] font-medium text-ng-ink-muted">
-              Next step: advance this order to{" "}
+              Next step: move this order to{" "}
               <span className="font-semibold text-ng-forest-deep">
                 {STATUS_LABEL[target]}
               </span>
@@ -145,7 +145,7 @@ export function StatusStepper({
           <div className="flex items-center gap-2.5 text-ng-success">
             <UiIcon name="verified" size={20} />
             <span className="text-[13px] font-semibold">
-              Order delivered, fulfilment complete.
+              Order delivered. Nothing left to do.
             </span>
           </div>
         )}

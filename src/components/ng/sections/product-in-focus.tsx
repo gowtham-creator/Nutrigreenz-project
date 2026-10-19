@@ -119,7 +119,7 @@ export function ProductInFocus({
   products,
   subTabs,
   ctaHref = "/shop",
-  ctaLabel = "See All",
+  ctaLabel = "See all",
   sectionId,
   accent,
 }: Props) {

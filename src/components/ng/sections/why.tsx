@@ -55,7 +55,7 @@ const PILLARS: Pillar[] = [
   {
     icon: "press",
     title: "Traditional processing",
-    body: "Bilona-churned, cold-pressed, hand-finished. Never refined, hexane-extracted, or industrially heated.",
+    body: "Bilona-churned, cold-pressed and hand-finished, never refined, hexane-extracted or industrially heated.",
   },
   {
     icon: "verified",
@@ -65,7 +65,7 @@ const PILLARS: Pillar[] = [
   {
     icon: "tractor",
     title: "Honest pricing",
-    body: "What we pay the farmer is printed on every label. No marketing markup, no designer packaging tax.",
+    body: "What we pay the farmer is printed on every label, and we add no markup for marketing or fancy packaging.",
   },
 ];
 

@@ -106,8 +106,8 @@ const GHEE_DIR = "/images/products/ghee";
 const GHEE_STORY: ProductStoryContent = {
   produceIcon: "ghee",
   description: [
-    "Made on Indian farms, our A2 Bilona Ghee is the epitome of purity: Bilona hand-churned from A2 cow curd, not cream.",
-    "Light on the gut and rich in nutrients and heart-healthy fats, it carries no hidden ingredients and takes no shortcuts. Just slow, traditional craft, the way ghee was always meant to be made.",
+    "Made on Indian farms, our A2 Bilona Ghee is hand-churned the Bilona way from A2 cow curd, not cream.",
+    "It is light on the gut, full of nutrients and heart-healthy fats, and has no hidden ingredients. We make it slowly, the traditional way.",
   ],
   gallery: [
     { src: `${GHEE_DIR}/ghee-hero.webp`, alt: "A2 Bilona Ghee jar", label: "Front of pack" },
@@ -143,7 +143,7 @@ const GHEE_STORY: ProductStoryContent = {
     {
       kind: "benefit-hero",
       heading: "Verified A2, naturally nourishing",
-      sub: "A2 protein, verified at source. A ghee that earns its place in your kitchen by doing more for your body, not less.",
+      sub: "The A2 protein is verified at source, so you know exactly what kind of milk your ghee started as.",
       image: { src: `${GHEE_DIR}/ghee-benefit-bowl.webp`, alt: "A top-down bowl of golden A2 Bilona Ghee", label: "Benefits" },
       bullets: [
         { icon: "shield-check-linear", label: "Easily digestible" },
@@ -155,21 +155,21 @@ const GHEE_STORY: ProductStoryContent = {
       kind: "split-2up",
       cards: [
         {
-          heading: "Our Own Curd Culture",
-          sub: "Your gut's best friend. We set fresh curd in-house with our own living culture, then churn, so the ghee is gentle and easy to digest.",
+          heading: "Our own curd culture",
+          sub: "We set fresh curd in-house with our own live culture and then churn it, so the ghee is gentle on your gut and easy to digest.",
           image: { src: `${GHEE_DIR}/ghee-curd.webp`, alt: "Fresh curd set the traditional way", label: "Curd culture" },
         },
         {
-          heading: "Farm to Spoon",
-          sub: "Sourced straight from the fields of trusted Indian farms: milk to spoon, with nothing anonymous in between.",
+          heading: "Farm to spoon",
+          sub: "Sourced straight from trusted Indian farms, with every step from milk to spoon traceable.",
           image: { src: `${GHEE_DIR}/ghee-farm.webp`, alt: "A2 Bilona Ghee sourced from Indian farms with Gir cows", label: "Farm sourced" },
         },
       ],
     },
     {
       kind: "wide-banner",
-      heading: "Tastes Like Home",
-      sub: "Daanedaar texture. Delicious taste. The grainy, golden ghee you remember from childhood kitchens. Made the same slow way.",
+      heading: "Tastes like home",
+      sub: "The grainy, daanedaar, golden ghee you remember from childhood kitchens, made the same slow way.",
       image: { src: `${GHEE_DIR}/ghee-lifestyle.webp`, alt: "Golden ghee poured into a brass kadai in an Indian kitchen", label: "Tastes like home" },
       imageSide: "left",
     },
@@ -177,13 +177,13 @@ const GHEE_STORY: ProductStoryContent = {
       kind: "split-2up",
       cards: [
         {
-          heading: "Expert Approved",
-          sub: "70+ quality checks and not a single shortcut. Every batch is screened end-to-end before it is ever sealed.",
+          heading: "Expert approved",
+          sub: "Every batch goes through 70+ quality checks before it is sealed.",
           image: { src: `${GHEE_DIR}/ghee-lab.webp`, alt: "A2 Bilona Ghee lab-tested through 70+ quality checks", label: "Quality checks" },
         },
         {
           heading: "Adulteration? Never",
-          sub: "Hormone-free. Dalda-free. Heavy-metal-free. Just pure A2 ghee: exactly as nature, and tradition, intended.",
+          sub: "Free of hormones, Dalda and heavy metals: just pure A2 ghee, made the traditional way.",
           image: { src: `${GHEE_DIR}/ghee-nothing-else.webp`, alt: "Pure A2 Bilona Ghee · jar and bowl, nothing else", label: "Pure & trusted" },
         },
       ],
@@ -230,8 +230,8 @@ const HONEY_DIR = "/images/products/honey";
 const HONEY_STORY: ProductStoryContent = {
   produceIcon: "honey",
   description: [
-    "Raw, single-forest honey. Strained, never heated, so the pollen, enzymes and aroma the bees built stay exactly where they belong: in the jar.",
-    "No added sugar, no syrup, no shortcuts. Just honey, the way the hive made it.",
+    "Raw, single-forest honey that is strained but never heated, so the pollen, enzymes and aroma stay in the jar.",
+    "There's no added sugar or syrup, just honey the way the hive made it.",
   ],
   gallery: [
     { src: `${HONEY_DIR}/honey-hero.webp`, alt: "Wild Raw Honey jar", label: "Front of pack" },
@@ -283,7 +283,7 @@ const RICE_STORY_BASE = minimalStory(
   "grain",
   [
     "Aged, single-origin rice grown the unhurried way and milled with a light touch, so each grain keeps its aroma, bite and natural goodness.",
-    "No polishing for looks, no shortcuts for shelf-life. Just honest rice that cooks the way it should.",
+    "We don't polish it for looks or treat it for shelf-life, so it cooks the way rice should.",
   ],
   {
     heading: "Pure by every measure",
@@ -295,8 +295,8 @@ const RICE_STORY_BASE = minimalStory(
     ],
   },
   {
-    a: { heading: "Aged for Flavour", sub: "Rested after harvest so the grains firm up and cook fluffy, never sticky." },
-    b: { heading: "Farm to Grain", sub: "Sourced from named paddy farms and traceable back to the field it grew in." },
+    a: { heading: "Aged for flavour", sub: "Rested after harvest so the grains firm up and cook fluffy, never sticky." },
+    b: { heading: "Farm to grain", sub: "Sourced from named paddy farms and traceable back to the field it grew in." },
   },
 );
 
@@ -307,8 +307,8 @@ const OILS_DIR = "/images/products/oils";
 const OILS_STORY: ProductStoryContent = {
   produceIcon: "oil",
   description: [
-    "Cold-pressed the traditional way. Seeds crushed slowly on a wooden ghani, never heated or refined, so the oil keeps the aroma, colour and nutrients of the seed it came from.",
-    "No bleaching, no deodorising, no chemicals at any step. Just small batches of unrefined oil, bottled as it leaves the press.",
+    "Cold-pressed the traditional way: seeds are crushed slowly on a wooden ghani and never heated or refined, so the oil keeps the aroma, colour and nutrients of the seed it came from.",
+    "There's no bleaching, deodorising or chemicals at any step. We press small batches of unrefined oil and bottle it as it leaves the press.",
   ],
   /* `sharedGallery` used to live here: a curated set the PDP appended to EVERY
      oil's gallery. It led with groundnut-side.webp, so a shopper looking at

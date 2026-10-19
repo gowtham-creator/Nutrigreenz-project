@@ -170,19 +170,19 @@ function resolveVariants(p: Product): { variants: PdpVariant[]; baseIndex: numbe
 function getIntro(p: Product, categoryId: string): string {
   const byCat: Record<string, string> = {
     oils: "Pressed slow and cold from a single farm lot, this oil keeps the flavour and nutrition that industrial refining strips away. You can taste the difference from the very first tempering.",
-    ghee: "Made the traditional Bilona way. Curd is hand-churned to butter, then slow-simmered to golden ghee the same day the milk is collected. Nothing about it is hurried.",
-    honey: "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays exactly where it belongs, in the jar.",
-    millets: "An ancient grain grown the way it always was. Rain-fed, intercropped and minimally processed. A wholesome, gluten-free base for everyday meals.",
-    spices: "Single-origin whole spice, stone-ground in small batches so the aroma oils survive. Colour and fragrance you can smell the moment you open the pack.",
-    superfoods: "Grown on partner farms, harvested at peak potency and gently milled so the goodness survives the journey to powder. A small spoon that does real work.",
-    pulses: "Honest, unpolished dal from a single-origin farm. No water-polish, no oil coating. It cooks creamy and tastes of the pulse itself.",
-    flours: "Stone-ground slowly on a traditional chakki so the grain stays cool and whole. Flour with the wheatgerm still in it: more flavour, more fibre.",
-    fruits: "Ripened on the tree, picked to order and never gassed with carbide. Seasonal fruit that actually tastes the way it should.",
-    gifting: "A curated hamper of our most-loved single-origin staples, in plastic-free packaging. A way to gift wellness you can stand behind, down to the farm.",
+    ghee: "Made the traditional Bilona way: curd is hand-churned to butter, then slow-simmered into golden ghee on the same day the milk is collected.",
+    honey: "Wild, raw and traceable to a single forest harvest. We never heat or ultra-filter, so everything the bees made stays in the jar.",
+    millets: "An old grain, grown rain-fed and intercropped the way it always was, then minimally processed. It makes a wholesome, gluten-free base for everyday meals.",
+    spices: "Single-origin whole spice, stone-ground in small batches so the aroma oils survive. You notice the colour and fragrance the moment you open the pack.",
+    superfoods: "Grown on partner farms, harvested at peak potency and gently milled at low heat so the nutrients survive.",
+    pulses: "Unpolished dal from a single-origin farm, with no water-polish or oil coating. It cooks creamy and tastes of the pulse itself.",
+    flours: "Stone-ground slowly on a traditional chakki so the grain stays cool and whole. The wheatgerm stays in, so you get more flavour and more fibre.",
+    fruits: "Seasonal fruit, ripened on the tree, picked to order and never gassed with carbide, so it tastes the way it should.",
+    gifting: "A hamper of our most-loved single-origin staples in plastic-free packaging, with every item traceable to its farm.",
   };
   return (
     byCat[categoryId] ??
-    "Single-origin, minimally processed and traceable from farm to your kitchen. Real food, sourced with respect for the people who grow it."
+    "Single-origin, minimally processed and traceable from the farm to your kitchen, bought with respect for the people who grow it."
   );
 }
 
@@ -525,7 +525,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <p className="text-[15px] leading-relaxed text-ng-ink">{intro}</p>
                 <p className="text-[15px] leading-relaxed text-ng-ink">
                   Every batch is traceable to a named partner farm and screened by an independent lab before it ships, so what
-                  reaches your kitchen is exactly what left the field, with nothing hidden in between.
+                  reaches your kitchen is what left the field.
                 </p>
               </Reveal>
             )}
@@ -593,7 +593,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section
         eyebrow="You may also like"
         heading={<>More from the <em className="italic text-ng-leaf">{cat.title.toLowerCase()}</em></>}
-        description="Single-origin staples chosen by fellow shoppers: same lab-tested, lot-traceable promise."
+        description="Single-origin staples other shoppers picked, lab-tested and lot-traceable like this one."
       >
         <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
           {relatedRail.map((r) => (

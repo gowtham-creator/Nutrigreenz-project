@@ -104,7 +104,7 @@ export function CategoryModal({
       if (!res.ok || !data.url) throw new Error();
       setImageUrl(data.url as string);
     } catch {
-      toast.error("Upload failed");
+      toast.error("Couldn't upload the image. Try again.");
     } finally {
       setUploading(false);
     }

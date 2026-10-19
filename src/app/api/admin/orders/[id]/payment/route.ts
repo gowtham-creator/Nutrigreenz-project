@@ -46,7 +46,7 @@ export async function POST(
       {
         ok: false,
         error: "not-cod",
-        message: "Online payments are confirmed by the gateway, not by hand.",
+        message: "Online payments are confirmed by the gateway. You can't mark them paid here.",
       },
       { status: 409 },
     );

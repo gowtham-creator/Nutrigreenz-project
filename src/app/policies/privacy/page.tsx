@@ -25,11 +25,11 @@ export default function PrivacyPolicyPage() {
               }
               <a href="https://www.nutrigreenz.farm">www.nutrigreenz.farm</a>
               {
-                ", or the Nutrigreenz mobile application (collectively, the “Nutrigreenz Platform”) made available by "
+                " or the Nutrigreenz mobile application (collectively, the “Nutrigreenz Platform”). The Nutrigreenz Platform is made available by "
               }
               <strong>Nutri Greenz Farm Technologies Pvt. Ltd</strong>
               {
-                " (“Nutrigreenz”, “Company”, “we”, “us” and “our”), a private company established under the laws of India having its registered office at Plot 209/A, Visweswara Residency, Street No 9, Wester Hills, Addagutta Society, KPHB, Pragathi Nagar Road, Hyderabad, 500085, Telangana, India."
+                " (“Nutrigreenz”, “Company”, “we”, “us” and “our”), a private company established under the laws of India, with its registered office at Plot 209/A, Visweswara Residency, Street No 9, Wester Hills, Addagutta Society, KPHB, Pragathi Nagar Road, Hyderabad, 500085, Telangana, India."
               }
             </p>
           ),
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
           body: (
             <p>
               {
-                "By using the Nutrigreenz Platform and the Services, you agree and consent to the collection, transfer, use, storage, disclosure and sharing of your information as described and collected by us in accordance with this Policy. If you do not agree with the Policy, please do not use, or access the Nutrigreenz Platform."
+                "By using the Nutrigreenz Platform and the Services, you agree and consent to the collection, transfer, use, storage, disclosure and sharing of your information as described and collected by us in accordance with this Policy. If you do not agree with the Policy, please do not use or access the Nutrigreenz Platform."
               }
             </p>
           ),
@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage() {
             <>
               <p>
                 {
-                  "Our Nutrigreenz Platform and third parties with whom we partner, may use cookies, pixel tags, web beacons, mobile device IDs, “flash cookies” and similar files or technologies to collect and store information with respect to your use of the Services and third-party websites, including to:"
+                  "Our Nutrigreenz Platform and third parties with whom we partner may use cookies, pixel tags, web beacons, mobile device IDs, “flash cookies” and similar files or technologies to collect and store information with respect to your use of the Services and third-party websites, including to:"
                 }
               </p>
               <ul className="list-disc pl-5 flex flex-col gap-2">
@@ -76,7 +76,7 @@ export default function PrivacyPolicyPage() {
             <>
               <p>
                 {
-                  "When you open our website, our hosting provider resolves an approximate location. City, state and country. From the internet address your connection arrives on. We use this to count how many visits came from each place, so we can decide which cities and states to serve, stock and deliver to next."
+                  "When you open our website, our hosting provider works out an approximate location (city, state and country) from the internet address your connection arrives on. We use this to count how many visits came from each place, so we can decide which cities and states to serve, stock and deliver to next."
                 }
               </p>
               <p>
@@ -91,7 +91,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <p>
                 {
-                  "This is distinct from the delivery addresses you choose to give us. Those are personal data, are stored against your account, and are used only to deliver your orders and to tell you whether we serve your area."
+                  "This is separate from the delivery addresses you choose to give us. Those are personal data, are stored against your account, and are used only to deliver your orders and to tell you whether we serve your area."
                 }
               </p>
             </>
@@ -106,11 +106,11 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc pl-5 flex flex-col gap-2">
                 <li>{"To provide, personalise, maintain, and improve our products and services."}</li>
                 <li>{"To carry out our obligations arising from any contracts entered between you and us."}</li>
-                <li>{"To administer and enhance the security of our Platform."}</li>
+                <li>{"To administer and improve the security of our Platform."}</li>
                 <li>{"To provide you with information about services we consider similar to those you are using."}</li>
                 <li>{"To understand our users and improve our Services."}</li>
                 <li>{"To generate and review reports and data about our user base."}</li>
-                <li>{"To count visits by city, state and country so we can plan where to expand our service. As counts only, never linked to you (see \u201cWhere visitors come from\u201d)."}</li>
+                <li>{"To count visits by city, state and country, as counts only and never linked to you, so we can plan where to expand our service (see \u201cWhere visitors come from\u201d)."}</li>
                 <li>{"To measure the effectiveness of advertising we serve."}</li>
               </ul>
             </>
@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
           body: (
             <p>
               {
-                "We implement appropriate technical and security measures to protect your information, including using vault and tokenization services from PCI-compliant service providers. However, please be aware that the transmission of information via the internet is not completely secure, and we cannot guarantee the security of your data transmitted through the Nutrigreenz Platform. Once we have received your information, we employ strict safeguards to prevent unauthorized access."
+                "We implement appropriate technical and security measures to protect your information, including using vault and tokenization services from PCI-compliant service providers. However, the transmission of information via the internet is not completely secure, and we cannot guarantee the security of your data transmitted through the Nutrigreenz Platform. Once we have received your information, we employ strict safeguards to prevent unauthorized access."
               }
             </p>
           ),

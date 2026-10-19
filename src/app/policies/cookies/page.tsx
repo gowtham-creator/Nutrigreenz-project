@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 export const metadata: Metadata = {
   title: "Cookie policy · Nutri Greenz",
   description:
-    "How Nutri Greenz uses cookies and similar local storage. To keep you signed in, remember your cart and delivery area, and understand how the site is used.",
+    "How Nutri Greenz uses cookies and similar local storage to keep you signed in, remember your cart and delivery area, and understand how the site is used.",
 };
 
 export default function CookiePolicyPage() {
@@ -21,7 +21,7 @@ export default function CookiePolicyPage() {
           body: (
             <p>
               Cookies are small files a website stores in your browser. Alongside them we use{" "}
-              <strong>local storage</strong> — for example to remember your chosen delivery area and
+              <strong>local storage</strong>, for example to remember your chosen delivery area and
               cart between visits. Together we refer to these as &ldquo;cookies&rdquo; on this page.
             </p>
           ),
@@ -33,16 +33,16 @@ export default function CookiePolicyPage() {
             <>
               <ul className="list-disc pl-5 flex flex-col gap-2">
                 <li>
-                  <strong>Essential</strong> — keep you signed in, hold your cart, and remember your
-                  delivery pincode and onboarding state. The site cannot work properly without these.
+                  <strong>Essential:</strong> these keep you signed in, hold your cart, and remember your
+                  delivery pincode and onboarding state. The site cannot work properly without them.
                 </li>
                 <li>
-                  <strong>Preferences</strong> — remember choices like your default address and slot so
+                  <strong>Preferences:</strong> these remember choices like your default address and slot so
                   you don&rsquo;t re-enter them each time.
                 </li>
                 <li>
-                  <strong>Analytics</strong> — help us understand which pages and products are useful so
-                  we can improve the experience. These are aggregated and never used to identify you
+                  <strong>Analytics:</strong> these help us understand which pages and products are useful so
+                  we can improve the site. They are aggregated and never used to identify you
                   personally.
                 </li>
               </ul>
@@ -57,11 +57,11 @@ export default function CookiePolicyPage() {
             <>
               <p>
                 You can clear or block cookies and local storage from your browser settings at any
-                time. Note that disabling essential storage will stop core features. Such as staying
-                signed in or keeping items in your cart, from working.
+                time. Disabling essential storage will stop core features, such as staying signed in or
+                keeping items in your cart, from working.
               </p>
               <p>
-                For how this fits into the wider picture of the data we hold, see our{" "}
+                To see how this fits with the other data we hold, read our{" "}
                 <a href="/policies/privacy">privacy policy</a>.
               </p>
             </>

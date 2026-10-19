@@ -108,7 +108,7 @@ export const FARMS: Farm[] = [
     practices: ["organic", "rainwater harvesting", "intercropping"],
     partneredSince: "2019-04-12",
     farmerName: "K. Subbaiah",
-    story: "Three generations of dryland farming. We helped them transition 9 acres from groundnut monoculture to mixed cropping in 2021.",
+    story: "Three generations of this family have farmed dry land here. In 2021 we helped them move 9 acres off groundnut monoculture and into mixed cropping.",
     image: "/images/farm/dryland-farm.webp",
   },
   {
@@ -119,7 +119,7 @@ export const FARMS: Farm[] = [
     practices: ["A2 dairy", "bilona churning", "biodynamic"],
     partneredSince: "2020-08-22",
     farmerName: "Hetal Pateel",
-    story: "18 Gir cows, no synthetic feed, hand-milking only. Bilona ghee made the same day milk is collected.",
+    story: "The dairy keeps 18 Gir cows. They are milked by hand and get no synthetic feed, and the bilona ghee is made on the same day the milk is collected.",
     image: "/images/farm/gir-farm.webp",
   },
   {
@@ -129,7 +129,7 @@ export const FARMS: Farm[] = [
     practices: ["wild honey", "co-operative", "forest-adjacent"],
     partneredSince: "2021-01-15",
     farmerName: "23-member co-op",
-    story: "Honey harvested without smoke or queen-killing. Each lot tested for purity at our Hyderabad lab.",
+    story: "The co-op harvests its honey without smoke and without killing the queen. We test every lot for purity at our Hyderabad lab.",
     image: "/images/farm/bee-coop.webp",
   },
 ];
@@ -141,10 +141,10 @@ export const TESTIMONIALS: Testimonial[] = [
 ];
 
 export const JOURNAL: JournalArticle[] = [
-  { id: "j1", slug: "why-bilona-matters", title: "Why bilona is the only ghee method we'll ever use", excerpt: "Three days of hand-churning. Eleven liters of milk per liter of ghee. The science behind why slow makes everything better.", cover: "/images/journal/why-bilona-matters.webp", category: "science", readMinutes: 8, publishedAt: "2026-04-12" },
-  { id: "j2", slug: "anantapur-rains", title: "Field notes: the rains came late this year", excerpt: "Climate volatility is changing how our partner farms plan. A dispatch from our agronomist after a visit to the groundnut belt.", cover: "/images/journal/anantapur-rains.webp", category: "field-notes", readMinutes: 6, publishedAt: "2026-03-28" },
-  { id: "j3", slug: "millet-pongal", title: "Foxtail millet pongal · Subbaiah's mother's recipe", excerpt: "A staple from the Anantapur kitchen, captured between harvests. Twenty minutes start to finish.", cover: "/images/journal/millet-pongal.webp", category: "recipes", readMinutes: 5, publishedAt: "2026-03-15" },
-  { id: "j4", slug: "what-lab-tests-mean", title: "What our lab tests actually tell you", excerpt: "Heavy metals, aflatoxin, pesticide residue. The three numbers every honest brand should put on the label.", cover: "/images/journal/what-lab-tests-mean.webp", category: "guides", readMinutes: 10, publishedAt: "2026-02-20" },
+  { id: "j1", slug: "why-bilona-matters", title: "Why bilona is the only ghee method we'll ever use", excerpt: "Our ghee takes three days of hand-churning and eleven liters of milk for every liter in the jar. This is the science of why the slow way makes better ghee.", cover: "/images/journal/why-bilona-matters.webp", category: "science", readMinutes: 8, publishedAt: "2026-04-12" },
+  { id: "j2", slug: "anantapur-rains", title: "Field notes: the rains came late this year", excerpt: "Unpredictable weather is changing the way our partner farms plan their year. Our agronomist wrote this after a visit to the groundnut belt.", cover: "/images/journal/anantapur-rains.webp", category: "field-notes", readMinutes: 6, publishedAt: "2026-03-28" },
+  { id: "j3", slug: "millet-pongal", title: "Subbaiah's mother's foxtail millet pongal", excerpt: "An everyday dish in Anantapur kitchens, written down between harvests. It takes twenty minutes from start to finish.", cover: "/images/journal/millet-pongal.webp", category: "recipes", readMinutes: 5, publishedAt: "2026-03-15" },
+  { id: "j4", slug: "what-lab-tests-mean", title: "What our lab tests actually tell you", excerpt: "Heavy metals, aflatoxin and pesticide residue: the three numbers every honest brand should put on its label.", cover: "/images/journal/what-lab-tests-mean.webp", category: "guides", readMinutes: 10, publishedAt: "2026-02-20" },
 ];
 
 /* ──────────────────────────────────────────────────────────────────────────

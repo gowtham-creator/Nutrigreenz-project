@@ -57,7 +57,7 @@ export function ImportModal({
       setPreview(data);
       setPhase("preview");
     } catch {
-      toast.error("Could not read that file", { description: "Check the CSV format and try again." });
+      toast.error("Couldn't read that file", { description: "Check the CSV format and try again." });
     } finally {
       setBusy(false);
     }

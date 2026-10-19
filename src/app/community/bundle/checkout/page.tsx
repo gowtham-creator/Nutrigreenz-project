@@ -23,7 +23,7 @@ export default function CommunityBundleCheckout() {
         <div className="mx-auto max-w-7xl px-5 md:px-8 py-5">
           <Link href="/community/bundle/inventory" className="text-[12px] text-ng-clay hover:underline">← Back to inventory</Link>
           <h1 className="font-display text-[28px] leading-tight mt-2">Confirm your pod order</h1>
-          <p className="text-[13px] text-ng-cream/70 mt-1">Madhapur pod · May cycle · pickup 23 May, 17:00–20:00</p>
+          <p className="text-[13px] text-ng-cream/70 mt-1">Madhapur pod · May cycle · pickup 23 May, 17:00 to 20:00</p>
         </div>
       </div>
 
@@ -57,14 +57,14 @@ export default function CommunityBundleCheckout() {
             <div className="rounded-3xl bg-ng-sage/30 border border-ng-line p-7">
               <span className="ng-eyebrow">Pickup point</span>
               <h2 className="font-display text-[22px] text-ng-forest-deep mt-2 leading-tight">
-                Captain Sneha's home, Madhapur
+                Captain Sneha&apos;s home, Madhapur
               </h2>
               <p className="text-[14px] text-ng-ink-muted mt-3 leading-relaxed">
-                14 Jubilee Hills Road No. 36, Madhapur, Hyderabad 500081. Sneha will message you 24h before pickup with apartment + parking details.
+                14 Jubilee Hills Road No. 36, Madhapur, Hyderabad 500081. Sneha will message you 24h before pickup with apartment and parking details.
               </p>
               <div className="mt-5 grid grid-cols-2 gap-3 text-[12.5px]">
                 <Tile label="Cycle closes" value="22 May, 22:00" />
-                <Tile label="Pickup window" value="23 May, 17:00–20:00" />
+                <Tile label="Pickup window" value="23 May, 17:00 to 20:00" />
               </div>
             </div>
 
@@ -92,10 +92,10 @@ export default function CommunityBundleCheckout() {
           {/* Right: Summary */}
           <aside className="lg:sticky lg:top-24 self-start space-y-5">
             <div className="rounded-3xl bg-ng-forest-deep text-ng-cream p-7">
-              <div className="text-[10.5px] uppercase tracking-wider text-ng-clay">You're saving</div>
+              <div className="text-[10.5px] uppercase tracking-wider text-ng-clay">You&apos;re saving</div>
               <div className="font-display text-[44px] text-ng-clay leading-none mt-2">₹{savings.toLocaleString()}</div>
               <p className="text-[12.5px] text-ng-cream/70 mt-3">
-                vs ordering individually. Same lot, same farmer. Last-mile cost = 0.
+                compared with ordering on your own. It&apos;s the same lot and the same farmer, with no last-mile cost.
               </p>
             </div>
 

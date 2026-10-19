@@ -152,7 +152,7 @@ export function StickyBar({ product, price, outOfStock = false }: StickyBarProps
             </Button>
             <Button onClick={buyNow} variant="primary" size="md" className="cursor-pointer">
               <AppIcon name="cart-add" size={16} />
-              <span className="font-display tracking-wide">Buy Now</span>
+              <span className="font-display tracking-wide">Buy now</span>
             </Button>
           </>
         )}

@@ -275,7 +275,7 @@ export function SessionCountdown({ className }: { className?: string }) {
       /* Decorative to a screen reader: it changes every second and would talk
          over everything else. The title and the sr-only label carry the meaning,
          and `aria-live` is deliberately absent for the same reason. */
-      title="This session ends at 00:00 and cannot be extended. Sign in again to continue."
+      title="You'll be signed out when this reaches 00:00. Sessions can't be extended, so sign in again to continue."
     >
       {/* The clock reads normally; the caution mark takes over once the session
           is nearly out, because at that point the message is "act now" rather

@@ -99,17 +99,17 @@ export function CommandCenterHero({
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-cream/[0.08] ring-1 ring-ng-cream/20 text-ng-cream/90 font-bold px-3 py-1 text-[11px] uppercase tracking-[0.14em]">
                   <Icon name="shield-check-bold" size={12} />
-                  Control Center
+                  Control center
                 </span>
               </div>
               <h1 className="font-display text-[30px] sm:text-[34px] leading-[1.05] tracking-[-0.01em] mt-3.5">
                 Super <em className="not-italic text-ng-cream">Admin</em>
                 <span className="text-ng-cream/60 font-sans font-normal text-[20px] align-middle mx-2">·</span>
-                <span className="text-ng-cream/90">Control Center</span>
+                <span className="text-ng-cream/90">Control center</span>
               </h1>
               <p className="font-sans text-[13px] font-medium text-ng-cream/85 mt-2 max-w-xl">
-                Global settings that drive the live storefront. Cart, checkout,
-                loyalty &amp; growth levers.
+                Global settings for the live storefront: cart, checkout,
+                loyalty and growth.
               </p>
               <div className="mt-3.5 flex items-center gap-2 text-[11.5px] font-medium text-ng-cream/85">
                 <UiIcon name="customer" size={14} className="text-ng-cream/70" />
@@ -126,7 +126,7 @@ export function CommandCenterHero({
                 <span className="absolute inline-flex h-full w-full rounded-full bg-ng-success opacity-70 animate-ping" />
                 <span className="relative inline-flex size-2 rounded-full bg-ng-success" />
               </span>
-              Live · driving storefront
+              Live on the storefront
             </span>
           </div>
 

@@ -40,7 +40,7 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 
 const CATEGORY_BLURBS: Record<string, string> = {
   oils: "Single-press, never refined. Each bottle traceable to the village ghani and the harvest lot it came from.",
-  ghee: "Bilona-churned from A2 milk, made the same day it's collected. Named cows, named dairies.",
+  ghee: "Bilona-churned from A2 milk on the day it's collected, from named cows and dairies.",
   honey: "Raw, unheated, lab-tested for purity. Harvested without smoke or queen-killing.",
   millets: "Climate-smart grains from dryland farms we helped transition away from monoculture.",
   spices: "Whole, sun-dried, stone-milled in small batches so the oils stay alive.",
@@ -48,7 +48,7 @@ const CATEGORY_BLURBS: Record<string, string> = {
   pulses: "Unpolished dals and pulses, sorted by hand, free of artificial colour.",
   flours: "Stone-ground in slow chakkis so the bran and germ stay in the bag.",
   fruits: "Seasonal produce picked ripe and shipped within the harvest window.",
-  gifting: "Curated hampers of our best-loved jars: ready to give, fully traceable.",
+  gifting: "Hampers of our best-loved jars, ready to give and fully traceable.",
 };
 
 // Category heroes use real origin/craft photography — NOT the product banners —

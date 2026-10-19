@@ -56,7 +56,7 @@ export default function AdminForgotPage() {
       setEmail("");
     } catch {
       toast.error("Couldn’t send reset link", {
-        description: "Please check your connection and try again.",
+        description: "Check your connection and try again.",
       });
     } finally {
       setSubmitting(false);

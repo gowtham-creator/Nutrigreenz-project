@@ -166,7 +166,7 @@ function LoginForm() {
   useEffect(() => {
     if (params.get("reason") === "timeout") {
       toast.message("Signed out due to inactivity", {
-        description: "Please sign in again.",
+        description: "Sign in again.",
       });
     }
   }, [params]);
@@ -326,11 +326,11 @@ function LoginForm() {
         completeSignIn(next);
         return;
       }
-      const msg = "Invalid credentials.";
+      const msg = "Email or password is incorrect.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } catch {
-      const msg = "Could not reach the server. Try again.";
+      const msg = "Couldn't reach the server. Try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
     } finally {
@@ -366,11 +366,11 @@ function LoginForm() {
         toast.error("Session expired", { description: msg });
         return;
       }
-      const msg = "Invalid or expired authenticator code.";
+      const msg = "That code is wrong or has expired. Enter the current code from your app.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } catch {
-      const msg = "Could not reach the server. Try again.";
+      const msg = "Couldn't reach the server. Try again.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } finally {
@@ -405,11 +405,11 @@ function LoginForm() {
         toast.error("Session expired", { description: msg });
         return;
       }
-      const msg = "Invalid or expired email code.";
+      const msg = "That code is wrong or has expired. Resend it and try again.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } catch {
-      const msg = "Could not reach the server. Try again.";
+      const msg = "Couldn't reach the server. Try again.";
       setError(msg);
       toast.error("Verification failed", { description: msg });
     } finally {
@@ -450,7 +450,7 @@ function LoginForm() {
         setError(msg);
         toast.error("Verification failed", { description: msg });
       } catch {
-        setError("Could not reach the server. Try again.");
+        setError("Couldn't reach the server. Try again.");
       } finally {
         setSubmitting(false);
       }
@@ -500,7 +500,7 @@ function LoginForm() {
       console.error("[admin mobile 2FA] confirm failed:", errCode || err);
       const msg =
         errCode === "auth/invalid-verification-code"
-          ? "That code is incorrect. Check it and re-enter."
+          ? "That code is incorrect. Check it and try again."
           : errCode === "auth/code-expired" || errCode === "auth/session-expired"
             ? "Your code expired. Request a new one."
             : "Couldn't verify the code. Request a fresh one and try again.";
@@ -555,7 +555,7 @@ function LoginForm() {
           } else {
             const msg =
               res.status === 429
-                ? "Too many attempts. Wait a few minutes and retry."
+                ? "Too many attempts. Wait a few minutes and try again."
                 : data.error === "SMS OTP not configured"
                   ? "SMS sign-in isn't configured yet."
                   : "Couldn't send the code.";
@@ -564,7 +564,7 @@ function LoginForm() {
           }
         }
       } catch {
-        setError("Could not reach the server. Try again.");
+        setError("Couldn't reach the server. Try again.");
       } finally {
         if (isResend) setResending(false);
         else setSubmitting(false);
@@ -616,7 +616,7 @@ function LoginForm() {
             : code === "auth/invalid-phone-number"
               ? "That mobile number looks invalid."
               : code === "auth/too-many-requests"
-                ? "Too many attempts. Wait a few minutes and retry."
+                ? "Too many attempts. Wait a few minutes and try again."
                 : `Couldn't send the code${code ? ` (${code})` : ""}.`;
       setError(friendly);
       toast.error("Sign in failed", { description: friendly });
@@ -665,12 +665,12 @@ function LoginForm() {
             : res.status === 401
               ? "That code is incorrect or expired. Request a fresh one."
               : res.status >= 500
-                ? "Server couldn't verify the sign-in. Please try again in a moment."
+                ? "The server couldn't verify your sign-in. Try again in a moment."
                 : "We couldn't verify your sign-in. Request a fresh code and try again.";
         setError(msg);
         toast.error("Sign in failed", { description: msg });
       } catch {
-        setError("Could not reach the server. Try again.");
+        setError("Couldn't reach the server. Try again.");
       } finally {
         setSubmitting(false);
       }
@@ -706,7 +706,7 @@ function LoginForm() {
         res.status === 403
           ? "This number isn't an authorised operator."
           : res.status >= 500
-            ? "Server couldn't verify the sign-in. Please try again in a moment."
+            ? "The server couldn't verify your sign-in. Try again in a moment."
             : "We couldn't verify your sign-in. Request a fresh code and try again.";
       setError(msg);
       toast.error("Sign in failed", { description: msg });
@@ -717,7 +717,7 @@ function LoginForm() {
       console.error("[admin phone sign-in] confirm failed:", code || err);
       const msg =
         code === "auth/invalid-verification-code"
-          ? "That code is incorrect. Check it and re-enter."
+          ? "That code is incorrect. Check it and try again."
           : code === "auth/code-expired" || code === "auth/session-expired"
             ? "Your code expired. Request a new one."
             : "Couldn't verify the code. Request a fresh one and try again.";

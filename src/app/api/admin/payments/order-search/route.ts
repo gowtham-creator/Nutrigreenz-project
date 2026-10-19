@@ -41,7 +41,7 @@ export async function GET(request: Request): Promise<Response> {
 
   if (!ref && !sbiRef && !atrn) {
     return Response.json(
-      { ok: false, error: "give one of ref, sbiRef or atrn" },
+      { ok: false, error: "Enter one of ref, sbiRef or atrn." },
       { status: 400 },
     );
   }

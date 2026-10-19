@@ -187,7 +187,7 @@ export default function AdminAnalytics() {
           Product <em className="italic text-ng-clay font-display">&amp; customer</em> analytics
         </span>
       }
-      subtitle="Demand signals per product & how customers sign in. Computed live from real data"
+      subtitle="Product demand and how customers sign in, calculated live"
       actions={
         <>
           <div className="hidden md:flex gap-1 bg-ng-paper border border-ng-line-soft rounded-full p-1">
@@ -334,7 +334,7 @@ export default function AdminAnalytics() {
 
           {/* 3 · PER-PRODUCT TABLE (sortable) ------------------------ */}
           <Card
-            title="Products · demand"
+            title="Product demand"
             action={<span className="text-[12.5px] font-medium text-ng-ink-soft">{NUM(sortedProducts.length)} products</span>}
             className="mb-6 !p-0"
           >
@@ -438,8 +438,8 @@ export default function AdminAnalytics() {
           </Card>
 
           <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
-            Figures computed live ({range.label}, by {BUCKETS.find((b) => b.id === bucket)?.label.toLowerCase()}). Views are best-effort PDP
-            pings; weekend = Sat/Sun (IST). Charts are hand-authored CSS/SVG — no chart libraries.
+            Figures are calculated live ({range.label}, by {BUCKETS.find((b) => b.id === bucket)?.label.toLowerCase()}). Views count product page
+            opens and may miss some. Weekend means Saturday and Sunday (IST). Charts use plain CSS and SVG.
           </p>
         </>
       )}

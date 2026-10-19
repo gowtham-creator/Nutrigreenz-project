@@ -133,7 +133,7 @@ function AuthScreen() {
             </Reveal>
             <p className="mt-3 text-[15px] leading-relaxed text-ng-ink-muted">
               {step === "phone"
-                ? "Enter your mobile number. We'll text you a one-time code. No password needed."
+                ? "Enter your mobile number and we'll text you a one-time code. No password needed."
                 : `We sent a 6-digit code to ${e164}.`}
             </p>
 
@@ -281,7 +281,7 @@ function AuthScreen() {
               <blockquote className="mt-3 font-display text-[19px] italic leading-snug text-ng-cream/95">
                 &ldquo;Six months in, my whole pantry is Nutri Greenz. The lot codes turned us into believers.&rdquo;
               </blockquote>
-              <footer className="mt-3 text-[12px] text-ng-cream/60">— Anjali · member since Aug 2025 · Hyderabad</footer>
+              <footer className="mt-3 text-[12px] text-ng-cream/60">Anjali · member since Aug 2025 · Hyderabad</footer>
             </div>
           </div>
         </div>

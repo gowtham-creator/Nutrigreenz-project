@@ -13,7 +13,7 @@ import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 export const metadata: Metadata = {
   title: "Shop the pantry · Nutri Greenz",
   description:
-    "Browse the whole pantry. Cold-pressed oils, A2 ghee, raw honey, millets, spices and more. Single-origin, lab-tested, fairly sourced.",
+    "Browse the whole pantry: cold-pressed oils, A2 ghee, raw honey, millets, spices and more, all single-origin, lab-tested and fairly sourced.",
 };
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
@@ -38,7 +38,7 @@ export default async function ShopPage() {
             Browse the <em className="italic text-ng-leaf">whole pantry.</em>
           </>
         }
-        description="Every item single-origin, every lot lab-tested, every farmer paid fairly. Filter, search and sort your way to a better shelf."
+        description="Every item is single-origin, every lot is lab-tested and every farmer is paid fairly. Filter, search and sort to find what you need."
       >
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mt-6 flex items-center gap-1.5 text-[13px] text-ng-ink-muted">

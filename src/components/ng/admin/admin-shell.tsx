@@ -321,8 +321,8 @@ function SidebarContent({
         {/* Sits on the permanently dark rail, so it opts out of the inversion
             too. Its `/75` and `/5` opacity forms measured 1.08:1 before. */}
         <div className="ng-on-dark rounded-2xl bg-ng-cream/5 border border-ng-cream/10 p-4 text-[12px] font-medium text-ng-cream/75">
-          <div className="text-ng-clay font-bold text-[12.5px] mb-1">Need a hand?</div>
-          Slack #admin-portal · runbook link in handbook
+          <div className="text-ng-clay font-bold text-[12.5px] mb-1">Need help?</div>
+          Ask in Slack #admin-portal. The runbook link is in the handbook.
         </div>
       </div>
     </>

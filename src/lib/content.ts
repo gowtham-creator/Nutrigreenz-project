@@ -17,13 +17,13 @@ import { JOURNAL as STATIC_JOURNAL, FARMS as STATIC_FARMS } from "@/components/n
  * the sample articles). Used to seed the DB and as the fallback body so a
  * static-sourced article looks identical to a DB-sourced one.
  */
-export const DEFAULT_ARTICLE_BODY_HTML = `<p>There is a faster version of almost every food we sell, and ghee is no exception. A modern creamery can take milk to finished fat in a matter of hours. We take five days. The slow pace of bilona. Three days of churning, two days of resting. Is not a marketing line; it's a chemical reality that nothing in modern dairy technology has been able to shortcut.</p>
-<h2>The science underneath the slowness</h2>
-<p>When milk is cultured at low temperature for 48 hours, the lactic-acid bacteria break down lactose more thoroughly. The resulting curd, churned by hand at the right rhythm, releases butter with a fundamentally different fatty-acid profile. Shorter-chain triglycerides, more conjugated linoleic acid, and a richer aromatic compound bouquet.</p>
-<blockquote>"I learned from my grandmother. The butter tells you when it's done. You don't tell it."<footer>— Hetal Pateel, Junagadh</footer></blockquote>
-<h2>Why we will not industrialise this</h2>
-<p>Several large dairies have asked us about white-labeling our ghee using continuous-flow centrifuge methods. We've politely declined. The yield is higher, the cost-per-jar is lower, but the result is not the same product. We'd rather sell fewer jars of the real thing than more jars of something we couldn't stand behind.</p>
-<p>If you scan the lot code on your jar, you can see Hetal's name, the exact day the milk was set, and the day the ghee was bottled. That receipt is the contract. It's the reason we exist.</p>`;
+export const DEFAULT_ARTICLE_BODY_HTML = `<p>Almost every food we sell has a faster version, and ghee is no exception. A modern creamery can turn milk into finished fat in a few hours. We take five days. Bilona is slow by design, with three days of churning and two of resting, and that pace comes from chemistry. Nothing in modern dairy technology has found a way to shorten it.</p>
+<h2>The science behind the slowness</h2>
+<p>When milk is cultured at a low temperature for 48 hours, the lactic-acid bacteria break down more of the lactose. Churn that curd by hand, at the right rhythm, and it gives up a butter with a different fatty-acid profile: shorter-chain triglycerides, more conjugated linoleic acid and more of the aromatic compounds that give ghee its smell.</p>
+<blockquote>"I learned from my grandmother. The butter tells you when it's done. You don't tell it."<footer>Hetal Pateel, Junagadh</footer></blockquote>
+<h2>Why we won't industrialise it</h2>
+<p>Several large dairies have asked about white-labeling our ghee using continuous-flow centrifuge methods. We politely declined. That route gives a higher yield and a lower cost per jar, but what comes out of it is a different product. We would rather sell fewer jars of the real thing than more jars of something we couldn't stand behind.</p>
+<p>Scan the lot code on your jar and you will see Hetal's name, the day the milk was set and the day the ghee was bottled. That receipt is our contract with you, and it is the reason this company exists.</p>`;
 
 /** Turn an arbitrary string into a URL-safe slug. */
 export function slugify(value: string): string {

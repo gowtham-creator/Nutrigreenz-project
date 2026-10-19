@@ -208,10 +208,10 @@ function RulesCard({
       });
       onSaved({ ...DEFAULT_RULES, ...res.rules });
       toast.success("Commerce rules saved", {
-        description: "Applied to the live storefront via the public commerce-rules feed.",
+        description: "The live storefront now uses these rules.",
       });
     } catch (err) {
-      toast.error("Could not save commerce rules", {
+      toast.error("Couldn't save commerce rules", {
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -221,7 +221,7 @@ function RulesCard({
 
   function reset() {
     setDraft(rules);
-    toast.info("Reverted unsaved changes");
+    toast.info("Unsaved changes discarded");
   }
 
   return (
@@ -230,7 +230,7 @@ function RulesCard({
         icon="settings"
         tone="forest"
         title="Commerce rules"
-        caption="Order minimum, free-delivery threshold, shipping model & tax. The live storefront economics."
+        caption="Minimum order, free delivery threshold, shipping and tax for the live storefront."
         badge={
           loading ? (
             <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -262,7 +262,7 @@ function RulesCard({
               onChange={(v) => patch("minOrderPaise", toPaise(v))}
               prefix="₹"
               step={10}
-              hint="Cart must reach this to checkout"
+              hint="Cart must reach this to check out"
             />
             <NumberField
               label="Free-delivery threshold"
@@ -270,7 +270,7 @@ function RulesCard({
               onChange={(v) => patch("freeDeliveryThresholdPaise", toPaise(v))}
               prefix="₹"
               step={10}
-              hint="Free at/above this subtotal"
+              hint="Delivery is free at or above this subtotal"
             />
             <NumberField
               label="Flat delivery fee"
@@ -373,7 +373,7 @@ function RulesCard({
                   ))}
                   {draft.shippingSlabs.length === 0 ? (
                     <li className="text-[12px] font-medium text-ng-ink-soft py-1">
-                      No slabs yet, add one above.
+                      No slabs yet. Add one above.
                     </li>
                   ) : null}
                 </ul>
@@ -385,7 +385,7 @@ function RulesCard({
             note={
               saving
                 ? "Saving…"
-                : "Persisted to Supabase. The storefront reads it from /api/commerce-rules."
+                : "Saved to the database. The storefront reads it from /api/commerce-rules."
             }
             onSave={save}
             onReset={reset}
@@ -427,7 +427,7 @@ function SlotsCard({
       setSlots((list) => [...list, res.slot]);
       toast.success("Slot added");
     } catch (err) {
-      toast.error("Could not add slot", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't add the slot", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -444,7 +444,7 @@ function SlotsCard({
       });
       toast.success("Slot saved");
     } catch (err) {
-      toast.error("Could not save slot", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't save the slot", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -457,7 +457,7 @@ function SlotsCard({
       setSlots((list) => list.filter((s) => s.id !== id));
       toast.success("Slot removed");
     } catch (err) {
-      toast.error("Could not remove slot", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't remove the slot", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -507,7 +507,7 @@ function SlotsCard({
                 label="Window"
                 value={slot.windowText ?? ""}
                 onChange={(v) => patchLocal(slot.id, { windowText: v })}
-                placeholder="7:00 AM – 10:00 AM"
+                placeholder="7:00 AM - 10:00 AM"
               />
               <NumberField
                 label="Sort"
@@ -546,7 +546,7 @@ function SlotsCard({
           ))}
           {slots.length === 0 ? (
             <li className="text-[12px] font-medium text-ng-ink-soft py-2">
-              No delivery slots, add one above.
+              No delivery slots yet. Add one above.
             </li>
           ) : null}
         </ul>
@@ -597,7 +597,7 @@ function AreasCard({
       setNewCommunity("");
       toast.success("Area added");
     } catch (err) {
-      toast.error("Could not add area", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't add the area", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -614,7 +614,7 @@ function AreasCard({
       });
       toast.success("Area saved");
     } catch (err) {
-      toast.error("Could not save area", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't save the area", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -627,7 +627,7 @@ function AreasCard({
       setAreas((list) => list.filter((a) => a.id !== id));
       toast.success("Area removed");
     } catch (err) {
-      toast.error("Could not remove area", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't remove the area", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setBusy(false);
     }
@@ -688,7 +688,7 @@ function AreasCard({
       {showImport ? (
         <div className="mb-5 rounded-xl border border-ng-line-soft bg-ng-cream/50 p-4">
           <label className="block text-[12.5px] font-semibold text-ng-ink-muted mb-1.5">
-            Paste CSV: columns: pincode, area, community (header optional)
+            Paste CSV with columns pincode, area, community (header row optional)
           </label>
           <textarea
             value={csv}
@@ -746,7 +746,7 @@ function AreasCard({
         <p className="text-[12.5px] font-medium text-ng-ink-soft py-2">Loading areas…</p>
       ) : areas.length === 0 ? (
         <p className="text-[12.5px] font-medium text-ng-ink-soft py-2">
-          No serviceable areas configured. Every pincode is currently treated as deliverable.
+          No serviceable areas set. Every pincode is treated as deliverable for now.
         </p>
       ) : (
         <ul className="space-y-2.5">
@@ -764,13 +764,13 @@ function AreasCard({
                 label="Area"
                 value={area.area ?? ""}
                 onChange={(v) => patchLocal(area.id, { area: v })}
-                placeholder="—"
+                placeholder="Optional"
               />
               <TextField
                 label="Community"
                 value={area.community ?? ""}
                 onChange={(v) => patchLocal(area.id, { community: v })}
-                placeholder="—"
+                placeholder="Optional"
               />
               <div className="rounded-xl border border-ng-line-soft bg-ng-paper px-3">
                 <Toggle

@@ -73,7 +73,7 @@ export default function AdminResetPage() {
         setError("This reset link is invalid or has expired. Request a new one.");
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Couldn't update your password. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +120,7 @@ export default function AdminResetPage() {
             Choose a new passcode
           </h2>
           <p className="font-sans text-[14px] font-medium text-ng-ink-muted mt-3 leading-relaxed">
-            Pick something strong you don't use elsewhere. This link works once
+            Pick something strong you don&rsquo;t use elsewhere. This link works once
             and expires 30 minutes after it was sent.
           </p>
         </div>

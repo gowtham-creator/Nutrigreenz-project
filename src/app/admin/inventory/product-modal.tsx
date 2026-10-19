@@ -91,7 +91,7 @@ export function ProductModal({
       }
       set("imageUrl", data.url);
     } catch {
-      setImageError("Upload failed. Please try again.");
+      setImageError("Couldn't upload the image. Try again.");
     } finally {
       setUploading(false);
     }
@@ -326,7 +326,7 @@ export function ProductModal({
                 label="More photos"
                 values={draft.gallery}
                 onChange={(v) => setDraft((d) => ({ ...d, gallery: v }))}
-                hint="Shown on the product page after the main image, in this order. The label, the texture, the product in use. Leave empty and the page shows captioned placeholders instead."
+                hint="Shown on the product page after the main image, in this order (for example the label, the texture, the product in use). If left empty, the page shows captioned placeholders."
               />
 
               {/* The field above is only one of the sources the product page

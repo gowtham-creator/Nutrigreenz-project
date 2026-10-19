@@ -56,8 +56,8 @@ export default async function UnsubscribePage({
       </h1>
       <p className="mt-3 text-[14.5px] leading-relaxed text-ng-ink-muted">
         We won&rsquo;t send you offers or campaigns any more. You&rsquo;ll still get
-        messages about orders you place &mdash; order confirmations, delivery updates
-        and invoices &mdash; because those are about a purchase, not marketing.
+        messages about orders you place (order confirmations, delivery updates
+        and invoices), because those relate to a purchase you made.
       </p>
       <p className="mt-3 text-[13px] text-ng-ink-soft">
         Changed your mind? Email us at{" "}

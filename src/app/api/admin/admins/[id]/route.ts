@@ -146,7 +146,7 @@ async function PATCHHandler(
         {
           ok: false,
           error: "last-superadmin",
-          message: "Cannot demote or deactivate the last active superadmin.",
+          message: "You can't demote or deactivate the last active Super Admin.",
         },
         { status: 409 },
       );
@@ -282,7 +282,7 @@ export async function DELETE(
         {
           ok: false,
           error: "last-superadmin",
-          message: "Cannot delete the last active superadmin.",
+          message: "You can't delete the last active Super Admin.",
         },
         { status: 409 },
       );

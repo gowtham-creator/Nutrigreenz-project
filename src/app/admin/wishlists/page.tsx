@@ -75,7 +75,7 @@ export default function AdminWishlists() {
           Wishlists <em className="italic text-ng-clay font-display">&amp; saved items</em>
         </span>
       }
-      subtitle="What customers have hearted but not yet bought. Your live demand & restock signal"
+      subtitle="Products customers have saved but not bought yet. Use it to spot demand and plan restocks"
       actions={
         <button
           type="button"
@@ -93,12 +93,12 @@ export default function AdminWishlists() {
         <StatTile label="Customers wishlisting" value={(report?.distinctSavers ?? 0).toLocaleString("en-IN")} delta="with at least one save" trend="up" />
         <StatTile label="Items saved" value={(report?.totalSaves ?? 0).toLocaleString("en-IN")} delta="across the catalogue" trend="up" />
         <StatTile label="Products saved" value={(report?.distinctProducts ?? 0).toLocaleString("en-IN")} delta="distinct SKUs" trend="up" />
-        <StatTile label="Most-saved" value={topProduct ? "#1" : "—"} delta={topProduct?.title ?? "no saves yet"} trend="flat" />
+        <StatTile label="Most saved" value={topProduct ? "#1" : "—"} delta={topProduct?.title ?? "no saves yet"} trend="flat" />
       </div>
 
       {/* Most-wishlisted products */}
       <Card
-        title="Most-wishlisted products"
+        title="Most wishlisted products"
         action={<span className="hidden sm:inline text-[11.5px] font-medium text-ng-ink-soft">Ranked by distinct savers</span>}
         className="!p-0 overflow-hidden mb-6"
       >

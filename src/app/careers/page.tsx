@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 };
 
 const VALUES = [
-  { icon: "leaf-bold", title: "Soil before slogans", body: "We&rsquo;d rather show the lab report than write a clever tagline. Substance wins here." },
-  { icon: "customers", title: "Farmers are partners", body: "Our growers aren&rsquo;t a line item. Fair, long-term relationships shape every decision we make." },
+  { icon: "leaf-bold", title: "Soil before slogans", body: "We&rsquo;d rather show you the lab report than write a clever tagline." },
+  { icon: "customers", title: "Farmers are partners", body: "We build fair, long-term relationships with our growers, and they shape every decision we make." },
   { icon: "test-tube-bold", title: "Earn trust daily", body: "Traceability is hard work, every lot, every day. We sweat the details so customers don&rsquo;t have to." },
-  { icon: "bolt-bold", title: "Small team, real ownership", body: "You&rsquo;ll own outcomes, not tickets. Ideas matter more than hierarchy." },
+  { icon: "bolt-bold", title: "Small team, real ownership", body: "You&rsquo;ll own the results of your work, and a good idea counts for more than a job title." },
 ];
 
 const PERKS = [
@@ -39,28 +39,28 @@ const ROLES = [
     team: "Product & Engineering",
     location: "Hyderabad · Hybrid",
     type: "Full-time",
-    blurb: "Build the storefront and traceability experience. TypeScript, Next.js App Router, an eye for craft and a love of fast, accessible UI.",
+    blurb: "Build the storefront and the traceability pages in TypeScript and the Next.js App Router. You care about detail and about fast, accessible UI.",
   },
   {
     title: "Quality & Lab Coordinator",
     team: "Quality",
     location: "Hyderabad · On-site",
     type: "Full-time",
-    blurb: "Run our lot-testing protocol end to end. Coordinate NABL labs, log reports, and make the no-compromise call on what ships.",
+    blurb: "Run our lot-testing protocol end to end. Coordinate NABL labs, log reports and make the final call on what ships.",
   },
   {
     title: "Customer Experience Lead",
     team: "Support",
     location: "Hyderabad · Hybrid",
     type: "Full-time",
-    blurb: "Be the warm, fast voice customers remember. Own support, returns and delight across chat, email and phone.",
+    blurb: "Handle support and returns across chat, email and phone, and be the warm, quick voice customers remember.",
   },
   {
     title: "Delivery Captain",
     team: "Last mile",
     location: "Across Hyderabad · Field",
     type: "Full-time / Part-time",
-    blurb: "Bring fresh boxes to doors on morning and evening slots. A friendly face and careful hands for our cold-chain.",
+    blurb: "Deliver fresh boxes on morning and evening slots, with a friendly face and careful handling of our cold-chain stock.",
   },
 ];
 
@@ -75,7 +75,7 @@ export default function CareersPage() {
             Grow something <em className="italic text-ng-leaf">honest</em> with us
           </>
         }
-        description="We're a small, stubborn team in Hyderabad building an honest, fully traceable food supply chain. From 42 partner farms to kitchens across the city. If that fires you up, we should talk."
+        description="We're a small, stubborn team in Hyderabad building an honest, fully traceable food supply chain, from 42 partner farms to kitchens across the city. If that sounds like your kind of work, talk to us."
       />
 
       {/* Culture */}

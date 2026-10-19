@@ -282,7 +282,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
           Reports <em className="italic text-ng-clay font-display">&amp; analytics</em>
         </span>
       }
-      subtitle="Revenue, fulfilment, products & coupons. Computed live from real orders"
+      subtitle="Revenue, fulfilment, products and coupons, calculated live from orders"
       actions={
         <>
           {/* Visible on phones too. It was `hidden sm:flex`, so on a phone the
@@ -463,7 +463,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
 
           {/* 1 · ORDERS BY STATUS & PAYMENT -------------------------- */}
           <Card
-            title="Orders · status & payment"
+            title="Orders by status and payment"
             action={
               <div className="flex items-center gap-2">
                 <ExportButton label="Status CSV" onClick={() => { const s = statusCsv(report); downloadCsv(`orders-status-${range.id}`, s.rows, s.headers); }} />
@@ -596,7 +596,7 @@ export function ReportsClient({ initialReport }: { initialReport: AdminReport | 
 
           <p className="text-[12.5px] font-medium text-ng-ink-soft text-center mt-2 mb-2">
             {hasOrders
-              ? `Computed live from real orders · ${range.label} · days in IST`
+              ? `Calculated live from orders · ${range.label} · days in IST`
               : `No orders in this range yet · ${range.label}`}
           </p>
         </>

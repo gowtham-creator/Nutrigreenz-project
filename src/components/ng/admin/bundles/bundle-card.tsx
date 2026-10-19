@@ -95,7 +95,7 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         <div className="px-6 py-5 bg-ng-paper">
           <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold mb-3">
             <Icon name="order" size={13} className="text-ng-forest" />
-            Consolidated SKU totals
+            Combined SKU totals
           </div>
           <ul className="space-y-2">
             {group.consolidated.map((c) => (
@@ -117,8 +117,8 @@ export function BundleCard({ group }: { group: BundleGroup }) {
         <p className="flex items-start gap-1.5 text-[11.5px] font-medium text-ng-ink-soft max-w-xl">
           <Icon name="info-circle-bold" size={14} className="text-ng-clay-deep mt-px" />
           <span>
-            Informational only. No re-pricing or auto-merging. The client decides individual vs bundled packing;
-            each order keeps its own value &amp; status.
+            For reference only. Prices aren&rsquo;t changed and orders aren&rsquo;t merged. You decide whether to pack them separately or together;
+            each order keeps its own value and status.
           </span>
         </p>
         <div className="text-right">

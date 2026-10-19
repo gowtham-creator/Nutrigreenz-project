@@ -71,16 +71,16 @@ export function OfferBanner() {
               <div className="max-w-xl">
                 <span className="inline-flex items-center gap-2 rounded-full bg-ng-clay/95 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_4px_14px_rgba(181,134,47,0.35)]">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ng-soil/80" />
-                  Harvest Sale is Live
+                  The harvest sale is live
                 </span>
 
                 <h2 className="mt-4 font-display text-[clamp(30px,5vw,56px)] font-medium leading-[0.98] tracking-tight text-ng-cream">
-                  Get Flat <span className="text-ng-clay">20% Off</span>
+                  Get flat <span className="text-ng-clay">20% off</span>
                   <br className="hidden sm:block" /> the whole harvest.
                 </h2>
 
                 <p className="mt-3 text-[15px] leading-relaxed text-ng-cream/80 md:text-[16px]">
-                  Cold-pressed oils, bilona ghee, raw honey &amp; stone-ground staples. Pressed
+                  Cold-pressed oils, bilona ghee, raw honey &amp; stone-ground staples, all pressed
                   fresh and lab-tested. Stock the pantry while the sale lasts.
                 </p>
 

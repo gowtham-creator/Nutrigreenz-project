@@ -153,7 +153,7 @@ const FLOWS: Flow[] = [
     id: "F11",
     name: "Loyalty wallet redemption",
     persona: "Member at checkout",
-    successCriteria: "Redeem ≤ 30% of order value seamlessly.",
+    successCriteria: "Redeem up to 30% of order value in one step.",
     steps: [
       { label: "Cart", route: "/cart", tone: "leaf" },
       { label: "Apply wallet credit", tone: "clay" },
@@ -188,7 +188,7 @@ export default function FlowMapPage() {
     <PageShell>
       <PageHero
         eyebrow="User journeys · F1 · F12"
-        title={<>Twelve flows. <em className="italic text-ng-leaf">One pantry.</em></>}
+        title={<>Twelve flows, <em className="italic text-ng-leaf">one pantry.</em></>}
         description="Every user journey across customer, admin, captain, and community surfaces. Each flow ends in a measurable success criterion."
       />
 

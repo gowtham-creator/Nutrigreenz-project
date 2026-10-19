@@ -28,13 +28,13 @@ import { WhenVisible } from "@/components/ng/admin/when-visible";
 
 /* ---- Read-only reference cards (kept from the previous display) -------- */
 const ZONES = [
-  { city: "Hyderabad", pin: "500001–500098", days: "Same/next day", surcharge: "Free above ₹599", on: true },
-  { city: "Secunderabad", pin: "500003–500094", days: "Same/next day", surcharge: "Free above ₹599", on: true },
-  { city: "Mumbai", pin: "400001–400107", days: "3 days", surcharge: "₹49 flat", on: true },
-  { city: "Chennai", pin: "600001–600099", days: "3 days", surcharge: "₹49 flat", on: true },
-  { city: "Delhi NCR", pin: "110001–110099", days: "3–4 days", surcharge: "₹79 flat", on: true },
-  { city: "Pan-India (rest)", pin: "—", days: "5–7 days", surcharge: "₹99 flat", on: true },
-  { city: "Kolkata", pin: "700001–700099", days: "—", surcharge: "—", on: false },
+  { city: "Hyderabad", pin: "500001-500098", days: "Same/next day", surcharge: "Free above ₹599", on: true },
+  { city: "Secunderabad", pin: "500003-500094", days: "Same/next day", surcharge: "Free above ₹599", on: true },
+  { city: "Mumbai", pin: "400001-400107", days: "3 days", surcharge: "₹49 flat", on: true },
+  { city: "Chennai", pin: "600001-600099", days: "3 days", surcharge: "₹49 flat", on: true },
+  { city: "Delhi NCR", pin: "110001-110099", days: "3-4 days", surcharge: "₹79 flat", on: true },
+  { city: "Pan-India (rest)", pin: "—", days: "5-7 days", surcharge: "₹99 flat", on: true },
+  { city: "Kolkata", pin: "700001-700099", days: "—", surcharge: "—", on: false },
 ];
 
 const PAYMENT = [
@@ -84,8 +84,8 @@ function AccessRequired() {
         </span>
         <h2 className="font-display text-[22px] text-ng-forest-deep">Super Admin access required</h2>
         <p className="text-[13.5px] font-medium text-ng-ink-muted mt-2">
-          The control center is restricted to Super Admins. Ask an owner to upgrade your
-          role, or head back to the admin overview.
+          Only Super Admins can open the control center. Ask an owner to change your
+          role, or go back to the overview.
         </p>
         <a
           href="/admin"
@@ -291,7 +291,7 @@ function ConfigContent() {
         <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
           <span>City</span>
           <span>PIN range</span>
-          <span>SLA</span>
+          <span>Delivery</span>
           <span>Pricing</span>
           <span>Status</span>
         </div>
@@ -395,10 +395,10 @@ function LoyaltySection() {
       setSaved(data.config);
       setDraft(data.config);
       toast.success("Loyalty programme saved", {
-        description: "Drives points earned & checkout redemption across the storefront.",
+        description: "Points earned on orders and redeemed at checkout now use these settings.",
       });
     } catch (err) {
-      toast.error("Could not save loyalty programme", {
+      toast.error("Couldn't save the loyalty programme", {
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -407,7 +407,7 @@ function LoyaltySection() {
   }
   function reset() {
     setDraft(saved);
-    toast.info("Reverted unsaved changes");
+    toast.info("Unsaved changes discarded");
   }
 
   return (
@@ -417,7 +417,7 @@ function LoyaltySection() {
           icon="star"
           tone="clay"
           title="Loyalty programme"
-          caption="Earn & redemption ratios, floors and caps. Drives points on orders and checkout redemption."
+          caption="How points are earned and redeemed, with minimums and limits. Applies to orders and checkout."
           badge={
             loading ? (
               <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -451,7 +451,7 @@ function LoyaltySection() {
             onChange={(v) => setDraft((d) => ({ ...d, minRedeemPoints: v }))}
             suffix="pts"
             step={10}
-            hint="Floor before points can be used"
+            hint="Minimum balance before points can be used"
           />
           <NumberField
             label="Max redeem % of order"
@@ -459,7 +459,7 @@ function LoyaltySection() {
             onChange={(v) => setDraft((d) => ({ ...d, maxRedeemPercent: v }))}
             suffix="%"
             step={1}
-            hint="Cap on points applied per order"
+            hint="Limit on points used per order"
           />
           <NumberField
             label="Points expiry"
@@ -473,7 +473,7 @@ function LoyaltySection() {
             <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
               <Toggle
                 label="Earning enabled"
-                description="Turn off to pause all points accrual"
+                description="Turn off to stop customers earning points"
                 checked={draft.earnEnabled}
                 onChange={(on) => setDraft((d) => ({ ...d, earnEnabled: on }))}
               />
@@ -485,7 +485,7 @@ function LoyaltySection() {
           note={
             saving
               ? "Saving…"
-              : "Persisted to Supabase. Drives points earned on orders and redemption at checkout."
+              : "Saved to the database. Applies to points earned on orders and redeemed at checkout."
           }
           onSave={save}
           onReset={reset}
@@ -556,7 +556,7 @@ function FeatureTogglesSection() {
       toast.success(`${current.label} ${next ? "enabled" : "disabled"}`);
     } catch (err) {
       setFlags((fs) => fs.map((f) => (f.key === key ? { ...f, enabled: current.enabled } : f)));
-      toast.error("Could not update feature", {
+      toast.error("Couldn't update the feature", {
         description: err instanceof Error ? err.message : undefined,
       });
     }
@@ -569,7 +569,7 @@ function FeatureTogglesSection() {
           icon="bolt-bold"
           tone="clay"
           title="Feature toggles"
-          caption="Switch storefront capabilities on or off across the platform."
+          caption="Turn storefront features on or off."
           badge={
             <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">
               {loading

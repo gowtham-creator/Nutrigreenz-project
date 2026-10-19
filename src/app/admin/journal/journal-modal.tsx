@@ -155,7 +155,7 @@ export function JournalModal({
               </select>
             </div>
             <div>
-              <label className={LABEL} htmlFor="nj-read">Read (min)</label>
+              <label className={LABEL} htmlFor="nj-read">Read time (min)</label>
               <input
                 id="nj-read"
                 type="number"
@@ -178,7 +178,7 @@ export function JournalModal({
           </div>
 
           <div>
-            <label className={LABEL} htmlFor="nj-excerpt">Excerpt / dek</label>
+            <label className={LABEL} htmlFor="nj-excerpt">Excerpt</label>
             <textarea
               id="nj-excerpt"
               rows={2}
@@ -197,7 +197,7 @@ export function JournalModal({
               className={`${FIELD} font-mono text-[12px] leading-relaxed`}
               value={draft.body}
               onChange={(e) => set("body", e.target.value)}
-              placeholder="<p>…</p><h2>…</h2><blockquote>…<footer>—</footer></blockquote>"
+              placeholder="<p>…</p><h2>…</h2><blockquote>…<footer>…</footer></blockquote>"
             />
             <p className="mt-1 text-[10.5px] font-medium text-ng-ink-muted">
               Rendered inside the article body. Use &lt;p&gt;, &lt;h2&gt; and &lt;blockquote&gt; tags.

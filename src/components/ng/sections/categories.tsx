@@ -96,7 +96,7 @@ export function Categories() {
     <Section
       className="overflow-hidden"
       eyebrow="Shop by harvest"
-      heading={<>Ten categories. One pantry. <em className="italic text-ng-leaf">All single-origin.</em></>}
+      heading={<>Ten categories, <em className="italic text-ng-leaf">all single-origin.</em></>}
       description="Every category is sourced from a named farm or co-op. Tap any tile to see who grew it and how."
     >
       {/* Parallaxed soft depth blob behind the grid — drifts slower than tiles */}

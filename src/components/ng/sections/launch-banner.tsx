@@ -42,7 +42,7 @@ export function LaunchBanner() {
               <FloatIn delay={0.15} className="absolute right-7 top-7 sm:right-10 md:right-12">
                 <span className="inline-flex items-center gap-1.5 rounded-full rounded-tr-sm bg-ng-clay px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ng-soil shadow-[0_4px_14px_rgba(181,134,47,0.35)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-ng-soil/70" />
-                  New Launch
+                  New launch
                 </span>
               </FloatIn>
 
@@ -50,7 +50,7 @@ export function LaunchBanner() {
                 <span className="ng-eyebrow text-ng-clay-light">This season&rsquo;s harvest</span>
 
                 <h2 className="mt-3 font-display text-[clamp(38px,5.4vw,68px)] font-medium leading-[0.96] tracking-tight text-ng-cream">
-                  Freshly Pressed
+                  Freshly pressed
                 </h2>
 
                 <p className="mt-3 font-display text-[clamp(18px,2.4vw,26px)] italic leading-snug text-ng-clay">
@@ -59,8 +59,8 @@ export function LaunchBanner() {
 
                 <ul className="mt-6 space-y-2.5">
                   {[
-                    "Single-origin. Pressed within 7 days.",
-                    "Always glass. Never plastic.",
+                    "Single-origin and pressed within 7 days",
+                    "Always bottled in glass, never plastic",
                   ].map((line) => (
                     <li
                       key={line}
@@ -75,7 +75,7 @@ export function LaunchBanner() {
                 <div className="mt-8">
                   <MagneticHover>
                     <Button variant="gold" size="lg" asChild>
-                      <Link href="/shop">Upgrade Your Oil</Link>
+                      <Link href="/shop">Upgrade your oil</Link>
                     </Button>
                   </MagneticHover>
                 </div>

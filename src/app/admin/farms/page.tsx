@@ -84,7 +84,7 @@ export default function AdminFarms() {
         setOpen(false);
         await load();
       } catch {
-        toast.error("Could not save farm", { description: "Please try again." });
+        toast.error("Couldn't save the farm", { description: "Try again." });
       } finally {
         setSaving(false);
       }
@@ -100,7 +100,7 @@ export default function AdminFarms() {
         toast.success("Farm removed", { description: f.name });
         await load();
       } catch {
-        toast.error("Could not remove farm");
+        toast.error("Couldn't remove the farm. Try again.");
       }
     },
     [load],
@@ -126,7 +126,7 @@ export default function AdminFarms() {
     >
       {!isSuper ? (
         <div className="mb-6 rounded-2xl bg-ng-clay/15 border border-ng-clay/30 px-5 py-3 text-[13px] font-medium text-ng-forest-deep">
-          You can review the Farms directory here. Adding, editing and removing farms is reserved for Super Admins.
+          You can view farms here. Only Super Admins can add, edit or remove them.
         </div>
       ) : null}
 

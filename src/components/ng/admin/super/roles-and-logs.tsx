@@ -52,7 +52,7 @@ const ROLES: {
     can: [
       "Everything an Admin can do",
       "Global commerce rules, loyalty & coupons",
-      "Referral config & feature toggles",
+      "Referral settings & feature toggles",
       "Role management & system logs",
     ],
   },
@@ -152,7 +152,7 @@ export function RolesAndLogs() {
           icon="shield-user-bold"
           tone="clay"
           title="Roles & activity"
-          caption="Who can reach what, the admin roster, and a recent system activity trail."
+          caption="What each role can access, the admin roster and recent system activity."
           badge={<span className="ng-eyebrow">§3.1</span>}
         />
 
@@ -256,7 +256,7 @@ export function RolesAndLogs() {
 
           <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
             <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-            Live trail of admin sign-ins and roster changes.
+            Live log of admin sign-ins and roster changes.
           </p>
         </div>
       </Card>

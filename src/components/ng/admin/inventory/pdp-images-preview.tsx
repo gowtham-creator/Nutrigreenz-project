@@ -86,7 +86,7 @@ export function PdpImagesPreview({
         if (!cancelled) setState({ id: productId, data: j, error: null });
       })
       .catch(() => {
-        if (!cancelled) setState({ id: productId, data: null, error: "Couldn't load the composed gallery." });
+        if (!cancelled) setState({ id: productId, data: null, error: "Couldn't load the gallery preview." });
       });
     return () => {
       cancelled = true;
@@ -168,7 +168,7 @@ export function PdpImagesPreview({
         <div>
           <p className="text-[13px] font-semibold text-ng-forest-deep">On the product page</p>
           <p className="mt-0.5 text-[11px] leading-snug text-ng-ink-muted">
-            Every slide the shopper will swipe, in order. Including ones this form does not control.
+            Every slide the shopper will swipe, in order, including ones this form doesn&rsquo;t control.
           </p>
         </div>
         {data ? (
@@ -186,7 +186,7 @@ export function PdpImagesPreview({
           <UiIcon name="caution" size={14} className="mt-px shrink-0" />
           <span>
             {data.duplicates} slide{data.duplicates === 1 ? " is" : "s are"} listed twice. A path already
-            supplied by the manifest will show again if you also add it to the gallery — remove it above.
+            supplied by the manifest will show again if you also add it to the gallery. Remove it above.
           </span>
         </p>
       ) : null}

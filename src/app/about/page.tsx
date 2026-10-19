@@ -28,7 +28,7 @@ const VISION_PILLARS: Array<
   { kind: "icon", icon: "soil", label: "Healthy soil" },
   { kind: "icon", icon: "farmhouse", label: "Sustainable farming" },
   { kind: "icon", icon: "customers", label: "Healthy customers" },
-  { kind: "flag", label: "Healthy Nation" },
+  { kind: "flag", label: "Healthy nation" },
 ];
 
 const FOUNDERS = [
@@ -36,13 +36,13 @@ const FOUNDERS = [
     name: "RamaKrishna Katakam",
     role: "Founder",
     initials: "RK",
-    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to revolutionize a food industry where today's food is produced using many chemicals that harm us and lead to various diseases. Organic food plays a crucial role in helping us stay healthy.",
+    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to change a food industry where today's food is produced using many chemicals that harm us and lead to various diseases. Organic food plays a big part in keeping us healthy.",
   },
   {
     name: "Surendra Madivada",
     role: "Founder · Natural & organic farming",
     initials: "SM",
-    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper, raising awareness about the crucial role of bees in pollination. Guided by the spirit of “Jai Jawan, Jai Kisan”.",
+    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper and talks to farmers about how much pollination depends on bees. Guided by the spirit of “Jai Jawan, Jai Kisan”.",
   },
 ];
 
@@ -74,7 +74,7 @@ export default function AboutPage() {
             Non-adulterated food, <em className="italic text-ng-leaf">direct from the farmer.</em>
           </>
         }
-        description="Pooling diverse backgrounds in organic farming, software engineering, packaging and exports, we came together to give organic farmers fair prices, and to bring their honest, non-adulterated harvest straight to your door."
+        description="We come from organic farming, software engineering, packaging and exports. We started Nutri Greenz to get organic farmers a fair price and to bring their non-adulterated harvest straight to your door."
       >
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild variant="primary" size="lg" className="!bg-ng-cream !text-ng-forest-deep hover:!bg-white">
@@ -91,12 +91,12 @@ export default function AboutPage() {
         <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
           <p>
             {
-              "Pooling our diverse backgrounds, we came together to establish a platform for organically cultivated produce. Recognizing the plight of many farmers who lack marketing opportunities and fair prices for their organic harvests, we joined forces."
+              "We came together from different backgrounds to build a platform for organically grown produce. Many organic farmers have no way to market their harvest and rarely get a fair price for it, so we joined forces."
             }
           </p>
           <p>
             {
-              "With each of us bringing unique expertise in organic farming, software engineering, packaging and exports, we made a collective decision to address this challenge and serve society. Dividing roles amongst ourselves, we began working collaboratively, and today, we proudly present Nutri Greenz Farm Technologies Pvt. Ltd. Our mission is to provide healthy food to our customers and to champion sustainable agricultural practices for the benefit of future generations."
+              "Each of us brought something different: organic farming, software engineering, packaging and exports. We split the roles between us and got to work, and the result is Nutri Greenz Farm Technologies Pvt. Ltd. Our mission is to give our customers healthy food and to support sustainable farming for the generations after us."
             }
           </p>
         </Reveal>
@@ -107,7 +107,7 @@ export default function AboutPage() {
         className="bg-ng-sage/25"
         eyebrow="Our vision"
         heading="Preserve the soil, nourish the nation"
-        description="We aim to preserve soil for the benefit of future generations through chemical-free, sustainable farming practices alongside our fellow farmers. While delivering wholesome, nutritious food to our valued customers."
+        description="We want to keep the soil healthy for future generations by farming chemical-free and sustainably alongside our fellow farmers, and to bring wholesome, nutritious food to our customers."
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {VISION_PILLARS.map((p, i) => (
@@ -143,12 +143,12 @@ export default function AboutPage() {
         <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
           <p>
             {
-              "In pursuit of our vision, we've wholeheartedly embraced chemical-free farming for the past eight years. By forming collaborations with fellow farmers in groups, we ensure fair prices for their harvests."
+              "We have farmed chemical-free for the past eight years. Working with fellow farmers in groups lets us get them fair prices for their harvests."
             }
           </p>
           <p>
             {
-              "Our dedication to offering healthy food extends to our customers, facilitated by convenient online applications and doorstep delivery services. Our current objective is to broaden our network, incorporate a greater number of farmers, and transition more cultivable lands into organic fields."
+              "For you, that means healthy food you can order online and have delivered to your door. Next, we want to grow our network, bring in more farmers and convert more farmland to organic."
             }
           </p>
         </Reveal>
@@ -199,7 +199,7 @@ export default function AboutPage() {
         <Reveal className="rounded-3xl bg-ng-forest text-ng-cream p-10 md:p-14 text-center">
           <h2 className="font-display text-[clamp(26px,4vw,42px)] leading-tight">Taste the difference honesty makes</h2>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-ng-cream/75">
-            Stock your pantry with non-adulterated produce sourced directly from farmers. Delivered
+            Stock your pantry with non-adulterated produce bought directly from farmers and delivered
             fresh across Hyderabad.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">

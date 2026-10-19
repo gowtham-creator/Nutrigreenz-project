@@ -151,7 +151,7 @@ export function PaymentGatewayPanel() {
         <SectionHeader
           icon="wallet"
           title="Payment gateway"
-          caption="What the live server can actually see. Values are never shown. Only whether each credential is present."
+          caption="What the live server can see. Credential values are never shown, only whether each one is set."
         />
 
         {failed ? (
@@ -179,7 +179,7 @@ export function PaymentGatewayPanel() {
                 <p className="text-[13.5px] font-semibold text-ng-forest-deep">
                   {ready
                     ? "Online payment is available"
-                    : "Online payment is off. Checkout offers Cash on Delivery only"}
+                    : "Online payment is off. Checkout offers cash on delivery only"}
                 </p>
                 <p className="mt-0.5 text-[12px] text-ng-ink-muted">
                   Checkout offers: {status.checkoutOffers.join(", ").toUpperCase() || "nothing"}
@@ -227,8 +227,8 @@ export function PaymentGatewayPanel() {
 
               <p className="mt-1.5 text-[11.5px] text-ng-ink-muted">
                 {status.proxy.configured
-                  ? `SBI calls leave through the proxy${status.proxy.expectedIp ? ` — expecting ${status.proxy.expectedIp}` : ""}.`
-                  : "SBIEPAY_PROXY_URL is not set. Calls would leave from a Vercel address SBI has not whitelisted, so they are refused before they are attempted."}
+                  ? `SBI calls go through the proxy${status.proxy.expectedIp ? ` (expected IP ${status.proxy.expectedIp})` : ""}.`
+                  : "SBIEPAY_PROXY_URL is not set. Calls would come from a Vercel address SBI hasn't whitelisted, so they are blocked before they are sent."}
               </p>
 
               {status.proxy.probe ? (
@@ -242,9 +242,9 @@ export function PaymentGatewayPanel() {
                 >
                   {status.proxy.probe.ok
                     ? status.proxy.probe.matchesWhitelist === false
-                      ? `arrives from ${status.proxy.probe.ip}. NOT the whitelisted address`
+                      ? `arrives from ${status.proxy.probe.ip}, which is NOT the whitelisted address`
                       : `arrives from ${status.proxy.probe.ip} ✓`
-                    : `proxy unreachable: ${status.proxy.probe.error}`}
+                    : `can't reach the proxy: ${status.proxy.probe.error}`}
                 </p>
               ) : null}
             </div>
@@ -313,7 +313,7 @@ export function PaymentGatewayPanel() {
                       />
                       <span className="min-w-0 text-[11.5px]">
                         <span className="font-semibold text-ng-forest-deep">{c.step}</span>
-                        <span className="text-ng-ink-muted"> — {c.detail}</span>
+                        <span className="text-ng-ink-muted">: {c.detail}</span>
                       </span>
                     </li>
                   ))}
@@ -365,7 +365,7 @@ export function PaymentGatewayPanel() {
                             <span className="text-[11.5px] font-semibold text-ng-forest-deep">
                               {a.mode}
                             </span>
-                            <span className="text-[11.5px] text-ng-ink-muted"> — {a.explain}</span>
+                            <span className="text-[11.5px] text-ng-ink-muted">: {a.explain}</span>
                             {a.ok ? (
                               /*
                                 `rel="noopener"`, deliberately NOT "noreferrer".
@@ -406,8 +406,8 @@ export function PaymentGatewayPanel() {
                                   into a ticket without hunting through a URL.
                                 */}
                                 <div className="mt-1 select-all rounded-lg bg-ng-sage/25 px-2.5 py-2 font-mono text-[10.5px] leading-relaxed text-ng-forest-deep">
-                                  <div>Order Ref Number: {a.orderRefNumber}</div>
-                                  <div>SBI Order Ref Number: {a.sbiOrderRefNumber}</div>
+                                  <div>Order ref number: {a.orderRefNumber}</div>
+                                  <div>SBI order ref number: {a.sbiOrderRefNumber}</div>
                                   <div>Source URL: {a.sentReturnUrl?.replace(/\/api\/.*$/, "")}</div>
                                   <div className="break-all">Return URL: {a.sentReturnUrl}</div>
                                 </div>
@@ -435,7 +435,7 @@ export function PaymentGatewayPanel() {
                     </ul>
                   ) : testOrder ? (
                     <p className="mt-2.5 text-[11.5px] text-ng-danger">
-                      {testOrder.error ?? "could not create the order"}
+                      {testOrder.error ?? "Couldn't create the test order."}
                     </p>
                   ) : null}
                 </div>

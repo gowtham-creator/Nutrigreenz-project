@@ -52,13 +52,13 @@ const PANELS: Panel[] = [
     src: "/images/about/about-hero.webp",
     alt: "A farmer checking pods and leaf health by hand in a groundnut field before harvest",
     title: "What do we look for?",
-    body: "Not the highest yield. Not the lowest price. Seed integrity, aroma and nutrition.",
+    body: "Seed integrity, aroma and nutrition come before yield or price.",
     tone: "dark",
   },
   {
     src: "/images/products/oils/gallery/groundnut-oil-lifestyle.webp",
     alt: "A bottle of cold-pressed groundnut oil beside raw groundnuts and whole spices",
-    title: "Impurities out. Goodness in.",
+    title: "Clean oil, no chemicals",
     body: "Wood-pressed in small batches, filtered by settling, never chemically stripped.",
     tone: "dark",
   },
@@ -78,7 +78,7 @@ export function NativeIngredients() {
       className="relative overflow-hidden bg-[#F6EFD8]"
       heading={
         <span className="text-ng-clay-deep">
-          Native ingredients. <em className="italic">No substitutes.</em>
+          Native ingredients, <em className="italic">with no substitutes.</em>
         </span>
       }
     >

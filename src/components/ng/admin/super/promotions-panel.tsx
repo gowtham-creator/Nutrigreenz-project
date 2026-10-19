@@ -208,7 +208,7 @@ const ERROR_COPY: Record<string, string> = {
   "title-required": "Title is required.",
   "headline-required": "Headline is required.",
   "invalid-banner-key": "Pick a banner.",
-  "invalid-discount-percent": "Discount must be a whole number 1–90%.",
+  "invalid-discount-percent": "Discount must be a whole number from 1 to 90%.",
   "slug-exists": "A promotion with that title already exists.",
   "db-unavailable": "Database unavailable. Check the Supabase config.",
 };
@@ -367,7 +367,7 @@ export function PromotionsPanel() {
       discountPercent: f.discountPercent.trim() || pct,
       autoMonth: f.bannerKey === "end-of-month" ? true : f.autoMonth,
     }));
-    toast.success("Copy generated. Tweak anything you like.");
+    toast.success("Copy filled in. Edit anything you need.");
   }
 
   async function submit() {
@@ -377,7 +377,7 @@ export function PromotionsPanel() {
     if (!title) return toast.error("Enter a title.");
     if (!headline) return toast.error("Enter a headline.");
     if (!Number.isFinite(percent) || percent < 1 || percent > 90) {
-      return toast.error("Discount must be a whole number 1–90%.");
+      return toast.error("Discount must be a whole number from 1 to 90%.");
     }
     const csv = (value: string) =>
       value
@@ -442,7 +442,7 @@ export function PromotionsPanel() {
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
         toast.error(
-          json.error ? (ERROR_COPY[json.error] ?? `Couldn't save (${json.error}).`) : "Couldn't save promotion.",
+          json.error ? (ERROR_COPY[json.error] ?? `Couldn't save the promotion (${json.error}).`) : "Couldn't save the promotion. Try again.",
         );
         return;
       }
@@ -450,7 +450,7 @@ export function PromotionsPanel() {
       closeForm();
       await load();
     } catch {
-      toast.error("Couldn't save promotion.");
+      toast.error("Couldn't save the promotion. Try again.");
     } finally {
       setSaving(false);
     }
@@ -465,13 +465,13 @@ export function PromotionsPanel() {
       });
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean };
       if (!res.ok || !json.ok) {
-        toast.error("Couldn't update promotion.");
+        toast.error("Couldn't update the promotion. Try again.");
         return;
       }
       toast.success(`${p.title} ${active ? "activated" : "paused"}`);
       await load();
     } catch {
-      toast.error("Couldn't update promotion.");
+      toast.error("Couldn't update the promotion. Try again.");
     }
   }
 
@@ -481,14 +481,14 @@ export function PromotionsPanel() {
       const res = await fetch(`/api/admin/marketing/promotions/${p.id}`, { method: "DELETE" });
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean };
       if (!res.ok || !json.ok) {
-        toast.error("Couldn't delete promotion.");
+        toast.error("Couldn't delete the promotion. Try again.");
         return;
       }
       toast.success(`${p.title} deleted`);
       if (editingId === p.id) closeForm();
       await load();
     } catch {
-      toast.error("Couldn't delete promotion.");
+      toast.error("Couldn't delete the promotion. Try again.");
     }
   }
 
@@ -507,7 +507,7 @@ export function PromotionsPanel() {
           <div>
             <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Promotions</h2>
             <p className="text-[13px] text-ng-ink-muted">
-              Occasion &amp; seasonal sales. Banner, discount, targeting &amp; schedule, applied live to catalogue prices.
+              Festival and seasonal sales: banner, discount, products and dates. Catalogue prices update live.
             </p>
           </div>
         </div>
@@ -583,7 +583,7 @@ export function PromotionsPanel() {
             onClick={autoGenerate}
             className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ng-clay/50 bg-ng-clay/5 px-4 py-2.5 text-[13px] font-semibold text-ng-clay-deep transition-colors hover:bg-ng-clay/10"
           >
-            <span aria-hidden>✨</span>
+            
             Auto-generate copy for {BANNER_LABELS[form.bannerKey]}
           </button>
 
@@ -630,7 +630,7 @@ export function PromotionsPanel() {
               onChange={(e) => setForm((f) => ({ ...f, announcement: e.target.value }))}
             />
             <p className="mt-1 text-[11px] text-ng-ink-soft">
-              Scrolls in the bar at the very top of the store while this sale is live. Leave blank to auto-build it from the title + discount.
+              Scrolls in the bar at the very top of the store while this sale is live. Leave blank to build it from the title and discount.
             </p>
           </div>
 
@@ -711,7 +711,7 @@ export function PromotionsPanel() {
                 onChange={(e) => setForm((f) => ({ ...f, variantSkus: e.target.value }))}
               />
               <p className="mt-1.5 text-[12px] leading-snug text-ng-ink-muted">
-                Marks down these sizes only — every other variant of the same product keeps its
+                Discounts these sizes only. Every other variant of the same product keeps its
                 list price. The offer tag appears on the matching size on the product page. A
                 variant with no SKU cannot be targeted; give it one first.
               </p>
@@ -810,7 +810,7 @@ export function PromotionsPanel() {
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">Loading promotions…</p>
       ) : promotions.length === 0 ? (
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">
-          No promotions yet. Create your first with “New promotion”.
+          No promotions yet. Use “New promotion” to add one.
         </p>
       ) : (
         <ul className="divide-y divide-ng-line-soft overflow-hidden rounded-2xl border border-ng-line-soft">

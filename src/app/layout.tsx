@@ -63,7 +63,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Nutrigreenz · Farm-to-table, fully traceable",
   description:
-    "Born in soil. Built for tomorrow. Traceable produce, cold-pressed oils, A2 ghee and superfoods. Straight from partner farms to your kitchen.",
+    "Traceable produce, cold-pressed oils, A2 ghee and superfoods, sent straight from our partner farms to your kitchen.",
 };
 
 export default function RootLayout({

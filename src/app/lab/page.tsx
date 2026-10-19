@@ -33,8 +33,8 @@ export default function LabPage() {
         image="/images/lab/lab-hero.webp"
         tone="forest"
         eyebrow="The Nutrigreenz lab desk"
-        title={<>Every batch. <em className="italic text-ng-clay">Three labs.</em> One verdict.</>}
-        description="We do not sell anything we have not tested. Every lot goes through eight checks across two NABL-accredited labs plus our in-house QC. If anything fails, the lot does not ship, full stop."
+        title={<>Every batch, checked by <em className="italic text-ng-clay">three labs.</em></>}
+        description="We do not sell anything we have not tested. Every lot goes through eight checks across two NABL-accredited labs plus our in-house QC. If any check fails, the lot does not ship."
       />
 
       <Section>
@@ -44,11 +44,11 @@ export default function LabPage() {
             <div>
               <span className="ng-eyebrow">What we test for</span>
               <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mt-3 leading-tight">
-                Eight tests. <em className="italic text-ng-leaf">No exceptions.</em>
+                Eight tests on <em className="italic text-ng-leaf">every lot.</em>
               </h2>
             </div>
             <p className="text-[15px] text-ng-ink-muted max-w-md">
-              These limits are tighter than FSSAI minimums. We've built our own reference library after eight years of testing. Anything outside the band gets rejected.
+              These limits are tighter than FSSAI minimums. We&apos;ve built our own reference library after eight years of testing. Anything outside the band gets rejected.
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export default function LabPage() {
             <div>
               <span className="ng-eyebrow">Recent lab reports</span>
               <h2 className="font-display text-[clamp(28px,4vw,42px)] text-ng-forest-deep mt-3 leading-tight">
-                Look under the hood.
+                Read the latest reports.
               </h2>
             </div>
             <Link href="/traceability" className="text-[13px] text-ng-forest font-medium hover:underline">
@@ -132,10 +132,10 @@ export default function LabPage() {
           <div className="relative">
             <span className="ng-eyebrow text-ng-clay-light">When a lot fails</span>
             <h2 className="font-display text-[clamp(26px,3.4vw,36px)] text-ng-cream mt-3 leading-tight">
-              We name it on the journal. <em className="italic text-ng-clay">Every time.</em>
+              We write it up in the journal, <em className="italic text-ng-clay">every time.</em>
             </h2>
             <p className="text-[15px] text-ng-cream/70 mt-5 leading-relaxed max-w-md">
-              In 2024 we rejected ₹14.2 lakh worth of inventory across 23 lots. The most common reason: moisture creep above 2% in groundnut after monsoon delays. We don't hide these, they're written up in our journal with the farmer's name and the resolution.
+              In 2024 we rejected ₹14.2 lakh worth of inventory across 23 lots. The most common reason was moisture creeping above 2% in groundnut after monsoon delays. Each one is written up in our journal with the farmer&apos;s name and how it was resolved.
             </p>
             <Link href="/journal" className="inline-block mt-7 rounded-full bg-ng-clay text-ng-forest-deep font-semibold px-6 py-3 text-[14px] hover:bg-ng-clay-deep transition-colors">
               Read the rejection journal →

@@ -24,19 +24,19 @@ const RELATED = [
     href: "/admin/referrals",
     icon: "customers",
     title: "Referrals",
-    detail: "Live referral ledger: who referred whom, and what was awarded.",
+    detail: "Who referred whom, and what each referral earned.",
   },
   {
     href: "/admin/config",
     icon: "settings",
     title: "Loyalty & referral settings",
-    detail: "Earn rate, redeem value, guardrails and referral rewards.",
+    detail: "Earn rate, redeem value, limits and referral rewards.",
   },
   {
     href: "/admin/analytics",
     icon: "chart-square-bold",
     title: "Analytics",
-    detail: "Real order, product and revenue performance.",
+    detail: "Order, product and revenue performance.",
   },
 ];
 
@@ -49,7 +49,7 @@ export default function AdminMarketing() {
           Marketing <em className="italic text-ng-clay font-display">desk</em>
         </span>
       }
-      subtitle="Promotions, redeemable coupons and storefront announcements, all live"
+      subtitle="Live promotions, coupons and storefront announcements"
       actions={
         <a
           href="#live-coupons"

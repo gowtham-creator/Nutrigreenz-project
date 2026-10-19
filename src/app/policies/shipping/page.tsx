@@ -4,7 +4,7 @@ import { PolicyLayout } from "@/components/ng/policy/policy-layout";
 export const metadata: Metadata = {
   title: "Shipping & delivery · Nutri Greenz",
   description:
-    "How and when Nutri Greenz delivers across Hyderabad. Delivery slots, free delivery on orders over ₹599, cold-chain handling and packaging.",
+    "How and when Nutri Greenz delivers across Hyderabad: delivery slots, free delivery on orders over ₹599, cold-chain handling and packaging.",
 };
 
 export default function ShippingPolicyPage() {
@@ -12,7 +12,7 @@ export default function ShippingPolicyPage() {
     <PolicyLayout
       activeHref="/policies/shipping"
       title="Shipping & delivery"
-      intro="We deliver fresh, fully traceable produce across Hyderabad on fixed slots. Here is exactly how it works, what it costs, and when to expect your box."
+      intro="We deliver fresh, fully traceable produce across Hyderabad in fixed slots. This page explains how delivery works, what it costs and when to expect your box."
       updated="1 June 2026"
       sections={[
         {
@@ -22,7 +22,7 @@ export default function ShippingPolicyPage() {
             <>
               <p>
                 We currently deliver across <strong>Hyderabad and the surrounding Greater Hyderabad
-                area</strong> — including Kukatpally, KPHB, Madhapur, Gachibowli, Kondapur, Miyapur,
+                area</strong>, including Kukatpally, KPHB, Madhapur, Gachibowli, Kondapur, Miyapur,
                 Banjara Hills, Jubilee Hills, Kphb Colony and most pincodes inside the ORR.
               </p>
               <p>
@@ -44,8 +44,8 @@ export default function ShippingPolicyPage() {
                 as possible. At checkout you choose:
               </p>
               <ul className="list-disc pl-5 flex flex-col gap-2">
-                <li><strong>Morning slot</strong> — 7:00 AM to 11:00 AM</li>
-                <li><strong>Evening slot</strong> — 5:00 PM to 9:00 PM</li>
+                <li><strong>Morning slot:</strong> 7:00 AM to 11:00 AM</li>
+                <li><strong>Evening slot:</strong> 5:00 PM to 9:00 PM</li>
               </ul>
               <p>
                 Place your order before <strong>9:00 PM</strong> for next-day delivery in most
@@ -61,13 +61,12 @@ export default function ShippingPolicyPage() {
           body: (
             <>
               <p>
-                <strong>Delivery is free on every order of ₹599 or more.</strong> Below that, a flat
-                delivery fee is shown transparently at checkout before you pay. Never a surprise on
-                the doorstep.
+                Delivery is free on every order of ₹599 or more. Below that, a flat delivery fee is
+                shown at checkout before you pay, so there is no surprise at the door.
               </p>
               <p>
-                All prices on the site are inclusive of applicable taxes. Your final, all-in total is
-                always confirmed on the checkout summary.
+                All prices on the site include applicable taxes. The checkout summary always confirms
+                your final, all-in total.
               </p>
             </>
           ),
@@ -83,9 +82,9 @@ export default function ShippingPolicyPage() {
                 they arrive in the condition they left the hub.
               </p>
               <p>
-                We are steadily moving every line to recyclable or returnable packaging. Where we use
-                liners or gel packs, hand them back to your delivery captain on your next order and we
-                reuse them.
+                We are moving every product line to recyclable or returnable packaging. If your order
+                came with liners or gel packs, hand them back to your delivery captain with your next
+                order and we will reuse them.
               </p>
             </>
           ),

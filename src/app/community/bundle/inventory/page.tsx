@@ -54,21 +54,21 @@ export default function CommunityBundleInventory() {
 
             <div className="rounded-2xl bg-ng-clay/20 border border-ng-clay/40 p-5">
               <div className="text-[10px] uppercase tracking-wider text-ng-forest font-bold">Pod special</div>
-              <h3 className="font-display text-[18px] text-ng-forest-deep mt-2 leading-tight">All items 8–14% off retail.</h3>
-              <p className="text-[12px] text-ng-ink-muted mt-2 leading-relaxed">Same lot · same lab report · same farmer. Lower price because zero last-mile.</p>
+              <h3 className="font-display text-[18px] text-ng-forest-deep mt-2 leading-tight">All items 8 to 14% off retail.</h3>
+              <p className="text-[12px] text-ng-ink-muted mt-2 leading-relaxed">The same lot, lab report and farmer as retail, priced lower because there is no last-mile delivery.</p>
             </div>
 
             <div className="rounded-2xl bg-ng-paper border border-ng-line-soft p-5">
               <div className="text-[11px] uppercase tracking-wider text-ng-ink-soft">Your pickup</div>
               <div className="font-display text-[16px] text-ng-forest-deep mt-2">14 Jubilee Hills Road No: 36</div>
-              <div className="text-[12px] text-ng-ink-muted mt-1">23 May, 17:00–20:00</div>
+              <div className="text-[12px] text-ng-ink-muted mt-1">23 May, 17:00 to 20:00</div>
             </div>
           </aside>
 
           {/* Inventory grid */}
           <div>
             <div className="flex items-center justify-between mb-6">
-              <span className="text-[14px] text-ng-ink-muted">{BUNDLE_LINEUP.length} products in this pod's lot</span>
+              <span className="text-[14px] text-ng-ink-muted">{BUNDLE_LINEUP.length} products in this pod&apos;s lot</span>
               <select className="rounded-full bg-ng-paper border border-ng-line-soft px-4 py-2 text-[13px] outline-none">
                 <option>Best value first</option>
                 <option>Most popular</option>

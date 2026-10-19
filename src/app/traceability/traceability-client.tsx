@@ -51,8 +51,8 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
         image="/images/traceability/traceability-hero.webp"
         tone="forest"
         eyebrow="Traceability is the product"
-        title={<>Type a code. <em className="italic text-ng-leaf">See the farm.</em></>}
-        description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the full story. Farmer, harvest date, pressing, lab tests, and kilometres travelled."
+        title={<>Type a code to <em className="italic text-ng-leaf">see the farm.</em></>}
+        description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the farmer, harvest date, pressing, lab tests and kilometres travelled."
       >
         <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
           <Input
@@ -95,7 +95,7 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
                   { label: "Harvested", date: SAMPLE.harvestedOn, place: "Anantapur · 14ha · partner farm" },
                   { label: "Pressed", date: SAMPLE.pressedOn, place: "Hyderabad · cold-press · single pass" },
                   { label: "Lab tested", date: SAMPLE.testedOn, place: "Hyderabad · 12-panel certified lab" },
-                  { label: "Shipped", date: SAMPLE.shippedOn, place: "Hyderabad hub → customer" },
+                  { label: "Shipped", date: SAMPLE.shippedOn, place: "Hyderabad hub to customer" },
                 ].map((step, i) => (
                   <li key={step.label} className="relative">
                     <div className="flex md:block items-center gap-4 md:gap-0">
@@ -173,12 +173,12 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
       ) : null}
 
       {/* How it works */}
-      <Section className="bg-ng-cream-mesh bg-ng-cream" eyebrow="How traceability works" heading={<>Six letters. <em className="italic text-ng-leaf">A full chain of custody.</em></>}>
+      <Section className="bg-ng-cream-mesh bg-ng-cream" eyebrow="How traceability works" heading={<>Six letters that trace <em className="italic text-ng-leaf">the full chain of custody.</em></>}>
         <div className="grid md:grid-cols-3 gap-6">
           {[
             { n: "01", title: "Every lot gets a code", body: "When a farm delivers a batch, we assign a six-character code (region · year · lot)." },
             { n: "02", title: "Stamped on every label", body: "The code is printed on the back label and encoded in the QR sticker. It's machine-readable and human-readable." },
-            { n: "03", title: "Tied to a public ledger", body: "Each event in the lot's life (harvest, press, test, ship) is anchored to a tamper-evident ledger. We can't quietly change history." },
+            { n: "03", title: "Tied to a public ledger", body: "Each event in the lot's life (harvest, press, test, ship) is anchored to a tamper-evident ledger. We can't change that record after the fact." },
           ].map((s) => (
             <article key={s.n} className="h-full rounded-3xl bg-ng-paper border border-ng-line-soft p-7">
               <div className="font-display text-[40px] leading-none text-ng-clay/60">{s.n}</div>

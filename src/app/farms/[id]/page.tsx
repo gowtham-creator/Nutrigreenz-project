@@ -63,10 +63,10 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
             </h2>
             <p className="text-[17px] text-ng-ink-muted leading-relaxed">
               {farm.story} {" "}
-              The land here is dryland — annual rainfall under 600mm — which means every choice the family makes carries weight. Three generations have farmed this soil; the youngest is now experimenting with biochar trials and short-rotation cover crops.
+              The land here is dryland, with annual rainfall under 600mm, so every choice the family makes matters. Three generations have farmed this soil, and the youngest is now trying biochar and short-rotation cover crops.
             </p>
             <p className="text-[17px] text-ng-ink-muted leading-relaxed">
-              Our relationship is structured around a five-year offtake agreement at a price that's renegotiated every year against a transparent cost-of-production formula. We share the upside when wholesale prices rise; we share the bridge financing when monsoons fail.
+              We work with them on a five-year offtake agreement, at a price renegotiated every year against an open cost-of-production formula. When wholesale prices rise, we share the gain. When the monsoon fails, we share the bridge financing.
             </p>
 
             {/* Gallery */}
@@ -105,7 +105,7 @@ export default async function FarmDetail({ params }: { params: Promise<{ id: str
 
             <div className="rounded-3xl bg-ng-forest-deep text-ng-cream p-7">
               <div className="text-[11px] uppercase tracking-wider text-ng-clay">Direct support</div>
-              <h3 className="font-display text-[22px] mt-2 leading-tight">Contribute to {farm.farmerName ?? "this farm"}'s drip-irrigation upgrade</h3>
+              <h3 className="font-display text-[22px] mt-2 leading-tight">Contribute to {farm.farmerName ?? "this farm"}&apos;s drip-irrigation upgrade</h3>
               <p className="text-[13px] text-ng-cream/70 mt-3">
                 We co-fund infrastructure with our member community. Every ₹50 from your order is matched.
               </p>

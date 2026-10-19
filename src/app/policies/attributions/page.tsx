@@ -57,9 +57,9 @@ export default function AttributionsPage() {
                 (CC BY 4.0).
               </p>
               <p>
-                We use them as published. The shapes are unaltered. They are recoloured to match
-                this site&rsquo;s palette and rendered at various sizes, and only the icons this site
-                actually uses are bundled rather than the full set.
+                We use them as published, with the shapes unaltered. They are recoloured to match
+                this site&rsquo;s palette and rendered at various sizes, and we bundle only the icons
+                this site uses.
               </p>
             </>
           ),
@@ -70,8 +70,8 @@ export default function AttributionsPage() {
           body: (
             <>
               <p>
-                The produce marks — the honey jar, the cold-pressed oil bottle, the individual
-                nuts and seeds — and the four marks in our promises row come from{" "}
+                The produce marks (the honey jar, the cold-pressed oil bottle, the individual
+                nuts and seeds) and the four marks in our promises row come from{" "}
                 <a
                   href="https://icons8.com"
                   target="_blank"
@@ -80,11 +80,10 @@ export default function AttributionsPage() {
                 >
                   Icons8
                 </a>
-                . They exist because no general-purpose icon set draws the things we actually
-                sell.
+                . We use them because no general-purpose icon set draws the things we sell.
               </p>
               <p>
-                Icons8&rsquo; free tier is usable with a link back, which is what this entry is.
+                Icons8&rsquo;s free tier can be used with a link back, and this entry is that link.
                 We have modified them: each is recoloured to match this site&rsquo;s palette, and
                 several were traced from the supplied images to outlines so they stay sharp at the
                 sizes we display them.
@@ -119,9 +118,9 @@ export default function AttributionsPage() {
                 by Gil Barbara. Both are released under CC0 1.0 into the public domain.
               </p>
               <p>
-                The public-domain dedication covers the drawings, not the brands. Each mark remains
-                the trade mark of its owner. Visa, Mastercard, UPI, PhonePe, Paytm and the rest, and
-                is shown here only to indicate which payment methods we accept and where you can find
+                The public-domain dedication covers only the drawings. Each mark (Visa, Mastercard,
+                UPI, PhonePe, Paytm and the rest) remains the trade mark of its owner, and is shown
+                here only to indicate which payment methods we accept and where you can find
                 us. It does not imply any endorsement of Nutri Greenz by those companies.
               </p>
             </>
@@ -134,14 +133,14 @@ export default function AttributionsPage() {
             <p>
               Product photography, farm imagery and packaging artwork on this site are our own or are
               licensed to us. They are not covered by the open-source licences above and may not be
-              reused without written permission — see the{" "}
+              reused without written permission (see the{" "}
               <a
                 href="/policies/terms"
                 className="underline underline-offset-2 hover:text-ng-forest"
               >
                 terms of service
               </a>
-              .
+              ).
             </p>
           ),
         },

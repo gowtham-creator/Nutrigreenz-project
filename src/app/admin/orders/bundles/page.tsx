@@ -8,7 +8,7 @@ export default function AdminOrderBundles() {
     <AdminShell
       active="/admin/orders"
       title="Community bundles"
-      subtitle="Confirmed orders grouped by gated community + delivery date"
+      subtitle="Confirmed orders grouped by gated community and delivery date"
       actions={
         <Link
           href="/admin/orders"

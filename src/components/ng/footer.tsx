@@ -118,13 +118,13 @@ export function Footer() {
         {/* Top: Harvest Letter — one calm, centered newsletter band */}
         <div className="mb-16 border-b border-ng-cream/15 pb-14 md:pb-16">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="ng-eyebrow text-ng-clay-light">Harvest Letter</span>
+            <span className="ng-eyebrow text-ng-clay-light">Harvest letter</span>
             <h2 className="mt-4 font-display text-[clamp(28px,4vw,44px)] leading-[1.08] text-ng-cream">
-              Born in soil. Built for tomorrow.
+              Born in soil, built for tomorrow.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-ng-cream/70">
-              No middlemen, no mystery. Just harvest news, seasonal recipes from our
-              partner kitchens, and the occasional member-only offer.
+              Harvest news, seasonal recipes from our partner kitchens and the
+              occasional member-only offer, with no middlemen in between.
             </p>
 
             <form className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
@@ -140,7 +140,7 @@ export function Footer() {
             </form>
 
             <p className="mt-4 text-[12px] text-ng-cream/60">
-              One letter a month. No spam. Unsubscribe anytime.
+              One letter a month, no spam, and you can unsubscribe any time.
             </p>
           </div>
         </div>

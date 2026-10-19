@@ -222,7 +222,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
           Customers <em className="italic text-ng-clay font-display">deduped</em>
         </span>
       }
-      subtitle="One canonical row per real person. Google and phone sign-ins folded into a single customer"
+      subtitle="One row per person. Google and phone sign-ins for the same person are merged into one customer"
       actions={
         <button
           onClick={() => void load()}
@@ -235,12 +235,12 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
     >
       {/* Dedup summary — makes the de-duplication visible at a glance. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatTile label="Canonical customers" value={customersTotal.toLocaleString("en-IN")} />
+        <StatTile label="Unique customers" value={customersTotal.toLocaleString("en-IN")} />
         <StatTile label="Sign-in identities" value={identitiesTotal.toLocaleString("en-IN")} />
         <StatTile
-          label="Identities merged away"
+          label="Duplicate sign-ins merged"
           value={mergedAway.toLocaleString("en-IN")}
-          delta={mergedAway > 0 ? "folded into customers" : undefined}
+          delta={mergedAway > 0 ? "merged into customers" : undefined}
           trend={mergedAway > 0 ? "down" : "flat"}
         />
         <StatTile label="Shown on this page" value={customers.length.toLocaleString("en-IN")} />
@@ -313,7 +313,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             <UiIcon name="caution" size={28} className="text-ng-terracotta mx-auto" />
             <p className="mt-3 text-[14px] font-semibold text-ng-ink">Couldn&apos;t load customers</p>
             <p className="mt-1 text-[12.5px] font-medium text-ng-ink-muted">
-              Please try again in a moment.
+              Try again in a moment.
             </p>
             <button
               onClick={() => void load()}
@@ -334,7 +334,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             <p className="mt-1.5 text-[12.5px] font-medium text-ng-ink-muted max-w-md mx-auto leading-relaxed">
               {query
                 ? "Try a different name, email or phone number."
-                : "The canonical customer table fills as people sign in and the backfill runs. Deduped customers will appear here automatically."}
+                : "Customers appear here as people sign in and the backfill runs. Duplicate sign-ins are merged automatically."}
             </p>
           </div>
         ) : (
@@ -435,7 +435,7 @@ function CustomerDrawer({
             <div className="text-center py-10">
               <UiIcon name="caution" size={26} className="text-ng-terracotta mx-auto" />
               <p className="mt-3 text-[13px] font-medium text-ng-ink-muted">
-                This customer could not be loaded.
+                Couldn&rsquo;t load this customer. Try again.
               </p>
             </div>
           ) : (
@@ -665,7 +665,7 @@ function CustomerDrawer({
                     ))}
                   </ul>
                 ) : (
-                  <EmptyLine>No live sign-in rows linked yet.</EmptyLine>
+                  <EmptyLine>No live sign-in records linked yet.</EmptyLine>
                 )}
               </Section>
             </>

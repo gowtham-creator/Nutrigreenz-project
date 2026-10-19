@@ -161,7 +161,7 @@ export default function AdminInventory() {
         setProductOpen(false);
         await loadProducts();
       } catch {
-        toast.error("Could not save product", { description: "Please try again." });
+        toast.error("Couldn't save the product", { description: "Try again." });
       } finally {
         setSaving(false);
       }
@@ -176,7 +176,7 @@ export default function AdminInventory() {
         toast.success("Product removed", { description: p.name });
         await loadProducts();
       } catch {
-        toast.error("Could not remove product");
+        toast.error("Couldn't remove the product. Try again.");
       }
     },
     [loadProducts],
@@ -197,7 +197,7 @@ export default function AdminInventory() {
         setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, stock: next } : x)));
         toast.success("Stock updated", { description: `${p.name} → ${next}` });
       } catch {
-        toast.error("Could not update stock");
+        toast.error("Couldn't update stock. Try again.");
       }
     },
     [stockDraft],
@@ -212,7 +212,7 @@ export default function AdminInventory() {
         await loadCategories();
         toast.success("Category added", { description: draft.name });
       } catch {
-        toast.error("Could not add category");
+        toast.error("Couldn't add the category. Try again.");
       } finally {
         setCategoryBusy(false);
       }
@@ -230,7 +230,7 @@ export default function AdminInventory() {
         await loadCategories();
         await loadProducts();
       } catch {
-        toast.error("Could not save category");
+        toast.error("Couldn't save the category. Try again.");
       } finally {
         setCategoryBusy(false);
       }
@@ -246,7 +246,7 @@ export default function AdminInventory() {
         await loadProducts();
         toast.success("Category removed");
       } catch {
-        toast.error("Could not remove category");
+        toast.error("Couldn't remove the category. Try again.");
       } finally {
         setCategoryBusy(false);
       }
@@ -383,7 +383,7 @@ export default function AdminInventory() {
           <div className="px-6 py-12 text-center text-[13px] font-medium text-ng-ink-muted">Loading…</div>
         ) : products.length === 0 ? (
           <div className="px-6 py-12 text-center text-[13px] font-medium text-ng-ink-muted">
-            No products match. Add one to get started.
+            No products match. Try another search or add a product.
           </div>
         ) : (
           <ul>
@@ -472,7 +472,7 @@ export default function AdminInventory() {
                         type="button"
                         onClick={() => setVariantProduct(p)}
                         aria-label={`Manage stock via variants for ${p.name}`}
-                        title="Stock is managed per variant · open Variants to edit"
+                        title="Stock is set per variant. Open Variants to edit it."
                         className="flex items-center gap-2 cursor-pointer text-left"
                       >
                         <StockMeter stock={eStock} threshold={LOW_STOCK_THRESHOLD} />

@@ -31,7 +31,7 @@ export default async function JournalIndex() {
         image="/images/journal/journal-hero.webp"
         eyebrow="The Nutrigreenz Journal"
         title={<>Long-form reporting <em className="italic text-ng-leaf">from the field.</em></>}
-        description="Updated every fortnight. Stories from the farms, recipes from our partner kitchens, deep dives on lab science, and the occasional honest mistake."
+        description="A new piece every fortnight: stories from the farms, recipes from our partner kitchens, long reads on lab science and, now and then, an honest account of something we got wrong."
       />
 
       <Section>
@@ -104,7 +104,7 @@ export default async function JournalIndex() {
           <div>
             <span className="ng-eyebrow text-ng-clay-light">Harvest letter</span>
             <h2 className="font-display text-[clamp(28px,4vw,42px)] leading-tight text-ng-cream mt-3">
-              One letter a month. <em className="italic text-ng-clay">Zero marketing.</em>
+              One letter a month, <em className="italic text-ng-clay">with no marketing in it.</em>
             </h2>
           </div>
           <form className="flex gap-3">

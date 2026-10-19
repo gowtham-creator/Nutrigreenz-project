@@ -160,7 +160,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
           <Icon name="star" size={18} />
         </span>
         <p className="text-[13px] text-ng-soil">
-          Buy now &amp; earn <span className="font-semibold text-ng-forest-deep">{coins} Harvest Coins</span> — redeem on your next order.
+          Buy now &amp; earn <span className="font-semibold text-ng-forest-deep">{coins} Harvest Coins</span> to redeem on your next order.
         </p>
       </div>
 
@@ -168,12 +168,12 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-ng-leaf bg-ng-leaf/[0.07] px-3.5 py-2.5">
         <UiIcon name="tag" size={18} className="text-ng-leaf" />
         <p className="text-[13px] text-ng-soil">
-          Best Price <span className="font-bold tabular-nums text-ng-forest-deep">₹{coupon.bestPrice.toLocaleString()}</span> with coupon
+          Best price <span className="font-bold tabular-nums text-ng-forest-deep">₹{coupon.bestPrice.toLocaleString()}</span> with coupon
         </p>
         <span className="rounded-md border border-ng-leaf/50 bg-ng-paper px-2 py-0.5 font-mono text-[12px] font-bold tracking-wide text-ng-forest">
           {coupon.code}
         </span>
-        <span className="text-[12px] text-ng-ink-muted">— apply at checkout</span>
+        <span className="text-[12px] text-ng-ink-muted">Apply at checkout</span>
       </div>
 
       {/* Variant tiles */}
@@ -269,7 +269,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
                   the one button that does not add to the cart — it goes straight
                   to checkout. */}
               <Icon name="bolt-bold" size={17} />
-              <span className="min-w-0 truncate font-display tracking-wide">Buy Now</span>
+              <span className="min-w-0 truncate font-display tracking-wide">Buy now</span>
             </Button>
           </div>
         </div>

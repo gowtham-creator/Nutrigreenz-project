@@ -34,7 +34,7 @@ async function uploadImage(file: File): Promise<string | null> {
   const res = await fetch("/api/admin/inventory/upload", { method: "POST", body });
   const data = (await res.json()) as { ok?: boolean; url?: string; error?: string };
   if (!res.ok || !data.ok || !data.url) {
-    toast.error("Upload failed. Please try again.");
+    toast.error("Couldn't upload the image. Try again.");
     return null;
   }
   return data.url;
@@ -179,7 +179,7 @@ export function VariantModal({
         ),
       );
     } catch {
-      toast.error("Could not load variants");
+      toast.error("Couldn't load variants. Try again.");
     } finally {
       setLoading(false);
     }
@@ -214,7 +214,7 @@ export function VariantModal({
       await load();
       onChanged();
     } catch {
-      toast.error("Could not save variant");
+      toast.error("Couldn't save the variant. Try again.");
     } finally {
       setBusy(false);
     }
@@ -227,7 +227,7 @@ export function VariantModal({
       await load();
       onChanged();
     } catch {
-      toast.error("Could not update variant");
+      toast.error("Couldn't update the variant. Try again.");
     } finally {
       setBusy(false);
     }
@@ -241,7 +241,7 @@ export function VariantModal({
       await load();
       onChanged();
     } catch {
-      toast.error("Could not remove variant");
+      toast.error("Couldn't remove the variant. Try again.");
     } finally {
       setBusy(false);
     }
@@ -263,7 +263,7 @@ export function VariantModal({
       await load();
       onChanged();
     } catch {
-      toast.error("Could not update variant image");
+      toast.error("Couldn't update the variant image. Try again.");
     } finally {
       setUploadingId(null);
     }
@@ -283,7 +283,7 @@ export function VariantModal({
 
   const addVariant = async () => {
     if (!draft.label.trim()) {
-      toast.error("Enter a size label, e.g: 1L");
+      toast.error("Enter a size label, for example 1L.");
       return;
     }
     setBusy(true);
@@ -305,7 +305,7 @@ export function VariantModal({
       await load();
       onChanged();
     } catch (err) {
-      toast.error("Could not add variant", {
+      toast.error("Couldn't add the variant", {
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -328,7 +328,7 @@ export function VariantModal({
           <div>
             <h2 className="font-display text-[19px] text-ng-forest-deep">Variants</h2>
             <p className="text-[12.5px] text-ng-ink-muted mt-0.5">
-              {product.name} · price &amp; stock live on each size × pack
+              {product.name} · each size and pack has its own price and stock
             </p>
           </div>
           <button
@@ -420,7 +420,7 @@ export function VariantModal({
                         disabled={busy}
                         onClick={() => void toggleActive(v)}
                         aria-label={v.isActive ? "Deactivate variant" : "Activate variant"}
-                        title={v.isActive ? "Active, click to hide" : "Inactive, click to show"}
+                        title={v.isActive ? "Active. Click to hide." : "Hidden. Click to show."}
                         className="text-ng-ink-muted hover:text-ng-forest transition-colors cursor-pointer disabled:opacity-50"
                       >
                         <Icon name={v.isActive ? "eye-bold" : "eye-closed-bold"} size={15} />

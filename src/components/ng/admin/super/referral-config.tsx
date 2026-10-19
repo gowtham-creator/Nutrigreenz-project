@@ -102,18 +102,18 @@ const ABUSE_GUARDS: {
   {
     key: "blockSameDevice",
     label: "Same-device block",
-    desc: "Reject referee sign-ups from the referrer's device fingerprint",
+    desc: "Reject referred sign-ups from the referrer's own device",
     icon: "smartphone-bold",
   },
   {
     key: "dedupeMobile",
-    label: "Mobile dedupe",
-    desc: "One reward per unique mobile number, no recycled numbers",
+    label: "One reward per mobile",
+    desc: "One reward per mobile number. Recycled numbers don't qualify",
     icon: "phone-bold",
   },
   {
     key: "blockAddressCluster",
-    label: "Address-cluster guard",
+    label: "Shared address check",
     desc: "Flag bursts of referrals sharing one delivery address",
     icon: "location",
   },
@@ -179,7 +179,7 @@ export function ReferralConfigSection() {
         description: `Referrer +${next.referrerPoints} pts · referee ${INR(next.refereeDiscount)} off.`,
       });
     } catch (err) {
-      toast.error("Could not save referral programme", {
+      toast.error("Couldn't save the referral programme", {
         description: err instanceof Error ? err.message : undefined,
       });
     } finally {
@@ -188,7 +188,7 @@ export function ReferralConfigSection() {
   }
   function reset() {
     setDraft(saved);
-    toast.info("Reverted unsaved changes");
+    toast.info("Unsaved changes discarded");
   }
 
   const guardsOn = ABUSE_GUARDS.filter((g) => draft[g.key]).length;
@@ -200,7 +200,7 @@ export function ReferralConfigSection() {
           icon="share-bold"
           tone="clay"
           title="Referral programme"
-          caption="Reward values, the confirmed-order qualifier and anti-abuse guards, drives refer-a-friend."
+          caption="Rewards, the qualifying order and abuse checks for refer-a-friend."
           badge={
             loading ? (
               <span className="ng-eyebrow text-ng-ink-soft">Loading…</span>
@@ -220,7 +220,7 @@ export function ReferralConfigSection() {
             onChange={(v) => patch("referrerPoints", v)}
             suffix="pts"
             step={10}
-            hint="Loyalty points after the referee's confirmed order"
+            hint="Points given once the friend's order is confirmed"
           />
           <NumberField
             label="Referee discount"
@@ -236,10 +236,10 @@ export function ReferralConfigSection() {
             onChange={(v) => patch("minQualifyingOrder", v)}
             prefix="₹"
             step={10}
-            hint="Subtotal the referee must place"
+            hint="Minimum subtotal for the friend's order"
           />
           <NumberField
-            label="Max referrals / month"
+            label="Max referrals per month"
             value={draft.maxPerMonth}
             onChange={(v) => patch("maxPerMonth", v)}
             suffix="/mo"
@@ -252,7 +252,7 @@ export function ReferralConfigSection() {
             onChange={(v) => patch("expiryDays", v)}
             suffix="days"
             step={1}
-            hint="Link & reward validity window"
+            hint="How long the link and reward stay valid"
           />
           <div className="flex items-center">
             <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
@@ -270,7 +270,7 @@ export function ReferralConfigSection() {
         <div className="mt-6 pt-5 border-t border-ng-line-soft">
           <div className="flex items-center gap-2 mb-3">
             <Icon name="shield-check-bold" size={16} className="text-ng-clay-deep" />
-            <span className="text-[12.5px] font-semibold text-ng-ink-muted">Anti-abuse guards</span>
+            <span className="text-[12.5px] font-semibold text-ng-ink-muted">Abuse checks</span>
             <span className="text-[11px] font-medium text-ng-ink-soft font-mono">
               {guardsOn} / {ABUSE_GUARDS.length} on
             </span>
@@ -308,7 +308,7 @@ export function ReferralConfigSection() {
           note={
             saving
               ? "Saving…"
-              : "Persisted to Supabase. Rewards fire only after a referee's confirmed order, no claw-back."
+              : "Saved to the database. Rewards are given only after the friend's order is confirmed, and are not taken back."
           }
           onSave={save}
           onReset={reset}

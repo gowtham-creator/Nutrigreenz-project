@@ -146,8 +146,8 @@ const DEFAULT_CONTENT: PdpCategoryContent = {
     eyebrow: "Our story",
     title: "From our farms to your kitchen",
     body: [
-      "Every Nutri Greenz staple starts on a named partner farm, not in an anonymous warehouse. We pay farmers fairly, trace every lot, and skip the shortcuts that strip away nutrition.",
-      "What lands on your shelf is real food. Grown with respect for the soil, the season, and the people who tend it.",
+      "Every Nutri Greenz staple starts on a named partner farm. We pay farmers fairly, trace every lot and skip the shortcuts that strip away nutrition.",
+      "What lands on your shelf is real food, grown with respect for the soil, the season and the people who tend it.",
     ],
   },
   way: {
@@ -201,7 +201,7 @@ const OILS: PdpCategoryContent = {
     eyebrow: "From seed to cold-press",
     title: "From seed to cold-press",
     body: [
-      "We buy the season's best seed from a single farm lot, then press it slow and cold. Below 40°C. On a wooden ghani. No heat, no hexane, no bleaching, no deodorising.",
+      "We buy the season's best seed from a single farm lot, then press it slowly on a wooden ghani below 40°C, with no heat, hexane, bleaching or deodorising.",
       "What's left is an oil that still tastes of the seed it came from, bottled in UV-protected glass so the aroma reaches your kitchen exactly as it left the press.",
     ],
     image: { src: `${OILS_IMG}/oils-lifestyle.webp`, alt: "Cold-pressed oil poured in an Indian kitchen" },
@@ -210,7 +210,7 @@ const OILS: PdpCategoryContent = {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with oils",
     cards: [
-      { icon: "temperature-bold", title: "Cold-pressed below 40°C", body: "Heat destroys aroma and antioxidants. We never let it.", points: ["Natural vitamin E retained", "Full seed flavour preserved"], image: { src: `${OILS_IMG}/groundnut.webp`, alt: "Cold-pressed groundnut oil in a glass bottle" } },
+      { icon: "temperature-bold", title: "Cold-pressed below 40°C", body: "Heat destroys aroma and antioxidants, so we keep it out of the process.", points: ["Natural vitamin E retained", "Full seed flavour preserved"], image: { src: `${OILS_IMG}/groundnut.webp`, alt: "Cold-pressed groundnut oil in a glass bottle" } },
       { icon: "filter-bold", title: "Single-pass, no refining", body: "One farm lot, one press: no blending, no solvents.", points: ["No hexane extraction", "No bleaching or deodorising"], image: { src: `${OILS_IMG}/sesame.webp`, alt: "Cold-pressed sesame oil in a glass bottle" } },
       { icon: "bottle-bold", title: "Glass-bottled fresh", body: "UV-protected glass, never plastic.", points: ["No leaching off the bottle", "Pressed-to-order freshness"], image: { src: `${OILS_IMG}/coconut.webp`, alt: "Cold-pressed coconut oil in a glass bottle" } },
     ],
@@ -255,8 +255,8 @@ const GHEE: PdpCategoryContent = {
     eyebrow: "Where happy cows roam",
     title: "Where happy cows roam",
     body: [
-      "Our ghee begins with indigenous A2 cows. Gir, Sahiwal, Desi. Grazing open pasture, never confined or pushed with synthetic feed. The milk is cultured into curd, hand-churned to butter the traditional Bilona way, then slow-simmered to golden ghee the same day it's collected.",
-      "It's a slower, costlier method. But it's the only way to get that grainy texture and nutty aroma that tells you it's the real thing.",
+      "Our ghee starts with indigenous A2 cows (Gir, Sahiwal and Desi) that graze open pasture and are never confined or pushed with synthetic feed. The milk is cultured into curd, hand-churned to butter the traditional Bilona way, then slow-simmered to golden ghee the same day it's collected.",
+      "It's a slower, costlier method, but it's the only way to get the grainy texture and nutty aroma of real Bilona ghee.",
     ],
     image: { src: `${GHEE_IMG}/ghee-farm.webp`, alt: "Indigenous A2 cows grazing open farm pasture" },
   },
@@ -265,13 +265,13 @@ const GHEE: PdpCategoryContent = {
     title: "The Nutri Greenz way with ghee",
     cards: [
       { icon: "test-tube-bold", title: "A2-protein verified", body: "From indigenous breeds that give A2 milk only.", points: ["Gir, Sahiwal & Desi cows", "Breed verified at source"], image: { src: `${GHEE_IMG}/a2-gir-cow-ghee.webp`, alt: "A2 Gir cow Bilona ghee jar" } },
-      { icon: "refresh-bold", title: "Bilona hand-churned", body: "Curd churned to butter, then slow-simmered, not cream-boiled.", points: ["Grainy, granular texture", "Nutty caramel aroma"], image: { src: `${GHEE_IMG}/vedic-bilona-ghee.webp`, alt: "Vedic Bilona hand-churned ghee jar" } },
-      { icon: "leaf-bold", title: "Farm to spoon", body: "Made the day milk is collected. Nothing stored, nothing rushed.", points: ["Grass-fed, no synthetic feed", "Single-source, traceable lot"], image: { src: `${GHEE_IMG}/ghee-jar-bowl.webp`, alt: "A2 Bilona ghee jar with a bowl, ready to serve" } },
+      { icon: "refresh-bold", title: "Bilona hand-churned", body: "Curd churned to butter, then slow-simmered (never boiled from cream).", points: ["Grainy, granular texture", "Nutty caramel aroma"], image: { src: `${GHEE_IMG}/vedic-bilona-ghee.webp`, alt: "Vedic Bilona hand-churned ghee jar" } },
+      { icon: "leaf-bold", title: "Farm to spoon", body: "Made on the day the milk is collected, with nothing stored or rushed.", points: ["Grass-fed, no synthetic feed", "Single-source, traceable lot"], image: { src: `${GHEE_IMG}/ghee-jar-bowl.webp`, alt: "A2 Bilona ghee jar with a bowl, ready to serve" } },
     ],
   },
   uses: {
     title: "How to use A2 ghee",
-    intro: "A high smoke point and rich aroma make ghee endlessly useful.",
+    intro: "A high smoke point and full aroma make ghee useful all through the kitchen.",
     tips: [
       { key: "High-heat cooking: ", rest: "its smoke point beats most oils, ideal for tadka and deep-frying." },
       { key: "A spoon over rice or roti: ", rest: "the simplest way to taste true Bilona ghee." },
@@ -283,13 +283,13 @@ const GHEE: PdpCategoryContent = {
   faq: [
     { q: "What is A2 ghee and why does it matter?", a: "A2 ghee comes from indigenous cow breeds (like Gir and Sahiwal) whose milk carries only the A2 beta-casein protein, which many people find gentler to digest than ordinary A1 milk." },
     { q: "What is the Bilona method?", a: "Milk is set into curd, the curd is hand-churned to extract butter, and only that butter is simmered into ghee. It's slower than the modern cream-boiling shortcut and gives a grainier, more aromatic ghee." },
-    { q: "Why has my ghee become grainy or solid?", a: "Granular texture and natural solidifying in cooler weather are signs of pure, traditionally-made ghee. Not a defect. It melts clear and golden the moment it's warmed." },
+    { q: "Why has my ghee become grainy or solid?", a: "Granular texture and natural solidifying in cooler weather are signs of pure, traditionally made ghee, not a defect. It melts clear and golden the moment it's warmed." },
     { q: "Does ghee need refrigeration?", a: "No. Store it in a cool, dry place with a clean dry spoon. Good ghee keeps for up to 12 months at room temperature." },
     { q: "Is your milk really grass-fed?", a: "Yes. Our partner cows graze open pasture with no synthetic feed or hormones. Each lot is traceable to the herd it came from." },
   ],
   knowYour: {
     title: "Know your ghee",
-    intro: "Not all ghee is the same. Here's how our types compare.",
+    intro: "Here's how our types of ghee compare.",
     rows: ["Flavour", "Texture", "Best for", "Benefit"],
     types: [
       { name: "A2 Desi cow", icon: "milk", values: ["Mild, nutty", "Soft, grainy", "Everyday cooking", "Gentle A2 protein"] },
@@ -308,8 +308,8 @@ const HONEY: PdpCategoryContent = {
     eyebrow: "Straight from the hive",
     title: "Straight from the hive",
     body: [
-      "Our honey is gathered by traditional beekeepers from a single forest harvest. Never smoked out, never the queen sacrificed. It's strained, never heated or ultra-filtered, so the enzymes, pollen and aroma the bees built stay exactly where they belong: in the jar.",
-      "Because it's truly raw, it naturally crystallises in cooler months. That's not a flaw. It's the surest sign no one boiled the life out of it.",
+      "Our honey is gathered by traditional beekeepers from a single forest harvest, without smoking out the hive or sacrificing the queen. It's strained but never heated or ultra-filtered, so the enzymes, pollen and aroma stay in the jar.",
+      "Because it's raw, it crystallises naturally in cooler months, which is a good sign that nobody heated it.",
     ],
     image: { src: `${HONEY_IMG}/honey-jar-dipper.webp`, alt: "Raw honey jar with a wooden dipper and honeycomb" },
   },
@@ -317,14 +317,14 @@ const HONEY: PdpCategoryContent = {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with honey",
     cards: [
-      { icon: "fire-bold", title: "Raw & unheated", body: "Never pasteurised. Enzymes and pollen left intact.", points: ["Strained, not ultra-filtered", "Living, active honey"], image: { src: `${HONEY_IMG}/honey-hero.webp`, alt: "Raw unheated honey jar" } },
+      { icon: "fire-bold", title: "Raw & unheated", body: "Never pasteurised, so the enzymes and pollen stay intact.", points: ["Strained, not ultra-filtered", "Living, active honey"], image: { src: `${HONEY_IMG}/honey-hero.webp`, alt: "Raw unheated honey jar" } },
       { icon: "leaf-bold", title: "Single-forest source", body: "Traced to one forest harvest, not bulk-blended.", points: ["Multifloral, acacia & forest", "Distinct seasonal character"], image: { src: `${HONEY_IMG}/wild-forest-honey.webp`, alt: "Wild forest single-origin raw honey jar" } },
       { icon: "test-tube-bold", title: "Purity lab-tested", body: "Screened for added sugar and syrup adulteration.", points: ["Zero added sugar or jaggery", "C3/C4 purity verified"], image: { src: `${HONEY_IMG}/kashmiri-acacia-honey.webp`, alt: "Lab-tested pure Kashmiri acacia honey jar" } },
     ],
   },
   uses: {
     title: "How to enjoy raw honey",
-    intro: "Raw honey is best appreciated unheated, so its enzymes stay alive.",
+    intro: "Eat raw honey unheated so its enzymes stay alive.",
     tips: [
       { key: "Stir into warm (not hot) water: ", rest: "with lemon for a gentle morning ritual." },
       { key: "Drizzle over breakfast: ", rest: "yoghurt, oats or fruit love a raw spoonful." },
@@ -336,13 +336,13 @@ const HONEY: PdpCategoryContent = {
   faq: [
     { q: "Why has my honey crystallised?", a: "Crystallisation is natural and a hallmark of raw, unprocessed honey. Stand the jar in warm water to liquefy it gently: never microwave, as that destroys the enzymes." },
     { q: "Is it really 100% pure?", a: "Yes. Every lot is lab-tested for C3/C4 sugar adulteration and added syrup. We add nothing: no sugar, no jaggery, no glucose." },
-    { q: "Is raw honey safe for everyone?", a: "It's wonderful for most people, but raw honey should not be given to infants under 12 months. Otherwise, enjoy freely." },
+    { q: "Is raw honey safe for everyone?", a: "It's fine for most people, but raw honey should not be given to infants under 12 months." },
     { q: "Why does the taste vary between jars?", a: "Because it's single-forest and seasonal. Multifloral, acacia and forest honeys each carry the flavour of the blossoms the bees foraged. Variation means it's genuine." },
     { q: "How should I store it?", a: "Keep it sealed at room temperature, away from direct sunlight. Raw honey never truly spoils." },
   ],
   knowYour: {
     title: "Know your honey",
-    intro: "Each honey carries the signature of its blossoms. Here's the difference.",
+    intro: "Each honey tastes of the blossoms the bees visited. Here's how they differ.",
     rows: ["Flavour", "Colour", "Best for", "Benefit"],
     types: [
       { name: "Multifloral", icon: "honey", values: ["Balanced, floral", "Amber", "Everyday use", "Broad pollen profile"] },
@@ -361,8 +361,8 @@ const MILLETS: PdpCategoryContent = {
     eyebrow: "Grains as old as India",
     title: "Grains as old as India",
     body: [
-      "Millets fed this land long before rice and wheat took over. We source them from dryland smallholder farms that grow them rain-fed and intercropped. The way they've always thrived. Then clean and pack them with minimal processing, never polishing away the fibre.",
-      "Wholesome, gluten-free and gentle on blood sugar, they're an ancient grain made for modern kitchens.",
+      "Millets fed this land long before rice and wheat took over. We source them from dryland smallholder farms that grow them rain-fed and intercropped, the way they have always been grown. We then clean and pack them with minimal processing and never polish away the fibre.",
+      "Wholesome, gluten-free and gentle on blood sugar, they fit easily into everyday cooking.",
     ],
   },
   way: {
@@ -376,7 +376,7 @@ const MILLETS: PdpCategoryContent = {
   },
   uses: {
     title: "How to cook with millets",
-    intro: "Millets are versatile. Treat them like rice or flour.",
+    intro: "Cook millets the way you would rice, or use them as flour.",
     tips: [
       { key: "Cook like rice: ", rest: "1 cup millet to 2.5 cups water for fluffy grains." },
       { key: "Soak before cooking: ", rest: "30 minutes improves texture and digestibility." },
@@ -410,11 +410,11 @@ const SPICES: PdpCategoryContent = {
   credentials: ["Single-origin", "Stone-ground", "No fillers or colour", "Lab-tested"],
   checks: 65,
   story: {
-    eyebrow: "Ground for aroma, not shelf-life",
-    title: "Ground for aroma, not shelf-life",
+    eyebrow: "Ground fresh for aroma",
+    title: "Ground fresh for aroma",
     body: [
-      "We buy whole spices from single-origin growers. Lakadong turmeric from Meghalaya, chillies sun-dried on the farm, and stone-grind them in small batches so the volatile oils that carry aroma survive. No fillers, no added colour, no anti-caking chemicals.",
-      "The result is colour and fragrance you can smell the moment you open the pack, the way a spice should announce itself.",
+      "We buy whole spices from single-origin growers, such as Lakadong turmeric from Meghalaya and chillies sun-dried on the farm, and stone-grind them in small batches so the volatile oils that carry the aroma survive. We add no fillers, colour or anti-caking chemicals.",
+      "You'll notice the colour and fragrance the moment you open the pack.",
     ],
   },
   way: {
@@ -430,7 +430,7 @@ const SPICES: PdpCategoryContent = {
     title: "How to use whole-ground spices",
     intro: "Fresh-ground spices are potent. A little goes a long way.",
     tips: [
-      { key: "Bloom in hot oil: ", rest: "30 seconds of tempering unlocks the deepest aroma." },
+      { key: "Bloom in hot oil: ", rest: "30 seconds of tempering brings out the most aroma." },
       { key: "Add turmeric early: ", rest: "let it cook out its raw edge for a rounder flavour." },
       { key: "Finish with garam masala: ", rest: "sprinkle at the end so its top notes survive." },
       { key: "Store airtight & dark: ", rest: "ground spices fade in light; keep the pack sealed." },
@@ -440,12 +440,12 @@ const SPICES: PdpCategoryContent = {
     { q: "Why is the colour so vivid?", a: "Because there's nothing diluting it. Our turmeric and chilli colour comes entirely from the spice. We never add synthetic dyes or colourants." },
     { q: "What makes Lakadong turmeric special?", a: "Lakadong turmeric from Meghalaya carries one of the highest natural curcumin levels in the world, giving it a deeper colour and stronger profile than ordinary turmeric." },
     { q: "Are these spices pure?", a: "Yes. Every batch is lab-tested for common adulterants like starch, chalk and artificial colour. What's on the label is all that's in the pack." },
-    { q: "How long do ground spices stay fresh?", a: "Ground spices are most aromatic within 6–9 months. Keep them airtight, away from heat and light, and buy in sizes you'll finish." },
+    { q: "How long do ground spices stay fresh?", a: "Ground spices are most aromatic within 6 to 9 months. Keep them airtight, away from heat and light, and buy in sizes you'll finish." },
     { q: "Do you add anti-caking agents?", a: "Never. A little natural clumping in humid weather is normal for additive-free spice. Just break it up with a dry spoon." },
   ],
   knowYour: {
     title: "Know your spice",
-    intro: "From earthy to fiery. How our core spices compare.",
+    intro: "From earthy to fiery, here's how our core spices compare.",
     rows: ["Profile", "Heat", "Best for", "Benefit"],
     types: [
       { name: "Lakadong turmeric", icon: "spice", values: ["Earthy, warm", "None", "Curries, lattes", "High curcumin"] },
@@ -465,8 +465,8 @@ const SUPERFOODS: PdpCategoryContent = {
     eyebrow: "Small spoon, big nutrition",
     title: "Small spoon, big nutrition",
     body: [
-      "Our superfoods. Moringa, ashwagandha, turmeric blends. Are grown on partner farms, harvested at peak potency, then gently sun-dried and milled at low temperature so the nutrients survive the journey to powder. No fillers, no flow agents, nothing diluting the dose.",
-      "A spoonful is meant to do real work, so we treat every step as if the goodness depends on it, because it does.",
+      "Our superfoods (moringa, ashwagandha and turmeric blends) are grown on partner farms, harvested at peak potency, then gently sun-dried and milled at low temperature so the nutrients survive. There are no fillers or flow agents diluting the dose.",
+      "Each step affects how much nutrition ends up in your spoon, so we take care at every one.",
     ],
   },
   way: {
@@ -516,8 +516,8 @@ const PULSES: PdpCategoryContent = {
     eyebrow: "The protein of every Indian thali",
     title: "The protein of every Indian thali",
     body: [
-      "Dals are the quiet backbone of Indian cooking, and we treat them with respect. Our pulses come from single-origin farms, cleaned and de-husked without the water-polish or oil-coating that makes supermarket dal look glossy but cook unevenly.",
-      "What you get is honest, unpolished dal that cooks creamy and tastes of the pulse itself. The way home cooking is meant to.",
+      "Dal is at the centre of Indian cooking, and we treat it with care. Our pulses come from single-origin farms, cleaned and de-husked without the water-polish or oil-coating that makes supermarket dal look glossy but cook unevenly.",
+      "What you get is honest, unpolished dal that cooks creamy and tastes of the pulse itself, the way home-cooked dal should.",
     ],
   },
   way: {
@@ -533,16 +533,16 @@ const PULSES: PdpCategoryContent = {
     title: "How to cook perfect dal",
     intro: "Unpolished pulses reward a little patience.",
     tips: [
-      { key: "Soak before cooking: ", rest: "30–60 minutes cuts cooking time and aids digestion." },
-      { key: "Pressure-cook gently: ", rest: "3–4 whistles gives a creamy, fully-cooked dal." },
+      { key: "Soak before cooking: ", rest: "30 to 60 minutes cuts cooking time and aids digestion." },
+      { key: "Pressure-cook gently: ", rest: "3 to 4 whistles gives a creamy, fully cooked dal." },
       { key: "Temper at the end: ", rest: "a fresh tadka of ghee, cumin and chilli lifts everything." },
       { key: "Sprout the whole ones: ", rest: "moong and chana sprout in a day for salads." },
     ],
   },
   faq: [
     { q: "Why does unpolished dal look duller?", a: "Glossy supermarket dal is often polished with water, oil or talc for looks. Ours skips that. A more matte grain means the natural skin and fibre are still intact." },
-    { q: "Do I need to soak pulses?", a: "Soaking whole pulses and chana for 30–60 minutes (or overnight) shortens cooking time and makes them easier to digest. Split dals need less." },
-    { q: "How long do they take to cook?", a: "Split dals cook in 3–4 pressure-cooker whistles; whole pulses like rajma and kala chana need a longer soak and cook." },
+    { q: "Do I need to soak pulses?", a: "Soaking whole pulses and chana for 30 to 60 minutes (or overnight) shortens cooking time and makes them easier to digest. Split dals need less." },
+    { q: "How long do they take to cook?", a: "Split dals cook in 3 to 4 pressure-cooker whistles; whole pulses like rajma and kala chana need a longer soak and cook." },
     { q: "Are they cleaned of stones?", a: "Yes, every lot is cleaned and sorted, but with truly unpolished pulses we still recommend a quick rinse and glance before cooking." },
     { q: "How should I store dal?", a: "Airtight, cool and dry. Add a few dried neem leaves or bay leaves to naturally keep pantry pests away." },
   ],
@@ -569,7 +569,7 @@ const FLOURS: PdpCategoryContent = {
     title: "Stone-ground, the way it should be",
     body: [
       "Modern roller mills run hot and fast, and strip out the bran and germ to make flour that lasts forever but gives little back. We stone-grind whole grain slowly on a traditional chakki, so the flour stays cool and keeps every part of the grain.",
-      "It's flour with the wheatgerm still in it. More flavour, more fibre, and rotis that actually smell of grain.",
+      "The wheatgerm is still in it, so you get more flavour, more fibre and rotis that smell of the grain.",
     ],
   },
   way: {
@@ -583,7 +583,7 @@ const FLOURS: PdpCategoryContent = {
   },
   uses: {
     title: "How to bake & cook with stone-ground flour",
-    intro: "Whole-grain flour behaves a little differently, and better.",
+    intro: "Whole-grain flour behaves a little differently from refined flour.",
     tips: [
       { key: "Rest your dough: ", rest: "20 minutes lets whole-grain atta hydrate for softer rotis." },
       { key: "Add a little extra water: ", rest: "wholemeal flour drinks more than refined maida." },
@@ -595,7 +595,7 @@ const FLOURS: PdpCategoryContent = {
     { q: "What does 'stone-ground' mean for me?", a: "Grain is crushed slowly between stones rather than fast steel rollers, so it doesn't overheat. That keeps the natural oils and nutrients that high-speed milling destroys." },
     { q: "Is this whole wheat or refined?", a: "Our atta is true wholemeal. The bran and germ are milled in, not sifted out, giving you more fibre and a fuller flavour than refined maida." },
     { q: "Why does my dough need more water?", a: "Whole-grain flour absorbs more water than refined flour. Add it gradually and rest the dough so the bran can soften." },
-    { q: "How long does stone-ground flour keep?", a: "Because the natural germ oils are intact, it's best used within 4–6 weeks. Store it airtight in a cool, dry place or refrigerate to extend freshness." },
+    { q: "How long does stone-ground flour keep?", a: "Because the natural germ oils are intact, it's best used within 4 to 6 weeks. Store it airtight in a cool, dry place or refrigerate to extend freshness." },
     { q: "Is it good for diabetics?", a: "Whole-grain, high-fibre flours release energy more slowly than refined maida, which many people prefer, but always follow your own dietary guidance." },
   ],
   knowYour: {
@@ -616,11 +616,11 @@ const FRUITS: PdpCategoryContent = {
   credentials: ["Tree-ripened", "Naturally grown", "No carbide", "Picked-to-order"],
   checks: 50,
   story: {
-    eyebrow: "Ripened on the tree, not in a warehouse",
-    title: "Ripened on the tree, not in a warehouse",
+    eyebrow: "Ripened on the tree",
+    title: "Ripened on the tree",
     body: [
-      "Seasonal fruit is best when it ripens where it grew. We work with named orchards that let fruit mature on the tree, then pick to order so it travels to you at its peak. Never gassed with carbide or artificially ripened to fake the colour.",
-      "It means our seasons are short and our fruit is real. When the Alphonso window closes, it closes, and that's exactly how it should be.",
+      "Seasonal fruit is best when it ripens where it grew. We work with named orchards that let fruit mature on the tree, then pick to order so it travels to you at its peak. It is never gassed with carbide or artificially ripened for colour.",
+      "That keeps our seasons short: when the Alphonso window closes, it closes.",
     ],
   },
   way: {
@@ -634,7 +634,7 @@ const FRUITS: PdpCategoryContent = {
   },
   uses: {
     title: "How to enjoy seasonal produce",
-    intro: "Naturally ripened fruit needs a little care and rewards it richly.",
+    intro: "Naturally ripened fruit needs a little care at home.",
     tips: [
       { key: "Let it rest at room temperature: ", rest: "a day or two finishes the ripening naturally." },
       { key: "Don't refrigerate unripe fruit: ", rest: "cold stalls the sweetness from developing." },
@@ -643,9 +643,9 @@ const FRUITS: PdpCategoryContent = {
     ],
   },
   faq: [
-    { q: "Why isn't the fruit perfectly uniform in colour?", a: "Naturally ripened fruit varies in colour and shape. Flawless, uniform fruit is often a sign of artificial ripening. We'd rather give you real." },
+    { q: "Why isn't the fruit perfectly uniform in colour?", a: "Naturally ripened fruit varies in colour and shape. Flawless, uniform fruit is often a sign of artificial ripening. We'd rather send you the real thing." },
     { q: "Is your fruit artificially ripened?", a: "Never. We don't use calcium carbide or ethylene gassing. Fruit ripens on the tree or naturally at room temperature after it arrives." },
-    { q: "My fruit arrived slightly firm, is that normal?", a: "Yes, for many fruits we pick at the right stage to survive transit. Rest it at room temperature for a day or two to ripen to perfection." },
+    { q: "My fruit arrived slightly firm, is that normal?", a: "Yes, for many fruits we pick at the right stage to survive transit. Rest it at room temperature for a day or two to finish ripening." },
     { q: "Why is availability seasonal?", a: "Because we don't cold-store for months. Each fruit has a natural window. When Alphonsos or Coorg oranges are in season, that's when you'll find them." },
     { q: "What if my produce arrives damaged?", a: "Perishables are delicate. If anything arrives bruised or spoiled, send us a photo within 24 hours and we'll make it right." },
   ],
@@ -664,28 +664,28 @@ const FRUITS: PdpCategoryContent = {
 
 const GIFTING: PdpCategoryContent = {
   produceIcon: "gift",
-  credentials: ["Curated hampers", "Plastic-free packaging", "Lab-tested staples", "Gift-ready"],
+  credentials: ["Hand-picked hampers", "Plastic-free packaging", "Lab-tested staples", "Gift-ready"],
   checks: 70,
   story: {
-    eyebrow: "Give real, give traceable",
-    title: "Give real, give traceable",
+    eyebrow: "Gifts you can trace to the farm",
+    title: "Gifts you can trace to the farm",
     body: [
-      "A Nutri Greenz hamper is a way to gift wellness, not just a box. We hand-pick our most-loved single-origin staples. Ghee, honey, cold-pressed oils, spices, and present them in plastic-free, reusable packaging that's as thoughtful as what's inside.",
-      "Every item carries the same lot-traceable, lab-tested promise as the rest of the shop. It's a gift you can stand behind, down to the farm it came from.",
+      "A Nutri Greenz hamper holds our most-loved single-origin staples (ghee, honey, cold-pressed oils and spices), hand-picked and packed in plastic-free, reusable packaging.",
+      "Every item is lot-traceable and lab-tested like the rest of the shop, so each one traces back to the farm it came from.",
     ],
   },
   way: {
     eyebrow: "The Nutri Greenz way",
     title: "The Nutri Greenz way with gifting",
     cards: [
-      { icon: "gift-bold", title: "Curated, not random", body: "Hand-picked best-sellers that work together.", points: ["Crowd-pleasing staples", "Balanced sweet & savoury"] },
-      { icon: "leaf-bold", title: "Plastic-free packaging", body: "Reusable, recyclable, beautiful out of the box.", points: ["No single-use plastic", "Gift-ready presentation"] },
+      { icon: "gift-bold", title: "Picked to go together", body: "Best-sellers we chose to go well together.", points: ["Crowd-pleasing staples", "Balanced sweet & savoury"] },
+      { icon: "leaf-bold", title: "Plastic-free packaging", body: "Reusable, recyclable and good-looking out of the box.", points: ["No single-use plastic", "Gift-ready presentation"] },
       { icon: "shield-check-bold", title: "Same farm promise", body: "Every item is traceable and lab-tested.", points: ["Lot codes on every product", "Quality you can vouch for"] },
     ],
   },
   uses: {
-    title: "Perfect for every occasion",
-    intro: "A wholesome gift that suits almost any moment.",
+    title: "Good for most occasions",
+    intro: "A wholesome gift that suits most occasions.",
     tips: [
       { key: "Festive gifting: ", rest: "Diwali, Pongal and weddings call for something meaningful." },
       { key: "Corporate gifting: ", rest: "thoughtful, healthy hampers your clients actually use." },
@@ -695,9 +695,9 @@ const GIFTING: PdpCategoryContent = {
   },
   faq: [
     { q: "Can I include a personal message?", a: "Yes. Add a gift note at checkout and we'll include a handwritten-style card with your message in the hamper." },
-    { q: "Is the packaging gift-ready?", a: "Absolutely. Every hamper arrives in plastic-free, reusable packaging, presentation-ready. No extra wrapping needed." },
+    { q: "Is the packaging gift-ready?", a: "Yes. Every hamper arrives in plastic-free, reusable packaging, presentation-ready. No extra wrapping needed." },
     { q: "Can I ship directly to the recipient?", a: "Yes. Enter their address at checkout and we'll dispatch straight to them, with no pricing on the packing slip." },
-    { q: "What's inside a hamper?", a: "Each hamper lists its exact contents. A curated mix of our most-loved single-origin staples like ghee, honey, oils and spices." },
+    { q: "What's inside a hamper?", a: "Each hamper lists its exact contents: a mix of our most-loved single-origin staples like ghee, honey, oils and spices." },
     { q: "Are the products inside traceable too?", a: "Yes. Every item carries the same lot code, lab test and farm traceability as anything else in the shop." },
   ],
   knowYour: {
@@ -710,7 +710,7 @@ const GIFTING: PdpCategoryContent = {
       { name: "Diwali sampler", icon: "honey", values: ["Best-sellers", "Compact", "Corporate gifting", "Crowd-pleasing"] },
     ],
   },
-  impact: impact("Every hamper shares the harvest, and the farmer's story. With someone you care about."),
+  impact: impact("Every hamper shares the harvest and the farmer's story with someone you care about."),
 };
 
 /* ─────────────────────────────── the registry ────────────────────────────── */

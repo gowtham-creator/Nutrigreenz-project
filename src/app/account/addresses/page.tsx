@@ -4,7 +4,7 @@ import { UiIcon } from "@/components/ui/ui-icon";
 import { AddressBook } from "@/components/ng/address/address-book";
 
 export const metadata = {
-  title: "Saved Addresses · Nutrigreenz",
+  title: "Saved addresses · Nutrigreenz",
   description: "Manage your delivery addresses for faster, traceable checkout.",
 };
 

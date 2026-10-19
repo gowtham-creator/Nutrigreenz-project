@@ -35,7 +35,7 @@ export function Testimonials() {
       className="overflow-hidden"
       eyebrow="From our pantry families"
       heading={<>What 12,400+ households <em className="italic text-ng-leaf">are saying.</em></>}
-      description="Verified reviews, every one. No filters, no edits."
+      description="Every review here is verified, and we don't filter or edit them."
     >
       {/* Depth backdrop — drifts slower than foreground */}
       <Parallax

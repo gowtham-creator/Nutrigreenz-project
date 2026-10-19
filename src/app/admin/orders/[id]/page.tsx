@@ -68,7 +68,7 @@ export default function AdminOrderDetail({
       );
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
       if (!res.ok || !data.ok) {
-        toast.error("Not recorded", {
+        toast.error("Payment not recorded", {
           description: data.message ?? "Couldn't record the payment. Try again.",
         });
         return;
@@ -76,7 +76,7 @@ export default function AdminOrderDetail({
       toast.success("Payment recorded", { description: "This order now counts as paid." });
       await load();
     } catch {
-      toast.error("Not recorded", { description: "Couldn't reach the server. Try again." });
+      toast.error("Payment not recorded", { description: "Couldn't reach the server. Try again." });
     } finally {
       setMarkingPaid(false);
     }
@@ -243,7 +243,7 @@ export default function AdminOrderDetail({
             <Card title="Delivery address">
               {addressRows.length === 0 ? (
                 <p className="text-[13px] font-medium text-ng-ink-muted">
-                  No address snapshot on this order.
+                  No delivery address saved on this order.
                 </p>
               ) : (
                 <>
@@ -378,7 +378,7 @@ export default function AdminOrderDetail({
           {/* Status timeline */}
           <Card title="Status timeline">
             {order.events.length === 0 ? (
-              <p className="text-[13px] font-medium text-ng-ink-muted">No status events yet.</p>
+              <p className="text-[13px] font-medium text-ng-ink-muted">No status changes yet.</p>
             ) : (
               <ol className="space-y-4">
                 {order.events.map((ev, idx) => {

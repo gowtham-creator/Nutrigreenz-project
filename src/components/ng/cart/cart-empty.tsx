@@ -55,7 +55,7 @@ export function CartEmpty() {
             Your bag is empty
           </h2>
           <p className="mt-2.5 max-w-sm text-[15px] leading-relaxed text-ng-ink-muted">
-            Nothing here yet. Explore single-origin oils, ghee, honey and more. Sourced direct from the farm, with every lot traceable to source.
+            Nothing here yet. Browse single-origin oils, ghee, honey and more, sourced direct from the farm with every lot traceable.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">

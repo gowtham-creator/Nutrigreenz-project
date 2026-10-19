@@ -122,7 +122,7 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
     <AdminShell
       active="/admin/orders"
       title="Orders"
-      subtitle={`${total} order${total === 1 ? "" : "s"} · forward-only fulfilment pipeline`}
+      subtitle={`${total} order${total === 1 ? "" : "s"} · statuses only move forward`}
       actions={
         <button
           type="button"

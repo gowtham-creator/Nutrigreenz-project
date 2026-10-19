@@ -99,7 +99,7 @@ export default async function Home() {
               Explore our <em className="italic text-ng-leaf">cold-pressed oils</em>
             </>
           }
-          description="Single-origin, pressed within seven days of dispatch. Always glass, never plastic. Pick your press."
+          description="Single-origin oils, pressed within seven days of dispatch and always bottled in glass. Pick your press."
           products={oils}
           subTabs={oilTabs}
           ctaHref="/shop/oils"
@@ -121,7 +121,7 @@ export default async function Home() {
               Explore our <em className="italic text-ng-leaf">A2 ghee</em>
             </>
           }
-          description="Bilona-churned the same day the milk is collected, from named desi cows: never bulk-boiled, never blended."
+          description="Bilona-churned on the day the milk is collected, from named desi cows, and never bulk-boiled or blended."
           products={ghee}
           subTabs={gheeTabs}
           ctaHref="/shop/ghee"
@@ -140,7 +140,7 @@ export default async function Home() {
               Pure, raw <em className="italic text-ng-leaf">honey</em>
             </>
           }
-          description="Forest honey harvested without smoke and never heated. Every lot lab-tested for purity."
+          description="Forest honey harvested without smoke and never heated. Every lot is lab-tested for purity."
           products={honey}
           subTabs={honeyTabs}
           ctaHref="/shop/honey"
@@ -159,7 +159,7 @@ export default async function Home() {
               Community <em className="italic text-ng-leaf">favourites</em>
             </>
           }
-          description="The single-origin staples our community reorders most: pantry essentials, ready to ship."
+          description="The single-origin staples our customers reorder most, ready to ship."
           products={favourites}
           subTabs={favouriteTabs}
           ctaHref="/shop"

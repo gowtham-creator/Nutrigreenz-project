@@ -23,7 +23,7 @@ const TIERS = [
     name: "Seedling",
     floor: 0,
     ceil: 5000,
-    range: "0 – ₹4,999 / yr",
+    range: "₹0 to ₹4,999 / yr",
     rate: "3% back",
     icon: "leaf-bold",
     perks: ["Free shipping over ₹599", "Birthday treat (1 month before)", "Member-only journal"],
@@ -32,7 +32,7 @@ const TIERS = [
     name: "Sapling",
     floor: 5000,
     ceil: 15000,
-    range: "₹5,000 – ₹14,999 / yr",
+    range: "₹5,000 to ₹14,999 / yr",
     rate: "5% back",
     icon: "sun-2-bold",
     perks: ["Free shipping always", "Early access to harvests (48h)", "2× referral credit", "Quarterly harvest letter"],
@@ -163,7 +163,7 @@ export default async function LoyaltyPage() {
                     {nextTier.rate}.
                   </>
                 ) : (
-                  <>You&rsquo;re at our highest tier — thank you for shopping with us.</>
+                  <>You&rsquo;re at our highest tier. Thank you for shopping with us.</>
                 )}
               </p>
               <Button variant="gold" size="md" className="mt-6" asChild>

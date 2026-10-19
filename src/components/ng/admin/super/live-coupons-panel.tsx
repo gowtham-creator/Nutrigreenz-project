@@ -121,7 +121,7 @@ export function LiveCouponsPanel() {
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        toast.error(json.error === "code-required" ? "Code required." : `Couldn't create coupon${json.error ? ` (${json.error})` : ""}.`);
+        toast.error(json.error === "code-required" ? "Enter a coupon code." : `Couldn't create the coupon${json.error ? ` (${json.error})` : ""}. Try again.`);
         return;
       }
       toast.success(`${code} created`);
@@ -141,13 +141,13 @@ export function LiveCouponsPanel() {
         body: JSON.stringify({ active }),
       });
       if (!res.ok) {
-        toast.error("Couldn't update coupon.");
+        toast.error("Couldn't update the coupon. Try again.");
         return;
       }
       toast.success(`${c.code} ${active ? "activated" : "deactivated"}`);
       await load();
     } catch {
-      toast.error("Couldn't update coupon.");
+      toast.error("Couldn't update the coupon. Try again.");
     }
   }
 
@@ -159,7 +159,7 @@ export function LiveCouponsPanel() {
         </span>
         <div>
           <h2 className="font-display text-[22px] leading-tight text-ng-forest-deep">Live coupons</h2>
-          <p className="text-[13px] text-ng-ink-muted">Real codes customers can redeem at checkout, validated server-side.</p>
+          <p className="text-[13px] text-ng-ink-muted">Codes customers can use at checkout. The server checks each one.</p>
         </div>
       </div>
 
@@ -208,8 +208,8 @@ export function LiveCouponsPanel() {
           <span className="flex items-center gap-1.5 text-[13px] leading-snug text-ng-ink">
             <Icon name="phone-bold" size={14} className="text-ng-clay-deep" />
             <span>
-              <span className="font-semibold text-ng-forest-deep">First-order / welcome code</span>
-              {" "}— requires a verified phone (once per customer)
+              <span className="font-semibold text-ng-forest-deep">First-order or welcome code</span>
+              : needs a verified phone (once per customer)
             </span>
           </span>
         </label>
@@ -241,7 +241,7 @@ export function LiveCouponsPanel() {
       {loading ? (
         <p className="py-6 text-center text-[14px] text-ng-ink-muted">Loading coupons…</p>
       ) : coupons.length === 0 ? (
-        <p className="py-6 text-center text-[14px] text-ng-ink-muted">No coupons yet. Create your first above.</p>
+        <p className="py-6 text-center text-[14px] text-ng-ink-muted">No coupons yet. Add one above.</p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-ng-line-soft">
           <table className="w-full text-left text-[13px]">
@@ -261,7 +261,7 @@ export function LiveCouponsPanel() {
                     <span className="inline-flex flex-wrap items-center gap-1.5">
                       {c.code}
                       {c.requiresVerifiedPhone ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome / first-order code · requires a verified phone, once per customer">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-ng-clay/20 px-2 py-0.5 text-[10px] font-semibold text-ng-clay-deep" title="Welcome or first-order code. Needs a verified phone, once per customer.">
                           <Icon name="phone-bold" size={10} />
                           Welcome
                         </span>

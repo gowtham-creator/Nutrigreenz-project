@@ -92,7 +92,7 @@ export default function AdminJournal() {
         setOpen(false);
         await load();
       } catch {
-        toast.error("Could not save article", { description: "Please try again." });
+        toast.error("Couldn't save the article", { description: "Try again." });
       } finally {
         setSaving(false);
       }
@@ -108,7 +108,7 @@ export default function AdminJournal() {
         toast.success("Article removed", { description: a.title });
         await load();
       } catch {
-        toast.error("Could not remove article");
+        toast.error("Couldn't remove the article. Try again.");
       }
     },
     [load],
@@ -134,7 +134,7 @@ export default function AdminJournal() {
     >
       {!isSuper ? (
         <div className="mb-6 rounded-2xl bg-ng-clay/15 border border-ng-clay/30 px-5 py-3 text-[13px] font-medium text-ng-forest-deep">
-          You can review the Journal here. Adding, editing and removing articles is reserved for Super Admins.
+          You can view articles here. Only Super Admins can add, edit or remove them.
         </div>
       ) : null}
 
