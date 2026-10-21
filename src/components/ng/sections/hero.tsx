@@ -49,10 +49,10 @@ interface PromoSlideDef {
    * half held soft and open, so each one already clears WCAG AA against the
    * forest headline ink with no wash at all:
    *
-   *   ghee 5.91:1   oils 4.57:1   honey 5.15:1   rice 4.98:1
+   *   ghee 5.91:1   honey 5.15:1   rice 4.98:1
    *
-   * (oils is the groundnut-farm art, measured for the lighter sub-copy ink
-   * at the 5th-percentile pixel with the wash applied.)
+   * The oils slide is a full-bleed field photograph and uses `tone: "light"`
+   * instead (cream copy over a dark tint), so this wash does not apply to it.
    *
    * The 0.10 they carry is margin, not necessity, and buys a little headroom
    * for the lighter weights in the sub-copy (final: 5.31:1 to 6.39:1). It
@@ -62,6 +62,12 @@ interface PromoSlideDef {
   washAlpha?: number;
   /** Crop for the stacked art band below lg. Defaults to keeping the product right of centre. */
   bandPos?: string;
+  /**
+   * "light" sets cream copy over a dark tint from lg up, for full-bleed photographs
+   * whose left side is a busy, mid-tone scene. Below lg the copy sits on the solid
+   * wash panel under the art, so it keeps the dark ink.
+   */
+  tone?: "light";
 }
 
 const SLIDES: PromoSlideDef[] = [
@@ -69,7 +75,7 @@ const SLIDES: PromoSlideDef[] = [
     id: "oils",
     label: "Cold-pressed groundnut oil",
     tag: "Farm fresh",
-    img: "/images/hero/launch-groundnut-farm.b1607961.webp",
+    img: "/images/hero/launch-groundnut-farm.b036d757.webp",
     alt: "Nutri Greenz cold-pressed groundnut oil in 5 L and 10 L cans on a wooden table at a groundnut farm at sunrise",
     kicker: "Khet se seedha,",
     title: "Cold-pressed",
@@ -82,6 +88,7 @@ const SLIDES: PromoSlideDef[] = [
     washAlpha: 0.1,
     // The cans sit hard right in this art; anchor right so the 10 L is never clipped on phones.
     bandPos: "object-right",
+    tone: "light",
   },
   {
     id: "ghee",
@@ -447,6 +454,7 @@ function desktopWash(slide: PromoSlideDef): string {
 }
 
 function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {
+  const light = slide.tone === "light";
   return (
     <div className="relative flex h-full min-h-[inherit] flex-col overflow-hidden lg:flex-row" style={{ backgroundColor: slide.wash }}>
       {/* Phones: the wide 21:9 art cannot fit a tall frame with copy on top of
@@ -484,7 +492,11 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
       <div
         aria-hidden
         className="absolute inset-0 hidden lg:block"
-        style={{ background: desktopWash(slide) }}
+        style={{
+          background: light
+            ? "linear-gradient(90deg, rgba(10,31,18,0.72) 0%, rgba(10,31,18,0.5) 34%, rgba(10,31,18,0) 62%)"
+            : desktopWash(slide),
+        }}
       />
 
       <CornerTag label={slide.tag} />
@@ -505,25 +517,25 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
           no tag clearance, only room at the bottom for the slider controls. */}
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center gap-2.5 px-5 pb-16 pt-3 sm:gap-3 sm:px-8 sm:pb-[4.5rem] md:px-12 lg:max-w-xl lg:gap-3.5 lg:p-14 lg:pt-[76px] lg:pl-16 xl:max-w-2xl">
         <FloatIn delay={0.05}>
-          <p className="font-sans text-[clamp(14px,1.5vw,20px)] font-semibold text-ng-forest">{slide.kicker}</p>
-          <h2 className="mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep">
+          <p className={`font-sans text-[clamp(14px,1.5vw,20px)] font-semibold text-ng-forest ${light ? "lg:text-ng-cream" : ""}`}>{slide.kicker}</p>
+          <h2 className={`mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep ${light ? "lg:text-white" : ""}`}>
             {slide.title}{" "}
-            <em className="relative whitespace-nowrap italic text-ng-forest">
+            <em className={`relative whitespace-nowrap italic text-ng-forest ${light ? "lg:text-ng-cream" : ""}`}>
               {slide.script}
-              <span aria-hidden className="absolute -bottom-1.5 left-0 h-[3px] w-full rounded-full bg-ng-forest/70" />
+              <span aria-hidden className={`absolute -bottom-1.5 left-0 h-[3px] w-full rounded-full bg-ng-forest/70 ${light ? "lg:bg-ng-cream/80" : ""}`} />
             </em>
           </h2>
         </FloatIn>
 
         <FloatIn delay={0.15}>
-          <p className="line-clamp-2 font-sans text-[clamp(14px,1.35vw,17px)] font-medium leading-snug text-ng-forest">
+          <p className={`line-clamp-2 font-sans text-[clamp(14px,1.35vw,17px)] font-medium leading-snug text-ng-forest ${light ? "lg:text-ng-cream" : ""}`}>
             {slide.sub}
           </p>
         </FloatIn>
 
         <FloatIn delay={0.22}>
-          <div className="inline-flex rounded-xl border border-dashed border-ng-forest/60 px-4 py-2">
-            <span className="font-sans text-[clamp(13px,1.2vw,16px)] font-medium text-ng-forest-deep">
+          <div className={`inline-flex rounded-xl border border-dashed border-ng-forest/60 px-4 py-2 ${light ? "lg:border-ng-cream/70" : ""}`}>
+            <span className={`font-sans text-[clamp(13px,1.2vw,16px)] font-medium text-ng-forest-deep ${light ? "lg:text-ng-cream" : ""}`}>
               {slide.tagline}
             </span>
           </div>
