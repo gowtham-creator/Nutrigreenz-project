@@ -49,7 +49,10 @@ interface PromoSlideDef {
    * half held soft and open, so each one already clears WCAG AA against the
    * forest headline ink with no wash at all:
    *
-   *   ghee 5.91:1   oils 4.82:1   honey 5.15:1   rice 4.98:1
+   *   ghee 5.91:1   oils 4.57:1   honey 5.15:1   rice 4.98:1
+   *
+   * (oils is the groundnut-farm art, measured for the lighter sub-copy ink
+   * at the 5th-percentile pixel with the wash applied.)
    *
    * The 0.10 they carry is margin, not necessity, and buys a little headroom
    * for the lighter weights in the sub-copy (final: 5.31:1 to 6.39:1). It
@@ -57,9 +60,29 @@ interface PromoSlideDef {
    * are covering the photograph you paid to shoot, so re-measure first.
    */
   washAlpha?: number;
+  /** Crop for the stacked art band below lg. Defaults to keeping the product right of centre. */
+  bandPos?: string;
 }
 
 const SLIDES: PromoSlideDef[] = [
+  {
+    id: "oils",
+    label: "Cold-pressed groundnut oil",
+    tag: "Farm fresh",
+    img: "/images/hero/launch-groundnut-farm.b1607961.webp",
+    alt: "Nutri Greenz cold-pressed groundnut oil in 5 L and 10 L cans on a wooden table at a groundnut farm at sunrise",
+    kicker: "Khet se seedha,",
+    title: "Cold-pressed",
+    script: "groundnut oil.",
+    sub: "Simple ingredients, real goodness | 5 L and 10 L",
+    tagline: "No adulteration, no preservatives",
+    cta: { label: "Shop groundnut oil", href: "/products/groundnut-cold-pressed-oil" },
+    // Warm golden-wheat, matched to the sunrise over the groundnut field.
+    wash: "#F3E9C9",
+    washAlpha: 0.1,
+    // The cans sit hard right in this art; anchor right so the 10 L is never clipped on phones.
+    bandPos: "object-right",
+  },
   {
     id: "ghee",
     label: "A2 Bilona Ghee",
@@ -73,23 +96,6 @@ const SLIDES: PromoSlideDef[] = [
     tagline: "Your family's daily dose of purity",
     cta: { label: "Shop ghee", href: "/shop/ghee" },
     wash: "#E7F1E4",
-    washAlpha: 0.1,
-  },
-  {
-    id: "oils",
-    label: "Cold-pressed oils",
-    tag: "6 varieties",
-    img: "/images/hero/launch-oils-photo.webp",
-    alt: "Nutri Greenz cold-pressed groundnut oil · cold-pressed, zero refining",
-    kicker: "Refined oil? Chhodo.",
-    title: "Cold-pressed",
-    script: "Apnao.",
-    sub: "Six wood-pressed oils | Groundnut to coconut",
-    tagline: "Nothing added, nothing refined",
-    cta: { label: "Shop oils", href: "/shop/oils" },
-    // Warm golden-wheat — matches the oils artwork and reads distinctly from
-    // the ghee slide's sage green (no two banners share a wash now).
-    wash: "#F3E9C9",
     washAlpha: 0.1,
   },
   {
@@ -459,7 +465,7 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
           priority={priority}
           quality={90}
           sizes="100vw"
-          className="object-cover object-[85%_center] lg:object-right"
+          className={`object-cover ${slide.bandPos ?? "object-[85%_center]"} lg:object-right`}
         />
         <div
           aria-hidden
