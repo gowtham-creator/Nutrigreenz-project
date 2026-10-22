@@ -14,6 +14,7 @@ import { Journal } from "@/components/ng/sections/journal";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getHeroPromotion } from "@/lib/promotions";
 import type { ProductCard } from "@/types/nutrigreenz";
+import { pageMeta } from "@/lib/seo";
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
 // stock, new SKUs, status) appear on the home page without a redeploy — the same
@@ -30,6 +31,13 @@ const hasTag =
   (...tags: string[]) =>
   (p: ProductCard) =>
     p.tags?.some((t) => tags.includes(t)) ?? false;
+
+export const metadata = pageMeta({
+  title: "Nutri Greenz · Cold-pressed oils, A2 ghee and raw honey",
+  description:
+    "Cold-pressed oils, A2 bilona ghee, raw honey and millets from partner farms, lab-tested and traceable to the farm, delivered across Hyderabad.",
+  path: "/",
+});
 
 export default async function Home() {
   // Single source of truth for every catalog-backed home section. Falls back to
@@ -80,6 +88,7 @@ export default async function Home() {
     <main className="bg-page-warmth text-ng-ink">
       <PromoBar />
       <Header />
+      <h1 className="sr-only">Nutri Greenz: cold-pressed oils, A2 bilona ghee and raw honey from partner farms, delivered in Hyderabad</h1>
       <Hero promo={heroPromo} />
       <AssuranceStrip />
       <ShopByCategory

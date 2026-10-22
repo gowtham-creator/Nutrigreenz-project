@@ -5,12 +5,13 @@ import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Careers · Nutri Greenz",
-  description:
-    "Join Nutri Greenz in Hyderabad. We're a small farm-to-table team building an honest, fully traceable food supply chain. See our culture and open roles.",
-};
+  description: "Join Nutri Greenz in Hyderabad. We're a small farm-to-table team building an honest, fully traceable food supply chain. See our culture and open roles.",
+  path: "/careers",
+});
 
 const VALUES = [
   { icon: "leaf-bold", title: "Soil before slogans", body: "We&rsquo;d rather show you the lab report than write a clever tagline." },

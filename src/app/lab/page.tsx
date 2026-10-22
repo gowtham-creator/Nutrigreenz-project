@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
+import { pageMeta } from "@/lib/seo";
 
 const TESTS = [
   { name: "Pesticide residue", limit: "FSSAI compliant: 0 ppm tolerance for organochlorines", method: "GC-MS multi-residue scan (172 compounds)" },
@@ -25,6 +26,13 @@ const SAMPLE_REPORTS = [
   { lot: "ANT-24-044", product: "Stone-Ground Bajra Flour", date: "01 Feb 2026", pages: 9, partner: "Eurofins" },
   { lot: "ANT-24-038", product: "Multi-Floral Forest Honey", date: "24 Jan 2026", pages: 13, partner: "TÜV SÜD" },
 ];
+
+export const metadata = pageMeta({
+  title: "Lab testing · Nutri Greenz",
+  description:
+    "How Nutri Greenz tests every lot: the checks we run, the labs that verify them, and the latest reports.",
+  path: "/lab",
+});
 
 export default function LabPage() {
   return (

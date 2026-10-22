@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Privacy policy · Nutri Greenz",
-  description:
-    "How Nutri Greenz Farm Technologies Pvt. Ltd collects, uses, discloses and protects your information when you use the Nutrigreenz Platform.",
-};
+  description: "How Nutri Greenz Farm Technologies Pvt. Ltd collects, uses, discloses and protects your information when you use the Nutrigreenz Platform.",
+  path: "/policies/privacy",
+});
 
 export default function PrivacyPolicyPage() {
   return (

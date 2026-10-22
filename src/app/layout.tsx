@@ -12,6 +12,8 @@ import { LocationProvider } from "@/lib/location";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { AddressProvider } from "@/lib/addresses";
+import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/ng/json-ld";
 
 /*
  * Display + serif — Fraunces.
@@ -61,9 +63,13 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nutrigreenz · Farm-to-table, fully traceable",
+  metadataBase: new URL(SITE_URL),
+  title: "Nutri Greenz · Cold-pressed oils, A2 ghee and raw honey",
   description:
-    "Traceable produce, cold-pressed oils, A2 ghee and superfoods, sent straight from our partner farms to your kitchen.",
+    "Cold-pressed oils, A2 bilona ghee, raw honey and millets from partner farms, lab-tested and traceable to the farm, delivered across Hyderabad.",
+  applicationName: SITE_NAME,
+  openGraph: { siteName: SITE_NAME, locale: "en_IN", type: "website", images: [DEFAULT_OG_IMAGE] },
+  twitter: { card: "summary_large_image", images: [DEFAULT_OG_IMAGE] },
 };
 
 export default function RootLayout({
@@ -75,6 +81,8 @@ export default function RootLayout({
       className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
         <AuthProvider>
           <CommerceProvider>
             <LoyaltyConfigProvider>

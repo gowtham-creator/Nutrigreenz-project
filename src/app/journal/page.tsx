@@ -5,6 +5,7 @@ import { Section } from "@/components/ng/section";
 import { Chip } from "@/components/ng/chip";
 import { Reveal } from "@/components/ng/motion";
 import { listJournals } from "@/lib/content";
+import { pageMeta } from "@/lib/seo";
 
 // Editorial content is DB-backed; revalidate so admin edits appear without a deploy.
 export const revalidate = 60;
@@ -16,6 +17,13 @@ const CATEGORY_TONE: Record<string, string> = {
   recipes: "bg-ng-terracotta text-ng-cream",
   guides: "bg-ng-leaf text-ng-forest-deep",
 };
+
+export const metadata = pageMeta({
+  title: "The Journal · Nutri Greenz",
+  description:
+    "Stories from our partner farms, recipes, and plain explanations of lab results and food science from the Nutri Greenz team.",
+  path: "/journal",
+});
 
 export default async function JournalIndex() {
   // Reads the DB (falls back to the static sample content when unconfigured/empty).

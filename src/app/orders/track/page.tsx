@@ -5,6 +5,7 @@ import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 
 export const metadata = {
+  robots: { index: false, follow: true },
   title: "Track your order · Nutrigreenz",
   description: "Live delivery status for any Nutrigreenz order. By order ID and phone.",
 };

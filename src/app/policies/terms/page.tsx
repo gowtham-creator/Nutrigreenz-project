@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Terms & conditions · Nutri Greenz",
-  description:
-    "The terms and conditions governing your use of the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
-};
+  description: "The terms and conditions governing your use of the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
+  path: "/policies/terms",
+});
 
 export default function TermsPage() {
   return (

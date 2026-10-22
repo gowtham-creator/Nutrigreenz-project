@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Attributions & licences · Nutri Greenz",
-  description:
-    "Credits for the open-source icon sets and third-party marks used on nutrigreenz.farm, and the licences they are used under.",
-};
+  description: "Credits for the open-source icon sets and third-party marks used on nutrigreenz.farm, and the licences they are used under.",
+  path: "/policies/attributions",
+});
 
 /**
  * Attributions.

@@ -6,12 +6,13 @@ import { Reveal } from "@/components/ng/motion";
 import { Button } from "@/components/ng/button";
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { IndiaFlag } from "@/components/ui/india-flag";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Our story · Nutri Greenz",
-  description:
-    "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering non-adulterated food direct from farmers. Read our story, vision, mission and the people behind it.",
-};
+  description: "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering non-adulterated food direct from farmers. Read our story, vision, mission and the people behind it.",
+  path: "/about",
+});
 
 /*
  * Solar stand-ins were doing duty here for ideas none of them described: a

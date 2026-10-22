@@ -5,12 +5,13 @@ import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Press & media · Nutri Greenz",
-  description:
-    "Press resources for Nutri Greenz, the Hyderabad farm-to-table brand. Media kit, brand facts, recent mentions and a press contact.",
-};
+  description: "Press resources for Nutri Greenz, the Hyderabad farm-to-table brand. Media kit, brand facts, recent mentions and a press contact.",
+  path: "/press",
+});
 
 const FACTS = [
   { label: "Founded", value: "2019, Hyderabad" },

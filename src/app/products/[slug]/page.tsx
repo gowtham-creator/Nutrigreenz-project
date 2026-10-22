@@ -30,6 +30,10 @@ import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 import { getProductStory } from "@/components/ng/pdp/pdp-story";
 import { galleryPanelsFor, nutritionBySizeFor } from "@/components/ng/pdp/product-gallery";
 import { getCategoryTheme } from "@/lib/category-theme";
+import { breadcrumbJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/ng/json-ld";
+import { freeDeliveryThreshold } from "@/lib/free-delivery";
+import { freeDeliveryOver } from "@/lib/free-delivery-copy";
 
 const SITE = "https://nutrigreenz.farm";
 const PLACEHOLDER = "/images/placeholder.svg";
@@ -249,7 +253,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { categoryId } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
   const title = `${p.title} · Nutri Greenz`;
-  const description = `Buy ${p.title} (${p.unit ?? cat.title}). Single-origin, lab-tested and fully traceable to the farm. Rated ${p.rating}/5 by ${p.reviewCount.toLocaleString()} customers. Free delivery over ₹599.`;
+  // No rating here: the storefront star counts are not customer reviews yet.
+  const freeFrom = await freeDeliveryThreshold();
+  const description = `Buy ${p.title} (${p.unit ?? cat.title}) online from Nutri Greenz in Hyderabad. Single-origin, lab-tested and traceable to the farm. Free delivery ${freeDeliveryOver(freeFrom)}.`;
   const url = `${SITE}/products/${p.slug}`;
 
   return {
@@ -402,13 +408,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         : "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: p.rating,
-      reviewCount: p.reviewCount,
-      bestRating: 5,
-      worstRating: 1,
-    },
   };
 
   return (
@@ -416,6 +415,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {/* Best-effort PDP view ping — records one product_views row for analytics. */}
       <ViewPing productId={p.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Shop", path: "/shop" },
+          { name: p.title, path: `/products/${p.slug}` },
+        ])}
+      />
 
       {/* Share the selected size × pack between the buy panel and the sticky bar. */}
       <PdpVariantProvider variants={variants} initialIndex={baseIndex}>

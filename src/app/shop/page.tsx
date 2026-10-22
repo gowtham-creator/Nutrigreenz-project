@@ -9,12 +9,14 @@ import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
+import { pageMeta } from "@/lib/seo";
+import { ProductGridFallback } from "@/components/ng/shop/product-grid-fallback";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Shop the pantry · Nutri Greenz",
-  description:
-    "Browse the whole pantry: cold-pressed oils, A2 ghee, raw honey, millets, spices and more, all single-origin, lab-tested and fairly sourced.",
-};
+  description: "Browse the whole pantry: cold-pressed oils, A2 ghee, raw honey, millets, spices and more, all single-origin, lab-tested and fairly sourced.",
+  path: "/shop",
+});
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits (price,
 // stock, new SKUs, status) appear on the live shop without a redeploy.
@@ -77,7 +79,7 @@ export default async function ShopPage() {
           opts a client component out of prerendering unless a boundary exists.
           Without it the whole page falls back to client-side rendering and the
           catalogue stops being static. */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<ProductGridFallback products={products} />}>
         <ProductListing products={products} categoryTags={categoryTags} />
       </Suspense>
     </PageShell>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
+import { pageMeta } from "@/lib/seo";
 
 const ACTIVE_BUNDLES = [
   {
@@ -30,6 +31,13 @@ const HOW = [
   { n: "02", t: "Order from your pod's inventory", b: "Each pod gets its own lot. The quality is the same, and the price is 8 to 14% lower because there is no last-mile delivery cost." },
   { n: "03", t: "Pick up from the Captain's home", b: "When the cycle closes, walk over to the Captain's address. There's no delivery slot to wait for and no box to throw away." },
 ];
+
+export const metadata = pageMeta({
+  title: "Community bundles · Nutri Greenz",
+  description:
+    "Order together with your gated community in Hyderabad and get your Nutri Greenz staples delivered on a shared delivery day.",
+  path: "/community/bundle",
+});
 
 export default function CommunityBundleIndex() {
   return (

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { PolicyLayout } from "@/components/ng/policy/policy-layout";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Cancellation & refund policy · Nutri Greenz",
-  description:
-    "The cancellation and refund policy for orders placed on the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
-};
+  description: "The cancellation and refund policy for orders placed on the Nutrigreenz Platform, operated by Nutri Greenz Farm Technologies Pvt. Ltd",
+  path: "/policies/refund",
+});
 
 const REFUND_TAT: { method: string; source: string; tat: string }[] = [
   { method: "Net Banking", source: "Source", tat: "5 to 7 business days" },

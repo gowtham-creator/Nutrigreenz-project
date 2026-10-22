@@ -5,12 +5,13 @@ import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Bulk & corporate · Nutri Greenz",
-  description:
-    "Buy Nutri Greenz in bulk or gift it at scale. Pantry supply for cafés and offices, curated corporate hampers and festival gifting: sourced direct, lab-tested, delivered across Hyderabad.",
-};
+  description: "Buy Nutri Greenz in bulk or gift it at scale. Pantry supply for cafés and offices, curated corporate hampers and festival gifting: sourced direct, lab-tested, delivered across Hyderabad.",
+  path: "/wholesale",
+});
 
 const USE_CASES = [
   {

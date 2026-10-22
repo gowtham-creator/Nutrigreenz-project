@@ -5,6 +5,9 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { getJournal, listJournals } from "@/lib/content";
+import { pageMeta, articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/ng/json-ld";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
 
@@ -18,6 +21,19 @@ const CATEGORY_TONE: Record<string, string> = {
 /** Escape user text for safe interpolation into the article lead paragraph. */
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getJournal(slug);
+  if (!article) return { title: "Article not found · Nutri Greenz", robots: { index: false } };
+  return pageMeta({
+    title: `${article.title} · Nutri Greenz`,
+    description: article.excerpt,
+    path: `/journal/${article.slug}`,
+    image: article.cover,
+    type: "article",
+  });
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -36,6 +52,23 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <PageShell>
+      <JsonLd
+        data={articleJsonLd({
+          title: article.title,
+          description: article.excerpt,
+          path: `/journal/${article.slug}`,
+          image: article.cover,
+          author: article.author,
+          publishedAt: article.publishedAt,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Journal", path: "/journal" },
+          { name: article.title, path: `/journal/${article.slug}` },
+        ])}
+      />
       <article>
         {/* Hero — the cover image fills the banner edge-to-edge and the heading
             sits over it on a bottom-anchored scrim (no separate green band or

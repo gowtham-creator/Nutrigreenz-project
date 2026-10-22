@@ -9,6 +9,9 @@ import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getCategoryTheme } from "@/lib/category-theme";
+import { pageMeta, breadcrumbJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/ng/json-ld";
+import { ProductGridFallback } from "@/components/ng/shop/product-grid-fallback";
 
 // Re-fetch the catalog at most once a minute so Inventory-Portal edits surface
 // on category pages without a redeploy.
@@ -70,10 +73,11 @@ export async function generateMetadata({
   const { categories } = await getStorefrontCatalog();
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return { title: "Category not found · Nutri Greenz" };
-  return {
+  return pageMeta({
     title: `${cat.title} · Nutri Greenz`,
     description: CATEGORY_BLURBS[slug] ?? `Shop ${cat.title} from named partner farms. Single-origin, lab-tested.`,
-  };
+    path: `/shop/${slug}`,
+  });
 }
 
 export default async function ShopCategoryPage({
@@ -148,7 +152,14 @@ export default async function ShopCategoryPage({
           opts a client component out of prerendering unless a boundary exists.
           Without it the whole page falls back to client-side rendering and the
           catalogue stops being static. */}
-      <Suspense fallback={null}>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Shop", path: "/shop" },
+          { name: cat.title, path: `/shop/${slug}` },
+        ])}
+      />
+      <Suspense fallback={<ProductGridFallback products={products.filter((p) => p.tags?.includes(slug))} />}>
         <ProductListing products={products} categoryTags={categoryTags} categorySlug={slug} />
       </Suspense>
       </div>

@@ -7,6 +7,7 @@ import { getCustomerSession } from "@/lib/customer-session";
 import { getLoyaltyConfig, loyaltyBalance, listLoyaltyLedger } from "@/lib/rewards";
 import { getReferralConfig } from "@/lib/referrals";
 import { UiIcon } from "@/components/ui/ui-icon";
+import { pageMeta } from "@/lib/seo";
 
 /**
  * /loyalty — the customer's real Harvest Credit wallet.
@@ -59,6 +60,13 @@ function describeEntry(reason: string, orderId: string | null): { note: string; 
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+export const metadata = pageMeta({
+  title: "Harvest Coins rewards · Nutri Greenz",
+  description:
+    "Earn Harvest Coins on every Nutri Greenz order and use them at checkout. See how coins are earned, redeemed and when they expire.",
+  path: "/loyalty",
+});
 
 export default async function LoyaltyPage() {
   const session = await getCustomerSession();

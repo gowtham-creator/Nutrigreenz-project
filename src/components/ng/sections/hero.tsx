@@ -271,9 +271,9 @@ export function Hero({ promo }: { promo?: HeroPromo | null }) {
           <div aria-hidden className="invisible grid [&>*]:[grid-area:1/1]">
             {items.map((item) =>
               item.kind === "promo" ? (
-                <PromoBannerSlide key={item.key} promo={item.promo} />
+                <PromoBannerSlide key={item.key} promo={item.promo} decorative />
               ) : (
-                <PromoSlide key={item.key} slide={item.slide} />
+                <PromoSlide key={item.key} slide={item.slide} decorative />
               ),
             )}
           </div>
@@ -453,7 +453,9 @@ function desktopWash(slide: PromoSlideDef): string {
   return `linear-gradient(to right, ${w}${alphaHex(a)} 0%, ${w}${alphaHex(a * 0.72)} 42%, transparent 68%)`;
 }
 
-function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priority?: boolean }) {
+function PromoSlide({ slide, priority = false, decorative = false }: { slide: PromoSlideDef; priority?: boolean; decorative?: boolean }) {
+  // The hidden sizer copy must not repeat the headline as a second h2.
+  const Heading = decorative ? "p" : "h2";
   const light = slide.tone === "light";
   return (
     <div className="relative flex h-full min-h-[inherit] flex-col overflow-hidden lg:flex-row" style={{ backgroundColor: slide.wash }}>
@@ -518,13 +520,13 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
       <div className="relative z-10 flex w-full flex-1 flex-col justify-center gap-2.5 px-5 pb-16 pt-3 sm:gap-3 sm:px-8 sm:pb-[4.5rem] md:px-12 lg:max-w-xl lg:gap-3.5 lg:p-14 lg:pt-[76px] lg:pl-16 xl:max-w-2xl">
         <FloatIn delay={0.05}>
           <p className={`font-sans text-[clamp(14px,1.5vw,20px)] font-semibold text-ng-forest ${light ? "lg:text-ng-cream" : ""}`}>{slide.kicker}</p>
-          <h2 className={`mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep ${light ? "lg:text-white" : ""}`}>
+          <Heading className={`mt-1 font-display text-[clamp(28px,4.6vw,60px)] leading-[0.98] text-ng-forest-deep ${light ? "lg:text-white" : ""}`}>
             {slide.title}{" "}
             <em className={`relative whitespace-nowrap italic text-ng-forest ${light ? "lg:text-ng-cream" : ""}`}>
               {slide.script}
               <span aria-hidden className={`absolute -bottom-1.5 left-0 h-[3px] w-full rounded-full bg-ng-forest/70 ${light ? "lg:bg-ng-cream/80" : ""}`} />
             </em>
-          </h2>
+          </Heading>
         </FloatIn>
 
         <FloatIn delay={0.15}>
@@ -562,7 +564,8 @@ function PromoSlide({ slide, priority = false }: { slide: PromoSlideDef; priorit
    festive banner art anchored right beneath a cream legibility wash, with the
    occasion tag → headline → bold "% OFF" → subcopy → orange CTA on the left.
    ────────────────────────────────────────────────────────────────────────── */
-function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; priority?: boolean }) {
+function PromoBannerSlide({ promo, priority = false, decorative = false }: { promo: HeroPromo; priority?: boolean; decorative?: boolean }) {
+  const Heading = decorative ? "p" : "h2";
   // A single cream wash keeps the forest copy legible over any of the nine
   // festive banner backgrounds — the same left-fade treatment the static slides
   // use, just with one shared colour since the artwork varies per promotion.
@@ -612,9 +615,9 @@ function PromoBannerSlide({ promo, priority = false }: { promo: HeroPromo; prior
             follows it. `text-balance` keeps a two-line headline evenly split
             rather than leaving one word stranded.
           */}
-          <h2 className="text-balance font-display text-[clamp(22px,3vw,38px)] leading-[1.08] text-ng-forest-deep">
+          <Heading className="text-balance font-display text-[clamp(22px,3vw,38px)] leading-[1.08] text-ng-forest-deep">
             {promo.headline}
-          </h2>
+          </Heading>
         </FloatIn>
 
         <FloatIn delay={0.14}>

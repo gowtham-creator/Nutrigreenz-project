@@ -5,11 +5,19 @@ import { Section } from "@/components/ng/section";
 import { Chip } from "@/components/ng/chip";
 import { Reveal } from "@/components/ng/motion";
 import { listFarms } from "@/lib/content";
+import { pageMeta } from "@/lib/seo";
 
 export const revalidate = 60;
 
 const REGIONS = ["All regions", "Andhra Pradesh", "Telangana", "Tamil Nadu", "Kerala", "Gujarat", "Maharashtra"];
 const PRACTICES = ["All practices", "Organic", "A2 dairy", "Cooperative", "Biodynamic", "Rainwater harvesting"];
+
+export const metadata = pageMeta({
+  title: "Our partner farms · Nutri Greenz",
+  description:
+    "Meet the farms and farmers who grow Nutri Greenz oils, ghee and honey, with the region, practices and story of each one.",
+  path: "/farms",
+});
 
 export default async function FarmsPage() {
   // Reads the DB (falls back to the static sample content when unconfigured/empty).

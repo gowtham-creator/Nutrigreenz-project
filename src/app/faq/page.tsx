@@ -4,12 +4,13 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { Icon } from "@/components/ui/icon";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "FAQs · Nutri Greenz",
-  description:
-    "Answers to common questions about Nutrigreenz payments, wallet recharge and autopay, cashback offers and refunds.",
-};
+  description: "Answers to common questions about Nutrigreenz payments, wallet recharge and autopay, cashback offers and refunds.",
+  path: "/faq",
+});
 
 interface QA {
   q: string;
