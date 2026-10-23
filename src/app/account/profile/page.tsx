@@ -206,9 +206,7 @@ export default function ProfilePage() {
 
       // Keep the header/avatar in step with what was just saved.
       updateProfile({ name: fullName, email });
-      ngToast.success("Profile saved", {
-        description: "Your details and preferences have been updated.",
-      });
+      ngToast.success("Profile saved");
     } catch {
       ngToast.error("Could not save", {
         description: "Check your connection and try again.",

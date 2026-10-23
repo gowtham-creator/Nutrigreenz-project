@@ -46,6 +46,7 @@
   --color-ng-line: var(--ng-line);
   --color-ng-line-soft: var(--ng-line-soft);
   --color-ng-danger: var(--ng-danger);
+  --color-ng-danger-light: var(--ng-danger-light);
   --color-ng-success: var(--ng-success);
   --color-ng-green-bright: var(--ng-green-bright);
   --color-ng-white: var(--ng-white);
@@ -119,6 +120,7 @@
   --ng-line: #E5E5DD;            /* borders */
   --ng-line-soft: #EFEFE8;       /* soft borders */
   --ng-danger: #C74D33;          /* error */
+  --ng-danger-light: #F2A28E;    /* error glyph on forest — 6.8:1 */
   --ng-success: #4CAF50;         /* success */
   --ng-blue: #2962A3;            /* info */
 
@@ -1110,17 +1112,112 @@
   .ng-bar-grow { animation: none; }
 }
 
-/* Toast progress rail — time remaining before auto-dismiss.
-   Scaled on transform so it runs on the compositor; animating width would
-   relayout the toast every frame while it sits over live content. */
-@keyframes ngToastProgress {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
+/* ── Notifications ────────────────────────────────────────────────────────
+ *
+ * Sonner's toast, restyled as a forest slip; see components/ng/toast.tsx.
+ * Colours come from the --normal-* variables set on <NgToaster>. These rules
+ * cover layout and type, and are scoped under `.ng-toaster` with one more
+ * class than sonner's own `[data-styled]` selectors so they win without
+ * !important.
+ */
+.ng-toaster [data-sonner-toast][data-styled="true"] {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 48px 14px 16px;
+  font-family: var(--font-sans);
+  box-shadow:
+    0 14px 32px -14px rgb(10 31 18 / 0.5),
+    0 2px 6px -2px rgb(10 31 18 / 0.25);
 }
-.ng-toast-progress { animation: ngToastProgress linear both; }
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-icon] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-content] { gap: 2px; padding-top: 1px; }
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-title] {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-description] {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgb(245 242 224 / 0.74);
+}
+
+/* The state, in the glyph. Each clears 3:1 on --ng-forest. */
+.ng-toaster [data-type="success"] [data-icon] { color: var(--ng-leaf-light); }
+.ng-toaster [data-type="error"] [data-icon] { color: var(--ng-danger-light); }
+.ng-toaster [data-type="warning"] [data-icon] { color: var(--ng-clay-light); }
+.ng-toaster [data-type="info"] [data-icon],
+.ng-toaster [data-type="loading"] [data-icon] { color: var(--ng-cream); }
+
+.ng-toast-spinner {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 1px;
+  border-radius: 999px;
+  border: 2px solid rgb(245 242 224 / 0.22);
+  border-top-color: currentColor;
+  animation: ngToastSpin 800ms linear infinite;
+}
+@keyframes ngToastSpin { to { transform: rotate(360deg); } }
+
+/* Dismiss: a quiet cross at the trailing edge, not a filled disc on the
+   corner. 28px drawn, 44px to the touch. */
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-close-button] {
+  left: auto;
+  right: 10px;
+  top: 10px;
+  width: 28px;
+  height: 28px;
+  transform: none;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(245 242 224 / 0.6);
+  transition: background-color 150ms var(--ease-out-soft), color 150ms var(--ease-out-soft);
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-close-button]::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+.ng-toaster [data-sonner-toast][data-styled="true"]:hover [data-close-button]:hover {
+  background: rgb(245 242 224 / 0.1);
+  color: var(--ng-cream);
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-close-button]:focus-visible {
+  box-shadow: 0 0 0 2px var(--ng-leaf-light);
+}
+
+/* Action: cream on forest, the one filled shape in the toast. */
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-button] {
+  height: 28px;
+  padding: 0 12px;
+  margin: 0 0 0 auto;
+  align-self: center;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--ng-cream);
+  color: var(--ng-forest-deep);
+  cursor: pointer;
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-button]:hover { background: var(--ng-cream-deep); }
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-button]:focus-visible {
+  box-shadow: 0 0 0 2px var(--ng-forest), 0 0 0 4px var(--ng-leaf-light);
+}
+.ng-toaster [data-sonner-toast][data-styled="true"] [data-cancel] {
+  background: transparent;
+  color: rgb(245 242 224 / 0.8);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ng-toast-progress { animation: none; opacity: 0; }
+  .ng-toast-spinner { animation-duration: 2400ms; }
 }
 
 /* ── Navigation progress ──────────────────────────────────────────────────
