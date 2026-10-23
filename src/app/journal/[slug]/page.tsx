@@ -5,11 +5,31 @@ import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Reveal } from "@/components/ng/motion";
 import { getJournal, listJournals } from "@/lib/content";
-import { pageMeta, articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { pageMeta, articleJsonLd, breadcrumbJsonLd, fitTitle } from "@/lib/seo";
 import { JsonLd } from "@/components/ng/json-ld";
+import { ProductCard } from "@/components/ng/product-card";
+import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import type { Metadata } from "next";
 
 export const revalidate = 60;
+
+/**
+ * Which shop category an article is about, from the words in its title and tags.
+ *
+ * Articles explained bilona churning or raw honey and then linked nowhere but
+ * other articles, so a reader convinced by the piece had to go and find the
+ * product. The first matching rule wins; an article that matches none simply
+ * shows no products.
+ */
+const TOPIC_CATEGORY: [RegExp, string][] = [
+  [/\b(ghee|bilona|a2|butter)\b/i, "ghee"],
+  [/\b(honey|bees?|hive|apiary)\b/i, "honey"],
+  [/\b(oils?|ghani|ganuga|cold[- ]pressed|wood[- ]pressed|groundnut|sesame|coconut|mustard)\b/i, "oils"],
+];
+
+function topicCategory(text: string): string | null {
+  return TOPIC_CATEGORY.find(([re]) => re.test(text))?.[1] ?? null;
+}
 
 const CATEGORY_TONE: Record<string, string> = {
   science: "bg-ng-forest text-ng-cream",
@@ -28,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const article = await getJournal(slug);
   if (!article) return { title: "Article not found · Nutri Greenz", robots: { index: false } };
   return pageMeta({
-    title: `${article.title} · Nutri Greenz`,
+    title: fitTitle(`${article.title} · Nutri Greenz`, article.title),
     description: article.excerpt,
     path: `/journal/${article.slug}`,
     image: article.cover,
@@ -42,6 +62,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound();
 
   const related = (await listJournals()).filter((a) => a.slug !== slug).slice(0, 3);
+  const topic = topicCategory([article.title, article.excerpt, ...article.tags].join(" "));
+  const shopFor = topic
+    ? (await getStorefrontCatalog().catch(() => null))?.products.filter((p) => p.tags?.includes(topic)).slice(0, 4) ?? []
+    : [];
 
   // The excerpt renders as the article lead; the DB `body` (admin-authored,
   // trusted HTML) supplies the rest. Both are direct children of `.prose-article`
@@ -60,6 +84,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           image: article.cover,
           author: article.author,
           publishedAt: article.publishedAt,
+          updatedAt: article.updatedAt,
         })}
       />
       <JsonLd
@@ -104,6 +129,22 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           />
         </Section>
       </article>
+
+      {/* Products the article is about */}
+      {topic && shopFor.length > 0 ? (
+        <Section className="!pt-0" eyebrow="From the shop" heading="Try what you just read about">
+          <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+            {shopFor.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          <p className="mt-8 text-[15px]">
+            <Link href={`/shop/${topic}`} className="font-medium text-ng-forest underline decoration-ng-leaf/40 underline-offset-4 hover:text-ng-leaf">
+              See all {topic === "oils" ? "cold-pressed oils" : topic}
+            </Link>
+          </p>
+        </Section>
+      ) : null}
 
       {/* Related */}
       <Section className="bg-ng-cream-mesh bg-ng-cream" eyebrow="Keep reading" heading="More from the Journal">

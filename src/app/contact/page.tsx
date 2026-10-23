@@ -10,7 +10,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
   title: "Contact us · Nutri Greenz",
-  description: "Get in touch with Nutri Greenz Farm Technologies Pvt. Ltd. Our team is in Kukatpally, Hyderabad. Email customersupport@nutrigreenz.farm or call +91 94918 93370. We reply within one business day.",
+  description: "Contact Nutri Greenz in Kukatpally, Hyderabad: call +91 94918 93370 or email customersupport@nutrigreenz.farm. We reply within one business day.",
   path: "/contact",
 });
 

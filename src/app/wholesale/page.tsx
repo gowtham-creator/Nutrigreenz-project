@@ -9,7 +9,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
   title: "Bulk & corporate · Nutri Greenz",
-  description: "Buy Nutri Greenz in bulk or gift it at scale. Pantry supply for cafés and offices, curated corporate hampers and festival gifting: sourced direct, lab-tested, delivered across Hyderabad.",
+  description: "Buy Nutri Greenz oils, ghee and honey in bulk: pantry supply for cafés and offices, corporate hampers and festival gifting, delivered across Hyderabad.",
   path: "/wholesale",
 });
 

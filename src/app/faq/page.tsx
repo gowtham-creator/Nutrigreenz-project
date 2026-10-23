@@ -8,7 +8,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
   title: "FAQs · Nutri Greenz",
-  description: "Answers to common questions about Nutrigreenz payments, wallet recharge and autopay, cashback offers and refunds.",
+  description: "Answers to common questions about Nutri Greenz payments, wallet recharge and autopay, cashback offers and refunds.",
   path: "/faq",
 });
 
@@ -54,7 +54,7 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         q: "How do I recharge my wallet?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"Log in to the Nutrigreenz app."}</li>
+            <li>{"Log in to the Nutri Greenz app."}</li>
             <li>{"Open the menu and choose Wallet."}</li>
             <li>{"Enter the amount and pay with a wallet, UPI or net banking."}</li>
           </ol>
@@ -79,7 +79,7 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         q: "Where can I change or delete my autopay setting?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"Log in to the Nutrigreenz app."}</li>
+            <li>{"Log in to the Nutri Greenz app."}</li>
             <li>{"Open the menu and choose Account and Preferences."}</li>
             <li>{"Tap the three dots at the top right to edit or delete autopay."}</li>
           </ol>
@@ -115,7 +115,7 @@ const GROUPS: { title: string; icon: string; items: QA[] }[] = [
         q: "Where can I see the current cashback offers?",
         a: (
           <ol className="list-decimal pl-5 flex flex-col gap-1.5">
-            <li>{"In the Nutrigreenz app, open the menu and go to Wallet & payment modes."}</li>
+            <li>{"In the Nutri Greenz app, open the menu and go to Wallet & payment modes."}</li>
             <li>{"Choose the auto-pay mode. The cashback is given one time only."}</li>
           </ol>
         ),

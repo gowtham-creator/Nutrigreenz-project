@@ -51,6 +51,8 @@ export interface JournalRecord {
   tags: string[];
   /** ISO date (YYYY-MM-DD). */
   publishedAt: string;
+  /** Last edit (ISO), for dateModified and the sitemap. Absent on samples. */
+  updatedAt?: string;
   sort: number;
 }
 
@@ -81,11 +83,12 @@ interface JournalRow {
   read_minutes: number | null;
   tags: string[] | null;
   published_at: string | null;
+  updated_at?: string | null;
   sort: number | null;
 }
 
 const JOURNAL_COLS =
-  "id, slug, title, excerpt, body, cover_url, author, category, read_minutes, tags, published_at, sort";
+  "id, slug, title, excerpt, body, cover_url, author, category, read_minutes, tags, published_at, updated_at, sort";
 
 function toJournal(r: JournalRow): JournalRecord {
   return {
@@ -95,11 +98,12 @@ function toJournal(r: JournalRow): JournalRecord {
     excerpt: r.excerpt ?? "",
     body: r.body || DEFAULT_ARTICLE_BODY_HTML,
     cover: r.cover_url ?? "/images/placeholder.svg",
-    author: r.author ?? "Nutrigreenz Field Desk",
+    author: r.author ?? "Nutri Greenz Field Desk",
     category: r.category ?? "science",
     readMinutes: r.read_minutes ?? 5,
     tags: r.tags ?? [],
     publishedAt: r.published_at ?? "",
+    updatedAt: r.updated_at ?? undefined,
     sort: r.sort ?? 0,
   };
 }
@@ -113,7 +117,7 @@ function staticJournal(a: (typeof STATIC_JOURNAL)[number], i: number): JournalRe
     excerpt: a.excerpt,
     body: DEFAULT_ARTICLE_BODY_HTML,
     cover: a.cover,
-    author: "Nutrigreenz Field Desk",
+    author: "Nutri Greenz Field Desk",
     category: a.category,
     readMinutes: a.readMinutes,
     tags: [],
@@ -177,7 +181,7 @@ export async function upsertJournal(input: JournalInput): Promise<JournalRecord>
     excerpt: input.excerpt?.trim() ?? "",
     body: input.body ?? "",
     cover_url: input.cover?.trim() || null,
-    author: input.author?.trim() || "Nutrigreenz Field Desk",
+    author: input.author?.trim() || "Nutri Greenz Field Desk",
     category: (input.category?.trim() || "science").toLowerCase(),
     read_minutes: Number.isFinite(input.readMinutes) ? Math.max(1, Math.round(input.readMinutes as number)) : 5,
     tags: input.tags ?? [],
@@ -222,6 +226,8 @@ export interface FarmRecord {
   story: string | null;
   image: string | null;
   gallery: string[];
+  /** Last edit (ISO), for the sitemap. Absent on samples. */
+  updatedAt?: string;
   sort: number;
 }
 
@@ -250,11 +256,12 @@ interface FarmRow {
   story: string | null;
   image_url: string | null;
   gallery: string[] | null;
+  updated_at?: string | null;
   sort: number | null;
 }
 
 const FARM_COLS =
-  "id, name, region, hectares, practices, partnered_since, farmer_name, story, image_url, gallery, sort";
+  "id, name, region, hectares, practices, partnered_since, farmer_name, story, image_url, gallery, updated_at, sort";
 
 function toFarm(r: FarmRow): FarmRecord {
   return {
@@ -268,6 +275,7 @@ function toFarm(r: FarmRow): FarmRecord {
     story: r.story ?? null,
     image: r.image_url ?? null,
     gallery: r.gallery ?? [],
+    updatedAt: r.updated_at ?? undefined,
     sort: r.sort ?? 0,
   };
 }

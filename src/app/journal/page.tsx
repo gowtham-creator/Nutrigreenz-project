@@ -37,7 +37,7 @@ export default async function JournalIndex() {
         tone="forest"
         serifTitle
         image="/images/journal/journal-hero.webp"
-        eyebrow="The Nutrigreenz Journal"
+        eyebrow="The Nutri Greenz Journal"
         title={<>Long-form reporting <em className="italic text-ng-leaf">from the field.</em></>}
         description="A new piece every fortnight: stories from the farms, recipes from our partner kitchens, long reads on lab science and, now and then, an honest account of something we got wrong."
       />

@@ -52,7 +52,7 @@ export function TraceabilityView({ farm }: { farm: TraceFarm | null }) {
         tone="forest"
         eyebrow="Traceability is the product"
         title={<>Type a code to <em className="italic text-ng-leaf">see the farm.</em></>}
-        description="Every Nutrigreenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the farmer, harvest date, pressing, lab tests and kilometres travelled."
+        description="Every Nutri Greenz product carries a six-character lot code on the back of the label or under the QR sticker. Type it below to see the farmer, harvest date, pressing, lab tests and kilometres travelled."
       >
         <div className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md">
           <Input

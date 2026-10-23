@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/icon";
 
 export const metadata = {
   robots: { index: false, follow: true },
-  title: "Track your order · Nutrigreenz",
-  description: "Live delivery status for any Nutrigreenz order. By order ID and phone.",
+  title: "Track your order · Nutri Greenz",
+  description: "Live delivery status for any Nutri Greenz order. By order ID and phone.",
 };
 
 const SEE = [
@@ -27,7 +27,7 @@ export default function TrackOrderPage() {
             No account needed
           </span>
           <h1 className="mt-2 font-display text-[clamp(30px,4vw,44px)] leading-tight text-ng-forest-deep">
-            Track any <em className="italic text-ng-leaf">Nutrigreenz order.</em>
+            Track any <em className="italic text-ng-leaf">Nutri Greenz order.</em>
           </h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
             Type the order ID and the phone number you used at checkout. We&apos;ll show you exactly

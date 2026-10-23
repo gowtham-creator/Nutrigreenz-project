@@ -18,7 +18,7 @@ export function Journal() {
     <Section
       className="overflow-hidden"
       eyebrow="From the field"
-      heading={<>The <em className="italic text-ng-leaf">Nutrigreenz Journal.</em></>}
+      heading={<>The <em className="italic text-ng-leaf">Nutri Greenz Journal.</em></>}
       description="Long-form reporting from the farms, the kitchen, and the lab. Updated every fortnight."
     >
       {/* Depth backdrop — drifts slower than the cards */}

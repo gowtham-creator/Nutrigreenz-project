@@ -9,7 +9,10 @@ import { ProductListing } from "@/components/ng/shop/product-listing";
 import { ShopTrustStrip } from "@/components/ng/shop/trust-strip";
 import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 import { getCategoryTheme } from "@/lib/category-theme";
-import { pageMeta, breadcrumbJsonLd } from "@/lib/seo";
+import { pageMeta, breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo";
+import { CATEGORY_GUIDES } from "@/lib/category-guides";
+import { searchName } from "@/lib/product-seo";
+import { CategoryGuide } from "@/components/ng/shop/category-guide";
 import { JsonLd } from "@/components/ng/json-ld";
 import { ProductGridFallback } from "@/components/ng/shop/product-grid-fallback";
 
@@ -73,9 +76,10 @@ export async function generateMetadata({
   const { categories } = await getStorefrontCatalog();
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return { title: "Category not found · Nutri Greenz" };
+  const guide = CATEGORY_GUIDES[slug];
   return pageMeta({
-    title: `${cat.title} · Nutri Greenz`,
-    description: CATEGORY_BLURBS[slug] ?? `Shop ${cat.title} from named partner farms. Single-origin, lab-tested.`,
+    title: guide?.metaTitle ?? `${cat.title} · Nutri Greenz`,
+    description: guide?.metaDescription ?? CATEGORY_BLURBS[slug] ?? `Shop ${cat.title} from named partner farms. Single-origin, lab-tested.`,
     path: `/shop/${slug}`,
   });
 }
@@ -90,8 +94,12 @@ export default async function ShopCategoryPage({
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) notFound();
 
-  const count = products.filter((p) => p.tags?.includes(slug)).length;
-  const words = cat.title.split(" ");
+  const inCategory = products.filter((p) => p.tags?.includes(slug));
+  const count = inCategory.length;
+  const guide = CATEGORY_GUIDES[slug];
+  // The heading says what people search for ("cold-pressed and wood-pressed
+  // oils"); the database name stays on the chips and the breadcrumb.
+  const words = (guide?.h1 ?? cat.title).split(" ");
   // Per-category look — an Oils page shouldn't read like Honey or Spices.
   const theme = getCategoryTheme(slug);
   // Categories with a real origin/craft photo show it behind the light cream
@@ -159,9 +167,17 @@ export default async function ShopCategoryPage({
           { name: cat.title, path: `/shop/${slug}` },
         ])}
       />
-      <Suspense fallback={<ProductGridFallback products={products.filter((p) => p.tags?.includes(slug))} />}>
+      <JsonLd
+        data={itemListJsonLd({
+          name: guide?.h1 ?? cat.title,
+          path: `/shop/${slug}`,
+          items: inCategory.map((p) => ({ name: searchName(p.title), path: `/products/${p.slug}` })),
+        })}
+      />
+      <Suspense fallback={<ProductGridFallback products={inCategory} />}>
         <ProductListing products={products} categoryTags={categoryTags} categorySlug={slug} />
       </Suspense>
+      {guide ? <CategoryGuide guide={guide} products={inCategory} /> : null}
       </div>
     </PageShell>
   );

@@ -6,11 +6,12 @@ import { Reveal } from "@/components/ng/motion";
 import { Button } from "@/components/ng/button";
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
 import { IndiaFlag } from "@/components/ui/india-flag";
-import { pageMeta } from "@/lib/seo";
+import { BRAND, pageMeta } from "@/lib/seo";
+import { AnswerBlock } from "@/components/ng/answer-block";
 
 export const metadata: Metadata = pageMeta({
   title: "Our story · Nutri Greenz",
-  description: "Nutri Greenz Farm Technologies Pvt. Ltd is a Hyderabad-based organic produce brand delivering non-adulterated food direct from farmers. Read our story, vision, mission and the people behind it.",
+  description: "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, ghee and raw honey direct from partner farms. Meet the founders and read how we began.",
   path: "/about",
 });
 
@@ -58,7 +59,7 @@ const TEAM = [
     name: "Sudhakar Manchala",
     role: "Packaging & supply chain",
     initials: "SM",
-    body: "Venkata Sudhakar Manchala, from Kakinada, East Godavari district, Andhra Pradesh, holds a Post Graduate degree in Polymer Engineering and an MBA in Marketing. After seven years in multinational corporations, he ventured into entrepreneurship in 2001, building his own plastic engineering and packaging business. He is a board member of the Indian Institute of Packaging and treasurer of the Indian Plastic Institute's Hyderabad chapter, and brings his passion for agriculture and the food supply chain to Nutrigreenz.",
+    body: "Venkata Sudhakar Manchala, from Kakinada, East Godavari district, Andhra Pradesh, holds a Post Graduate degree in Polymer Engineering and an MBA in Marketing. After seven years in multinational corporations, he ventured into entrepreneurship in 2001, building his own plastic engineering and packaging business. He is a board member of the Indian Institute of Packaging and treasurer of the Indian Plastic Institute's Hyderabad chapter, and brings his passion for agriculture and the food supply chain to Nutri Greenz.",
   },
 ];
 
@@ -87,8 +88,26 @@ export default function AboutPage() {
         </div>
       </PageHero>
 
+      {/* Who we are, in facts — the passage search engines and AI assistants quote */}
+      <Section className="!pb-0">
+        <AnswerBlock
+          question="What is Nutri Greenz?"
+          answer={`${BRAND.summary} The company behind it is ${BRAND.legalName}, registered in Telangana. ${BRAND.disambiguation}`}
+          facts={[
+            { label: "Brand", value: "Nutri Greenz (also written NutriGreenz)" },
+            { label: "Company", value: BRAND.legalName },
+            { label: "CIN", value: BRAND.cin },
+            ...(BRAND.fssai ? [{ label: "FSSAI licence", value: BRAND.fssai }] : []),
+            { label: "We sell", value: "Cold-pressed oils, A2 and bilona ghee, raw honey", href: "/shop" },
+            { label: "Office", value: "Prashanth Nagar, Kukatpally, Hyderabad, Telangana 500072" },
+            { label: "Delivery", value: "Across Hyderabad" },
+            { label: "Contact", value: `${BRAND.telephone} · ${BRAND.email}`, href: "/contact" },
+          ]}
+        />
+      </Section>
+
       {/* Our story */}
-      <Section eyebrow="Our story" heading="How Nutrigreenz began">
+      <Section eyebrow="Our story" heading="How Nutri Greenz began">
         <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
           <p>
             {

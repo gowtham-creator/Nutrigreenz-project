@@ -274,7 +274,7 @@ export default function ProfilePage() {
             </span>
             <div>
               <h2 className="font-display text-[22px] leading-none text-ng-forest-deep">Account details</h2>
-              <p className="mt-1 text-[13px] text-ng-ink-soft">The basics on your Nutrigreenz account.</p>
+              <p className="mt-1 text-[13px] text-ng-ink-soft">The basics on your Nutri Greenz account.</p>
             </div>
           </div>
 

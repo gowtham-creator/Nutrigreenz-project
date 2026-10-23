@@ -132,6 +132,16 @@ function mapVariantOption(v: ProductVariantRecord, promoPercent = 0): ProductVar
  * for surfaces that show an explicit sale chip. With no applicable promo the
  * card is identical to before (no `mrp`, no promo fields).
  */
+/** The newest of a set of ISO timestamps, ignoring blanks and bad values. */
+function latestIso(values: readonly (string | null | undefined)[]): string | undefined {
+  let best: number | null = null;
+  for (const v of values) {
+    const t = v ? Date.parse(v) : NaN;
+    if (!Number.isNaN(t) && (best === null || t > best)) best = t;
+  }
+  return best === null ? undefined : new Date(best).toISOString();
+}
+
 export function mapRecordToProductCard(
   record: ProductRecord,
   categorySlug: string | null,
@@ -237,6 +247,7 @@ export function mapRecordToProductCard(
      * shopper no reason to choose between them.
      */
     description: record.description?.trim() || undefined,
+    updatedAt: latestIso([record.updatedAt, ...activeVariants.map((v) => v.updatedAt)]),
     tags: tag ? [tag] : [],
     variants: options,
     promoPercent: hasPromo ? promoPercent : undefined,

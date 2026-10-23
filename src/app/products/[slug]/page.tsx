@@ -30,12 +30,14 @@ import { getPdpContent } from "@/components/ng/pdp/pdp-content";
 import { getProductStory } from "@/components/ng/pdp/pdp-story";
 import { galleryPanelsFor, nutritionBySizeFor } from "@/components/ng/pdp/product-gallery";
 import { getCategoryTheme } from "@/lib/category-theme";
-import { breadcrumbJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, pageMeta } from "@/lib/seo";
+import { productDescription, productGroupJsonLd, productTitle, variantsBySize } from "@/lib/product-seo";
+import { productAnswer } from "@/lib/category-guides";
+import { AnswerBlock } from "@/components/ng/answer-block";
 import { JsonLd } from "@/components/ng/json-ld";
 import { freeDeliveryThreshold } from "@/lib/free-delivery";
 import { freeDeliveryOver } from "@/lib/free-delivery-copy";
 
-const SITE = "https://nutrigreenz.farm";
 const PLACEHOLDER = "/images/placeholder.svg";
 /** Reuse the storefront's "harvest" coupon deal across PDP offer/best-price strips. */
 const COUPON_CODE = "HARVEST10";
@@ -252,31 +254,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const { categoryId } = getPdpContent(p);
   const cat = getCategoryMeta(p, categoryId);
-  const title = `${p.title} · Nutri Greenz`;
   // No rating here: the storefront star counts are not customer reviews yet.
   const freeFrom = await freeDeliveryThreshold();
-  const description = `Buy ${p.title} (${p.unit ?? cat.title}) online from Nutri Greenz in Hyderabad. Single-origin, lab-tested and traceable to the farm. Free delivery ${freeDeliveryOver(freeFrom)}.`;
-  const url = `${SITE}/products/${p.slug}`;
-
-  return {
-    title,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: "website",
-      url,
-      title,
-      description,
-      siteName: "Nutri Greenz",
-      images: [{ url: p.image || PLACEHOLDER, alt: p.title }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [p.image || PLACEHOLDER],
-    },
-  };
+  const meta = pageMeta({
+    title: productTitle(p),
+    description: productDescription(p, cat.slug, freeDeliveryOver(freeFrom)),
+    path: `/products/${p.slug}`,
+    image: p.image || PLACEHOLDER,
+  });
+  // The layout's title template is not used, so the brand suffix in
+  // productTitle() is the whole title; `absolute` keeps it that way.
+  return { ...meta, title: { absolute: productTitle(p) } };
 }
 
 /* ---------------------------------- page ---------------------------------- */
@@ -389,36 +377,34 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ...PLACEHOLDER_SLOTS.map((slot) => ({ src: PLACEHOLDER, ...slot })),
         ];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: p.title,
-    image: [`${SITE}${p.image || PLACEHOLDER}`],
-    description: intro,
-    sku: p.id,
-    brand: { "@type": "Brand", name: "Nutri Greenz" },
-    category: cat.title,
-    offers: {
-      "@type": "Offer",
-      url: `${SITE}/products/${p.slug}`,
-      priceCurrency: "INR",
-      price: p.price,
-      availability: outOfStock
-        ? "https://schema.org/OutOfStock"
-        : "https://schema.org/InStock",
-      itemCondition: "https://schema.org/NewCondition",
-    },
-  };
+  const answer = productAnswer(p, cat.slug);
+  const freeFrom = await freeDeliveryThreshold();
+  const sizeLabels = variantsBySize(p).map((v) => v.label);
+  const facts = [
+    ...(sizeLabels.length > 0 ? [{ label: "Sizes", value: sizeLabels.join(", ") }] : []),
+    { label: "Category", value: cat.title, href: `/shop/${cat.slug}` },
+    { label: "Sold by", value: "Nutri Greenz, Kukatpally, Hyderabad", href: "/about" },
+    { label: "Delivery", value: `Across Hyderabad, free ${freeDeliveryOver(freeFrom)}` },
+    { label: "Quality", value: "Every lot lab-tested before it ships", href: "/lab" },
+  ];
+
+  const jsonLd = productGroupJsonLd({
+    product: p,
+    description: answer?.answer ?? intro,
+    categoryTitle: cat.title,
+    image: p.image || PLACEHOLDER,
+  });
 
   return (
     <PageShell>
       {/* Best-effort PDP view ping — records one product_views row for analytics. */}
       <ViewPing productId={p.id} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Home", path: "/" },
           { name: "Shop", path: "/shop" },
+          { name: cat.title, path: `/shop/${cat.slug}` },
           { name: p.title, path: `/products/${p.slug}` },
         ])}
       />
@@ -544,6 +530,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </Section>
+
+      {/* 3a · Plain-language answer + facts, for shoppers and for search */}
+      {answer ? (
+        <Section className="!pt-0 !pb-12 md:!pb-16">
+          <AnswerBlock question={answer.question} answer={answer.answer} facts={facts} />
+        </Section>
+      ) : null}
 
       {/* 3b · Editorial story blocks — only when the category has story content */}
       {story ? (

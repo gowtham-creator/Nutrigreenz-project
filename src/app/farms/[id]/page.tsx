@@ -8,7 +8,7 @@ import { ProductCard } from "@/components/ng/product-card";
 import { Reveal } from "@/components/ng/motion";
 import { PRODUCTS } from "@/components/ng/data";
 import { getFarm, listFarms } from "@/lib/content";
-import { pageMeta } from "@/lib/seo";
+import { pageMeta, fitTitle } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const revalidate = 60;
@@ -27,7 +27,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!farm) return { title: "Farm not found · Nutri Greenz", robots: { index: false } };
   const story = (farm.story ?? "").replace(/\s+/g, " ").trim();
   return pageMeta({
-    title: `${farm.name}, ${farm.region} · Nutri Greenz farms`,
+    title: fitTitle(
+      `${farm.name}, ${farm.region} · Nutri Greenz farms`,
+      `${farm.name}, ${farm.region.split(",")[0].trim()} · Nutri Greenz`,
+      `${farm.name} · Nutri Greenz`,
+      farm.name,
+    ),
     description: story ? (story.length > 155 ? `${story.slice(0, 152).trimEnd()}...` : story) : `${farm.name} in ${farm.region}, a Nutri Greenz partner farm.`,
     path: `/farms/${farm.id}`,
     image: farm.image,

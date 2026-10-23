@@ -94,6 +94,13 @@ export interface ProductCard {
    * nowhere, while every product in a category showed the same paragraph.
    */
   description?: string;
+  /**
+   * When the product or any of its active variants last changed (ISO).
+   *
+   * Feeds the sitemap's <lastmod>, which has to be a real edit date: stamping
+   * the build time on every URL teaches crawlers to ignore the field.
+   */
+  updatedAt?: string;
 }
 
 export interface Category {

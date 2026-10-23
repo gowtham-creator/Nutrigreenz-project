@@ -1,6 +1,20 @@
 import Link from "next/link";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
+import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
+
+// A page of links: useful to people and to crawlers following them, but not a
+// result anyone searches for. It used to inherit the home page's title and
+// description, which made it a duplicate of the home page.
+export const metadata: Metadata = {
+  ...pageMeta({
+    title: "Sitemap · Nutri Greenz",
+    description: "Every page on nutrigreenz.farm in one list: the shop, our partner farms, the journal, quality and traceability, help and policies.",
+    path: "/sitemap",
+  }),
+  robots: { index: false, follow: true },
+};
 
 interface Node { label: string; href?: string; children?: Node[]; note?: string }
 
@@ -114,7 +128,7 @@ export default function SitemapPage() {
     <PageShell>
       <PageHero
         eyebrow="Information architecture"
-        title={<>The full <em className="italic text-ng-leaf">Nutrigreenz map.</em></>}
+        title={<>The full <em className="italic text-ng-leaf">Nutri Greenz map.</em></>}
         description="Every route in the system. Storefront, admin, captain PWA, and community bundle. Click any node to jump to that page."
       />
 

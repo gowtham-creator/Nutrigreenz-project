@@ -33,9 +33,9 @@ const hasTag =
     p.tags?.some((t) => tags.includes(t)) ?? false;
 
 export const metadata = pageMeta({
-  title: "Nutri Greenz · Cold-pressed oils, A2 ghee and raw honey",
+  title: "Cold-Pressed Oils, A2 Ghee & Raw Honey | Nutri Greenz",
   description:
-    "Cold-pressed oils, A2 bilona ghee, raw honey and millets from partner farms, lab-tested and traceable to the farm, delivered across Hyderabad.",
+    "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, A2 and bilona ghee and raw honey from partner farms. Lab-tested, traceable, delivered home.",
   path: "/",
 });
 
@@ -88,7 +88,7 @@ export default async function Home() {
     <main className="bg-page-warmth text-ng-ink">
       <PromoBar />
       <Header />
-      <h1 className="sr-only">Nutri Greenz: cold-pressed oils, A2 bilona ghee and raw honey from partner farms, delivered in Hyderabad</h1>
+      <h1 className="sr-only">Nutri Greenz: cold-pressed oils, A2 ghee, bilona ghee and raw honey from partner farms, delivered in Hyderabad</h1>
       <Hero promo={heroPromo} />
       <AssuranceStrip />
       <ShopByCategory

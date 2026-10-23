@@ -40,7 +40,7 @@ export default function LabPage() {
       <PageHero
         image="/images/lab/lab-hero.webp"
         tone="forest"
-        eyebrow="The Nutrigreenz lab desk"
+        eyebrow="The Nutri Greenz lab desk"
         title={<>Every batch, checked by <em className="italic text-ng-clay">three labs.</em></>}
         description="We do not sell anything we have not tested. Every lot goes through eight checks across two NABL-accredited labs plus our in-house QC. If any check fails, the lot does not ship."
       />

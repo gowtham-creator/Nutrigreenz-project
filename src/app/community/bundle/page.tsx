@@ -27,7 +27,7 @@ const ACTIVE_BUNDLES = [
 ];
 
 const HOW = [
-  { n: "01", t: "Join a pod near you", b: "Each pod is run by a Nutrigreenz Captain, a vetted resident in your neighbourhood who collects everyone's orders." },
+  { n: "01", t: "Join a pod near you", b: "Each pod is run by a Nutri Greenz Captain, a vetted resident in your neighbourhood who collects everyone's orders." },
   { n: "02", t: "Order from your pod's inventory", b: "Each pod gets its own lot. The quality is the same, and the price is 8 to 14% lower because there is no last-mile delivery cost." },
   { n: "03", t: "Pick up from the Captain's home", b: "When the cycle closes, walk over to the Captain's address. There's no delivery slot to wait for and no box to throw away." },
 ];

@@ -3,13 +3,7 @@ import { Button } from "./button";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { FSSAI_LICENCE } from "@/components/ng/fssai-mark";
-
-const SOCIALS = [
-  { name: "instagram", icon: "simple-icons:instagram", label: "Instagram" },
-  { name: "facebook", icon: "simple-icons:facebook", label: "Facebook" },
-  { name: "youtube", icon: "simple-icons:youtube", label: "YouTube" },
-  { name: "x", icon: "simple-icons:x", label: "X" },
-] as const;
+import { BRAND, SOCIAL_PROFILES } from "@/lib/seo";
 
 const NAV_GROUPS = [
   {
@@ -200,21 +194,33 @@ export function Footer() {
                     space to break at and is wider than a mobile column. */}
                 <p className="break-words">customersupport@nutrigreenz.farm</p>
               </address>
-              <div className="flex flex-wrap gap-3">
-                {SOCIALS.map((s) => (
-                  <Link
-                    key={s.name}
-                    href={`https://${s.name}.com/nutrigreenz`}
-                    aria-label={s.label}
-                    className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
-                  >
-                    <Icon name={s.icon} size={16} label={s.label} />
-                  </Link>
-                ))}
-              </div>
+              {/* Only the brand's own profiles. These used to be guessed handles
+                  (instagram.com/nutrigreenz and so on), one of which belongs to
+                  an unrelated account; see SOCIAL_PROFILES in lib/seo. */}
+              {SOCIAL_PROFILES.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {SOCIAL_PROFILES.map((s) => (
+                    <a
+                      key={s.href}
+                      href={s.href}
+                      rel="me noopener"
+                      target="_blank"
+                      aria-label={s.label}
+                      className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-full border border-ng-cream/20 hover:border-ng-clay text-ng-cream hover:text-ng-clay transition-colors"
+                    >
+                      <Icon name={s.icon} size={16} label={s.label} />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
+
+        {/* Who we are, in one sentence, on every page. Search engines and AI
+            assistants were confusing the brand with similarly named businesses;
+            the same description sits in the structured data and /llms.txt. */}
+        <p className="mb-6 max-w-3xl text-[13px] leading-relaxed text-ng-cream/70">{BRAND.summary}</p>
 
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-[12px] text-ng-cream/70">
@@ -249,11 +255,11 @@ export function Footer() {
         */}
         <p className="mt-5 border-t border-ng-cream/12 pt-4 text-[11.5px] leading-relaxed text-ng-cream/55">
           Nutri Greenz™ and the leaf device are trademarks of Nutri Greenz Farm
-          Technologies Pvt. Ltd. · FSSAI Lic. {FSSAI_LICENCE} · All prices are
-          inclusive of GST · Registered office: HITEC City, Hyderabad, Telangana
-          500072 · Grievance and customer care:{" "}
-          <a href="mailto:care@nutrigreenz.in" className="underline underline-offset-2 hover:text-ng-cream">
-            care@nutrigreenz.in
+          Technologies Pvt. Ltd. · CIN {BRAND.cin} · FSSAI Lic. {FSSAI_LICENCE} ·
+          All prices are inclusive of GST · Office: Prashanth Nagar, Kukatpally,
+          Hyderabad, Telangana 500072 · Grievance and customer care:{" "}
+          <a href={`mailto:${BRAND.email}`} className="underline underline-offset-2 hover:text-ng-cream">
+            {BRAND.email}
           </a>
         </p>
       </div>

@@ -13,8 +13,8 @@ import { pageMeta } from "@/lib/seo";
 import { ProductGridFallback } from "@/components/ng/shop/product-grid-fallback";
 
 export const metadata: Metadata = pageMeta({
-  title: "Shop the pantry · Nutri Greenz",
-  description: "Browse the whole pantry: cold-pressed oils, A2 ghee, raw honey, millets, spices and more, all single-origin, lab-tested and fairly sourced.",
+  title: "Shop Cold-Pressed Oils, Ghee & Honey | Nutri Greenz",
+  description: "Shop cold-pressed oils, A2 and bilona ghee and raw honey online in Hyderabad. Single-origin, lab-tested and traceable to the farm it came from.",
   path: "/shop",
 });
 
