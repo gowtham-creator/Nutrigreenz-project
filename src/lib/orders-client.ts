@@ -176,6 +176,7 @@ export function formatOrderDate(iso: string): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 }
 
@@ -186,6 +187,7 @@ export function formatOrderDateTime(iso: string): string {
     month: "short",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "Asia/Kolkata",
   });
 }
 

@@ -1,10 +1,10 @@
 /**
- * The order email's "Payment" line.
+ * The order email's "Payment" line and order date.
  *
  * Driven through sendOrderPlacedEmail with the transport and every side channel
  * mocked; the rendered HTML is read back from what would have been sent.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
   sendEmail: vi.fn(),
@@ -95,5 +95,26 @@ describe("order email - Payment line", () => {
   it("says Pending for an unpaid order", async () => {
     const line = await paymentLineFor({ paymentStatus: "pending", paidAt: null });
     expect(line).toContain("Pending");
+  });
+});
+
+describe("order email - date", () => {
+  // Production servers run in UTC; run this the same way on any machine.
+  const tz = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = "UTC";
+  });
+  afterAll(() => {
+    if (tz === undefined) delete process.env.TZ;
+    else process.env.TZ = tz;
+  });
+
+  it("dates an order placed after midnight in India by the India date", async () => {
+    // 19:05 UTC on 23 October is 00:35 IST on 24 October.
+    m.getOrder.mockResolvedValue({ ...ORDER, placedAt: "2026-10-23T19:05:00Z", createdAt: "2026-10-23T19:05:00Z" });
+    await sendOrderPlacedEmail("ord-1");
+    const html = m.sendEmail.mock.calls.at(-1)?.[0].html as string;
+    expect(html).toContain("24 October 2026");
+    expect(html).not.toContain("23 October 2026");
   });
 });

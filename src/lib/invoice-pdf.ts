@@ -84,9 +84,10 @@ function safe(text: string): string {
 function longDate(iso: string | null): string {
   if (!iso) return "-";
   const d = new Date(iso);
+  // The server runs in UTC; the invoice carries the date in India.
   return Number.isNaN(d.getTime())
     ? "-"
-    : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 function snap(src: Record<string, unknown> | null, key: string): string {

@@ -233,10 +233,13 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const isCod = order.paymentMethod === "cod";
   const gst = gstFor(order);
 
+  // The server runs in UTC; an order placed after midnight in India is dated
+  // that day, not the day before.
   const when = new Date(order.placedAt ?? order.createdAt).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 
   const itemRows = order.items
