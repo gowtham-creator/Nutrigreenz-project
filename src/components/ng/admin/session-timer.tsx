@@ -28,16 +28,17 @@ import { cn } from "@/lib/utils";
  * unattended machine could live indefinitely as long as anything nudged the
  * page.
  *
- * The session now ends 30 minutes after sign-in, whatever happens in between.
+ * The session now ends 45 minutes after sign-in (ADMIN_SESSION_TTL_SECONDS),
+ * whatever happens in between.
  * Nothing an operator does extends it. That is a real ceiling on how long a
  * stolen laptop, a shared desk or a forgotten tab stays useful, and it is the
  * behaviour a CERT-In reviewer expects to find on an admin surface.
  *
  * ── Why the deadline comes from a cookie ──────────────────────────────────
  *
- * Starting a 30-minute clock when this component mounts would restart the
+ * Starting a 45-minute clock when this component mounts would restart the
  * session on every refresh, every new tab and every hard navigation — the
- * timer would say 30:00 while the real session had four minutes left. So the
+ * timer would say 45:00 while the real session had four minutes left. So the
  * login routes publish the absolute deadline in a readable `ng_admin_exp`
  * cookie and this counts down to THAT. Refresh, reopen, or open a second tab:
  * every one of them shows the same remaining time, because they are all

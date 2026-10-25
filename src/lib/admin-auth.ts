@@ -97,7 +97,7 @@ export function getAdminRole(): AdminRole | null {
  *
  * The countdown reads this rather than starting its own clock at mount, so a
  * refresh, a new tab or a navigation all show the same remaining time — the
- * session ends when it ends, not a fresh 30 minutes after the last page load.
+ * session ends when it ends, not a fresh 45 minutes after the last page load.
  */
 export function getAdminSessionExpiry(): number | null {
   if (typeof document === "undefined") return null;

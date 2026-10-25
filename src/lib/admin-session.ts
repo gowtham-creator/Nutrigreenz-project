@@ -23,14 +23,15 @@
 export type AdminRole = "admin" | "superadmin";
 
 /**
- * Admin session idle window, in seconds. The `ng_admin` cookie (and the readable
- * email/role cookies) are set with this maxAge at login and SLID on activity via
- * `/api/admin/heartbeat` + on navigation, so an active operator never lapses.
- * After this long with no activity the cookies expire on their own and the proxy
- * bounces the next admin request to the login screen. Single source of truth —
- * the login routes and the client idle guard all read this window.
+ * Admin session lifetime, in seconds, for every operator role (admin and super
+ * admin, which is what the owner signs in as). Fixed from sign-in: activity
+ * does not extend it (see components/ng/admin/session-timer.tsx). The expiry is
+ * signed into the `ng_admin` token and checked on every request, and published
+ * in `ng_admin_exp` for the header countdown. Single source of truth: the login
+ * routes, the token and the countdown all read this. 45 minutes at the owner's
+ * request (25 Oct 2026; it was 35).
  */
-export const ADMIN_SESSION_TTL_SECONDS = 35 * 60;
+export const ADMIN_SESSION_TTL_SECONDS = 45 * 60;
 
 /**
  * Cookie attributes for the admin session cookies.
@@ -44,7 +45,7 @@ export const ADMIN_SESSION_TTL_SECONDS = 35 * 60;
  * skipped. For a portal that moves money and holds customer records, closing
  * the browser should mean signing out.
  *
- * The 35-minute idle window is NOT lost by this. It never depended on the
+ * The 45-minute window is NOT lost by this. It never depended on the
  * cookie's lifetime: `expiresAt` is inside the signed token and is checked on
  * every verify, so an idle session is rejected server-side whether or not the
  * cookie is still present. Removing maxAge takes away a way to stay signed in,
