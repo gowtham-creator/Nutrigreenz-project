@@ -24,6 +24,7 @@ import {
   releaseRedeemedPoints,
   reburnReleasedPoints,
   removeCouponUsesForOrder,
+  revokeEarnedPoints,
 } from "@/lib/rewards";
 
 function useDb(respond: Responder) {
@@ -134,6 +135,43 @@ describe("reburnReleasedPoints", () => {
     expect(await reburnReleasedPoints("cust-1", "ord-1")).toBe(120);
     expect(inserts(fake.ops, "loyalty_ledger")).toEqual([
       { customer_id: "cust-1", order_id: "ord-1", delta_points: -120, reason: "order_redeem" },
+    ]);
+  });
+});
+
+describe("revokeEarnedPoints — a cancelled order's earned points", () => {
+  /** This order's earn and cancel rows, then the customer's live balance. */
+  const useLedger = (orderRows: { delta_points: number }[], balance: number) =>
+    useDb((op) => {
+      if (op.table !== "loyalty_ledger" || op.action !== "select") return undefined;
+      return filterOn(op, "order_id") ? { data: orderRows } : { data: [{ delta_points: balance }] };
+    });
+
+  it("takes back what the order earned, as an order_cancel row", async () => {
+    const fake = useLedger([{ delta_points: 220 }], 1000);
+
+    expect(await revokeEarnedPoints("cust-1", "ord-1")).toBe(220);
+    expect(inserts(fake.ops, "loyalty_ledger")).toEqual([
+      { customer_id: "cust-1", order_id: "ord-1", delta_points: -220, reason: "order_cancel" },
+    ]);
+    // Reads only earn and cancel rows, so a redeemed-points give-back can't skew it.
+    const read = fake.ops.find((o) => o.table === "loyalty_ledger" && filterOn(o, "order_id"));
+    expect(filterOn(read!, "reason", "in")?.value).toEqual(["order_earn", "order_cancel"]);
+  });
+
+  it("is idempotent: a second cancel takes nothing more", async () => {
+    const fake = useLedger([{ delta_points: 220 }, { delta_points: -220 }], 1000);
+
+    expect(await revokeEarnedPoints("cust-1", "ord-1")).toBe(0);
+    expect(inserts(fake.ops, "loyalty_ledger")).toEqual([]);
+  });
+
+  it("never drives the balance negative: points already spent stay spent", async () => {
+    const fake = useLedger([{ delta_points: 220 }], 50);
+
+    expect(await revokeEarnedPoints("cust-1", "ord-1")).toBe(50);
+    expect(inserts(fake.ops, "loyalty_ledger")).toEqual([
+      { customer_id: "cust-1", order_id: "ord-1", delta_points: -50, reason: "order_cancel" },
     ]);
   });
 });

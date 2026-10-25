@@ -28,13 +28,14 @@ export interface OrdersInitialData {
 
 /**
  * Filter chips: "all", "paid" (every order whose payment has been received,
- * whatever its fulfilment stage), then each fulfilment stage.
+ * whatever its fulfilment stage), then each fulfilment stage, then cancelled.
  */
 type StatusFilter = "all" | "paid" | OrderStatus;
 const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All orders" },
   { key: "paid", label: "Paid" },
   ...ORDER_STATUS_FLOW.map((s) => ({ key: s, label: STATUS_LABEL[s] })),
+  { key: "cancelled", label: STATUS_LABEL.cancelled },
 ];
 
 const COLS = "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.6fr)_minmax(0,1.4fr)_minmax(0,0.5fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.6fr)] gap-4";
@@ -109,7 +110,8 @@ export function OrdersClient({ initialData }: { initialData: OrdersInitialData |
   // Stat tiles from the current page (server is the source of truth for `total`).
   const stats = useMemo(() => {
     const count = (s: OrderStatus) => orders.filter((o) => o.status === s).length;
-    const pendingPay = orders.filter((o) => o.paymentStatus === "pending").length;
+    // A cancelled cash-on-delivery order stays "pending" but is owed nothing.
+    const pendingPay = orders.filter((o) => o.paymentStatus === "pending" && o.status !== "cancelled").length;
     return {
       placed: count("placed"),
       toPack: count("confirmed") + count("packed"),

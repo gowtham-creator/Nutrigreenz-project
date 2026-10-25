@@ -24,6 +24,7 @@ const STATUSES: readonly OrderStatus[] = [
   "packed",
   "shipped",
   "delivered",
+  "cancelled",
 ];
 const PAYMENT_STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed"];
 

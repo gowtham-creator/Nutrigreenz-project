@@ -13,9 +13,10 @@
  * recomputed here from the persisted variant/product prices + the live commerce
  * rules — the client-supplied totals are never trusted.
  *
- * Status is forward-only (placed → confirmed → packed → shipped → delivered).
- * There is no cancel/refund transition (§3.9 no-cancellation); any backward or
- * lateral move is rejected.
+ * Status is forward-only (placed → confirmed → packed → shipped → delivered);
+ * any backward or lateral move is rejected. The one exit is {@link cancelOrder}:
+ * an admin can cancel an order that has not been delivered, which gives back
+ * what it held. This replaces §3.9 no-cancellation (owner, 25 Oct 2026).
  */
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -29,6 +30,7 @@ import {
   removeCouponUsesForOrder,
   releaseRedeemedPoints,
   reburnReleasedPoints,
+  revokeEarnedPoints,
   CouponInvalidError,
 } from "@/lib/rewards";
 import {
@@ -72,21 +74,26 @@ export class UnpricedItemsError extends Error {
 
 /* ── status model ─────────────────────────────────────────────────────── */
 
-/** Fulfilment lifecycle — forward-only, no cancelled/refunded (§3.9). */
+/** Fulfilment lifecycle (forward-only), plus the terminal `cancelled`. */
 export type OrderStatus =
   | "placed"
   | "confirmed"
   | "packed"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
 
 /** How an order is paid. Mirrors the `orders.payment_method` check constraint. */
 export type PaymentMethod = "upi" | "cod";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
-/** Forward-only status pipeline; index in this array is the rank. */
-export const ORDER_STATUS_FLOW: readonly OrderStatus[] = [
+/** The pipeline stages, i.e. every status except the terminal `cancelled`. */
+export type FulfilmentStatus = Exclude<OrderStatus, "cancelled">;
+
+/** Forward-only status pipeline; index in this array is the rank. `cancelled`
+ *  is deliberately absent: it is reached only through {@link cancelOrder}. */
+export const ORDER_STATUS_FLOW: readonly FulfilmentStatus[] = [
   "placed",
   "confirmed",
   "packed",
@@ -95,8 +102,11 @@ export const ORDER_STATUS_FLOW: readonly OrderStatus[] = [
 ];
 
 function statusRank(status: string): number {
-  return ORDER_STATUS_FLOW.indexOf(status as OrderStatus);
+  return ORDER_STATUS_FLOW.indexOf(status as FulfilmentStatus);
 }
+
+/** Statuses an order can be cancelled from. Delivered is a return, not a cancel. */
+export const CANCELLABLE_STATUSES: readonly OrderStatus[] = ["placed", "confirmed", "packed", "shipped"];
 
 /** Whether `next` is a strictly-forward move from `current`. */
 export function isForwardTransition(current: string, next: string): boolean {
@@ -223,6 +233,7 @@ const ITEM_COLS =
 const EVENT_COLS = "id, order_id, status, note, at, by";
 
 function toStatus(raw: string): OrderStatus {
+  if (raw === "cancelled") return raw;
   return statusRank(raw) >= 0 ? (raw as OrderStatus) : "placed";
 }
 
@@ -940,6 +951,91 @@ export async function advanceOrderStatus(
   return order ? { ok: true, order } : { ok: false, error: "not-found" };
 }
 
+/* ── cancellation (admin only) ────────────────────────────────────────── */
+
+export interface CancelOrderResult {
+  ok: boolean;
+  order?: OrderWithDetail;
+  error?: "not-found" | "not-cancellable" | "payment-pending" | "unavailable";
+}
+
+/**
+ * Cancel an order that has not been delivered, and give back what it held.
+ *
+ * The status change is a compare-and-set on the cancellable statuses, so two
+ * operators pressing Cancel together cancel it once and release once. The
+ * release then claims `holds_released_at` like {@link releaseOrderHolds}: a
+ * failed online order whose holds were already given back gives nothing twice.
+ * Points the order earned are taken back as an `order_cancel` ledger row.
+ *
+ * An online order whose payment is still pending is refused: the bank could
+ * confirm it after the cancel, and the paid path would take the holds again
+ * for an order nobody will fulfil. It can be cancelled once it settles.
+ *
+ * Money is not moved here. A paid online order is refunded by a person in the
+ * gateway; the cancellation email tells the customer the refund is coming.
+ *
+ * Needs migration 20261025120000_order_cancellation.sql; without it the
+ * status check rejects 'cancelled' and this returns `unavailable`.
+ */
+export async function cancelOrder(
+  idOrNumber: string,
+  byEmail: string,
+  reason?: string | null,
+): Promise<CancelOrderResult> {
+  const current = await getOrder(idOrNumber);
+  if (!current) return { ok: false, error: "not-found" };
+  if (!CANCELLABLE_STATUSES.includes(current.status)) {
+    return { ok: false, error: "not-cancellable" };
+  }
+  if (current.paymentMethod === "upi" && current.paymentStatus === "pending") {
+    return { ok: false, error: "payment-pending" };
+  }
+
+  const db = supabaseAdmin();
+  const { data: won, error } = await db
+    .from("orders")
+    .update({ status: "cancelled" })
+    .eq("id", current.id)
+    .in("status", [...CANCELLABLE_STATUSES])
+    .select("id");
+  if (error) {
+    console.error(`[orders] could not cancel ${current.orderNumber}: ${error.message}`);
+    return { ok: false, error: "unavailable" };
+  }
+  if (!won || won.length === 0) return { ok: false, error: "not-cancellable" };
+
+  await db.from("order_status_events").insert({
+    order_id: current.id,
+    status: "cancelled",
+    by: byEmail.trim() || "system",
+    note: reason?.trim() || null,
+  });
+
+  const { data: claimed, error: claimErr } = await db
+    .from("orders")
+    .update({ holds_released_at: new Date().toISOString() })
+    .eq("id", current.id)
+    .is("holds_released_at", null)
+    .select("id");
+  if (claimErr) {
+    console.error(`[orders] could not release holds for cancelled ${current.orderNumber}: ${claimErr.message}`);
+  } else if (claimed && claimed.length > 0) {
+    await giveBackHolds(current.id, current.customerId);
+  }
+
+  if (current.customerId) {
+    try {
+      await revokeEarnedPoints(current.customerId, current.id);
+    } catch (err) {
+      console.error(`[orders] points revoke failed for ${current.orderNumber}:`, err);
+    }
+  }
+
+  const order = await getOrder(current.id);
+  return order ? { ok: true, order } : { ok: false, error: "not-found" };
+}
+
 /* ── payment status (set by the payment seam, never the client) ───────── */
 
 /*
@@ -1143,7 +1239,18 @@ export async function releaseOrderHolds(orderId: string): Promise<boolean> {
   }
   const row = (claimed as { id: string; customer_id: string | null }[] | null)?.[0];
   if (!row) return false;
+  await giveBackHolds(orderId, row.customer_id);
+  return true;
+}
 
+/**
+ * Return an order's stock reservation, coupon use and redeemed points. Only
+ * ever called by the winner of a `holds_released_at` claim, so it runs once
+ * per order. Each part is attempted independently, so one failing does not
+ * strand the others.
+ */
+async function giveBackHolds(orderId: string, customerId: string | null): Promise<void> {
+  const db = supabaseAdmin();
   try {
     const lines = await heldStockLines(orderId);
     if (lines.length > 0) {
@@ -1162,14 +1269,13 @@ export async function releaseOrderHolds(orderId: string): Promise<boolean> {
     console.error(`[orders] coupon release failed for ${orderId}:`, err);
   }
 
-  if (row.customer_id) {
+  if (customerId) {
     try {
-      await releaseRedeemedPoints(row.customer_id, orderId);
+      await releaseRedeemedPoints(customerId, orderId);
     } catch (err) {
       console.error(`[orders] points release failed for ${orderId}:`, err);
     }
   }
-  return true;
 }
 
 /**

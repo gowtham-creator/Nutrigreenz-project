@@ -18,9 +18,9 @@ vi.mock("@/lib/notification-templates", () => ({ render: vi.fn(() => ({ body: ""
 vi.mock("@/lib/sms", () => ({ sendSms: vi.fn() }));
 vi.mock("@/lib/whatsapp", () => ({ sendWhatsApp: vi.fn() }));
 vi.mock("@/lib/invoice-pdf", () => ({ billingAttachments: vi.fn(async () => []) }));
-vi.mock("@/lib/admin-order-alerts", () => ({ sendAdminOrderAlert: vi.fn() }));
+vi.mock("@/lib/admin-order-alerts", () => ({ sendAdminOrderAlert: vi.fn(), sendAdminOrderCancelledAlert: vi.fn() }));
 
-import { sendOrderPlacedEmail } from "@/lib/order-emails";
+import { sendOrderCancelledEmail, sendOrderPlacedEmail } from "@/lib/order-emails";
 
 const ORDER = {
   id: "ord-1",
@@ -116,5 +116,40 @@ describe("order email - date", () => {
     const html = m.sendEmail.mock.calls.at(-1)?.[0].html as string;
     expect(html).toContain("24 October 2026");
     expect(html).not.toContain("23 October 2026");
+  });
+});
+
+describe("order email - cancelled", () => {
+  const cancelled = (overrides: Record<string, unknown> = {}) => ({
+    ...ORDER,
+    status: "cancelled",
+    events: [
+      { id: "e1", orderId: "ord-1", status: "placed", note: "Order placed", at: "2026-10-01T10:00:00Z", by: "system" },
+      { id: "e2", orderId: "ord-1", status: "cancelled", note: "The ghee batch failed our lab test.", at: "2026-10-01T12:00:00Z", by: "ops@nutrigreenz.farm" },
+    ],
+    ...overrides,
+  });
+  const customerMail = () =>
+    m.sendEmail.mock.calls.map((c) => c[0] as { to: string; subject: string; html: string }).find((c) => c.to === ORDER.userEmail);
+
+  it("tells the customer it's cancelled, why, and that a paid order is refunded", async () => {
+    m.getOrder.mockResolvedValue(cancelled());
+    await sendOrderCancelledEmail("ord-1");
+    const mail = customerMail();
+    expect(mail?.subject).toBe("Order NG-26-1001 cancelled · Nutri Greenz");
+    const text = mail!.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toContain("The ghee batch failed our lab test.");
+    expect(text).toContain("We'll refund ₹2,200.00 to the account you paid from");
+    expect(text).toContain("Shop again");
+    expect(text).not.toContain("Track your order");
+  });
+
+  it("tells a cash-on-delivery customer they haven't been charged", async () => {
+    m.getOrder.mockResolvedValue(cancelled({ paymentMethod: "cod", paymentStatus: "pending", paidAt: null }));
+    await sendOrderCancelledEmail("ord-1");
+    const text = customerMail()!.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(text).toContain("you haven't been charged");
+    expect(text).not.toContain("on delivery");
+    expect(text).not.toContain("refund");
   });
 });

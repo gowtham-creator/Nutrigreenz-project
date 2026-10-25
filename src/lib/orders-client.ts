@@ -7,13 +7,15 @@
  * shown here are exactly what the server persisted.
  */
 
-/** Customer-facing fulfilment lifecycle (mirrors the server, forward-only). */
+/** Customer-facing fulfilment lifecycle (mirrors the server, forward-only),
+ *  plus `cancelled`, which can end it from any stage before delivery. */
 export type OrderStatus =
   | "placed"
   | "confirmed"
   | "packed"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
@@ -120,6 +122,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   packed: "Packed",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 
 export function statusLabel(status: OrderStatus): string {
@@ -129,6 +132,8 @@ export function statusLabel(status: OrderStatus): string {
 /** Soft tint + dot classes for a fulfilment status pill (matches storefront). */
 export function statusTone(status: OrderStatus): { dot: string; pill: string } {
   switch (status) {
+    case "cancelled":
+      return { dot: "bg-ng-ink-soft", pill: "bg-ng-line text-ng-ink-muted" };
     case "delivered":
       return { dot: "bg-ng-green-bright", pill: "bg-ng-leaf/15 text-ng-forest" };
     case "shipped":

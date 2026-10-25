@@ -17,7 +17,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
   ORDER_STATUS_FLOW,
-  type OrderStatus,
+  type FulfilmentStatus,
   type PaymentStatus,
 } from "@/lib/orders";
 
@@ -29,7 +29,7 @@ export interface ReportRange {
 }
 
 export interface StatusBreakdownEntry {
-  status: OrderStatus;
+  status: FulfilmentStatus;
   orders: number;
   revenuePaise: number;
 }
@@ -266,7 +266,7 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
   let pendingOrderCount = 0;
   let failedRevenuePaise = 0;
   let failedOrderCount = 0;
-  const statusMap = new Map<OrderStatus, { orders: number; revenuePaise: number }>();
+  const statusMap = new Map<FulfilmentStatus, { orders: number; revenuePaise: number }>();
   const paymentMap = new Map<PaymentStatus, { orders: number; revenuePaise: number }>();
   const couponMap = new Map<string, { orders: number; discountPaise: number }>();
 
@@ -286,9 +286,9 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
       pendingOrderCount += 1;
     }
 
-    const status = (ORDER_STATUS_FLOW.includes(o.status as OrderStatus)
+    const status = (ORDER_STATUS_FLOW.includes(o.status as FulfilmentStatus)
       ? o.status
-      : "placed") as OrderStatus;
+      : "placed") as FulfilmentStatus;
     const s = statusMap.get(status) ?? { orders: 0, revenuePaise: 0 };
     s.orders += 1;
     s.revenuePaise += o.total_paise;

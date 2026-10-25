@@ -41,6 +41,12 @@ export async function POST(
   const order = await getOrder(id);
   if (!order) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
 
+  if (order.status === "cancelled") {
+    return Response.json(
+      { ok: false, error: "cancelled", message: "This order was cancelled, so there is nothing to collect." },
+      { status: 409 },
+    );
+  }
   if (order.paymentMethod !== "cod") {
     return Response.json(
       {

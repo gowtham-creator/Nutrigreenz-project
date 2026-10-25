@@ -55,6 +55,7 @@ function describeEntry(reason: string, orderId: string | null): { note: string; 
     return { note: orderId ? "Earned on an order" : "Points earned", icon: "order" };
   }
   if (reason === "order_redeem") return { note: "Redeemed at checkout", icon: "tag-price-bold" };
+  if (reason === "order_cancel") return { note: "Order cancelled", icon: "order" };
   return { note: "Adjustment", icon: "customers" };
 }
 

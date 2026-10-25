@@ -81,6 +81,29 @@ export interface AdminCustomerRow {
   createdAt: string;
   /** Most-recent `last_login_at` across all linked `users` rows, or null. */
   lastActive: string | null;
+  /** Orders placed by this customer, including under any merged duplicate. */
+  orderCount: number;
+  /** Order value across orders that were neither cancelled nor failed. */
+  spentPaise: number;
+  /** When their latest order was placed, or null. */
+  lastOrderAt: string | null;
+  /**
+   * The name on their latest order's delivery address. A customer who signed
+   * in by phone has no profile name, so without this they list as "Unnamed
+   * customer" and cannot be matched to the order they just placed.
+   */
+  orderName: string | null;
+}
+
+/** One order under a customer (admin view, newest first). */
+export interface CustomerOrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  totalPaise: number;
+  placedAt: string;
 }
 
 /** Full detail for one canonical customer. */
@@ -95,6 +118,8 @@ export interface AdminCustomerDetail {
    * captured (or once cleared). Read-only admin surface.
    */
   autoDetectedLocation: AutoDetectedLocation | null;
+  /** Every order they placed, newest first. */
+  orders: CustomerOrderSummary[];
 }
 
 /** A page of deduped customers plus the total count of LIVE canonical rows. */
@@ -167,6 +192,21 @@ const ADDRESS_COLS =
 const USER_COLS =
   "id, customer_id, firebase_uid, email, phone, full_name, photo_url, provider, last_login_at, created_at";
 
+const ORDER_COLS =
+  "id, order_number, customer_id, status, payment_status, payment_method, total_paise, placed_at, address_snapshot";
+
+interface OrderRow {
+  id: string;
+  order_number: string;
+  customer_id: string | null;
+  status: string;
+  payment_status: string;
+  payment_method: string;
+  total_paise: number;
+  placed_at: string;
+  address_snapshot: Record<string, unknown> | null;
+}
+
 const PROVIDER_ORDER: CustomerProvider[] = ["google", "phone"];
 
 /** Sort providers into a stable, human-friendly order (google before phone). */
@@ -199,6 +239,80 @@ function parseAutoDetectedLocation(raw: unknown): AutoDetectedLocation | null {
     lng: typeof r.lng === "number" ? r.lng : undefined,
     detectedAt: typeof r.detectedAt === "string" ? r.detectedAt : "",
   };
+}
+
+type Db = ReturnType<typeof supabaseAdmin>;
+
+/**
+ * The orders of each live customer in `ids`, newest first, keyed by the live id.
+ *
+ * Orders stay on the customer row they were placed under, and a merge leaves
+ * that row behind as a tombstone. Reading only the live id would hide every
+ * order placed before a merge, so tombstones merged into these ids count too.
+ */
+async function ordersByCustomer(db: Db, ids: string[]): Promise<Map<string, OrderRow[]>> {
+  const out = new Map<string, OrderRow[]>();
+  if (ids.length === 0) return out;
+  const owner = new Map<string, string>(ids.map((id) => [id, id]));
+  const { data: merged } = await db.from("customers").select("id, merged_into").in("merged_into", ids);
+  for (const m of (merged ?? []) as { id: string; merged_into: string }[]) owner.set(m.id, m.merged_into);
+
+  const { data } = await db
+    .from("orders")
+    .select(ORDER_COLS)
+    .in("customer_id", [...owner.keys()])
+    .order("placed_at", { ascending: false });
+  for (const o of (data ?? []) as OrderRow[]) {
+    const live = o.customer_id ? owner.get(o.customer_id) : undefined;
+    if (!live) continue;
+    const list = out.get(live) ?? [];
+    list.push(o);
+    out.set(live, list);
+  }
+  return out;
+}
+
+/** The order fields of a customer row, from their orders (newest first). */
+function orderFacts(orders: OrderRow[]): Pick<AdminCustomerRow, "orderCount" | "spentPaise" | "lastOrderAt" | "orderName"> {
+  let spentPaise = 0;
+  for (const o of orders) {
+    if (o.status !== "cancelled" && o.payment_status !== "failed") spentPaise += o.total_paise;
+  }
+  let orderName: string | null = null;
+  for (const o of orders) {
+    const a = o.address_snapshot ?? {};
+    const name = [a.fullName, a.name].find((v): v is string => typeof v === "string" && v.trim().length > 0);
+    if (name) {
+      orderName = name.trim();
+      break;
+    }
+  }
+  return { orderCount: orders.length, spentPaise, lastOrderAt: orders[0]?.placed_at ?? null, orderName };
+}
+
+/**
+ * Live customer ids whose orders match a search term: an order number, or the
+ * email, phone or delivery name on an order. Lets the team find a customer from
+ * the order in front of them. Empty on any error, so search never breaks.
+ */
+async function customerIdsFromOrders(db: Db, term: string): Promise<string[]> {
+  const t = term.replace(/[,()%*]/g, " ").trim();
+  if (!t) return [];
+  const { data, error } = await db
+    .from("orders")
+    .select("customer_id")
+    .or(
+      `order_number.ilike.%${t}%,user_email.ilike.%${t}%,user_phone.ilike.%${t}%,address_snapshot->>fullName.ilike.%${t}%`,
+    )
+    .not("customer_id", "is", null)
+    .limit(200);
+  if (error || !data) return [];
+  const ids = [...new Set((data as { customer_id: string }[]).map((r) => r.customer_id))];
+  if (ids.length === 0) return [];
+  const { data: rows } = await db.from("customers").select("id, merged_into").in("id", ids);
+  return [
+    ...new Set(((rows ?? []) as { id: string; merged_into: string | null }[]).map((r) => r.merged_into ?? r.id)),
+  ];
 }
 
 export interface ListCustomersInput {
@@ -245,8 +359,16 @@ export async function listCustomers(
   if (search) {
     // Escape PostgREST `or` reserved characters in the user term.
     const safe = search.replace(/[,()]/g, " ");
+    // Also match through their orders: an order number, or a name that only
+    // exists on a delivery address.
+    const viaOrders = await customerIdsFromOrders(db, search);
     q = q.or(
-      `display_name.ilike.%${safe}%,primary_email.ilike.%${safe}%,primary_phone.ilike.%${safe}%`,
+      [
+        `display_name.ilike.%${safe}%`,
+        `primary_email.ilike.%${safe}%`,
+        `primary_phone.ilike.%${safe}%`,
+        ...(viaOrders.length ? [`id.in.(${viaOrders.join(",")})`] : []),
+      ].join(","),
     );
   }
 
@@ -277,10 +399,11 @@ export async function listCustomers(
   const ids = customerRows.map((c) => c.id);
 
   // Fan out the per-customer aggregates in parallel, scoped to this page.
-  const [identitiesRes, addressesRes, usersRes] = await Promise.all([
+  const [identitiesRes, addressesRes, usersRes, orders] = await Promise.all([
     db.from("customer_identities").select(IDENTITY_COLS).in("customer_id", ids),
     db.from("addresses").select("id, customer_id").in("customer_id", ids),
     db.from("users").select("id, customer_id, last_login_at").in("customer_id", ids),
+    ordersByCustomer(db, ids),
   ]);
 
   const identityRows = (identitiesRes.data ?? []) as IdentityRow[];
@@ -332,6 +455,7 @@ export async function listCustomers(
     addressCount: addressCountByCustomer.get(c.id) ?? 0,
     createdAt: c.created_at,
     lastActive: lastActiveByCustomer.get(c.id) ?? null,
+    ...orderFacts(orders.get(c.id) ?? []),
   }));
 
   return {
@@ -360,7 +484,7 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
   if (error || !customerData) return null;
   const c = customerData as CustomerRow & { auto_detected_location: unknown };
 
-  const [identitiesRes, addressesRes, usersRes] = await Promise.all([
+  const [identitiesRes, addressesRes, usersRes, orders] = await Promise.all([
     db
       .from("customer_identities")
       .select(IDENTITY_COLS)
@@ -376,6 +500,7 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
       .select(USER_COLS)
       .eq("customer_id", id)
       .order("last_login_at", { ascending: false, nullsFirst: false }),
+    ordersByCustomer(db, [id]).then((m) => m.get(id) ?? []),
   ]);
 
   const identityRows = (identitiesRes.data ?? []) as IdentityRow[];
@@ -397,6 +522,7 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
     addressCount: addressRows.length,
     createdAt: c.created_at,
     lastActive,
+    ...orderFacts(orders),
   };
 
   const identities: CustomerIdentitySummary[] = identityRows.map((r) => ({
@@ -443,5 +569,14 @@ export async function getCustomer(id: string): Promise<AdminCustomerDetail | nul
     addresses,
     linkedUsers,
     autoDetectedLocation: parseAutoDetectedLocation(c.auto_detected_location),
+    orders: orders.map((o) => ({
+      id: o.id,
+      orderNumber: o.order_number,
+      status: o.status,
+      paymentStatus: o.payment_status,
+      paymentMethod: o.payment_method,
+      totalPaise: o.total_paise,
+      placedAt: o.placed_at,
+    })),
   };
 }

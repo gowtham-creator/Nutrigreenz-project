@@ -3,9 +3,10 @@
  *
  * These mirror the server records returned by `GET /api/admin/orders` and
  * `GET /api/admin/orders/[id]` (see `src/lib/orders.ts`). The portal is a thin,
- * read-mostly client over those admin-gated APIs: the only mutation is the
- * forward-only status advance (`POST /api/admin/orders/[id]/status`). There is
- * deliberately NO cancel/refund path here (§3.9 no-cancellation).
+ * read-mostly client over those admin-gated APIs. The mutations are the
+ * forward-only status advance (`POST /api/admin/orders/[id]/status`) and the
+ * cancel (`POST /api/admin/orders/[id]/cancel`), which ends an order that has
+ * not been delivered. Refunds are made in the payment gateway, not here.
  */
 import type { Pill } from "@/components/ng/admin/admin-shell";
 import type { ComponentProps } from "react";
@@ -17,11 +18,13 @@ export type OrderStatus =
   | "confirmed"
   | "packed"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
-/** Forward-only fulfilment pipeline; index is the rank. */
+/** Forward-only fulfilment pipeline; index is the rank. `cancelled` is not a
+ *  stage: it ends the pipeline from wherever the order was. */
 export const ORDER_STATUS_FLOW: readonly OrderStatus[] = [
   "placed",
   "confirmed",
@@ -37,7 +40,11 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   packed: "Packed",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled",
 };
+
+/** Statuses an order can be cancelled from (must match src/lib/orders.ts). */
+export const CANCELLABLE_STATUSES: readonly OrderStatus[] = ["placed", "confirmed", "packed", "shipped"];
 
 /** Label for the action that advances INTO each stage. */
 export const ADVANCE_LABEL: Record<OrderStatus, string> = {
@@ -46,6 +53,7 @@ export const ADVANCE_LABEL: Record<OrderStatus, string> = {
   packed: "Mark packed",
   shipped: "Mark shipped",
   delivered: "Mark delivered",
+  cancelled: "Cancel order", // never used: cancelling is not an advance
 };
 
 export const PAYMENT_LABEL: Record<PaymentStatus, string> = {
@@ -67,6 +75,7 @@ export const STATUS_TONE: Record<OrderStatus, PillTone> = {
   packed: "progress",
   shipped: "transit",
   delivered: "success",
+  cancelled: "neutral",
 };
 
 /** Pill tone for each payment status. */

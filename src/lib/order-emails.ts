@@ -17,7 +17,7 @@ import { sendWhatsApp } from "@/lib/whatsapp";
 import { billingAttachments } from "@/lib/invoice-pdf";
 import { gstFor } from "@/lib/gst";
 import { paymentMethodLabel } from "@/lib/payment-label";
-import { sendAdminOrderAlert } from "@/lib/admin-order-alerts";
+import { sendAdminOrderAlert, sendAdminOrderCancelledAlert } from "@/lib/admin-order-alerts";
 
 /**
  * Transactional ORDER emails via Brevo (reuses src/lib/email.ts). BEST-EFFORT:
@@ -43,7 +43,7 @@ const rupees = (paise: number) =>
     maximumFractionDigits: 2,
   })}`;
 
-type Kind = "placed" | "confirmed" | "packed" | "shipped" | "delivered";
+type Kind = "placed" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
 
 const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intro: string }> = {
   // Sent the moment the customer completes checkout — the order exists, but the
@@ -75,7 +75,18 @@ const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intr
     heading: "Delivered 🎉",
     intro: "Your order has reached you. We hope you love it. Reply here if anything isn't perfect.",
   },
+  cancelled: {
+    subject: (n) => `Order ${n} cancelled · Nutri Greenz`,
+    heading: "Order cancelled",
+    intro: "Your order has been cancelled and won't be delivered. Here's what happens next.",
+  },
 };
+
+/** The note an operator left when cancelling, if any. Shown to the customer. */
+function cancelReason(order: OrderWithDetail): string {
+  const ev = [...order.events].reverse().find((e) => e.status === "cancelled");
+  return ev?.note?.trim() ?? "";
+}
 
 function escapeHtml(s: string): string {
   return s.replace(
@@ -192,6 +203,34 @@ function logisticsBody(
         `Please keep <strong>${rupees(order.totalPaise)}</strong> ready. You can pay in cash or by UPI at the door.`,
       )
     : "";
+
+  if (kind === "cancelled") {
+    const paid = order.paymentStatus === "paid";
+    const money = paid
+      ? order.paymentMethod === "upi"
+        ? block(
+            "Your refund",
+            `We'll refund <strong>${rupees(order.totalPaise)}</strong> to the account you paid from, usually within 5 to 7 working days.`,
+          )
+        : block(
+            "Your refund",
+            `We'll call you to arrange the refund of <strong>${rupees(order.totalPaise)}</strong>.`,
+          )
+      : block(
+          "Nothing to pay",
+          order.paymentMethod === "cod"
+            ? "This was a cash-on-delivery order, so you haven't been charged."
+            : "No payment was taken for this order.",
+        );
+    const giveBack = [
+      order.loyaltyRedeemedPaise > 0 ? "The points you used on this order are back in your account." : "",
+      order.couponCode ? `You can use the code <strong>${escapeHtml(order.couponCode)}</strong> again.` : "",
+    ].filter(Boolean);
+    const reason = cancelReason(order);
+    return `${reason ? block("Reason", escapeHtml(reason)) : ""}${money}${
+      giveBack.length ? block("Points and coupons", giveBack.join("<br />")) : ""
+    }${block("What was in the order", items)}`;
+  }
 
   if (kind === "packed") {
     return `${block("What's in the box", items)}${address ? block("Delivering to", address) : ""}${codNote}`;
@@ -347,9 +386,13 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
         <tr>
           <td style="padding:8px 0 0;font-size:14.5px;line-height:1.6;color:${MUTED}">${c.intro}</td>
         </tr>
-        <tr>
+        ${
+          kind === "cancelled"
+            ? ""
+            : `<tr>
           <td style="padding:26px 0 0">${progressTracker(kind, { INK, MUTED, LINE, GREEN })}</td>
         </tr>`
+        }`
         }
 
         <!-- Documents ride with the email as attachments, so a link that
@@ -375,12 +418,14 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
                 "Payment",
                 paid
                   ? `Paid · ${escapeHtml(paymentMethodLabel(order))}`
-                  : isCod
-                    ? `Pay ${rupees(order.totalPaise)} on delivery`
-                    : "Pending",
+                  : kind === "cancelled"
+                    ? "Not charged"
+                    : isCod
+                      ? `Pay ${rupees(order.totalPaise)} on delivery`
+                      : "Pending",
               )}
               ${isReceipt ? meta("Status", escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1))) : ""}
-              ${!isReceipt && slotLabel ? meta("Delivery slot", escapeHtml(slotLabel)) : ""}
+              ${!isReceipt && kind !== "cancelled" && slotLabel ? meta("Delivery slot", escapeHtml(slotLabel)) : ""}
             </table>
           </td>
         </tr>
@@ -458,9 +503,9 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           <td style="padding:32px 0 0">
             <table role="presentation" cellpadding="0" cellspacing="0"><tr>
               <td style="background:${GREEN};border-radius:999px">
-                <a href="${kind === "delivered" ? `${SITE}/shop` : `${SITE}/orders/${order.id}`}"
+                <a href="${kind === "delivered" || kind === "cancelled" ? `${SITE}/shop` : `${SITE}/orders/${order.id}`}"
                    style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none">
-                  ${kind === "delivered" ? "Shop again" : "Track your order"}
+                  ${kind === "delivered" || kind === "cancelled" ? "Shop again" : "Track your order"}
                 </a>
               </td>
             </tr></table>
@@ -575,4 +620,9 @@ export function sendOrderShippedEmail(orderId: string): Promise<void> {
 }
 export function sendOrderDeliveredEmail(orderId: string): Promise<void> {
   return send(orderId, "delivered");
+}
+
+/** Sent when an operator cancels an order: to the customer and to the team. */
+export async function sendOrderCancelledEmail(orderId: string): Promise<void> {
+  await Promise.allSettled([send(orderId, "cancelled"), sendAdminOrderCancelledAlert(orderId)]);
 }

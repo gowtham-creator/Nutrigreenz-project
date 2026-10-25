@@ -42,6 +42,7 @@ vi.mock("@/lib/rewards", () => {
     removeCouponUsesForOrder: vi.fn(),
     releaseRedeemedPoints: vi.fn(),
     reburnReleasedPoints: vi.fn(),
+    revokeEarnedPoints: vi.fn(),
   };
 });
 
@@ -49,6 +50,7 @@ import * as rewards from "@/lib/rewards";
 import { getCommerceRules } from "@/lib/commerce-rules";
 import { getActivePromotions } from "@/lib/promotions";
 import {
+  cancelOrder,
   createOrder,
   failUnpaidOnlineOrder,
   listStalePendingPayments,
@@ -689,5 +691,107 @@ describe("createOrder — loyalty points are earned when an online order is PAID
 
     expect(rewards.earnPointsForOrder).toHaveBeenCalledTimes(1);
     expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 87_000);
+  });
+});
+
+/**
+ * A database for cancelling. The status compare-and-set wins unless `lost`,
+ * the holds marker can be claimed unless `released`, and `statusError` stands
+ * in for the status check before the cancellation migration is applied.
+ */
+function cancelDb(
+  order: Record<string, unknown>,
+  opts: { lost?: boolean; released?: boolean; statusError?: boolean } = {},
+) {
+  return installDb(
+    (op) => {
+      if (op.table === "order_items" && op.action === "select") return { data: ITEMS };
+      if (op.table === "orders" && op.action === "update") {
+        const payload = op.payload as Record<string, unknown>;
+        if (payload.status === "cancelled") {
+          if (opts.statusError) return { error: { message: 'violates check constraint "orders_status_chk"' } };
+          return { data: opts.lost ? [] : [{ id: "ord-1" }] };
+        }
+        if ("holds_released_at" in payload) return { data: opts.released ? [] : [{ id: "ord-1" }] };
+      }
+      return undefined;
+    },
+    order,
+  );
+}
+
+describe("cancelOrder", () => {
+  const cod = orderRow({ payment_method: "cod", payment_status: "pending", status: "packed" });
+
+  it("cancels with a compare-and-set on the cancellable statuses, and records who and why", async () => {
+    const fake = cancelDb(cod);
+
+    const result = await cancelOrder("NG-26-1001", "ops@nutrigreenz.farm", "  Out of stock for your slot  ");
+
+    expect(result.ok).toBe(true);
+    const cas = updatesTo(fake.ops, "orders")[0];
+    expect(cas.payload).toEqual({ status: "cancelled" });
+    expect(filterOn(cas, "status", "in")?.value).toEqual(["placed", "confirmed", "packed", "shipped"]);
+    const event = fake.ops.find((o) => o.table === "order_status_events" && o.action === "insert");
+    expect(event?.payload).toEqual({
+      order_id: "ord-1",
+      status: "cancelled",
+      by: "ops@nutrigreenz.farm",
+      note: "Out of stock for your slot",
+    });
+  });
+
+  it("gives back stock, coupon and redeemed points, and takes back earned points", async () => {
+    const fake = cancelDb(cod);
+
+    await cancelOrder("ord-1", "ops@nutrigreenz.farm");
+
+    const claim = updatesTo(fake.ops, "orders")[1];
+    expect(claim.payload).toEqual({ holds_released_at: expect.any(String) });
+    expect(filterOn(claim, "holds_released_at", "is")?.value).toBeNull();
+    // Any order qualifies, not only a failed online one.
+    expect(filterOn(claim, "payment_status")).toBeUndefined();
+    expect(fake.rpcCalls.map((c) => c.name)).toEqual(["release_variant_stock"]);
+    expect(rewards.removeCouponUsesForOrder).toHaveBeenCalledWith("ord-1");
+    expect(rewards.releaseRedeemedPoints).toHaveBeenCalledWith("cust-1", "ord-1");
+    expect(rewards.revokeEarnedPoints).toHaveBeenCalledWith("cust-1", "ord-1");
+  });
+
+  it("does not release twice when the holds were already given back", async () => {
+    const fake = cancelDb(cod, { released: true });
+
+    expect((await cancelOrder("ord-1", "ops")).ok).toBe(true);
+    expect(fake.rpcCalls).toHaveLength(0);
+    expect(rewards.removeCouponUsesForOrder).not.toHaveBeenCalled();
+  });
+
+  it("refuses a delivered order without writing anything", async () => {
+    const fake = cancelDb(orderRow({ status: "delivered", payment_method: "cod" }));
+
+    expect(await cancelOrder("ord-1", "ops")).toEqual({ ok: false, error: "not-cancellable" });
+    expect(updatesTo(fake.ops, "orders")).toHaveLength(0);
+  });
+
+  it("refuses an online order whose payment is still pending", async () => {
+    const fake = cancelDb(orderRow({ payment_method: "upi", payment_status: "pending" }));
+
+    expect(await cancelOrder("ord-1", "ops")).toEqual({ ok: false, error: "payment-pending" });
+    expect(updatesTo(fake.ops, "orders")).toHaveLength(0);
+  });
+
+  it("releases nothing when another operator's cancel won the race", async () => {
+    const fake = cancelDb(cod, { lost: true });
+
+    expect(await cancelOrder("ord-1", "ops")).toEqual({ ok: false, error: "not-cancellable" });
+    expect(fake.rpcCalls).toHaveLength(0);
+    expect(rewards.revokeEarnedPoints).not.toHaveBeenCalled();
+  });
+
+  it("reports unavailable, and changes nothing else, before the migration is applied", async () => {
+    const fake = cancelDb(cod, { statusError: true });
+
+    expect(await cancelOrder("ord-1", "ops")).toEqual({ ok: false, error: "unavailable" });
+    expect(fake.ops.some((o) => o.table === "order_status_events" && o.action === "insert")).toBe(false);
+    expect(fake.rpcCalls).toHaveLength(0);
   });
 });

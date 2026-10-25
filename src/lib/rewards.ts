@@ -222,7 +222,7 @@ export interface CouponRecord {
   updatedAt: string;
 }
 
-export type LoyaltyReason = "order_earn" | "order_redeem" | "adjust";
+export type LoyaltyReason = "order_earn" | "order_redeem" | "adjust" | "order_cancel";
 
 /** One append-only ledger row. Earn rows are positive, redemptions negative. */
 export interface LoyaltyLedgerRecord {
@@ -336,7 +336,7 @@ function cleanList(raw: unknown): string[] | null {
 }
 
 function toReason(raw: string | null | undefined): LoyaltyReason {
-  return raw === "order_earn" || raw === "order_redeem" ? raw : "adjust";
+  return raw === "order_earn" || raw === "order_redeem" || raw === "order_cancel" ? raw : "adjust";
 }
 
 function toCoupon(r: CouponRow): CouponRecord {
@@ -671,6 +671,42 @@ export async function releaseRedeemedPoints(customerId: string, orderId: string)
     reason: "adjust",
   });
   return error ? 0 : -net;
+}
+
+/**
+ * Take back the points a cancelled order earned.
+ *
+ * Writes an `order_cancel` row, never `adjust`, so it cannot be mistaken for
+ * the give-back of redeemed points that {@link releaseRedeemedPoints} nets
+ * over. Idempotent: the amount is what the order earned less what earlier
+ * `order_cancel` rows already took. Clamped to the live balance so the ledger
+ * never goes negative; points already spent stay spent. Returns the points
+ * taken back.
+ */
+export async function revokeEarnedPoints(customerId: string, orderId: string): Promise<number> {
+  if (!customerId || !orderId || !isSupabaseConfigured) return 0;
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("loyalty_ledger")
+    .select("delta_points")
+    .eq("customer_id", customerId)
+    .eq("order_id", orderId)
+    .in("reason", ["order_earn", "order_cancel"]);
+  const net = ((data as { delta_points: number }[] | null) ?? []).reduce(
+    (sum, r) => sum + r.delta_points,
+    0,
+  );
+  if (net <= 0) return 0;
+
+  const points = Math.min(net, Math.max(0, await loyaltyBalance(customerId)));
+  if (points <= 0) return 0;
+  const { error } = await db.from("loyalty_ledger").insert({
+    customer_id: customerId,
+    order_id: orderId,
+    delta_points: -points,
+    reason: "order_cancel",
+  });
+  return error ? 0 : points;
 }
 
 /**

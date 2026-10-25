@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-shell";
+import { STATUS_LABEL, STATUS_TONE, formatPaise, type OrderStatus } from "@/app/admin/orders/portal-data";
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 
@@ -37,6 +39,21 @@ interface CustomerRow {
   addressCount: number;
   createdAt: string;
   lastActive: string | null;
+  orderCount: number;
+  spentPaise: number;
+  lastOrderAt: string | null;
+  /** The name on their latest order's address, for a customer with no profile name. */
+  orderName: string | null;
+}
+
+interface CustomerOrderRow {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: string;
+  paymentMethod: string;
+  totalPaise: number;
+  placedAt: string;
 }
 
 interface IdentityRow {
@@ -98,6 +115,7 @@ interface CustomerDetail {
   addresses: AddressRow[];
   linkedUsers: LinkedUserRow[];
   autoDetectedLocation: AutoLocationRow | null;
+  orders: CustomerOrderRow[];
 }
 
 const PROVIDER_LABEL: Record<Provider, string> = {
@@ -112,8 +130,13 @@ function providerTone(p: Provider): "info" | "success" | "neutral" {
   return "neutral";
 }
 
+/** Profile name, else the name they gave on their latest order. */
+function nameOf(c: CustomerRow): string {
+  return c.displayName || c.orderName || "Unnamed customer";
+}
+
 function initialOf(c: CustomerRow): string {
-  const src = c.displayName || c.primaryEmail || c.primaryPhone || "?";
+  const src = c.displayName || c.orderName || c.primaryEmail || c.primaryPhone || "?";
   return src.trim().charAt(0).toUpperCase() || "?";
 }
 
@@ -269,7 +292,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, email or phone"
+              placeholder="Search name, phone, email or order no."
               className="w-64 max-w-[60vw] rounded-full border border-ng-line bg-ng-cream pl-9 pr-3 py-2 text-[12.5px] font-medium text-ng-ink placeholder:text-ng-ink-muted focus:outline-none focus:border-ng-leaf transition-colors"
             />
           </label>
@@ -283,7 +306,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
           <span>Email</span>
           <span>Phone</span>
           <span>Providers</span>
-          <span className="text-right">Addresses</span>
+          <span className="text-right">Orders</span>
           <span>Joined</span>
           <span></span>
         </div>
@@ -333,7 +356,7 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
             </p>
             <p className="mt-1.5 text-[12.5px] font-medium text-ng-ink-muted max-w-md mx-auto leading-relaxed">
               {query
-                ? "Try a different name, email or phone number."
+                ? "Try a different name, phone, email or order number."
                 : "Customers appear here as people sign in and the backfill runs. Duplicate sign-ins are merged automatically."}
             </p>
           </div>
@@ -349,10 +372,9 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
                     {initialOf(c)}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-ng-ink truncate">
-                      {c.displayName || "Unnamed customer"}
-                    </div>
+                    <div className="font-semibold text-ng-ink truncate">{nameOf(c)}</div>
                     <div className="text-[11.5px] font-medium text-ng-ink-soft">
+                      {!c.displayName && c.orderName ? "Name from their order · " : ""}
                       {c.identityCount} {c.identityCount === 1 ? "identity" : "identities"}
                     </div>
                   </div>
@@ -364,8 +386,15 @@ export function CustomersClient({ initialData }: { initialData: CustomerPage | n
                   {c.primaryPhone || "—"}
                 </span>
                 <ProviderBadges providers={c.providers} />
-                <span className="font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep text-right">
-                  {c.addressCount}
+                <span className="text-right">
+                  <span className="block font-mono text-[12.5px] tabular-nums font-semibold text-ng-forest-deep">
+                    {c.orderCount}
+                  </span>
+                  {c.orderCount > 0 ? (
+                    <span className="block text-[11px] font-medium tabular-nums text-ng-ink-soft">
+                      {formatPaise(c.spentPaise)}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="text-[12px] font-medium text-ng-ink-soft">{fmtDate(c.createdAt)}</span>
                 <button
@@ -445,9 +474,10 @@ function CustomerDrawer({
                   {initialOf(c)}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-[18px] text-ng-forest-deep truncate">
-                    {c.displayName || "Unnamed customer"}
-                  </div>
+                  <div className="font-display text-[18px] text-ng-forest-deep truncate">{nameOf(c)}</div>
+                  {!c.displayName && c.orderName ? (
+                    <div className="text-[11.5px] font-medium text-ng-ink-soft">Name from their latest order</div>
+                  ) : null}
                   <div className="mt-1.5">
                     <ProviderBadges providers={c.providers} />
                   </div>
@@ -463,7 +493,41 @@ function CustomerDrawer({
                   label="Joined"
                   value={fmtDate(c.createdAt)}
                 />
+                <Field icon="bag-check-bold" label="Orders" value={String(c.orderCount)} />
+                <Field icon="wallet-money-bold" label="Order value" value={formatPaise(c.spentPaise)} />
               </dl>
+
+              <Section icon="bag-check-bold" title={`Orders (${detail?.orders.length ?? 0})`}>
+                {detail && detail.orders.length > 0 ? (
+                  <ul className="space-y-2">
+                    {detail.orders.map((o) => (
+                      <li key={o.id}>
+                        <Link
+                          href={`/admin/orders/${o.id}`}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-ng-line-soft bg-ng-paper p-3 transition-colors hover:border-ng-leaf/50"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-mono text-[12.5px] font-semibold text-ng-forest-deep">
+                              {o.orderNumber}
+                            </span>
+                            <span className="mt-0.5 block text-[11.5px] font-medium text-ng-ink-soft">
+                              {fmtDate(o.placedAt)} · {o.paymentMethod === "cod" ? "Cash on delivery" : "Online"}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2.5">
+                            <Pill tone={STATUS_TONE[o.status] ?? "neutral"}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
+                            <span className="font-mono text-[12.5px] font-semibold tabular-nums text-ng-ink">
+                              {formatPaise(o.totalPaise)}
+                            </span>
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <EmptyLine>No orders yet.</EmptyLine>
+                )}
+              </Section>
 
               <Section
                 icon="shield-user-bold"

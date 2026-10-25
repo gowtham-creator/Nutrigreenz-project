@@ -25,12 +25,14 @@ import { DonutChart, HBars, PAYMENT_TONE, Pipeline, STAGE_TONE, compareFigures }
 import { UiIcon } from "@/components/ui/ui-icon";
 
 /* ── API shapes (JSON only — no server modules imported client-side) ─────── */
-type OrderStatus = "placed" | "confirmed" | "packed" | "shipped" | "delivered";
+type OrderStatus = "placed" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
+/** The pipeline stages; reports leave cancelled orders out. */
+type Stage = Exclude<OrderStatus, "cancelled">;
 type PaymentStatus = "pending" | "paid" | "failed";
 type PillTone = "neutral" | "success" | "warn" | "danger" | "info";
 
 interface StatusBreakdownEntry {
-  status: OrderStatus;
+  status: Stage;
   orders: number;
   revenuePaise: number;
 }
@@ -127,6 +129,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   packed: "Packed",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 const STATUS_PILL: Record<OrderStatus, PillTone> = {
   placed: "warn",
@@ -134,10 +137,11 @@ const STATUS_PILL: Record<OrderStatus, PillTone> = {
   packed: "info",
   shipped: "success",
   delivered: "success",
+  cancelled: "neutral",
 };
 /* The queue, as the next action each stage waits on. "Delivered" is not in it:
    it is the one stage with nothing left to do, so it is a footnote. */
-const OPEN_STAGES: { status: Exclude<OrderStatus, "delivered">; label: string }[] = [
+const OPEN_STAGES: { status: Exclude<Stage, "delivered">; label: string }[] = [
   { status: "placed", label: "To confirm" },
   { status: "confirmed", label: "To pack" },
   { status: "packed", label: "To ship" },
@@ -189,7 +193,7 @@ export default function AdminOverview() {
    */
   useLiveRefresh(() => void load({ quiet: true }), { intervalMs: 45_000 });
 
-  const statusMap = new Map<OrderStatus, number>();
+  const statusMap = new Map<Stage, number>();
   for (const st of report?.statusBreakdown ?? []) statusMap.set(st.status, st.orders);
 
   const queue = OPEN_STAGES.map((st) => ({

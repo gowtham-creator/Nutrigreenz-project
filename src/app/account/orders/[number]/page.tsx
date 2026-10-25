@@ -44,6 +44,8 @@ const STATUS_RANK: Record<OrderStatus, number> = {
   packed: 2,
   shipped: 3,
   delivered: 4,
+  // Not a stage: a cancelled order shows the stages it reached, then "Cancelled".
+  cancelled: -1,
 };
 
 function lineImage(item: OrderItemView): string | null {
@@ -149,16 +151,27 @@ export default function AccountOrderDetailPage({
   const tone = statusTone(order.status);
   const pay = paymentTone(order.paymentStatus);
   const count = orderItemCount(order);
-  const currentRank = STATUS_RANK[order.status];
+  const cancelled = order.status === "cancelled";
+  // A cancelled order counts every stage it reached as done.
+  const currentRank = cancelled
+    ? Math.max(0, ...order.events.map((ev) => STATUS_RANK[ev.status])) + 1
+    : STATUS_RANK[order.status];
+  const cancelEvent = cancelled ? [...order.events].reverse().find((ev) => ev.status === "cancelled") : undefined;
 
   // Map each pipeline step to its completion + the timestamp from its event.
   const eventAt = new Map<OrderStatus, string>();
   for (const ev of order.events) {
     if (!eventAt.has(ev.status)) eventAt.set(ev.status, ev.at);
   }
-  const timeline = FLOW.map((step) => ({
+  const steps = cancelled
+    ? [
+        ...FLOW.filter((step) => STATUS_RANK[step.status] < currentRank),
+        { status: "cancelled" as const, label: "Cancelled", icon: "close-circle-bold" },
+      ]
+    : FLOW;
+  const timeline = steps.map((step) => ({
     ...step,
-    done: STATUS_RANK[step.status] < currentRank,
+    done: STATUS_RANK[step.status] >= 0 && STATUS_RANK[step.status] < currentRank,
     active: step.status === order.status,
     at: eventAt.get(step.status) ?? null,
   }));
@@ -200,14 +213,33 @@ export default function AccountOrderDetailPage({
             </span>
           </div>
           <h1 className="mt-2 font-display text-[clamp(28px,4vw,38px)] leading-tight text-ng-forest-deep">
-            {order.status === "delivered" ? "Delivered. Enjoy your harvest." : "Your order is on its way."}
+            {cancelled
+              ? "This order was cancelled."
+              : order.status === "delivered"
+                ? "Delivered. Enjoy your harvest."
+                : "Your order is on its way."}
           </h1>
           <span className="mt-1 block text-[13px] text-ng-ink-muted">
             Placed {formatOrderDate(order.placedAt)} · {count} item{count > 1 ? "s" : ""}
           </span>
         </header>
 
-        {order.paymentStatus === "pending" ? (
+        {cancelled ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-ng-line bg-ng-cream/60 p-4 text-[13px]">
+            <Icon name="close-circle-bold" size={18} className="mt-0.5 shrink-0 text-ng-ink-muted" />
+            <div className="space-y-0.5 leading-relaxed text-ng-ink-muted">
+              <p className="font-display text-[14.5px] text-ng-forest-deep">
+                Cancelled{cancelEvent ? ` on ${formatOrderDate(cancelEvent.at)}` : ""}
+              </p>
+              {cancelEvent?.note ? <p>{cancelEvent.note}</p> : null}
+              <p>
+                {order.paymentStatus === "paid"
+                  ? "Your refund is on its way to the account you paid from, usually within 5 to 7 working days."
+                  : "You haven't been charged for this order."}
+              </p>
+            </div>
+          </div>
+        ) : order.paymentStatus === "pending" ? (
           <div className="flex items-start gap-3 rounded-2xl border border-ng-amber/40 bg-ng-amber/10 p-4 text-[13px]">
             <UiIcon name="deliveryTime" size={18} className="mt-0.5 shrink-0 text-ng-amber" />
             <div>
@@ -244,14 +276,16 @@ export default function AccountOrderDetailPage({
                       ) : null}
                       <span
                         className={`relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full ring-4 ring-ng-paper ${
-                          t.active
+                          t.active && cancelled
+                            ? "bg-ng-line text-ng-ink-muted"
+                            : t.active
                             ? "bg-ng-leaf text-ng-forest-deep shadow-[0_0_0_4px_rgba(102,191,115,0.22)]"
                             : t.done
                               ? "bg-ng-forest text-ng-cream"
                               : "bg-ng-sage/60 text-ng-ink-soft"
                         }`}
                       >
-                        {t.active ? (
+                        {t.active && !cancelled ? (
                           <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-ng-leaf/40" />
                         ) : null}
                         <Icon name={t.icon} size={17} className="relative" />
@@ -265,7 +299,7 @@ export default function AccountOrderDetailPage({
                           >
                             {t.label}
                           </span>
-                          {t.active ? (
+                          {t.active && !cancelled ? (
                             <span className="rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-forest">
                               Now
                             </span>
@@ -432,8 +466,9 @@ export default function AccountOrderDetailPage({
               <Link href="mailto:customersupport@nutrigreenz.farm">Report an issue</Link>
             </Button>
 
-            {/* No cancel action — short no-cancellation note instead (§3.9). */}
-            <NoCancellationNotice />
+            {/* Customers can't cancel; only the team can. A cancelled order
+                shows its own note above, so the policy line would contradict it. */}
+            {cancelled ? null : <NoCancellationNotice />}
           </aside>
         </div>
 

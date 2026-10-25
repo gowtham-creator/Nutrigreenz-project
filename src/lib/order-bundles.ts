@@ -15,7 +15,7 @@
  */
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { ORDER_STATUS_FLOW, type OrderStatus } from "@/lib/orders";
+import { ORDER_STATUS_FLOW, type FulfilmentStatus, type OrderStatus } from "@/lib/orders";
 
 /* ── result shapes ────────────────────────────────────────────────────── */
 
@@ -110,7 +110,7 @@ function deliveryDateFrom(slot: Record<string, unknown> | null): string | null {
 }
 
 function toStatus(raw: string): OrderStatus {
-  return ORDER_STATUS_FLOW.includes(raw as OrderStatus) ? (raw as OrderStatus) : "placed";
+  return ORDER_STATUS_FLOW.includes(raw as FulfilmentStatus) ? (raw as OrderStatus) : "placed";
 }
 
 /* ── aggregation ──────────────────────────────────────────────────────── */

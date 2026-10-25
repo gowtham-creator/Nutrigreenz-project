@@ -362,7 +362,7 @@ export default function AdminOrderDetail({
                 so. Marking it here is the only thing that turns a COD order into
                 revenue — nothing flips it automatically, because "delivered"
                 does not prove the cash actually changed hands. */}
-            {order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? (
+            {order.paymentMethod === "cod" && order.paymentStatus !== "paid" && order.status !== "cancelled" ? (
               <button
                 type="button"
                 disabled={markingPaid}

@@ -1,5 +1,6 @@
 /**
- * "New order" alerts to the operators, sent when a customer places an order.
+ * "New order" alerts to the operators, sent when a customer places an order,
+ * and "order cancelled" alerts, sent when an operator cancels one.
  *
  * ── What this fixes ───────────────────────────────────────────────────────
  *
@@ -205,8 +206,17 @@ async function alertRecipients(): Promise<string[]> {
   return [...out.values()];
 }
 
+/** What differs between the new-order and the cancelled-order alert. */
+interface AlertVariant {
+  eyebrow: string;
+  /** Extra summary rows, label to already-escaped value, shown first. */
+  rows?: [string, string][];
+  /** A line under the amount, e.g. a refund the team now owes. */
+  callout?: string;
+}
+
 /** The alert body — a scannable summary plus a link straight to the order. */
-function alertHtml(order: OrderWithDetail): string {
+function alertHtml(order: OrderWithDetail, variant: AlertVariant = { eyebrow: "New order" }): string {
   const items = order.items
     .map(
       (it) => `
@@ -236,7 +246,9 @@ function alertHtml(order: OrderWithDetail): string {
   <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#F7F5EC;padding:24px">
     <div style="max-width:560px;margin:0 auto;background:#FFFDF6;border:1px solid ${LINE};border-radius:14px;overflow:hidden">
       <div style="background:${GREEN};padding:16px 20px">
-        <div style="color:#F2EFE0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">New order</div>
+        <div style="color:#F2EFE0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">${esc(
+          variant.eyebrow,
+        )}</div>
         <div style="color:#FFFDF6;font-size:22px;font-weight:700;margin-top:2px">${esc(
           order.orderNumber,
         )}</div>
@@ -247,7 +259,14 @@ function alertHtml(order: OrderWithDetail): string {
           payText,
         )}</div>
 
+        ${
+          variant.callout
+            ? `<div style="margin-top:12px;font-size:14px;font-weight:600;color:#B84329">${esc(variant.callout)}</div>`
+            : ""
+        }
+
         <table style="width:100%;border-collapse:collapse;margin-top:16px">
+          ${(variant.rows ?? []).map(([label, value]) => row(label, value)).join("")}
           ${row("Customer", esc(customerName(order)))}
           ${row("Phone", esc(order.userPhone || "—"))}
           ${row("Email", esc(order.userEmail || "—"))}
@@ -258,7 +277,7 @@ function alertHtml(order: OrderWithDetail): string {
           ${items}
         </table>
 
-        <a href="${SITE}/admin/orders"
+        <a href="${SITE}/admin/orders/${esc(order.id)}"
            style="display:inline-block;margin-top:18px;background:${GREEN};color:#FFFDF6;text-decoration:none;padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600">
           Open in admin
         </a>
@@ -297,5 +316,43 @@ export async function sendAdminOrderAlert(orderId: string): Promise<void> {
     }
   } catch (err) {
     console.error(`[admin-order-alerts] alert for ${orderId} failed:`, err);
+  }
+}
+
+/**
+ * Tell the operators an order was cancelled, by whom and why, and whether a
+ * refund is now owed. Same recipients and guarantees as the new-order alert.
+ */
+export async function sendAdminOrderCancelledAlert(orderId: string): Promise<void> {
+  try {
+    if (!isEmailConfigured()) return;
+    const order = await getOrder(orderId);
+    if (!order) return;
+
+    const recipients = mergeRecipients(await alertRecipients(), alwaysRecipients());
+    if (recipients.length === 0) return;
+
+    const ev = [...order.events].reverse().find((e) => e.status === "cancelled");
+    const rows: [string, string][] = [["Cancelled by", esc(ev?.by || "—")]];
+    if (ev?.note?.trim()) rows.push(["Reason", esc(ev.note.trim())]);
+    const callout =
+      order.paymentStatus === "paid"
+        ? `Refund due: ${rupees(order.totalPaise)} (${order.paymentMethod === "upi" ? "refund it in the payment gateway" : "cash was collected"})`
+        : undefined;
+
+    const subject = `Order ${order.orderNumber} cancelled · ${rupees(order.totalPaise)}`;
+    const html = alertHtml(order, { eyebrow: "Order cancelled", rows, callout });
+
+    const results = await Promise.allSettled(
+      recipients.map((to) => sendEmail({ to, subject, html })),
+    );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      console.error(
+        `[admin-order-alerts] ${order.orderNumber} cancelled: ${failed}/${recipients.length} sends failed`,
+      );
+    }
+  } catch (err) {
+    console.error(`[admin-order-alerts] cancel alert for ${orderId} failed:`, err);
   }
 }

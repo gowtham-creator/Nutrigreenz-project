@@ -30,7 +30,7 @@ vi.mock("@/lib/supabase-admin", () => {
   return { isSupabaseConfigured: true, supabaseAdmin: () => db };
 });
 
-import { sendAdminOrderAlert } from "./admin-order-alerts";
+import { sendAdminOrderAlert, sendAdminOrderCancelledAlert } from "./admin-order-alerts";
 
 function orderWith(addressSnapshot: Record<string, unknown> | null) {
   return {
@@ -121,5 +121,42 @@ describe("admin order alert — always-notify inboxes", () => {
     m.getOrder.mockResolvedValue(orderWith({ fullName: "Asha Rao" }));
     await sendAdminOrderAlert("ord-1");
     expect(sentTo()).toEqual(["ops@nutrigreenz.farm"]);
+  });
+});
+
+describe("admin order alert — cancelled", () => {
+  const cancelled = (overrides: Record<string, unknown> = {}) => ({
+    ...orderWith({ fullName: "Asha Rao" }),
+    status: "cancelled",
+    events: [
+      { status: "placed", by: "system", note: "Order placed", at: "2026-10-25T04:48:05Z" },
+      { status: "cancelled", by: "ops@nutrigreenz.farm", note: "Out of stock <today>", at: "2026-10-25T06:00:00Z" },
+    ],
+    ...overrides,
+  });
+
+  it("says who cancelled it and why, linking straight to the order", async () => {
+    m.getOrder.mockResolvedValue(cancelled());
+    await sendAdminOrderCancelledAlert("ord-1");
+    const { subject, html } = m.sendEmail.mock.calls[0][0] as { subject: string; html: string };
+    expect(subject).toBe("Order NG-26-1001 cancelled · ₹2,200.00");
+    expect(html).toContain("Order cancelled");
+    expect(html).toContain("ops@nutrigreenz.farm");
+    expect(html).toContain("Out of stock &lt;today&gt;");
+    expect(html).toContain("/admin/orders/ord-1");
+  });
+
+  it("flags the refund the team now owes on a paid online order", async () => {
+    m.getOrder.mockResolvedValue(cancelled());
+    await sendAdminOrderCancelledAlert("ord-1");
+    const { html } = m.sendEmail.mock.calls[0][0] as { html: string };
+    expect(html).toContain("Refund due: ₹2,200.00 (refund it in the payment gateway)");
+  });
+
+  it("owes nothing on an unpaid cash-on-delivery order", async () => {
+    m.getOrder.mockResolvedValue(cancelled({ paymentMethod: "cod", paymentStatus: "pending" }));
+    await sendAdminOrderCancelledAlert("ord-1");
+    const { html } = m.sendEmail.mock.calls[0][0] as { html: string };
+    expect(html).not.toContain("Refund due");
   });
 });
