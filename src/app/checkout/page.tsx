@@ -12,7 +12,7 @@ import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
-import { useCommerceRules } from "@/lib/commerce";
+import { useCommerceRules, useCommerceStatus } from "@/lib/commerce";
 import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
 import { fetchServiceable } from "@/lib/serviceability";
@@ -195,6 +195,7 @@ export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { isAuthed, account, loading: authLoading } = useAuth();
   const rules = useCommerceRules();
+  const { slotsStatus, refreshRules } = useCommerceStatus();
   const { config: loyalty } = useLoyaltyConfig();
   const { addresses, defaultAddress } = useAddresses();
 
@@ -284,9 +285,14 @@ export default function CheckoutPage() {
     addressId ?? defaultAddress?.id ?? addresses[0]?.id ?? null;
   const selectedAddress =
     addresses.find((a) => a.id === resolvedAddressId) ?? null;
-  const resolvedSlotId = slotId ?? rules.deliverySlots[0]?.id ?? null;
+  // Only a slot in the live list counts. A restored draft can name one that has
+  // since been switched off; that falls back to the first open slot rather than
+  // ticking the slot step with nothing selected.
   const selectedSlot =
-    rules.deliverySlots.find((s) => s.id === resolvedSlotId) ?? null;
+    rules.deliverySlots.find((s) => s.id === slotId) ??
+    rules.deliverySlots[0] ??
+    null;
+  const resolvedSlotId = selectedSlot?.id ?? null;
 
   // Check the selected address's pincode against the live serviceable-areas list.
   const selectedPincode = selectedAddress?.pincode ?? null;
@@ -416,6 +422,12 @@ export default function CheckoutPage() {
         toast.error("Please select a delivery address.");
       } else if (notServiceable) {
         toast.error(`We don't deliver to ${selectedAddress.pincode} yet.`);
+      } else if (!selectedSlot) {
+        toast.error(
+          slotsStatus === "live"
+            ? "No delivery slots are open right now. Please check back soon."
+            : "Please choose a delivery slot.",
+        );
       } else if (!payment) {
         toast.error("Please choose a payment method.");
       } else if (!acknowledged) {
@@ -503,6 +515,16 @@ export default function CheckoutPage() {
           toast.error(
             `${names.length ? names.join(", ") : "Some items"} in your cart ${names.length === 1 ? "is" : "are"} no longer available. Please remove ${names.length === 1 ? "it" : "them"} from your cart and add ${names.length === 1 ? "it" : "them"} again from the shop.`,
           );
+          setPlacing(false);
+          return;
+        }
+        if (res.status === 409 && rejection.error === "slot-unavailable") {
+          // Switched off while this page was open. Re-read the open slots and
+          // send the customer back to choose; nothing was created.
+          toast.error("That delivery slot is no longer available. Please choose another slot.");
+          setSlotId(null);
+          setStep(1);
+          void refreshRules();
           setPlacing(false);
           return;
         }
@@ -735,6 +757,8 @@ export default function CheckoutPage() {
             <StaggerItem id="ng-step-1" className={cn(step !== 1 && "hidden", "lg:block", "scroll-mt-28")}>
               <SlotPicker
                 slots={rules.deliverySlots}
+                status={slotsStatus}
+                onRetry={() => void refreshRules()}
                 selectedId={resolvedSlotId}
                 onSelect={setSlotId}
               />

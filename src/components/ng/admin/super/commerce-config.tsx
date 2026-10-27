@@ -8,6 +8,7 @@ import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { SectionHeader, PrimarySection } from "@/components/ng/admin/super/command-center";
 import { NumberField, Toggle, SegToggle, TextField, SaveBar } from "@/components/ng/admin/super/controls";
 import { adminGet, invalidateAdminGet } from "@/lib/admin-get";
+import { DeliverySlotsManager } from "@/components/ng/admin/slots/delivery-slots-manager";
 
 /**
  * Super Admin · Commerce Rules (Phase B — DB-backed).
@@ -147,7 +148,12 @@ export function CommerceConfigPanel() {
           onSaved={(next) => setRules(next)}
           onRetry={load}
         />
-        <SlotsCard slots={slots} loading={loading} setSlots={setSlots} />
+        <DeliverySlotsManager
+          slots={slots}
+          onSlotsChange={setSlots}
+          canEdit
+          loading={loading}
+        />
         <AreasCard areas={areas} loading={loading} setAreas={setAreas} />
       </div>
     </PrimarySection>
@@ -392,164 +398,6 @@ function RulesCard({
             dirty={dirty}
           />
         </>
-      )}
-    </Card>
-  );
-}
-
-/* =======================================================================
- * Delivery slots manager
- * ===================================================================== */
-function SlotsCard({
-  slots,
-  loading,
-  setSlots,
-}: {
-  slots: DeliverySlot[];
-  loading: boolean;
-  setSlots: React.Dispatch<React.SetStateAction<DeliverySlot[]>>;
-}) {
-  const [busy, setBusy] = React.useState(false);
-
-  function patchLocal(id: string, p: Partial<DeliverySlot>) {
-    setSlots((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)));
-  }
-
-  async function addSlot() {
-    setBusy(true);
-    try {
-      const res = await sendJson<{ slot: DeliverySlot }>(`${API}/slots`, "POST", {
-        label: "New slot",
-        windowText: "",
-        sort: slots.length,
-        active: true,
-      });
-      setSlots((list) => [...list, res.slot]);
-      toast.success("Slot added");
-    } catch (err) {
-      toast.error("Couldn't add the slot", { description: err instanceof Error ? err.message : undefined });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function saveSlot(slot: DeliverySlot) {
-    setBusy(true);
-    try {
-      await sendJson(`${API}/slots/${slot.id}`, "PATCH", {
-        label: slot.label,
-        windowText: slot.windowText ?? "",
-        sort: slot.sort,
-        active: slot.active,
-      });
-      toast.success("Slot saved");
-    } catch (err) {
-      toast.error("Couldn't save the slot", { description: err instanceof Error ? err.message : undefined });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function removeSlot(id: string) {
-    setBusy(true);
-    try {
-      await sendJson(`${API}/slots/${id}`, "DELETE", {});
-      setSlots((list) => list.filter((s) => s.id !== id));
-      toast.success("Slot removed");
-    } catch (err) {
-      toast.error("Couldn't remove the slot", { description: err instanceof Error ? err.message : undefined });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card>
-      <SectionHeader
-        icon="clock-circle-bold"
-        tone="clay"
-        title="Delivery slots"
-        caption="The delivery windows shoppers pick at checkout. Toggle off to hide a slot without deleting it."
-        action={
-          <button
-            type="button"
-            onClick={addSlot}
-            disabled={busy || loading}
-            className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-3.5 py-1.5 text-[12px] hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <Icon name="add-circle-bold" size={14} />
-            Add slot
-          </button>
-        }
-        badge={
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">
-            {slots.filter((s) => s.active).length} / {slots.length} active
-          </span>
-        }
-      />
-
-      {loading ? (
-        <p className="text-[12.5px] font-medium text-ng-ink-soft py-2">Loading slots…</p>
-      ) : (
-        <ul className="space-y-2.5">
-          {slots.map((slot) => (
-            <li
-              key={slot.id}
-              className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,0.7fr)_auto_auto] gap-3 items-end rounded-xl border border-ng-line-soft bg-ng-cream/40 p-3"
-            >
-              <TextField
-                label="Label"
-                value={slot.label}
-                onChange={(v) => patchLocal(slot.id, { label: v })}
-                placeholder="Morning"
-              />
-              <TextField
-                label="Window"
-                value={slot.windowText ?? ""}
-                onChange={(v) => patchLocal(slot.id, { windowText: v })}
-                placeholder="7:00 AM - 10:00 AM"
-              />
-              <NumberField
-                label="Sort"
-                value={slot.sort}
-                onChange={(v) => patchLocal(slot.id, { sort: v })}
-                step={1}
-              />
-              <div className="rounded-xl border border-ng-line-soft bg-ng-paper px-3">
-                <Toggle
-                  label="Active"
-                  checked={slot.active}
-                  onChange={(on) => patchLocal(slot.id, { active: on })}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => saveSlot(slot)}
-                  disabled={busy}
-                  aria-label={`Save slot ${slot.label}`}
-                  className="h-11 px-3.5 rounded-xl bg-ng-forest-deep text-ng-cream hover:bg-ng-forest transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Icon name="save" size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeSlot(slot.id)}
-                  disabled={busy}
-                  aria-label={`Remove slot ${slot.label}`}
-                  className="h-11 px-3 rounded-xl border border-ng-line text-ng-terracotta hover:bg-ng-terracotta/10 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Icon name="trash-bin-trash-bold" size={16} />
-                </button>
-              </div>
-            </li>
-          ))}
-          {slots.length === 0 ? (
-            <li className="text-[12px] font-medium text-ng-ink-soft py-2">
-              No delivery slots yet. Add one above.
-            </li>
-          ) : null}
-        </ul>
       )}
     </Card>
   );

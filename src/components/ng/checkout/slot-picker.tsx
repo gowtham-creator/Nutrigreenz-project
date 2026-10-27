@@ -2,17 +2,35 @@
 
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import type { SlotsStatus } from "@/lib/commerce";
 import type { DeliverySlot } from "@/types/nutrigreenz";
 
+/**
+ * The delivery-slot step. Shows only the shop's live, active slots: while they
+ * load it says so instead of offering placeholders, and when none is open it
+ * says that too, so a customer is never handed a window nobody will run.
+ */
 export function SlotPicker({
   slots,
+  status = "live",
+  onRetry,
   selectedId,
   onSelect,
 }: {
   slots: DeliverySlot[];
+  status?: SlotsStatus;
+  onRetry?: () => void;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const notice =
+    status === "loading"
+      ? "Checking which delivery slots are open…"
+      : slots.length > 0
+        ? null
+        : status === "failed"
+          ? "We couldn't load the delivery slots."
+          : "No delivery slots are open right now. Please check back soon.";
   return (
     <div className="rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-ng-float)]">
       <div className="mb-5 flex items-center gap-3">
@@ -27,6 +45,23 @@ export function SlotPicker({
         </div>
       </div>
 
+      {notice ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-ng-line-soft bg-ng-cream/50 px-4 py-4 text-[14px] text-ng-ink-muted"
+        >
+          <span>{notice}</span>
+          {status === "failed" && onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="rounded-full border border-ng-forest/30 px-3.5 py-1.5 text-[13px] font-semibold text-ng-forest-deep transition-colors hover:bg-ng-sage/30"
+            >
+              Try again
+            </button>
+          ) : null}
+        </div>
+      ) : (
       <div className="grid items-stretch gap-3 sm:grid-cols-3">
         {slots.map((slot) => {
           const selected = slot.id === selectedId;
@@ -71,6 +106,7 @@ export function SlotPicker({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

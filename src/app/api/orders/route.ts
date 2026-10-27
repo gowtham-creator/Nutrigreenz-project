@@ -30,6 +30,7 @@ import {
 import { beginPayment, isOnlinePaymentAvailable } from "@/lib/payments";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { afterResponse } from "@/lib/after-response";
+import { findBookableSlot } from "@/lib/commerce-rules";
 
 // supabase-admin + firebase-admin (jose, via session) need the Node runtime.
 export const runtime = "nodejs";
@@ -156,6 +157,32 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  /*
+   * The delivery slot must be one the shop is running right now.
+   *
+   * The browser used to send its own copy of the slot and the server stored it
+   * as given, so a slot an admin had switched off still came through: from a
+   * checkout draft saved before the switch, a page left open across it, or the
+   * storefront's built-in fallback slots when none were active. Checking the id
+   * against the live table closes all three, and the order keeps the server's
+   * copy of the slot, not whatever label the browser claimed.
+   */
+  const rawSlot =
+    typeof b.slotSnapshot === "object" && b.slotSnapshot !== null
+      ? (b.slotSnapshot as Record<string, unknown>)
+      : null;
+  const slotId = str(rawSlot?.id) ?? str(b.slotId);
+  let slot: Awaited<ReturnType<typeof findBookableSlot>> = null;
+  try {
+    slot = slotId ? await findBookableSlot(slotId) : null;
+  } catch (err) {
+    console.error(`order-slot-lookup-failed: ${err instanceof Error ? err.message : String(err)}`);
+    return Response.json({ ok: false, error: "create-failed" }, { status: 500 });
+  }
+  if (!slot) {
+    return Response.json({ ok: false, error: "slot-unavailable" }, { status: 409 });
+  }
+
   try {
     const order = await createOrder({
       customerId: session.customerId,
@@ -172,10 +199,7 @@ export async function POST(request: Request): Promise<Response> {
         typeof b.addressSnapshot === "object" && b.addressSnapshot !== null
           ? (b.addressSnapshot as Record<string, unknown>)
           : null,
-      slotSnapshot:
-        typeof b.slotSnapshot === "object" && b.slotSnapshot !== null
-          ? (b.slotSnapshot as Record<string, unknown>)
-          : null,
+      slotSnapshot: { id: slot.id, label: slot.label, windowText: slot.windowText },
     });
 
     // Order-placed confirmation email (best-effort, fire-and-forget so it never

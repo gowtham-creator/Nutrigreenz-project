@@ -1,6 +1,8 @@
 import { requirePermission } from "@/lib/admin-permissions-guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listOrdersAdmin } from "@/lib/orders";
+import { buildOrderSummary, periodWindows, type OrderSummary } from "@/lib/order-summary";
+import { isSuperAdmin } from "@/app/api/admin/config/guard";
 import {
   OrdersClient,
   type OrdersInitialData,
@@ -19,23 +21,35 @@ import {
  *
  * On a server-side data error the client receives `null` and falls back to its
  * original mount fetch, preserving the existing loading/empty behavior.
+ *
+ * The page opens on TODAY: the first page is today's orders (IST), with the
+ * today / week / month summary and the delivery slots alongside. Slots can be
+ * changed here only by a super admin, the same rule as the config API.
  */
 export const runtime = "nodejs";
 
 export default async function AdminOrdersPage() {
   await requirePermission("orders");
 
+  const canEditSlots = await isSuperAdmin();
+
   let initialData: OrdersInitialData | null;
+  let initialSummary: OrderSummary | null = null;
   if (!isSupabaseConfigured) {
     initialData = { orders: [], total: 0 };
   } else {
-    try {
-      const page = await listOrdersAdmin({ limit: 100 });
-      initialData = { orders: page.orders, total: page.total };
-    } catch {
-      initialData = null;
-    }
+    const now = new Date();
+    const today = periodWindows(now).today;
+    const [page, summary] = await Promise.allSettled([
+      listOrdersAdmin({ limit: 100, placedFrom: today.from, placedTo: today.to }),
+      buildOrderSummary(now),
+    ]);
+    initialData =
+      page.status === "fulfilled" ? { orders: page.value.orders, total: page.value.total } : null;
+    initialSummary = summary.status === "fulfilled" ? summary.value : null;
   }
 
-  return <OrdersClient initialData={initialData} />;
+  return (
+    <OrdersClient initialData={initialData} initialSummary={initialSummary} canEditSlots={canEditSlots} />
+  );
 }

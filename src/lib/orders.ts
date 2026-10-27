@@ -850,6 +850,10 @@ export interface AdminOrderFilter {
   search?: string;
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
+  /** Placed at or after this instant (ISO). */
+  placedFrom?: string;
+  /** Placed before this instant (ISO, exclusive). */
+  placedTo?: string;
   limit?: number;
   offset?: number;
 }
@@ -860,8 +864,9 @@ export interface AdminOrderPage {
 }
 
 /**
- * Admin orders list: filterable by fulfilment status, payment status, and a free
- * text search over order number / customer email / phone. Newest first, paged.
+ * Admin orders list: filterable by fulfilment status, payment status, when it
+ * was placed, and a free text search over order number / customer email /
+ * phone. Newest first, paged.
  */
 export async function listOrdersAdmin(
   filter: AdminOrderFilter = {},
@@ -877,6 +882,8 @@ export async function listOrdersAdmin(
 
   if (filter.status) query = query.eq("status", filter.status);
   if (filter.paymentStatus) query = query.eq("payment_status", filter.paymentStatus);
+  if (filter.placedFrom) query = query.gte("placed_at", filter.placedFrom);
+  if (filter.placedTo) query = query.lt("placed_at", filter.placedTo);
   if (filter.search) {
     const term = filter.search.trim().replace(/[%,]/g, "");
     if (term) {

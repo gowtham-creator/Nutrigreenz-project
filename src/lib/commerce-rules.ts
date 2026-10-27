@@ -303,6 +303,26 @@ export async function updateSlot(id: string, input: SlotUpdateInput): Promise<De
   return data ? toSlot(data as DeliverySlotRow) : null;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The slot a customer may book: the configured slot with this id, while it is
+ * active. Null for an inactive, deleted or made-up slot (the storefront's old
+ * built-in "morning"/"midday"/"evening" ids are not slots). Throws when the
+ * lookup itself fails, so a database error is never mistaken for a closed slot.
+ */
+export async function findBookableSlot(id: string): Promise<DeliverySlotRecord | null> {
+  if (!UUID.test(id)) return null;
+  const { data, error } = await supabaseAdmin()
+    .from("delivery_slots")
+    .select(SLOT_COLS)
+    .eq("id", id)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toSlot(data as DeliverySlotRow) : null;
+}
+
 /** Delete a delivery slot. */
 export async function deleteSlot(id: string): Promise<void> {
   await supabaseAdmin().from("delivery_slots").delete().eq("id", id);

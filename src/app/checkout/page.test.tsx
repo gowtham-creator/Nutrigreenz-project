@@ -19,6 +19,7 @@ const m = vi.hoisted(() => ({
   saveReceipt: vi.fn(),
   clearCheckoutDraft: vi.fn(),
   navigate: vi.fn(),
+  refreshRules: vi.fn(),
 }));
 
 // Fixtures are hoisted with the mocks: `vi.mock` factories run before the
@@ -168,7 +169,10 @@ vi.mock("@/lib/auth", () => ({
     account: { email: "asha@example.com", phone: "+919800000000" },
   }),
 }));
-vi.mock("@/lib/commerce", () => ({ useCommerceRules: () => fx.rules }));
+vi.mock("@/lib/commerce", () => ({
+  useCommerceRules: () => fx.rules,
+  useCommerceStatus: () => ({ slotsStatus: "live", refreshRules: m.refreshRules }),
+}));
 vi.mock("@/lib/loyalty-config", () => ({
   useLoyaltyConfig: () => ({
     config: { minRedeemPoints: 100, redeemPointsPerRupee: 10, maxRedeemPercent: 20 },
@@ -475,6 +479,24 @@ describe("checkout — Cash on Delivery", () => {
     expect(m.clear).not.toHaveBeenCalled();
     expect(m.push).not.toHaveBeenCalled();
     expect(m.saveReceipt).not.toHaveBeenCalled();
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+  });
+
+  it("sends only the slot it shows, and re-reads the slots when that one has closed", async () => {
+    m.refreshRules.mockResolvedValue(undefined);
+    fetchMock.mockResolvedValue(jsonResponse(409, { ok: false, error: "slot-unavailable" }));
+
+    const pay = await placeOrderWith("cod");
+
+    expect(postedBody().slotSnapshot).toMatchObject({ id: "slot-1" });
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(
+        "That delivery slot is no longer available. Please choose another slot.",
+      ),
+    );
+    expect(m.refreshRules).toHaveBeenCalledTimes(1);
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
     await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
   });
 

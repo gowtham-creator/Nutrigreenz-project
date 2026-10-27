@@ -16,6 +16,7 @@ const m = vi.hoisted(() => ({
   isOnlinePaymentAvailable: vi.fn(),
   sendOrderPlacedEmail: vi.fn(),
   afterResponse: vi.fn(),
+  findBookableSlot: vi.fn(),
 }));
 
 // The real SbiepayError is imported below, so its own imports must be safe in Node.
@@ -57,6 +58,7 @@ vi.mock("@/lib/payments", () => ({
 }));
 vi.mock("@/lib/order-emails", () => ({ sendOrderPlacedEmail: m.sendOrderPlacedEmail }));
 vi.mock("@/lib/after-response", () => ({ afterResponse: m.afterResponse }));
+vi.mock("@/lib/commerce-rules", () => ({ findBookableSlot: m.findBookableSlot }));
 
 import { POST, maxDuration } from "./route";
 import { SbiepayError } from "@/lib/sbiepay-client";
@@ -70,6 +72,8 @@ const ORDER = {
   userPhone: "+919800000000",
   paymentStatus: "pending",
 };
+
+const SLOT = { id: "slot-1", label: "Morning", windowText: "7–10 AM", sort: 0, active: true };
 
 function orderRequest(body: Record<string, unknown>): Request {
   return new Request("http://localhost/api/orders", {
@@ -100,6 +104,7 @@ beforeEach(() => {
   m.sendOrderPlacedEmail.mockResolvedValue(undefined);
   m.recordGatewayHandoff.mockResolvedValue(true);
   m.failUnpaidOnlineOrder.mockResolvedValue({ id: "ord-1" });
+  m.findBookableSlot.mockResolvedValue(SLOT);
   consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -350,5 +355,46 @@ describe("POST /api/orders — items the catalog cannot price", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("item-unavailable");
     expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/orders — delivery slot", () => {
+  it("refuses a slot that is switched off, before creating anything", async () => {
+    m.findBookableSlot.mockResolvedValue(null);
+
+    const res = await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ ok: false, error: "slot-unavailable" });
+    expect(m.findBookableSlot).toHaveBeenCalledWith("slot-1");
+    expect(m.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("refuses an order with no slot at all", async () => {
+    const res = await POST(orderRequest({ paymentMethod: "cod", slotSnapshot: null }));
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("slot-unavailable");
+    expect(m.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("stores the server's copy of the slot, not the label the browser sent", async () => {
+    await POST(orderRequest({ paymentMethod: "cod", slotSnapshot: { id: "slot-1", label: "Midnight" } }));
+
+    expect(m.createOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slotSnapshot: { id: "slot-1", label: "Morning", windowText: "7–10 AM" },
+      }),
+    );
+  });
+
+  it("answers 500 rather than 'slot closed' when the slot lookup itself fails", async () => {
+    m.findBookableSlot.mockRejectedValue(new Error("connection reset"));
+
+    const res = await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe("create-failed");
+    expect(m.createOrder).not.toHaveBeenCalled();
   });
 });

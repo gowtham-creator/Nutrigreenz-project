@@ -3,7 +3,8 @@
  *
  * Admin/superadmin-gated (shared cookie + `verifyToken` guard). Filterable by
  * `status` (placed|confirmed|packed|shipped|delivered), `paymentStatus`
- * (pending|paid|failed), and a free-text `search` over order number / email /
+ * (pending|paid|failed), `from` / `to` (ISO instants: placed at or after
+ * `from`, before `to`), and a free-text `search` over order number / email /
  * phone; paged via `limit` + `offset`. When Supabase is unconfigured the response
  * is an empty, well-formed page so the UI shows its empty state, never an error.
  */
@@ -48,11 +49,26 @@ export async function GET(request: Request): Promise<Response> {
   const paymentStatus = PAYMENT_STATUSES.includes(paymentRaw as PaymentStatus)
     ? (paymentRaw as PaymentStatus)
     : undefined;
+  const instant = (key: string) => {
+    const raw = url.searchParams.get(key);
+    const ms = raw ? Date.parse(raw) : NaN;
+    return Number.isFinite(ms) ? new Date(ms).toISOString() : undefined;
+  };
+  const placedFrom = instant("from");
+  const placedTo = instant("to");
   const limitRaw = Number(url.searchParams.get("limit"));
   const offsetRaw = Number(url.searchParams.get("offset"));
   const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined;
   const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? offsetRaw : undefined;
 
-  const page = await listOrdersAdmin({ search, status, paymentStatus, limit, offset });
+  const page = await listOrdersAdmin({
+    search,
+    status,
+    paymentStatus,
+    placedFrom,
+    placedTo,
+    limit,
+    offset,
+  });
   return Response.json({ ok: true, ...page });
 }

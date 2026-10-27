@@ -24,11 +24,13 @@ export const COMMERCE_RULES: CommerceRules = {
   freeDeliveryThreshold: 599,
   shippingFlat: 40,
   taxMode: "inclusive",
-  deliverySlots: [
-    { id: "morning", label: "Morning · 7–10 AM", cutoff: "22:00" },
-    { id: "midday", label: "Midday · 11 AM–2 PM", cutoff: "08:00" },
-    { id: "evening", label: "Evening · 5–8 PM", cutoff: "13:00" },
-  ],
+  /*
+   * No built-in slots. Slots only ever come from the live config: built-in
+   * ones were shown whenever the live list was empty or not loaded yet, which
+   * offered customers windows the shop had switched off (and ids the order
+   * API now refuses). Checkout waits for `slotsStatus` instead.
+   */
+  deliverySlots: [],
   shippingType: "flat",
   shippingSlabs: [],
   taxRateBps: 0,
@@ -40,9 +42,18 @@ const PUBLIC_RULES_ENDPOINT = "/api/commerce-rules";
 
 const STORAGE_KEY = "ng.commerce.v1";
 
+/**
+ * Whether `rules.deliverySlots` is the shop's live list yet: "loading" until
+ * the public config answers, "failed" when it could not be read.
+ */
+export type SlotsStatus = "loading" | "live" | "failed";
+
 interface CommerceConfigValue {
   /** The live commerce rules (defaults merged with any persisted edits). */
   rules: CommerceRules;
+  slotsStatus: SlotsStatus;
+  /** Read the live config again (checkout calls this when a slot closes under it). */
+  refreshRules: () => Promise<void>;
   /** Shallow-merge a partial patch into the rules and persist. */
   updateRules: (patch: Partial<CommerceRules>) => void;
   /** Restore the built-in defaults (and clear persisted edits). */
@@ -72,9 +83,9 @@ function normalizeRules(value: unknown): CommerceRules {
       v.taxMode === "inclusive" || v.taxMode === "exclusive"
         ? v.taxMode
         : COMMERCE_RULES.taxMode,
-    deliverySlots: Array.isArray(v.deliverySlots)
-      ? v.deliverySlots
-      : COMMERCE_RULES.deliverySlots,
+    // Never restored from storage: a slot saved on an earlier visit may have
+    // been switched off since. The live read below supplies them.
+    deliverySlots: [],
     shippingType:
       v.shippingType === "flat" || v.shippingType === "slab" || v.shippingType === "zero"
         ? v.shippingType
@@ -119,14 +130,15 @@ function fromPublicPayload(p: PublicRulesPayload): CommerceRules {
         // Legacy slots carried an "order by" cutoff; live config slots don't.
         cutoff: "",
       }))
-    : COMMERCE_RULES.deliverySlots;
+    : [];
 
   return {
     minOrderValue: paiseToRupees(p.minOrderPaise),
     freeDeliveryThreshold: paiseToRupees(p.freeDeliveryThresholdPaise),
     shippingFlat: paiseToRupees(p.shippingFlatPaise),
     taxMode: p.taxMode === "exclusive" ? "exclusive" : "inclusive",
-    deliverySlots: slots.length > 0 ? slots : COMMERCE_RULES.deliverySlots,
+    // An empty list means no slot is active: checkout says so and stops.
+    deliverySlots: slots,
     shippingType:
       p.shippingType === "slab" || p.shippingType === "zero" ? p.shippingType : "flat",
     shippingSlabs: Array.isArray(p.shippingSlabs)
@@ -154,6 +166,23 @@ function readStoredRules(): CommerceRules {
 export function CommerceProvider({ children }: { children: ReactNode }) {
   const [rules, setRules] = useState<CommerceRules>(COMMERCE_RULES);
   const [hydrated, setHydrated] = useState(false);
+  const [slotsStatus, setSlotsStatus] = useState<SlotsStatus>("loading");
+
+  /** Fetch the LIVE Super-Admin config; resolves to whether it was applied. */
+  const fetchLive = useCallback(async (isCancelled: () => boolean = () => false) => {
+    try {
+      const res = await fetch(PUBLIC_RULES_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = (await res.json()) as { ok?: boolean; rules?: PublicRulesPayload };
+      if (!data?.ok || !data.rules) throw new Error("no rules");
+      if (isCancelled()) return;
+      setRules(fromPublicPayload(data.rules));
+      setSlotsStatus("live");
+    } catch {
+      /* offline / unavailable — keep the cached/default rules, but say so */
+      if (!isCancelled()) setSlotsStatus("failed");
+    }
+  }, []);
 
   // Hydrate from localStorage after mount (avoids SSR mismatch), then fetch the
   // LIVE Super-Admin config from the public API so the storefront's economics
@@ -163,22 +192,16 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
     setHydrated(true);
 
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(PUBLIC_RULES_ENDPOINT, { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { ok?: boolean; rules?: PublicRulesPayload };
-        if (!cancelled && data?.ok && data.rules) {
-          setRules(fromPublicPayload(data.rules));
-        }
-      } catch {
-        /* offline / unavailable — keep the cached/default rules */
-      }
-    })();
+    void fetchLive(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchLive]);
+
+  const refreshRules = useCallback(async () => {
+    setSlotsStatus("loading");
+    await fetchLive();
+  }, [fetchLive]);
 
   // Persist whenever rules change (only after initial hydration).
   useEffect(() => {
@@ -206,8 +229,8 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<CommerceConfigValue>(
-    () => ({ rules, updateRules, resetRules }),
-    [rules, updateRules, resetRules],
+    () => ({ rules, slotsStatus, refreshRules, updateRules, resetRules }),
+    [rules, slotsStatus, refreshRules, updateRules, resetRules],
   );
 
   return <CommerceContext.Provider value={value}>{children}</CommerceContext.Provider>;
@@ -229,6 +252,12 @@ function useCommerceContext(): CommerceConfigValue {
  */
 export function useCommerceRules(): CommerceRules {
   return useCommerceContext().rules;
+}
+
+/** Whether the delivery slots are the live list yet, and a way to re-read them. */
+export function useCommerceStatus(): { slotsStatus: SlotsStatus; refreshRules: () => Promise<void> } {
+  const { slotsStatus, refreshRules } = useCommerceContext();
+  return { slotsStatus, refreshRules };
 }
 
 /** Read + mutate the commerce rules (used by the Super Admin UI). */

@@ -17,7 +17,9 @@ export async function GET(): Promise<Response> {
     const rules = await getPublicCommerceRules();
     return Response.json(
       { ok: true, rules },
-      { headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" } },
+      // Never cached: an admin switching a slot off must take effect on the
+      // next checkout, not a few minutes later.
+      { headers: { "cache-control": "no-store" } },
     );
   } catch {
     return Response.json({ ok: false, error: "unavailable" }, { status: 503 });
