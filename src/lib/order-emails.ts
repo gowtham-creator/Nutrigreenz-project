@@ -44,7 +44,7 @@ const rupees = (paise: number) =>
     maximumFractionDigits: 2,
   })}`;
 
-type Kind = "placed" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
+type Kind = "placed" | "confirmed" | "packed" | "scheduled" | "shipped" | "delivered" | "cancelled";
 
 const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intro: string }> = {
   // Sent the moment the customer completes checkout — the order exists, but the
@@ -65,6 +65,11 @@ const COPY: Record<Kind, { subject: (n: string) => string; heading: string; intr
     subject: (n) => `Order ${n} is packed · Nutri Greenz`,
     heading: "Packed and ready 📦",
     intro: "Your order is packed and waiting for its delivery slot. Here's your summary:",
+  },
+  scheduled: {
+    subject: (n) => `Order ${n}: delivery scheduled · Nutri Greenz`,
+    heading: "Delivery scheduled 🌿",
+    intro: "Your community delivery is scheduled.",
   },
   shipped: {
     subject: (n) => `Order ${n} is on its way 🚚 · Nutri Greenz`,
@@ -252,8 +257,13 @@ function logisticsBody(
   )}`;
 }
 
-function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
-  const c = COPY[kind];
+function orderEmailHtml(order: OrderWithDetail, kind: Kind, scheduledFor?: string): string {
+  const c = scheduledFor
+    ? {
+        ...COPY[kind],
+        intro: `Your community delivery is set for ${scheduledFor}. A Nutri Greenz captain will bring your order to your door.`,
+      }
+    : COPY[kind];
   const INK = "#141414";
   const MUTED = "#6B6F72";
   const LINE = "#E4E4E5";
@@ -517,7 +527,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
 </body></html>`;
 }
 
-async function send(orderId: string, kind: Kind): Promise<void> {
+async function send(orderId: string, kind: Kind, when?: string): Promise<void> {
   try {
     const order = await getOrder(orderId);
     if (!order) return;
@@ -542,7 +552,7 @@ async function send(orderId: string, kind: Kind): Promise<void> {
       await sendEmail({
         to: order.userEmail,
         subject: COPY[kind].subject(order.orderNumber),
-        html: orderEmailHtml(order, kind),
+        html: orderEmailHtml(order, kind, when),
         attachments,
       });
     }
@@ -553,7 +563,7 @@ async function send(orderId: string, kind: Kind): Promise<void> {
       const type: NotifyType = kind === "placed" ? "orderPlaced" : "orderStatus";
       const vars = {
         orderNumber: order.orderNumber,
-        status: kind,
+        status: when ? `scheduled for ${when}` : kind,
         total: rupees(order.totalPaise),
         itemsSummary: order.items.map((it) => `${it.title} x${it.qty}`).join(", "),
         trackUrl: `${SITE}/orders/${order.id}`,
@@ -591,6 +601,11 @@ export function sendOrderConfirmedEmail(orderId: string): Promise<void> {
 }
 export function sendOrderPackedEmail(orderId: string): Promise<void> {
   return send(orderId, "packed");
+}
+
+/** Sent when an operator puts the order on a community delivery run. */
+export function sendDeliveryScheduledEmail(orderId: string, when: string): Promise<void> {
+  return send(orderId, "scheduled", when);
 }
 
 export function sendOrderShippedEmail(orderId: string): Promise<void> {

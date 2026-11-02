@@ -151,3 +151,14 @@ export function communitySummary(communities: readonly string[]): string {
   if (communities.length === 1) return shortCommunity(communities[0]);
   return `${shortCommunity(communities[0])} +${communities.length - 1} more`;
 }
+
+/** "2026-11-05", "Evening (5–8 PM)" → "Thu, 5 Nov · Evening (5–8 PM)". */
+export function deliveryWhenLabel(isoDay: string, windowText: string): string {
+  const day = new Date(`${isoDay}T00:00:00Z`).toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+  return `${day} · ${windowText}`;
+}

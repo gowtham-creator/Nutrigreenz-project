@@ -9,6 +9,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getOrder } from "@/lib/orders";
+import { deliveryForOrder } from "@/lib/community-delivery";
 
 export const runtime = "nodejs";
 
@@ -31,5 +32,5 @@ export async function GET(
     return Response.json({ ok: false, error: "not-found" }, { status: 404 });
   }
 
-  return Response.json({ ok: true, order });
+  return Response.json({ ok: true, order: { ...order, delivery: await deliveryForOrder(order.id) } });
 }

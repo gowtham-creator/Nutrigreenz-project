@@ -7,7 +7,7 @@ vi.mock("@/lib/captains", () => ({ advancePickup: vi.fn(), requireActiveCaptain:
 import { PATCH } from "@/app/api/captain/pickups/[id]/route";
 import { advancePickup, requireActiveCaptain } from "@/lib/captains";
 
-const pickup = { id: "p1", captainId: "cap-1", community: "X", address: null, status: "due", dueAt: null, updatedAt: "x", createdAt: "x" } as const;
+const pickup = { id: "p1", captainId: "cap-1", community: "X", address: null, deliveryDate: null, windowText: null, status: "due", dueAt: null, updatedAt: "x", createdAt: "x" } as const;
 const patch = (body: unknown) =>
   PATCH(new Request("http://x", { method: "PATCH", body: JSON.stringify(body) }), {
     params: Promise.resolve({ id: "p1" }),

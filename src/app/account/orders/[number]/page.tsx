@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { deliveryWhenLabel } from "@/lib/community-label";
 import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
@@ -392,7 +393,15 @@ export default function AccountOrderDetailPage({
                   {inrFromPaise(order.totalPaise)}
                 </span>
               </div>
-              {slotLabel ? (
+              {order.delivery ? (
+                <p className="mt-3 flex items-start gap-2 border-t border-ng-line-soft pt-3 text-[12px] font-semibold text-ng-forest-deep">
+                  <UiIcon name="deliveryTime" size={14} className="mt-px shrink-0 text-ng-forest" />
+                  <span>
+                    Community delivery · {deliveryWhenLabel(order.delivery.deliveryDate, order.delivery.windowText)}
+                    {order.delivery.captainName ? ` · Captain ${order.delivery.captainName}` : ""}
+                  </span>
+                </p>
+              ) : slotLabel ? (
                 <p className="mt-3 flex items-center gap-2 border-t border-ng-line-soft pt-3 text-[12px] text-ng-ink-muted">
                   <UiIcon name="deliveryTime" size={14} className="text-ng-forest" />
                   Slot · {slotLabel}

@@ -16,6 +16,9 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { ORDER_STATUS_FLOW, type FulfilmentStatus, type OrderStatus } from "@/lib/orders";
+import { listCaptains } from "@/lib/captains";
+import { listDeliverySlots } from "@/lib/commerce-rules";
+import type { CaptainPickupStatus } from "@/types/nutrigreenz";
 
 /* ── result shapes ────────────────────────────────────────────────────── */
 
@@ -27,6 +30,30 @@ export interface BundleOrderSummary {
   status: OrderStatus;
   totalPaise: number;
   itemCount: number;
+  /** The delivery run this order is on, or null while unassigned. */
+  pickupId: string | null;
+}
+
+/** A delivery run assigned to some or all of a bundle's orders. */
+export interface BundleDelivery {
+  id: string;
+  captainName: string;
+  deliveryDate: string;
+  windowText: string;
+  status: CaptainPickupStatus;
+  orderCount: number;
+}
+
+export interface BundleCaptain {
+  id: string;
+  name: string;
+  communities: string[];
+}
+
+export interface BundleSlot {
+  id: string;
+  label: string;
+  windowText: string | null;
 }
 
 /** A SKU line consolidated across every order in a group (for packing). */
@@ -54,12 +81,17 @@ export interface BundleGroup {
   bundleTotalPaise: number;
   orders: BundleOrderSummary[];
   consolidated: BundleConsolidatedItem[];
+  deliveries: BundleDelivery[];
 }
 
 export interface BundlesResult {
   groups: BundleGroup[];
   /** Distinct delivery dates across the built groups (ascending, nulls last). */
   deliveryDates: string[];
+  /** Active captains an operator can assign. */
+  captains: BundleCaptain[];
+  /** Open delivery slots, the same ones customers choose from. */
+  slots: BundleSlot[];
   totals: {
     groups: number;
     orders: number;
@@ -79,6 +111,7 @@ interface BundleOrderRow {
   total_paise: number;
   address_snapshot: Record<string, unknown> | null;
   slot_snapshot: Record<string, unknown> | null;
+  pickup_id: string | null;
 }
 
 interface BundleItemRow {
@@ -125,7 +158,7 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
   const { data: orderData } = await db
     .from("orders")
     .select(
-      "id, order_number, user_email, status, payment_status, total_paise, address_snapshot, slot_snapshot",
+      "id, order_number, user_email, status, payment_status, total_paise, pickup_id, address_snapshot, slot_snapshot",
     )
     .in("status", [...BUNDLEABLE_STATUSES])
     .neq("payment_status", "failed")
@@ -133,7 +166,7 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
   const orders = (orderData as BundleOrderRow[] | null) ?? [];
 
   if (orders.length === 0) {
-    return { groups: [], deliveryDates: [], totals: { groups: 0, orders: 0, bundleTotalPaise: 0 } };
+    return { groups: [], deliveryDates: [], captains: [], slots: [], totals: { groups: 0, orders: 0, bundleTotalPaise: 0 } };
   }
 
   // Line items for those orders, indexed by order id.
@@ -180,6 +213,7 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
         bundleTotalPaise: 0,
         orders: [],
         consolidated: [],
+        deliveries: [],
       };
       groups.set(key, group);
     }
@@ -194,6 +228,7 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
       status: toStatus(o.status),
       totalPaise: o.total_paise,
       itemCount,
+      pickupId: o.pickup_id ?? null,
     });
     group.orderCount += 1;
     group.totalItems += itemCount;
@@ -227,6 +262,38 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
     );
   }
 
+  // Who is delivering each group's orders, and what an operator can assign next.
+  const [roster, openSlots] = await Promise.all([listCaptains(false), listDeliverySlots()]);
+  const captainName = new Map(roster.map((c) => [c.id, c.name]));
+  const pickupIds = Array.from(new Set(orders.map((o) => o.pickup_id).filter((id): id is string => Boolean(id))));
+  if (pickupIds.length > 0) {
+    const { data: pickupData } = await db
+      .from("captain_pickups")
+      .select("id, captain_id, delivery_date, window_text, status")
+      .in("id", pickupIds);
+    const pickups = (pickupData as {
+      id: string;
+      captain_id: string;
+      delivery_date: string | null;
+      window_text: string | null;
+      status: CaptainPickupStatus;
+    }[] | null) ?? [];
+    for (const group of groups.values()) {
+      for (const p of pickups) {
+        const orderCount = group.orders.filter((o) => o.pickupId === p.id).length;
+        if (orderCount === 0) continue;
+        group.deliveries.push({
+          id: p.id,
+          captainName: captainName.get(p.captain_id) ?? "Captain",
+          deliveryDate: p.delivery_date ?? "",
+          windowText: p.window_text ?? "",
+          status: p.status,
+          orderCount,
+        });
+      }
+    }
+  }
+
   // Soonest delivery date first; undated groups sink to the bottom.
   const sorted = Array.from(groups.values()).sort((a, b) => {
     if (a.deliveryDate !== b.deliveryDate) {
@@ -247,6 +314,8 @@ export async function buildOrderBundles(): Promise<BundlesResult> {
 
   return {
     groups: sorted,
+    captains: roster.filter((c) => c.active).map((c) => ({ id: c.id, name: c.name, communities: c.communities })),
+    slots: openSlots.filter((s) => s.active).map((s) => ({ id: s.id, label: s.label, windowText: s.windowText })),
     deliveryDates,
     totals: { groups: sorted.length, orders: totalOrders, bundleTotalPaise: totalValue },
   };

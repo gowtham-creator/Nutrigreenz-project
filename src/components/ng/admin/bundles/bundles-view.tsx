@@ -18,15 +18,20 @@ export function BundlesView() {
   const [loading, setLoading] = useState(true);
   const [activeDate, setActiveDate] = useState<string | null>(null);
 
+  // Bumped after assigning or removing a delivery, to read the bundles again.
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     let active = true;
     (async () => {
-      const res = await fetch("/api/admin/orders/bundles");
+      const res = await fetch("/api/admin/orders/bundles", { cache: "no-store" });
       const json = (await res.json()) as { ok: boolean } & Partial<BundlesResult>;
       if (active && json.ok) {
         setData({
           groups: json.groups ?? [],
           deliveryDates: json.deliveryDates ?? [],
+          captains: json.captains ?? [],
+          slots: json.slots ?? [],
           totals: json.totals ?? { groups: 0, orders: 0, bundleTotalPaise: 0 },
         });
       }
@@ -35,7 +40,7 @@ export function BundlesView() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const dates = data?.deliveryDates ?? [];
 
@@ -96,7 +101,13 @@ export function BundlesView() {
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
-            <BundleCard key={g.key} group={g} />
+            <BundleCard
+              key={g.key}
+              group={g}
+              captains={data?.captains ?? []}
+              slots={data?.slots ?? []}
+              onChanged={() => setReloadKey((k) => k + 1)}
+            />
           ))}
         </div>
       )}

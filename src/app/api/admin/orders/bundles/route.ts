@@ -28,6 +28,8 @@ export async function GET(): Promise<Response> {
       ok: true,
       groups: [],
       deliveryDates: [],
+      captains: [],
+      slots: [],
       totals: { groups: 0, orders: 0, bundleTotalPaise: 0 },
     });
   }
