@@ -188,15 +188,22 @@ function toArea(r: ServiceableAreaRow): ServiceableAreaRecord {
 
 /**
  * Read the singleton commerce config. Returns sane built-in defaults when the
- * DB is unconfigured or the row is somehow missing, so callers never crash.
+ * DB is unconfigured or the row is somehow missing. Throws when the read itself
+ * fails: callers that price an order must stop, and the ones that can degrade
+ * (the public read, the free-delivery copy) catch it.
  */
 export async function getCommerceRules(): Promise<CommerceRulesRecord> {
   if (!isSupabaseConfigured) return DEFAULT_COMMERCE_RULES;
-  const { data } = await supabaseAdmin()
+  const { data, error } = await supabaseAdmin()
     .from("commerce_rules")
     .select(RULES_COLS)
     .eq("id", 1)
     .maybeSingle();
+  // A failed read must not look like a missing row. The defaults are a ₹300
+  // minimum and a ₹40 fee, so an order placed during a blip would be charged, or
+  // refused, by rules the shop is not running, and the admin panel would show
+  // them as the live values, one Save away from overwriting the real ones.
+  if (error) throw new Error(error.message);
   return data ? toRules(data as CommerceRulesRow) : DEFAULT_COMMERCE_RULES;
 }
 

@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({
   requireSuperAdmin: vi.fn(),
   revalidateStorefront: vi.fn(),
+  getCommerceRules: vi.fn(),
   updateCommerceRules: vi.fn(),
   updateFeatureFlags: vi.fn(),
 }));
@@ -16,7 +17,7 @@ vi.mock("./guard", () => ({ requireSuperAdmin: m.requireSuperAdmin }));
 vi.mock("@/lib/supabase-admin", () => ({ isSupabaseConfigured: true, supabaseAdmin: vi.fn() }));
 vi.mock("@/lib/revalidate-storefront", () => ({ revalidateStorefront: m.revalidateStorefront }));
 vi.mock("@/lib/commerce-rules", () => ({
-  getCommerceRules: vi.fn(),
+  getCommerceRules: m.getCommerceRules,
   updateCommerceRules: m.updateCommerceRules,
 }));
 vi.mock("@/lib/feature-flags", () => ({
@@ -25,7 +26,7 @@ vi.mock("@/lib/feature-flags", () => ({
   updateFeatureFlags: m.updateFeatureFlags,
 }));
 
-import { PUT as putCommerce } from "./commerce/route";
+import { GET as getCommerce, PUT as putCommerce } from "./commerce/route";
 import { PUT as putFeatures } from "./features/route";
 
 const put = (body: unknown) =>
@@ -53,6 +54,17 @@ describe("saving the commerce rules", () => {
     const res = await putCommerce(put({ freeDeliveryThresholdPaise: 79_900 }));
     expect(res.status).toBe(400);
     expect(m.revalidateStorefront).not.toHaveBeenCalled();
+  });
+});
+
+describe("reading the commerce rules", () => {
+  it("answers 503 on a failed read, so the panel cannot show or save defaults", async () => {
+    m.getCommerceRules.mockRejectedValue(new Error("connection reset"));
+
+    const res = await getCommerce();
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ ok: false, error: "unavailable" });
   });
 });
 

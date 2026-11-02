@@ -14,8 +14,13 @@ import { revalidateStorefront } from "@/lib/revalidate-storefront";
 export async function GET(): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
-  const rules = await getCommerceRules();
-  return Response.json({ ok: true, rules });
+  try {
+    const rules = await getCommerceRules();
+    return Response.json({ ok: true, rules });
+  } catch {
+    // The panel shows its retry state rather than values it could save back.
+    return Response.json({ ok: false, error: "unavailable" }, { status: 503 });
+  }
 }
 
 const SHIPPING_TYPES: readonly ShippingType[] = ["flat", "slab", "zero"];

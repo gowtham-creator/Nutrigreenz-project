@@ -15,7 +15,7 @@ vi.mock("@/lib/supabase-admin", () => ({
   supabaseAdmin: () => h.db,
 }));
 
-import { isServiceable } from "@/lib/commerce-rules";
+import { DEFAULT_COMMERCE_RULES, getCommerceRules, isServiceable } from "@/lib/commerce-rules";
 
 /** A database with `active` live areas, of which `matches` are this pincode. */
 function areasDb(active: FakeResult, matches: FakeResult = { count: 0 }) {
@@ -23,6 +23,43 @@ function areasDb(active: FakeResult, matches: FakeResult = { count: 0 }) {
   h.db = fake.client;
   return fake;
 }
+
+describe("getCommerceRules", () => {
+  const rulesDb = (result: FakeResult) => {
+    h.db = createFakeSupabase(() => result).client;
+  };
+
+  it("reads the live rules", async () => {
+    rulesDb({
+      data: {
+        min_order_paise: 100,
+        free_delivery_threshold_paise: 0,
+        shipping_type: "zero",
+        shipping_flat_paise: 5_000,
+        shipping_slabs: [],
+        tax_mode: "inclusive",
+        tax_rate_bps: 500,
+        currency: "INR",
+        updated_at: "2026-10-01T00:00:00Z",
+      },
+    });
+
+    await expect(getCommerceRules()).resolves.toMatchObject({
+      minOrderPaise: 100,
+      shippingType: "zero",
+    });
+  });
+
+  it("uses the defaults when the row is missing", async () => {
+    rulesDb({ data: null });
+    await expect(getCommerceRules()).resolves.toEqual(DEFAULT_COMMERCE_RULES);
+  });
+
+  it("throws on a failed read rather than pass the defaults off as live", async () => {
+    rulesDb({ error: { message: "connection reset" } });
+    await expect(getCommerceRules()).rejects.toThrow("connection reset");
+  });
+});
 
 describe("isServiceable", () => {
   beforeEach(() => {

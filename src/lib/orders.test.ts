@@ -743,6 +743,16 @@ describe("createOrder — loyalty points are earned when an online order is PAID
     expect(isServiceable).toHaveBeenCalledWith("");
   });
 
+  it("refuses to price an order when the rules cannot be read", async () => {
+    const { ops, rpcCalls } = placeDb();
+    vi.mocked(getCommerceRules).mockRejectedValue(new Error("connection reset"));
+
+    await expect(createOrder({ ...input, paymentMethod: "cod" })).rejects.toThrow("connection reset");
+
+    expect(rpcCalls).toEqual([]);
+    expect(ops.filter((o) => o.action === "insert")).toEqual([]);
+  });
+
   it("does not report a failed area lookup as an area it cannot deliver to", async () => {
     const { rpcCalls } = placeDb();
     vi.mocked(isServiceable).mockRejectedValue(new Error("connection reset"));
