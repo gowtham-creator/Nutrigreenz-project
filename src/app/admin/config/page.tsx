@@ -26,25 +26,6 @@ import { getAdminRole, getAdminEmail } from "@/lib/admin-auth";
 import { adminGet, invalidateAdminGet } from "@/lib/admin-get";
 import { WhenVisible } from "@/components/ng/admin/when-visible";
 
-/* ---- Read-only reference cards (kept from the previous display) -------- */
-const ZONES = [
-  { city: "Hyderabad", pin: "500001-500098", days: "Same/next day", surcharge: "Free above ₹599", on: true },
-  { city: "Secunderabad", pin: "500003-500094", days: "Same/next day", surcharge: "Free above ₹599", on: true },
-  { city: "Mumbai", pin: "400001-400107", days: "3 days", surcharge: "₹49 flat", on: true },
-  { city: "Chennai", pin: "600001-600099", days: "3 days", surcharge: "₹49 flat", on: true },
-  { city: "Delhi NCR", pin: "110001-110099", days: "3-4 days", surcharge: "₹79 flat", on: true },
-  { city: "Pan-India (rest)", pin: "—", days: "5-7 days", surcharge: "₹99 flat", on: true },
-  { city: "Kolkata", pin: "700001-700099", days: "—", surcharge: "—", on: false },
-];
-
-const PAYMENT = [
-  { method: "UPI · Razorpay", on: true, fee: "0.4%", note: "Default checkout" },
-  { method: "Cards · Razorpay", on: true, fee: "1.9% + ₹2", note: "All major networks" },
-  { method: "Netbanking", on: true, fee: "₹15 flat", note: "" },
-  { method: "Wallets (Paytm, PhonePe)", on: true, fee: "1.4%", note: "" },
-  { method: "COD", on: false, fee: "—", note: "Disabled · pilferage rate too high" },
-];
-
 const SUB_NAV = [
   "Commerce",
   "Loyalty",
@@ -52,7 +33,6 @@ const SUB_NAV = [
   "Coupons",
   "Features",
   "Access",
-  "Shipping",
   "Payment",
 ];
 
@@ -262,9 +242,11 @@ function ConfigContent() {
       {/* Secondary panels mount when scrolled to, not on page load. Each one
           fetches from its own effect, so deferring the mount defers the request.
           The wrapper holds the sub-nav anchor while the panel is absent. */}
-      <WhenVisible minHeight={340}>
-        <PaymentGatewayPanel />
-      </WhenVisible>
+      <div id="payment" className="scroll-mt-32">
+        <WhenVisible minHeight={340}>
+          <PaymentGatewayPanel />
+        </WhenVisible>
+      </div>
 
       <WhenVisible anchorId="coupons" minHeight={420}>
         <CouponCampaignBuilder />
@@ -275,65 +257,6 @@ function ConfigContent() {
       <WhenVisible anchorId="access" minHeight={380}>
         <RolesAndLogs />
       </WhenVisible>
-
-      {/* Read-only reference: shipping zones + payment methods */}
-      <Card
-        title={
-          <span className="flex items-center gap-2">
-            <UiIcon name="location" size={17} className="text-ng-forest" />
-            Shipping zones
-          </span>
-        }
-        action={<span className="text-[11px] uppercase tracking-wider font-semibold text-ng-ink-muted">{ZONES.filter((z) => z.on).length} live · read-only</span>}
-        className="!p-0 overflow-hidden mb-6"
-      >
-        <div id="shipping" className="scroll-mt-32" />
-        <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-4 px-6 py-3 bg-ng-cream border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
-          <span>City</span>
-          <span>PIN range</span>
-          <span>Delivery</span>
-          <span>Pricing</span>
-          <span>Status</span>
-        </div>
-        <ul>
-          {ZONES.map((z) => (
-            <li
-              key={`${z.city}-${z.pin}`}
-              className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-4 px-6 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0"
-            >
-              <span className="font-semibold text-ng-ink">{z.city}</span>
-              <span className="font-mono font-medium text-[11.5px] text-ng-ink-muted tabular-nums">{z.pin}</span>
-              <span className="text-[12.5px] font-medium text-ng-ink-muted">{z.days}</span>
-              <span className="text-[12.5px] font-medium text-ng-ink">{z.surcharge}</span>
-              <span><Pill tone={z.on ? "success" : "neutral"}>{z.on ? "Live" : "Off"}</Pill></span>
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <Card
-        title={
-          <span className="flex items-center gap-2">
-            <Icon name="card-bold" size={17} className="text-ng-forest" />
-            Payment methods
-          </span>
-        }
-        className="mb-2"
-      >
-        <div id="payment" className="scroll-mt-32" />
-        <ul className="divide-y divide-ng-line-soft -mt-1">
-          {PAYMENT.map((p) => (
-            <li key={p.method} className="py-3 flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="text-[13.5px] font-semibold text-ng-ink">{p.method}</div>
-                <div className="text-[11.5px] font-medium text-ng-ink-soft mt-0.5">{p.note || `Fee: ${p.fee}`}</div>
-              </div>
-              <span className="font-mono font-semibold text-[12px] text-ng-ink tabular-nums">{p.fee}</span>
-              <Pill tone={p.on ? "success" : "neutral"}>{p.on ? "On" : "Off"}</Pill>
-            </li>
-          ))}
-        </ul>
-      </Card>
     </AdminShell>
   );
 }
