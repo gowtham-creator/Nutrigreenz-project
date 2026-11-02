@@ -6,11 +6,22 @@ import { cn } from "@/lib/utils";
 import { shortCommunity } from "@/lib/community-label";
 import {
   autocompleteAddress,
+  fetchPlaceAddress,
   isPlacesConfigured,
   newSessionToken,
+  type PlaceAddress,
   type PlaceSuggestion,
 } from "@/lib/places-client";
 import { UiIcon } from "@/components/ui/ui-icon";
+
+/** A community just added to the list, and what Places knows about it. */
+export interface PickedCommunity {
+  name: string;
+  /** False when it was typed by hand rather than picked from a search result. */
+  fromPlaces: boolean;
+  /** Null for free text, or when the Place Details call came back empty. */
+  address: PlaceAddress | null;
+}
 
 /**
  * Search-and-assign picker for gated communities.
@@ -31,12 +42,19 @@ export function CommunityPicker({
   label = "Communities",
   hint = "Search and assign the communities this captain runs stalls in.",
   placeholder = "Search a community, apartment or society…",
+  onPick,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
   label?: string;
   hint?: string;
   placeholder?: string;
+  /**
+   * Told about each newly added community, with its pincode when it came from
+   * Places. Optional, because reading that means a Place Details call, the billed
+   * part of a search: callers that only want the name don't pay for it.
+   */
+  onPick?: (picked: PickedCommunity) => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceSuggestion[]>([]);
@@ -81,21 +99,30 @@ export function CommunityPicker({
   }, [query]);
 
   const add = useCallback(
-    (name: string) => {
+    (name: string, placeId?: string) => {
       const clean = name.trim();
       if (!clean) return;
       // Case-insensitive de-dupe: "My Home Bhooja" and "my home bhooja" must not
       // both end up assigned, or area targeting would only match one of them.
-      if (!value.some((v) => v.toLowerCase() === clean.toLowerCase())) {
-        onChange([...value, clean]);
-      }
+      const isNew = !value.some((v) => v.toLowerCase() === clean.toLowerCase());
+      if (isNew) onChange([...value, clean]);
       setQuery("");
       setResults([]);
       setOpen(false);
+      // Details closes the session the search ran in, so it takes the old token.
+      const session = sessionRef.current;
       // A new billing session per completed search, per Places session pricing.
       sessionRef.current = newSessionToken();
+      if (isNew && onPick) {
+        const details: Promise<PlaceAddress | null> = placeId
+          ? fetchPlaceAddress(placeId, session)
+          : Promise.resolve(null);
+        void details.then((address) =>
+          onPick({ name: clean, fromPlaces: Boolean(placeId), address }),
+        );
+      }
     },
-    [value, onChange],
+    [value, onChange, onPick],
   );
 
   const remove = (name: string) => onChange(value.filter((v) => v !== name));
@@ -146,7 +173,7 @@ export function CommunityPicker({
             if (e.key === "Enter") {
               e.preventDefault();
               // Enter assigns the top match, or the raw text when nothing matched.
-              add(results[0]?.text ?? query);
+              add(results[0]?.text ?? query, results[0]?.placeId);
             }
           }}
           placeholder={placeholder}
@@ -167,7 +194,7 @@ export function CommunityPicker({
               <li key={r.placeId}>
                 <button
                   type="button"
-                  onClick={() => add(r.text)}
+                  onClick={() => add(r.text, r.placeId)}
                   className="flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-ng-sage/40 cursor-pointer"
                 >
                   <UiIcon name="location" size={15} className="mt-0.5 shrink-0 text-ng-forest" />

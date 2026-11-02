@@ -14,15 +14,30 @@ import {
   SegToggle,
 } from "@/components/ng/admin/super/controls";
 import { ProductPicker } from "@/components/ng/admin/product-picker";
+import { CouponCommunityField } from "@/components/ng/admin/super/coupon-community-field";
+import { CouponCustomerPhones } from "@/components/ng/admin/super/coupon-customer-phones";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { fetchAdminCoupons } from "@/lib/admin-coupons-client";
+import {
+  COUPON_STATUS_LABEL,
+  couponDay,
+  couponDayLabel,
+  couponSavedMessage,
+  couponStatus,
+  couponValidityLabel,
+  editedCouponDatesProblem,
+  newCouponDatesProblem,
+  type CouponStatus,
+} from "@/lib/coupon-dates";
+import { istDay } from "@/lib/order-periods";
+import { phoneRowProblems, phoneRowsToList } from "@/lib/phone-e164";
 
 /**
  * Super Admin · Coupon campaign builder (§3.5.2).
  *
- * Create/edit a campaign (code, type, value, min cart, max cap, expiry,
- * first-order-only, loyalty-stacking), choose one of the five targeting modes,
- * and review how each code has actually performed.
+ * Create/edit a campaign (code, type, value, min cart, max cap, start and end
+ * dates, first-order-only, loyalty-stacking), choose one of the five targeting
+ * modes, and review how each code has actually performed.
  *
  * The performance figures were previously invented. Four codes carried
  * hardcoded stats — FRESH50 read "1,840 issued · 612 redeemed · ₹2,48,900
@@ -31,10 +46,10 @@ import { fetchAdminCoupons } from "@/lib/admin-coupons-client";
  * that in most cases had never been redeemed. They now come from `coupon_uses`
  * joined to the orders they discounted.
  *
- * There is no "issued" figure any more, and so no redemption RATE. These are
- * public codes typed at checkout, not vouchers sent to named customers: nothing
- * issues them, so the rate has no denominator and every value shown for it was
- * necessarily made up. Reach is now distinct customers, which is real.
+ * There is no "issued" figure any more, and so no redemption RATE. Most of these
+ * are public codes typed at checkout: nothing issues them, so the rate has no
+ * denominator and every value shown for it was necessarily made up. Reach is now
+ * distinct customers, which is real.
  */
 
 const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -60,8 +75,8 @@ const TARGET_MODES: {
     label: "Specific customers",
     icon: "user-plus-bold",
     hint: "Issue to named individuals, e.g. a VIP or win-back list.",
-    selectorLabel: "Customer mobiles / IDs",
-    placeholder: "+91 98xxxxxx01, +91 98xxxxxx02",
+    selectorLabel: "",
+    placeholder: "",
   },
   {
     value: "zip",
@@ -76,8 +91,8 @@ const TARGET_MODES: {
     label: "Gated community",
     icon: "office",
     hint: "A captain-led society or apartment cluster.",
-    selectorLabel: "Community / society",
-    placeholder: "My Home Avatar, Aparna Sarovar",
+    selectorLabel: "",
+    placeholder: "",
   },
   {
     value: "product",
@@ -108,11 +123,18 @@ type CampaignDraft = {
   value: number;
   minOrderValue: number;
   maxDiscount: number;
-  expiresAt: string; // ISO date or ""
+  /** IST calendar days as YYYY-MM-DD, or "" on an older coupon without one. */
+  startsOn: string;
+  endsOn: string;
   firstOrderOnly: boolean;
   stackLoyalty: boolean;
   target: TargetMode;
+  /** Pincodes as typed, for the "zip" and "community" modes. */
   targetDetail: string;
+  /** Kept whole: a Places result is an address, full of commas. */
+  communities: string[];
+  /** What is in each box of the "individual" mode, E.164 once saved. */
+  customerPhones: string[];
   /** Product ids for the "product" targeting mode — real catalogue rows. */
   productIds: string[];
 };
@@ -131,6 +153,9 @@ interface Perf {
 
 type Campaign = CampaignDraft & {
   id: string;
+  active: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
   /**
    * Measured performance, or null when this code has never been redeemed.
    *
@@ -149,11 +174,14 @@ function emptyDraft(): CampaignDraft {
     value: 10,
     minOrderValue: 599,
     maxDiscount: 150,
-    expiresAt: "",
+    startsOn: "",
+    endsOn: "",
     firstOrderOnly: false,
-    stackLoyalty: false,
+    stackLoyalty: true,
     target: "global",
     targetDetail: "",
+    communities: [],
+    customerPhones: [],
     productIds: [],
   };
 }
@@ -167,11 +195,15 @@ interface LiveCoupon {
   minOrderPaise: number;
   capPaise: number | null;
   active: boolean;
+  startsAt?: string | null;
   endsAt?: string | null;
   requiresVerifiedPhone: boolean;
   pincodes: string[] | null;
   communities: string[] | null;
   productIds: string[] | null;
+  customerPhones?: string[] | null;
+  stackLoyalty?: boolean;
+  description?: string | null;
 }
 
 /**
@@ -179,35 +211,54 @@ interface LiveCoupon {
  *
  * The mode used to be decorative — a label chosen in the form and thrown away.
  * Reading it back from the stored restrictions means the badge describes what
- * the server will really enforce.
+ * the server will really enforce. A community coupon usually has pincodes too,
+ * which fence it to one city, so communities are read before pincodes.
+ *
+ * `requiresVerifiedPhone` says nothing about who may use a code: it marks a
+ * first-order coupon, and treating it as "Specific customers" mislabelled those.
  */
 function targetOf(c: LiveCoupon): TargetMode {
+  if (c.customerPhones?.length) return "individual";
   if (c.productIds?.length) return "product";
   if (c.communities?.length) return "community";
   if (c.pincodes?.length) return "zip";
-  if (c.requiresVerifiedPhone) return "individual";
   return "global";
 }
 
 function toCampaign(c: LiveCoupon, perf: Perf | null): Campaign {
   return {
     id: c.id,
+    active: c.active,
+    startsAt: c.startsAt ?? null,
+    endsAt: c.endsAt ?? null,
     code: c.code,
-    description: "",
+    description: c.description ?? "",
     type: c.kind,
     // Flat coupons are stored in paise; the form works in whole rupees.
     value: c.kind === "flat" ? Math.round(c.value / 100) : c.value,
     minOrderValue: Math.round(c.minOrderPaise / 100),
     maxDiscount: c.capPaise ? Math.round(c.capPaise / 100) : 0,
-    expiresAt: c.endsAt ? c.endsAt.slice(0, 10) : "",
+    // Never `.slice(0, 10)`: a stored start is 18:30 UTC the day before.
+    startsOn: couponDay(c.startsAt),
+    endsOn: couponDay(c.endsAt),
     firstOrderOnly: c.requiresVerifiedPhone,
-    stackLoyalty: false,
+    stackLoyalty: c.stackLoyalty !== false,
     target: targetOf(c),
-    targetDetail: (c.pincodes ?? c.communities ?? []).join(", "),
+    targetDetail: (c.pincodes ?? []).join(", "),
+    communities: c.communities ?? [],
+    customerPhones: c.customerPhones ?? [],
     productIds: c.productIds ?? [],
     perf,
   };
 }
+
+/** Status pill colours. Ended and Inactive stay quiet: neither needs action. */
+const STATUS_TONE: Record<CouponStatus, "success" | "warn" | "neutral"> = {
+  live: "success",
+  scheduled: "warn",
+  ended: "neutral",
+  inactive: "neutral",
+};
 
 function valueLabel(c: { type: "percent" | "flat"; value: number; maxDiscount?: number }): string {
   const base = c.type === "percent" ? `${c.value}%` : INR(c.value);
@@ -227,6 +278,14 @@ function roi(p: Perf | null): string {
 }
 
 const rupees = (paise: number) => INR(paise / 100);
+
+/**
+ * Header and rows share one template, so the columns can't drift apart. Every row
+ * is its own grid, so the status and edit tracks are fixed widths: `auto` would
+ * size to each row's own pill and leave the columns out of line.
+ */
+const LIST_COLUMNS =
+  "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.1fr)_96px_minmax(0,0.9fr)_minmax(0,0.7fr)_minmax(0,0.6fr)_32px]";
 
 /* ----------------------------------------------------------------------- */
 /* Main section.                                                            */
@@ -288,6 +347,9 @@ export function CouponCampaignBuilder() {
   const [saving, setSaving] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [channels, setChannels] = React.useState({ email: true, sms: false });
+  // Fixed at load, so the list doesn't change under the operator's hands.
+  const [loadedAt] = React.useState(() => Date.now());
+  const today = istDay(loadedAt);
 
   /**
    * Send the campaign for the code currently loaded in the form.
@@ -303,6 +365,25 @@ export function CouponCampaignBuilder() {
 
     const picked = (["email", "sms"] as const).filter((c) => channels[c]);
     if (picked.length === 0) return;
+
+    /*
+     * The server sends to the SAVED coupon's list. With an edit still in the
+     * form, the numbers on screen would not be the numbers messaged, and a code
+     * switched to "Specific customers" but not saved would go to everyone.
+     */
+    const saved = campaigns.find((c) => c.id === editingId);
+    const listOf = (phones: string[]) => phoneRowsToList(phones).join();
+    if (
+      saved &&
+      (saved.target !== draft.target ||
+        (draft.target === "individual" &&
+          listOf(saved.customerPhones) !== listOf(draft.customerPhones)))
+    ) {
+      toast.error("Save the coupon first", {
+        description: "Sending uses the saved targeting, not what's in the form.",
+      });
+      return;
+    }
 
     setSending(true);
     try {
@@ -320,13 +401,7 @@ export function CouponCampaignBuilder() {
             // Every template ends on {ctaUrl}; without it the message trails off
             // into nothing and the SMS spends characters on a dangling arrow.
             ctaUrl: `${window.location.origin}/shop`,
-            validTill: draft.expiresAt
-              ? new Date(draft.expiresAt).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
-              : "",
+            validTill: draft.endsOn ? couponDayLabel(draft.endsOn, { year: true }) : "",
           },
         }),
       });
@@ -366,7 +441,9 @@ export function CouponCampaignBuilder() {
             ? "Promotional SMS needs a DLT-registered template. Set MSG91_PROMO_TEMPLATE_ID first."
             : blocked.length > 0
               ? `Channel unavailable: ${blocked.join(", ")}.`
-              : `${r.audience} customers in the audience, but none were reachable or all had already received this code.`,
+              : r.audience === 0 && draft.target === "individual"
+                ? "None of these numbers belong to a customer who can receive marketing."
+                : `${r.audience} customers in the audience, but none were reachable or all had already received this code.`,
         });
         return;
       }
@@ -404,11 +481,14 @@ export function CouponCampaignBuilder() {
       value: c.value,
       minOrderValue: c.minOrderValue,
       maxDiscount: c.maxDiscount,
-      expiresAt: c.expiresAt,
+      startsOn: c.startsOn,
+      endsOn: c.endsOn,
       firstOrderOnly: c.firstOrderOnly,
       stackLoyalty: c.stackLoyalty,
       target: c.target,
       targetDetail: c.targetDetail,
+      communities: c.communities,
+      customerPhones: c.customerPhones,
       productIds: c.productIds ?? [],
     });
     if (typeof document !== "undefined") {
@@ -432,6 +512,36 @@ export function CouponCampaignBuilder() {
       return;
     }
 
+    const datesProblem = isEditing
+      ? editedCouponDatesProblem(
+          draft.startsOn,
+          draft.endsOn,
+          campaigns.find((c) => c.id === editingId) ?? {},
+        )
+      : newCouponDatesProblem(draft.startsOn, draft.endsOn, istDay(Date.now()));
+    if (datesProblem) {
+      toast.error(datesProblem);
+      return;
+    }
+
+    // A targeting mode left empty stores no restriction, which means everyone:
+    // the opposite of what picking the mode asked for.
+    const customerPhones = phoneRowsToList(draft.customerPhones);
+    if (draft.target === "individual") {
+      if (phoneRowProblems(draft.customerPhones).some(Boolean)) {
+        toast.error("Fix the highlighted mobile number");
+        return;
+      }
+      if (customerPhones.length === 0) {
+        toast.error("Add at least one mobile number");
+        return;
+      }
+    }
+    if (draft.target === "community" && draft.communities.length === 0) {
+      toast.error("Add at least one community");
+      return;
+    }
+
     /*
      * Persist through the same endpoints the live coupon manager uses.
      *
@@ -451,15 +561,21 @@ export function CouponCampaignBuilder() {
       value: draft.type === "flat" ? Math.round(draft.value * 100) : draft.value,
       minOrderPaise: Math.round(draft.minOrderValue * 100),
       capPaise: draft.maxDiscount > 0 ? Math.round(draft.maxDiscount * 100) : null,
-      endsAt: draft.expiresAt || null,
+      // IST calendar days. The API turns these into the instants they stand for.
+      startsAt: draft.startsOn || null,
+      endsAt: draft.endsOn || null,
+      description: draft.description.trim() || null,
+      stackLoyalty: draft.stackLoyalty,
       // "First order only" is enforced server-side as verified-phone +
       // once-per-customer, which is what that checkbox has always meant.
       requiresVerifiedPhone: draft.firstOrderOnly,
       // Each targeting mode writes only its own restriction and clears the rest,
       // so switching mode cannot leave a stale filter silently narrowing the code.
-      pincodes: draft.target === "zip" ? areaList : null,
-      communities: draft.target === "community" ? areaList : null,
+      // Community mode keeps pincodes too: they fence a name to one city.
+      pincodes: draft.target === "zip" || draft.target === "community" ? areaList : null,
+      communities: draft.target === "community" ? draft.communities : null,
       productIds: draft.target === "product" ? draft.productIds : null,
+      customerPhones: draft.target === "individual" ? customerPhones : null,
     };
 
     setSaving(true);
@@ -487,9 +603,14 @@ export function CouponCampaignBuilder() {
         return existing ? cs.map((c) => (c.id === coupon.id ? row : c)) : [row, ...cs];
       });
       setTrackingId(coupon.id);
-      toast.success(isEditing ? `${code} updated` : `${code} is live`, {
-        description: `${mode.label} · valid at checkout now.`,
+      const saved = couponSavedMessage({
+        code,
+        targetLabel: mode.label,
+        status: couponStatus(coupon, Date.now()),
+        startDay: couponDay(coupon.startsAt),
+        editing: isEditing,
       });
+      toast.success(saved.title, { description: saved.description });
       resetForm();
     } catch (err) {
       const reason = err instanceof Error ? err.message : "";
@@ -497,7 +618,13 @@ export function CouponCampaignBuilder() {
         description:
           reason === "duplicate" || reason === "code-taken"
             ? `${code} already exists.`
-            : "Couldn't save the coupon. It is not live. Try again.",
+            : reason === "dates-required"
+              ? "Choose a start date and an end date."
+              : reason === "dates-invalid"
+                ? "Check the dates. The end date can't be before the start date."
+                : reason === "customer-phones-invalid"
+                  ? "One of the mobile numbers isn't valid."
+                  : "Couldn't save the coupon. It is not live. Try again.",
       });
     } finally {
       setSaving(false);
@@ -505,6 +632,10 @@ export function CouponCampaignBuilder() {
   }
 
   const redeemedCount = campaigns.filter((c) => c.perf).length;
+  const liveCount = campaigns.filter((c) => couponStatus(c, loadedAt) === "live").length;
+  // An older coupon can be edited without dates. On a new one both are required.
+  const dateHint = (hint: string, value: string) =>
+    isEditing && !value ? "Not set on this older coupon" : hint;
 
   return (
     <section id="coupons" className="mb-6 scroll-mt-32">
@@ -577,6 +708,10 @@ export function CouponCampaignBuilder() {
               step={draft.type === "percent" ? 1 : 10}
               hint="The discount applied at checkout"
             />
+          </div>
+
+          {/* Limits + validity window */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
             <NumberField
               label="Minimum cart value"
               value={draft.minOrderValue}
@@ -593,19 +728,21 @@ export function CouponCampaignBuilder() {
               step={10}
               hint={draft.type === "percent" ? "Ceiling on a % discount" : "0. N/a for flat coupons"}
             />
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="ng-campaign-expiry" className="text-[12.5px] font-medium text-ng-ink-muted">
-                Expiry date
-              </label>
-              <input
-                id="ng-campaign-expiry"
-                type="date"
-                value={draft.expiresAt}
-                onChange={(e) => patch("expiresAt", e.target.value)}
-                className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200 cursor-pointer tabular-nums"
-              />
-              <p className="text-[11.5px] font-medium text-ng-ink-soft">Blank = perpetual</p>
-            </div>
+            <DateField
+              id="ng-campaign-start"
+              label="Start date"
+              value={draft.startsOn}
+              onChange={(v) => patch("startsOn", v)}
+              hint={dateHint("Works from 12:00 AM IST", draft.startsOn)}
+            />
+            <DateField
+              id="ng-campaign-end"
+              label="End date"
+              value={draft.endsOn}
+              min={draft.startsOn || (isEditing ? undefined : today)}
+              onChange={(v) => patch("endsOn", v)}
+              hint={dateHint("Works until 11:59 PM IST", draft.endsOn)}
+            />
           </div>
 
           <TextField
@@ -689,6 +826,24 @@ export function CouponCampaignBuilder() {
                   onChange={(v) => patch("productIds", v)}
                 />
               </div>
+            ) : draft.target === "individual" ? (
+              <div className="mt-3 max-w-xl">
+                <CouponCustomerPhones
+                  value={draft.customerPhones}
+                  onChange={(v) => patch("customerPhones", v)}
+                />
+              </div>
+            ) : draft.target === "community" ? (
+              <div className="mt-3 max-w-xl">
+                <CouponCommunityField
+                  communities={draft.communities}
+                  onCommunities={(v) => patch("communities", v)}
+                  pincodes={draft.targetDetail}
+                  onPincodes={(update) =>
+                    setDraft((d) => ({ ...d, targetDetail: update(d.targetDetail) }))
+                  }
+                />
+              </div>
             ) : !mode.noSelector ? (
               <TextField
                 label={mode.selectorLabel}
@@ -751,9 +906,11 @@ export function CouponCampaignBuilder() {
                   {sending ? "Sending…" : "Send now"}
                 </button>
                 <p className="text-[11px] text-ng-ink-soft leading-relaxed max-w-[190px]">
-                  {isEditing
-                    ? "Goes to customers who haven't opted out. Already-sent recipients are skipped."
-                    : "Save the coupon first. A campaign sends an existing code."}
+                  {!isEditing
+                    ? "Save the coupon first. A campaign sends an existing code."
+                    : draft.target === "individual"
+                      ? "Goes only to the saved numbers, where they belong to a customer who hasn't opted out."
+                      : "Goes to customers who haven't opted out. Already-sent recipients are skipped."}
                 </p>
               </div>
 
@@ -770,9 +927,7 @@ export function CouponCampaignBuilder() {
                   </span>{" "}
                   for {draft.type === "percent" ? `${draft.value}% off` : `${INR(draft.value)} off`}
                   {draft.minOrderValue ? ` on orders ₹${draft.minOrderValue}+` : ""}
-                  {draft.expiresAt
-                    ? `. Valid till ${new Date(draft.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
-                    : ""}
+                  {draft.endsOn ? `. Valid till ${couponDayLabel(draft.endsOn)}` : ""}
                   . Shop fresh → nutrigreenz.farm
                 </p>
                 <p className="text-[11.5px] font-medium text-ng-ink-soft mt-2 font-mono">
@@ -786,10 +941,7 @@ export function CouponCampaignBuilder() {
           <div className="mt-5 pt-4 border-t border-ng-clay/20 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-[11.5px] font-medium text-ng-ink-soft flex items-center gap-1.5 min-w-0">
               <Icon name="info-circle-bold" size={13} className="text-ng-clay-deep shrink-0" />
-              <span>
-                Saving makes the code live at checkout. Sending the campaign by SMS
-                or email is not connected yet.
-              </span>
+              <span>Saving makes the code work at checkout from its start date.</span>
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
@@ -883,12 +1035,16 @@ export function CouponCampaignBuilder() {
               Campaigns
             </span>
             <span className="text-[11px] font-medium text-ng-ink-soft font-mono">
-              {campaigns.length} live · {redeemedCount} redeemed
+              {liveCount} live · {redeemedCount} redeemed
             </span>
           </div>
-          <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold">
+          {/* The header is wide-screen only. On a phone each row is a small card
+              whose figures carry their own labels. */}
+          <div className={cn(LIST_COLUMNS, "hidden lg:grid gap-3 px-1 pb-2 mb-1 border-b border-ng-line-soft text-[11px] uppercase tracking-wider text-ng-ink-muted font-semibold")}>
             <span>Code</span>
             <span>Targeting</span>
+            <span>Validity</span>
+            <span>Status</span>
             <span className="text-right">Value</span>
             <span className="text-right">Redeemed</span>
             <span className="text-right">ROI</span>
@@ -903,18 +1059,20 @@ export function CouponCampaignBuilder() {
             <p className="px-1 py-3 text-[12.5px] text-ng-ink-muted">Loading campaigns…</p>
           ) : campaigns.length === 0 ? (
             <p className="px-1 py-3 text-[12.5px] text-ng-ink-muted">
-              No coupons yet. Create one above and it goes live at checkout immediately.
+              No coupons yet. Create one above and it works at checkout from its start date.
             </p>
           ) : null}
           <ul>
             {campaigns.map((c) => {
               const m = TARGET_MODES.find((x) => x.value === c.target)!;
               const selected = c.id === trackingId;
+              const status = couponStatus(c, loadedAt);
               return (
                 <li
                   key={c.id}
                   className={cn(
-                    "grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] gap-3 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 rounded-lg transition-colors",
+                    LIST_COLUMNS,
+                    "grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 gap-y-1.5 lg:gap-y-3 px-1 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 rounded-lg transition-colors",
                     selected && "bg-ng-clay/[0.06]",
                   )}
                 >
@@ -926,18 +1084,31 @@ export function CouponCampaignBuilder() {
                   >
                     <span className="font-mono text-[13px] text-ng-forest-deep font-semibold truncate">{c.code}</span>
                   </button>
-                  <span className="flex items-center gap-1.5 text-[12.5px] font-medium text-ng-ink-muted min-w-0">
+                  <span className="order-3 lg:order-none col-span-3 lg:col-span-1 flex items-center gap-1.5 text-[12.5px] font-medium text-ng-ink-muted min-w-0">
                     <Icon name={m.icon} size={14} className="text-ng-forest shrink-0" />
                     <span className="truncate">{m.label}</span>
                   </span>
-                  <span className="font-semibold tabular-nums text-ng-ink text-right">{valueLabel(c)}</span>
-                  <span className="tabular-nums font-medium text-ng-ink-muted text-right">
-                    {c.perf ? c.perf.redemptions.toLocaleString("en-IN") : "—"}
+                  <span className="order-3 lg:order-none col-span-3 lg:col-span-1 flex items-center gap-1.5 text-[12.5px] font-medium tabular-nums text-ng-ink-muted min-w-0">
+                    <Icon name="calendar-bold" size={14} className="text-ng-forest shrink-0 lg:hidden" />
+                    <span className="truncate">{couponValidityLabel(c.startsAt, c.endsAt)}</span>
                   </span>
-                  <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink text-right">
-                    {roi(c.perf)}
+                  <span className="order-1 lg:order-none">
+                    <Pill tone={STATUS_TONE[status]}>{COUPON_STATUS_LABEL[status]}</Pill>
                   </span>
-                  <span className="flex justify-end">
+                  {/* A flex row on a phone; `contents` hands the three cells back
+                      to the grid on a wide screen. */}
+                  <div className="order-3 lg:order-none col-span-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] lg:text-[13px] lg:contents">
+                    <span className="font-semibold tabular-nums text-ng-ink lg:text-right">{valueLabel(c)}</span>
+                    <span className="tabular-nums font-medium text-ng-ink-muted lg:text-right">
+                      <span className="lg:hidden">Redeemed </span>
+                      {c.perf ? c.perf.redemptions.toLocaleString("en-IN") : "—"}
+                    </span>
+                    <span className="font-mono tabular-nums text-[12.5px] font-semibold text-ng-ink lg:text-right">
+                      <span className="lg:hidden font-sans font-medium text-ng-ink-muted">ROI </span>
+                      {roi(c.perf)}
+                    </span>
+                  </div>
+                  <span className="order-2 lg:order-none flex justify-end">
                     <button
                       type="button"
                       onClick={() => edit(c)}
@@ -954,6 +1125,42 @@ export function CouponCampaignBuilder() {
         </div>
       </Card>
     </section>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* A required IST calendar day.                                             */
+/* ----------------------------------------------------------------------- */
+function DateField({
+  id,
+  label,
+  value,
+  min,
+  onChange,
+  hint,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  min?: string;
+  onChange: (next: string) => void;
+  hint: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[12.5px] font-semibold text-ng-ink-muted">
+        {label}
+      </label>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        min={min}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-11 px-3.5 rounded-xl bg-ng-paper border border-ng-line outline-none text-[14px] text-ng-ink placeholder:text-ng-ink-soft focus:border-ng-forest focus:shadow-[0_0_0_3px_rgba(184,212,154,0.30)] transition-all duration-200 cursor-pointer tabular-nums"
+      />
+      <p className="text-[11.5px] font-medium text-ng-ink-soft">{hint}</p>
+    </div>
   );
 }
 

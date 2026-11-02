@@ -44,21 +44,34 @@ interface Row {
 /**
  * Every customer who may receive marketing, with their permitted channels.
  *
+ * `phones` narrows that to the customers on those E.164 numbers, for a code
+ * limited to named customers. Opt-outs still apply, and a number with no customer
+ * behind it reaches nobody: there is no consent record to send on. Omit it for
+ * the whole base. An EMPTY list means nobody, never everybody, so a list that lost
+ * its numbers cannot turn a private send into a blast.
+ *
  * Throws {@link ConsentColumnsMissing} when the consent migration has not been
  * applied. That is deliberate: without those columns every row looks like
  * consent, and the failure mode of guessing wrong is messaging the entire
  * customer base without permission. Refusing to send is the recoverable error.
  */
-export async function marketingAudience(): Promise<Recipient[]> {
+export async function marketingAudience(
+  opts: { phones?: readonly string[] | null } = {},
+): Promise<Recipient[]> {
   if (!isSupabaseConfigured) return [];
+  if (opts.phones && opts.phones.length === 0) return [];
 
-  const { data, error } = await supabaseAdmin()
+  const everyone = supabaseAdmin()
     .from("customers")
     .select(
       "id, display_name, primary_email, primary_phone, marketing_email_opt_out, marketing_sms_opt_out, unsubscribe_token",
     )
     // Merged duplicates would double-message one real person.
     .is("merged_into", null);
+
+  const { data, error } = await (opts.phones
+    ? everyone.in("primary_phone", [...opts.phones])
+    : everyone);
 
   if (error) {
     // Postgres 42703 = undefined_column; anything else is a genuine failure.

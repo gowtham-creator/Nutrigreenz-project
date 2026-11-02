@@ -65,6 +65,7 @@ export type CouponQuoteReason =
   | "customer-limit"
   | "phone-verification-required"
   | "area-not-eligible"
+  | "customer-not-eligible"
   | "unavailable";
 
 export interface CouponQuote {
@@ -73,6 +74,8 @@ export interface CouponQuote {
   discountPaise: number;
   reason: CouponQuoteReason;
   code: string | null;
+  /** False when this code can't be combined with loyalty points. */
+  stacksWithLoyalty?: boolean;
 }
 
 const COUPON_REASON_COPY: Record<string, string> = {
@@ -83,9 +86,11 @@ const COUPON_REASON_COPY: Record<string, string> = {
   "below-min": "Your cart doesn't meet this coupon's minimum.",
   "usage-limit": "This coupon has reached its usage limit.",
   "customer-limit": "You've already used this coupon.",
+  // Not "welcome offer": codes limited to named customers land here too.
   "phone-verification-required":
-    "Verify your mobile number to use this welcome offer. We'll ask for a quick OTP.",
+    "Verify your mobile number to use this offer. We'll ask for a quick OTP.",
   "area-not-eligible": "This code isn't available for your delivery address.",
+  "customer-not-eligible": "This code isn't available for your account.",
   unavailable: "Coupons are unavailable right now. Please try again.",
   unauthenticated: "Please sign in to apply a coupon.",
 };
@@ -135,12 +140,14 @@ export async function validateCouponApi(
       discountPaise?: number;
       reason?: CouponQuoteReason;
       coupon?: { code?: string } | null;
+      stacksWithLoyalty?: boolean;
     };
     return {
       valid: Boolean(json.valid),
       discountPaise: Math.max(0, Math.round(json.discountPaise ?? 0)),
       reason: json.reason ?? (json.valid ? "ok" : "not-found"),
       code: json.coupon?.code ?? (json.valid ? trimmed.toUpperCase() : null),
+      stacksWithLoyalty: json.stacksWithLoyalty !== false,
     };
   } catch {
     return { valid: false, discountPaise: 0, reason: "unavailable", code: null };

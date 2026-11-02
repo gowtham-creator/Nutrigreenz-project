@@ -21,6 +21,7 @@
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getCommerceRules, isServiceable, type CommerceRulesRecord } from "@/lib/commerce-rules";
+import { snapshotAddressText } from "@/lib/community-label";
 import {
   validateCouponServer,
   quoteLoyaltyRedemption,
@@ -662,11 +663,15 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   //     history. An invalid code aborts the order (the caller maps it to a 400).
   let couponDiscount = 0;
   let validatedCouponCode: string | null = null;
+  let couponBlocksLoyalty = false;
   const requestedCode = input.couponCode?.trim().toUpperCase() || null;
   if (requestedCode) {
     const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId, {
       // Area-targeted coupons match the same delivery pincode.
       pincode: deliveryPincode || null,
+      // The address this order will really be delivered to, so a preview that
+      // sent different text cannot carry a community discount onto the order.
+      addressText: snapshotAddressText(input.addressSnapshot),
       // Product-targeted coupons are matched against the order's own lines,
       // for the same reason the pincode is: the client cannot assert them.
       productIds: lineTotals.map((l) => l.line.productId ?? null),
@@ -674,13 +679,16 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
     if (!check.valid) throw new CouponInvalidError(check.reason ?? "not-found");
     couponDiscount = check.discountPaise;
     validatedCouponCode = check.coupon?.code ?? requestedCode;
+    couponBlocksLoyalty = check.coupon?.stackLoyalty === false;
   }
 
   // 2b. Loyalty: QUOTE the redemption (no ledger write yet) so the totals and the
   //     stored order row agree; the actual burn is committed once the order id
   //     exists. The quote clamps to the live balance + program guardrails and
   //     leaves the coupon its headroom (coupon + loyalty can't exceed subtotal).
-  const loyaltyQuote = input.customerId
+  //     A coupon that doesn't stack gives zero whatever the client asked for: the
+  //     quote is what gets burned below, so nothing is taken from the ledger.
+  const loyaltyQuote = input.customerId && !couponBlocksLoyalty
     ? await quoteLoyaltyRedemption(
         input.customerId,
         Math.max(0, Math.round(input.loyaltyPoints ?? 0)),

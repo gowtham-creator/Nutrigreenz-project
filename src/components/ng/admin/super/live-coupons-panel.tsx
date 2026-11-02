@@ -5,9 +5,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { Icon } from "@/components/ui/icon";
+import { CouponCommunityField } from "@/components/ng/admin/super/coupon-community-field";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { cn } from "@/lib/utils";
 import { fetchAdminCoupons, invalidateAdminCoupons } from "@/lib/admin-coupons-client";
+import { shortCommunity } from "@/lib/community-label";
+import { newCouponDatesProblem } from "@/lib/coupon-dates";
+import { istDay } from "@/lib/order-periods";
 
 /**
  * LiveCouponsPanel — the REAL coupon manager backed by the `coupons` table
@@ -56,10 +60,21 @@ const EMPTY = {
   minOrder: "",
   cap: "",
   perCustomerLimit: "1",
+  /** IST calendar days as YYYY-MM-DD. Both are required on a new coupon. */
+  startsOn: "",
+  endsOn: "",
   requiresPhone: false,
   pincodes: "",
-  communities: "",
+  communities: [] as string[],
 };
+
+/** What the create API's refusal means for whoever is at this form. */
+function createFailureMessage(error: string | undefined): string {
+  if (error === "code-required") return "Enter a coupon code.";
+  if (error === "dates-required") return "Choose a start date and an end date.";
+  if (error === "dates-invalid") return "Check the dates. The end date can't be before the start date.";
+  return `Couldn't create the coupon${error ? ` (${error})` : ""}. Try again.`;
+}
 
 export function LiveCouponsPanel() {
   const [coupons, setCoupons] = useState<CouponRow[]>([]);
@@ -94,6 +109,8 @@ export function LiveCouponsPanel() {
     const value = Number(form.value);
     if (!code) return toast.error("Enter a coupon code.");
     if (!Number.isFinite(value) || value <= 0) return toast.error("Enter a discount value.");
+    const datesProblem = newCouponDatesProblem(form.startsOn, form.endsOn, istDay(Date.now()));
+    if (datesProblem) return toast.error(`${datesProblem}.`);
 
     const body = {
       code,
@@ -103,11 +120,15 @@ export function LiveCouponsPanel() {
       minOrderPaise: form.minOrder ? Math.round(Number(form.minOrder) * 100) : 0,
       capPaise: form.kind === "percent" && form.cap ? Math.round(Number(form.cap) * 100) : null,
       perCustomerLimit: form.perCustomerLimit ? Math.round(Number(form.perCustomerLimit)) : null,
+      // IST calendar days. The API turns these into the instants they stand for.
+      startsAt: form.startsOn,
+      endsAt: form.endsOn,
       // Welcome/first-order codes require an OTP-verified phone + are once-per-customer.
       requiresVerifiedPhone: form.requiresPhone,
-      // Area targeting — comma/newline separated; blank means "valid everywhere".
+      // Area targeting — blank means "valid everywhere". Communities go as a list:
+      // a Places result is an address, and the API splits a string on its commas.
       pincodes: form.pincodes.trim() || null,
-      communities: form.communities.trim() || null,
+      communities: form.communities.length > 0 ? form.communities : null,
       active: true,
     };
 
@@ -121,7 +142,7 @@ export function LiveCouponsPanel() {
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        toast.error(json.error === "code-required" ? "Enter a coupon code." : `Couldn't create the coupon${json.error ? ` (${json.error})` : ""}. Try again.`);
+        toast.error(createFailureMessage(json.error));
         return;
       }
       toast.success(`${code} created`);
@@ -197,6 +218,27 @@ export function LiveCouponsPanel() {
           </Button>
         </div>
 
+        {/* Validity window, in IST calendar days. */}
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:col-span-6">
+          <Input
+            label="Start date"
+            type="date"
+            required
+            hint="Works from 12:00 AM IST"
+            value={form.startsOn}
+            onChange={(e) => setForm((f) => ({ ...f, startsOn: e.target.value }))}
+          />
+          <Input
+            label="End date"
+            type="date"
+            required
+            min={form.startsOn || undefined}
+            hint="Works until 11:59 PM IST"
+            value={form.endsOn}
+            onChange={(e) => setForm((f) => ({ ...f, endsOn: e.target.value }))}
+          />
+        </div>
+
         {/* Welcome / first-order gate — requires an OTP-verified phone + once per customer. */}
         <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-ng-line-soft bg-ng-paper px-4 py-3 sm:col-span-2 lg:col-span-6">
           <input
@@ -216,23 +258,15 @@ export function LiveCouponsPanel() {
 
         {/* Area targeting — restrict the code to specific pincodes and/or gated
             communities. Both blank = redeemable anywhere we deliver. */}
-        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:col-span-6">
-          <Input
-            label="Limit to pincodes (optional)"
-            placeholder="500072, 500085"
-            value={form.pincodes}
-            onChange={(e) => setForm((f) => ({ ...f, pincodes: e.target.value }))}
+        <div className="flex flex-col gap-3 sm:col-span-2 lg:col-span-6">
+          <CouponCommunityField
+            communities={form.communities}
+            onCommunities={(communities) => setForm((f) => ({ ...f, communities }))}
+            pincodes={form.pincodes}
+            onPincodes={(update) => setForm((f) => ({ ...f, pincodes: update(f.pincodes) }))}
           />
-          <Input
-            label="Limit to gated communities (optional)"
-            placeholder="My Home Bhooja, Aparna Sarovar"
-            value={form.communities}
-            onChange={(e) => setForm((f) => ({ ...f, communities: e.target.value }))}
-          />
-          <p className="text-[12px] leading-relaxed text-ng-ink-soft sm:col-span-2">
-            Comma-separated. Leave both blank for a code that works everywhere we deliver.
-            Community names must match the ones on your serviceable-areas list, and are
-            checked against the customer&rsquo;s delivery pincode at checkout.
+          <p className="text-[12px] leading-relaxed text-ng-ink-soft">
+            Optional. Leave both blank for a code that works everywhere we deliver.
           </p>
         </div>
       </div>
@@ -282,7 +316,7 @@ export function LiveCouponsPanel() {
                         >
                           <UiIcon name="customers" size={10} />
                           {c.communities.length === 1
-                            ? c.communities[0]
+                            ? shortCommunity(c.communities[0])
                             : `${c.communities.length} communities`}
                         </span>
                       ) : null}
