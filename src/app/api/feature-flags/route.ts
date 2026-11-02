@@ -17,7 +17,9 @@ export async function GET(): Promise<Response> {
     const flags = await getFeatureFlags();
     return Response.json(
       { ok: true, flags },
-      { headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" } },
+      // Never cached: a switch the Super Admin turns off must be off on the
+      // next read, not up to six minutes later from the CDN.
+      { headers: { "cache-control": "no-store" } },
     );
   } catch {
     return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

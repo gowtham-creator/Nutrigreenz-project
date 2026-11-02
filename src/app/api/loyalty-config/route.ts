@@ -18,7 +18,11 @@ export async function GET(): Promise<Response> {
     const config = await getPublicLoyaltyConfig();
     return Response.json(
       { ok: true, config },
-      { headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" } },
+      // Never cached. The CDN honoured the old max-age and stale-while-revalidate
+      // (up to six minutes), and the browser's no-store does not reach past it,
+      // while the server always charges from the live config: the storefront
+      // could quote a redeem rate the order would not honour.
+      { headers: { "cache-control": "no-store" } },
     );
   } catch {
     return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

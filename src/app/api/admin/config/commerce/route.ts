@@ -8,6 +8,7 @@ import {
   type ShippingType,
   type TaxMode,
 } from "@/lib/commerce-rules";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** GET — the singleton commerce config. Super-admin only. */
 export async function GET(): Promise<Response> {
@@ -83,6 +84,9 @@ export async function PUT(request: Request): Promise<Response> {
 
   try {
     const rules = await updateCommerceRules(patch);
+    // The free-delivery claim on the shop and product pages is cached for 60s;
+    // it should not contradict the new rule for that long.
+    revalidateStorefront();
     return Response.json({ ok: true, rules });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

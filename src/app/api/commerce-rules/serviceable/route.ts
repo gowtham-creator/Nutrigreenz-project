@@ -24,7 +24,10 @@ export async function GET(request: Request): Promise<Response> {
     const serviceable = await isServiceable(pincode);
     return Response.json(
       { ok: true, pincode, serviceable },
-      { headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" } },
+      // Never cached: the order API checks the live list, so a cached "yes" for
+      // an area just switched off lets a customer fill in checkout only to be
+      // refused at the last step.
+      { headers: { "cache-control": "no-store" } },
     );
   } catch {
     return Response.json({ ok: false, error: "unavailable" }, { status: 503 });

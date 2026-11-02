@@ -147,7 +147,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
       const offline = resolveOffline(pin);
       try {
-        const res = await fetch(`/api/geo/pincode?pincode=${pin}`, { cache: "force-cache" });
+        // The answer carries the serviceable flag, so it cannot come from the
+        // browser cache: force-cache would keep the first answer for good.
+        const res = await fetch(`/api/geo/pincode?pincode=${pin}`, { cache: "no-store" });
 
         /*
          * 404 means India Post has no record of this pincode — it does not
