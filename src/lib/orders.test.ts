@@ -23,7 +23,7 @@ vi.mock("@/lib/supabase-admin", () => ({
   isSupabaseConfigured: true,
   supabaseAdmin: () => h.db,
 }));
-vi.mock("@/lib/commerce-rules", () => ({ getCommerceRules: vi.fn() }));
+vi.mock("@/lib/commerce-rules", () => ({ getCommerceRules: vi.fn(), isServiceable: vi.fn() }));
 vi.mock("@/lib/promotions", () => ({
   getActivePromotions: vi.fn(),
   promoPercentForVariant: vi.fn(),
@@ -47,9 +47,11 @@ vi.mock("@/lib/rewards", () => {
 });
 
 import * as rewards from "@/lib/rewards";
-import { getCommerceRules } from "@/lib/commerce-rules";
+import { getCommerceRules, isServiceable } from "@/lib/commerce-rules";
 import { getActivePromotions } from "@/lib/promotions";
 import {
+  BelowMinimumOrderError,
+  NotServiceableError,
   cancelOrder,
   createOrder,
   failUnpaidOnlineOrder,
@@ -118,6 +120,7 @@ const updatesTo = (ops: FakeOp[], table: string) =>
 beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.mocked(isServiceable).mockResolvedValue(true);
 });
 
 describe("listStalePendingPayments", () => {
@@ -691,6 +694,77 @@ describe("createOrder — loyalty points are earned when an online order is PAID
 
     expect(rewards.earnPointsForOrder).toHaveBeenCalledTimes(1);
     expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 87_000);
+  });
+
+  it("refuses a cart under the live minimum before reserving or writing anything", async () => {
+    const { ops, rpcCalls } = placeDb();
+    vi.mocked(getCommerceRules).mockResolvedValue({ ...RULES, minOrderPaise: 100_001 } as never);
+
+    const placed = createOrder({ ...input, paymentMethod: "cod" });
+
+    await expect(placed).rejects.toBeInstanceOf(BelowMinimumOrderError);
+    await expect(placed).rejects.toMatchObject({ minOrderPaise: 100_001 });
+    expect(rpcCalls).toEqual([]);
+    expect(ops.filter((o) => o.action === "insert")).toEqual([]);
+    expect(rewards.redeemPoints).not.toHaveBeenCalled();
+  });
+
+  it("accepts a cart exactly at the minimum", async () => {
+    placeDb();
+    vi.mocked(getCommerceRules).mockResolvedValue({ ...RULES, minOrderPaise: 100_000 } as never);
+
+    await expect(createOrder({ ...input, paymentMethod: "cod" })).resolves.toBeTruthy();
+  });
+
+  it("refuses a pincode off the serviceable list before reserving or writing anything", async () => {
+    const { ops, rpcCalls } = placeDb();
+    vi.mocked(isServiceable).mockResolvedValue(false);
+
+    const placed = createOrder({
+      ...input,
+      paymentMethod: "cod",
+      addressSnapshot: { pincode: " 110001 " },
+    });
+
+    await expect(placed).rejects.toBeInstanceOf(NotServiceableError);
+    await expect(placed).rejects.toMatchObject({ pincode: "110001" });
+    expect(isServiceable).toHaveBeenCalledWith("110001");
+    expect(rpcCalls).toEqual([]);
+    expect(ops.filter((o) => o.action === "insert")).toEqual([]);
+  });
+
+  it("treats a missing address as a blank pincode, not as a pass", async () => {
+    placeDb();
+    vi.mocked(isServiceable).mockResolvedValue(false);
+
+    await expect(createOrder({ ...input, paymentMethod: "cod" })).rejects.toBeInstanceOf(
+      NotServiceableError,
+    );
+    expect(isServiceable).toHaveBeenCalledWith("");
+  });
+
+  it("does not report a failed area lookup as an area it cannot deliver to", async () => {
+    const { rpcCalls } = placeDb();
+    vi.mocked(isServiceable).mockRejectedValue(new Error("connection reset"));
+
+    const placed = createOrder({ ...input, paymentMethod: "cod" });
+
+    await expect(placed).rejects.toThrow("connection reset");
+    await expect(placed).rejects.not.toBeInstanceOf(NotServiceableError);
+    expect(rpcCalls).toEqual([]);
+  });
+
+  it("matches an area-targeted coupon on the same delivery pincode", async () => {
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "cod", addressSnapshot: { pincode: "500081" } });
+
+    expect(rewards.validateCouponServer).toHaveBeenCalledWith(
+      "HARVEST10",
+      100_000,
+      "cust-1",
+      expect.objectContaining({ pincode: "500081" }),
+    );
   });
 });
 

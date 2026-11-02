@@ -18,6 +18,8 @@ import {
   failUnpaidOnlineOrder,
   listOrdersForCustomer,
   recordGatewayHandoff,
+  BelowMinimumOrderError,
+  NotServiceableError,
   OutOfStockError,
   UnpricedItemsError,
   type OrderLineInput,
@@ -281,6 +283,21 @@ export async function POST(request: Request): Promise<Response> {
     // Insufficient stock is a client-actionable conflict, not a 500 — the order
     // was rejected BEFORE persistence (no oversell), so the cart can be adjusted
     // and retried.
+    // Under the minimum at the server's own prices: nothing was created. The
+    // amount goes back so checkout can say what the live minimum is.
+    if (err instanceof BelowMinimumOrderError) {
+      return Response.json(
+        { ok: false, error: "below-minimum", minOrderPaise: err.minOrderPaise },
+        { status: 409 },
+      );
+    }
+    // An address the shop does not deliver to: nothing was created.
+    if (err instanceof NotServiceableError) {
+      return Response.json(
+        { ok: false, error: "not-serviceable", pincode: err.pincode },
+        { status: 409 },
+      );
+    }
     // Lines the catalog cannot price (an old cart): nothing was created.
     if (err instanceof UnpricedItemsError) {
       return Response.json(

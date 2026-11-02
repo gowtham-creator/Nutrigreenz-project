@@ -451,26 +451,30 @@ export async function importAreas(
 /**
  * Serviceability lookup. True when an ACTIVE serviceable_areas row matches the
  * pincode. When the table is empty (no areas configured yet) it returns `true`
- * so serviceability is non-blocking until the admin curates the list.
+ * so serviceability is non-blocking until the admin curates the list. Once a
+ * list exists, a blank pincode is not on it. Throws when the lookup itself
+ * fails, so a database error is never mistaken for an answer about the area.
  */
 export async function isServiceable(pincode: string): Promise<boolean> {
   const pin = (pincode ?? "").trim();
-  if (!pin) return false;
   if (!isSupabaseConfigured) return true;
   const db = supabaseAdmin();
 
-  const { count: total } = await db
+  const { count: total, error } = await db
     .from("serviceable_areas")
     .select("id", { count: "exact", head: true })
     .eq("active", true);
+  if (error) throw new Error(error.message);
   // No active areas configured → don't block checkout.
   if (!total) return true;
+  if (!pin) return false;
 
-  const { count: match } = await db
+  const { count: match, error: matchError } = await db
     .from("serviceable_areas")
     .select("id", { count: "exact", head: true })
     .eq("active", true)
     .eq("pincode", pin);
+  if (matchError) throw new Error(matchError.message);
   return Boolean(match && match > 0);
 }
 

@@ -5,7 +5,7 @@
  *
  * Fails OPEN: on a malformed response or network error it returns `true`, so a
  * flaky check never wrongly blocks a customer from checking out. The authoritative
- * (fail-closed) decision still lives server-side; this is the UI signal.
+ * decision is made when the order is placed (`createOrder`); this is the UI signal.
  */
 export async function fetchServiceable(pincode: string): Promise<boolean> {
   const pin = (pincode ?? "").trim();

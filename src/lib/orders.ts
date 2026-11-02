@@ -20,7 +20,7 @@
  */
 import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
-import { getCommerceRules, type CommerceRulesRecord } from "@/lib/commerce-rules";
+import { getCommerceRules, isServiceable, type CommerceRulesRecord } from "@/lib/commerce-rules";
 import {
   validateCouponServer,
   quoteLoyaltyRedemption,
@@ -69,6 +69,37 @@ export class UnpricedItemsError extends Error {
     super("item-unavailable");
     this.name = "UnpricedItemsError";
     this.titles = titles;
+  }
+}
+
+/**
+ * The cart is under the Super Admin's minimum order value, measured on the
+ * server's own prices. Thrown BEFORE anything is reserved or inserted, so the
+ * order simply does not exist. The minimum used to be checked only in the cart
+ * and checkout pages, which a hand-made POST or a page left open never ran.
+ */
+export class BelowMinimumOrderError extends Error {
+  readonly minOrderPaise: number;
+  constructor(minOrderPaise: number) {
+    super("below-minimum");
+    this.name = "BelowMinimumOrderError";
+    this.minOrderPaise = minOrderPaise;
+  }
+}
+
+/**
+ * The delivery pincode is not on the Super Admin's serviceable list. Thrown
+ * BEFORE anything is reserved or inserted. Only checkout used to ask, and its
+ * check fails open by design so a flaky request cannot block a customer, which
+ * left nothing behind it: a saved draft, an open page or a hand-made POST could
+ * place an order for an area the admin had switched off.
+ */
+export class NotServiceableError extends Error {
+  readonly pincode: string;
+  constructor(pincode: string) {
+    super("not-serviceable");
+    this.name = "NotServiceableError";
+    this.pincode = pincode;
   }
 }
 
@@ -590,9 +621,10 @@ async function applyPromotionsToPricedLines(
  * that the order id exists. An online order earns its points when it is PAID
  * ({@link onOnlineOrderPaid}). Returns the full order with detail.
  *
- * Throws {@link CouponInvalidError} when a claimed coupon fails re-validation so
- * the caller can answer 400 with the concrete reason. Payment stays `pending` —
- * the payment seam flips it only on a verified charge.
+ * Throws {@link BelowMinimumOrderError} or {@link NotServiceableError} when the
+ * order breaks a commerce rule, and {@link CouponInvalidError} when a claimed
+ * coupon fails re-validation, so the caller can answer with the concrete reason.
+ * Payment stays `pending` — the payment seam flips it only on a verified charge.
  */
 export async function createOrder(input: CreateOrderInput): Promise<OrderWithDetail> {
   const db = supabaseAdmin();
@@ -617,6 +649,14 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   // 2. Recompute discounts + shipping + tax from the live rules — never trusting
   //    the client's claimed amounts.
   const rules = await getCommerceRules();
+  if (subtotalPaise < rules.minOrderPaise) throw new BelowMinimumOrderError(rules.minOrderPaise);
+
+  // The pincode actually being delivered to, taken from the order's own address
+  // snapshot — not from anything the client asserted alongside it. A failed
+  // lookup throws (a 500), so a database error never reads as "not serviceable".
+  const rawPincode = input.addressSnapshot?.pincode;
+  const deliveryPincode = typeof rawPincode === "string" ? rawPincode.trim() : "";
+  if (!(await isServiceable(deliveryPincode))) throw new NotServiceableError(deliveryPincode);
 
   // 2a. Coupon: re-validate against the server catalogue + this customer's usage
   //     history. An invalid code aborts the order (the caller maps it to a 400).
@@ -624,13 +664,9 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   let validatedCouponCode: string | null = null;
   const requestedCode = input.couponCode?.trim().toUpperCase() || null;
   if (requestedCode) {
-    // Area-targeted coupons are matched against the pincode actually being
-    // delivered to, taken from the order's own address snapshot — not from
-    // anything the client asserted alongside the code.
-    const rawPincode = input.addressSnapshot?.pincode;
-    const deliveryPincode = typeof rawPincode === "string" ? rawPincode.trim() : null;
     const check = await validateCouponServer(requestedCode, subtotalPaise, input.customerId, {
-      pincode: deliveryPincode,
+      // Area-targeted coupons match the same delivery pincode.
+      pincode: deliveryPincode || null,
       // Product-targeted coupons are matched against the order's own lines,
       // for the same reason the pincode is: the client cannot assert them.
       productIds: lineTotals.map((l) => l.line.productId ?? null),

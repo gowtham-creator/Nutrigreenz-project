@@ -35,11 +35,23 @@ vi.mock("@/lib/orders", () => {
       super("item-unavailable");
     }
   }
+  class BelowMinimumOrderError extends Error {
+    constructor(readonly minOrderPaise: number) {
+      super("below-minimum");
+    }
+  }
+  class NotServiceableError extends Error {
+    constructor(readonly pincode: string) {
+      super("not-serviceable");
+    }
+  }
   return {
     createOrder: m.createOrder,
     recordGatewayHandoff: m.recordGatewayHandoff,
     failUnpaidOnlineOrder: m.failUnpaidOnlineOrder,
     listOrdersForCustomer: vi.fn(),
+    BelowMinimumOrderError,
+    NotServiceableError,
     OutOfStockError,
     UnpricedItemsError,
   };
@@ -61,6 +73,7 @@ vi.mock("@/lib/after-response", () => ({ afterResponse: m.afterResponse }));
 vi.mock("@/lib/commerce-rules", () => ({ findBookableSlot: m.findBookableSlot }));
 
 import { POST, maxDuration } from "./route";
+import { BelowMinimumOrderError, NotServiceableError } from "@/lib/orders";
 import { SbiepayError } from "@/lib/sbiepay-client";
 
 const ORDER = {
@@ -396,5 +409,38 @@ describe("POST /api/orders — delivery slot", () => {
     expect(res.status).toBe(500);
     expect((await res.json()).error).toBe("create-failed");
     expect(m.createOrder).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/orders — commerce rules the order breaks", () => {
+  it("answers 409 below-minimum with the live minimum and opens no payment", async () => {
+    m.createOrder.mockRejectedValue(new BelowMinimumOrderError(30_000));
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ ok: false, error: "below-minimum", minOrderPaise: 30_000 });
+    expect(m.beginPayment).not.toHaveBeenCalled();
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it("answers 409 not-serviceable naming the pincode and opens no payment", async () => {
+    m.createOrder.mockRejectedValue(new NotServiceableError("110001"));
+
+    const res = await POST(orderRequest({ paymentMethod: "upi" }));
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ ok: false, error: "not-serviceable", pincode: "110001" });
+    expect(m.beginPayment).not.toHaveBeenCalled();
+    expect(m.sendOrderPlacedEmail).not.toHaveBeenCalled();
+  });
+
+  it("does not call a failed area lookup 'not serviceable'", async () => {
+    m.createOrder.mockRejectedValue(new Error("connection reset"));
+
+    const res = await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe("create-failed");
   });
 });
