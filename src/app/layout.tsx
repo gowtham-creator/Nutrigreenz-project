@@ -8,6 +8,7 @@ import { LinkPhonePrompt } from "@/components/ng/account/link-phone-prompt";
 import { NavigationProgress } from "@/components/ng/navigation-progress";
 import { CommerceProvider } from "@/lib/commerce";
 import { LoyaltyConfigProvider } from "@/lib/loyalty-config";
+import { ComingSoon } from "@/components/ng/coming-soon";
 import { LocationProvider } from "@/lib/location";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
@@ -77,6 +78,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
+      suppressHydrationWarning
       lang="en"
       className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
@@ -90,6 +92,7 @@ export default function RootLayout({
                 <CartProvider>
                   <WishlistProvider>
                     <AddressProvider>
+                      <ComingSoon />
                       {children}
                       <LinkPhonePrompt />
                       {/* Outside the page tree on purpose: it must survive the

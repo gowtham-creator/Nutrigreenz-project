@@ -75,6 +75,7 @@ describe("isReferralProgrammeOpen", () => {
 describe("getStorefrontFlags", () => {
   const FLAGS = {
     cod: true,
+    coming_soon: true,
     subscriptions: true,
     referrals: true,
     community_bundles: false,

@@ -23,7 +23,8 @@ export type FeatureFlagKey =
   | "community_bundles"
   | "captain_network"
   | "auto_product_badges"
-  | "cod";
+  | "cod"
+  | "coming_soon";
 
 export interface FeatureFlagMeta {
   key: FeatureFlagKey;
@@ -77,6 +78,12 @@ export const FEATURE_FLAGS: readonly FeatureFlagMeta[] = [
     description: "Offer Cash on Delivery at checkout",
     defaultEnabled: true,
   },
+  {
+    key: "coming_soon",
+    label: "Coming soon banner",
+    description: "Show the coming soon film and strip. Switch off on launch day",
+    defaultEnabled: true,
+  },
 ];
 
 /** A plain key → enabled map — the shape the storefront consumes. */
@@ -90,6 +97,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   captain_network: false,
   auto_product_badges: true,
   cod: true,
+  coming_soon: true,
 };
 
 interface FeatureFlagRow {
