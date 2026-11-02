@@ -434,7 +434,7 @@ function LoyaltySection() {
             value={draft.earnPointsPerRupee}
             onChange={(v) => setDraft((d) => ({ ...d, earnPointsPerRupee: v }))}
             suffix="pts"
-            step={0.1}
+            step={1}
             hint="Points credited per rupee spent"
           />
           <NumberField

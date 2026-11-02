@@ -116,12 +116,12 @@ export async function POST(request: Request): Promise<Response> {
   // Snapshot the customer's contact for attribution even if the FK is later cleared.
   const customer = await getCustomerById(session.customerId);
 
-  // The client may request a redemption as points (`loyaltyPoints`) or, for the
-  // current checkout, as a paise value — either way the server RE-CLAMPS it to
-  // the live balance + guardrails, so this is only a request, never a claim. A
-  // paise request is converted to points at the LIVE redeem rate, so an admin
-  // changing the redeem ratio in loyalty config takes effect immediately (rather
-  // than a hardcoded 10 paise/point).
+  // The client may request a redemption as points (`loyaltyPoints`, what checkout
+  // sends) or, for a tab still on an older checkout, as a paise value — either
+  // way the server RE-CLAMPS it to the live balance + guardrails, so this is only
+  // a request, never a claim. A paise request is converted to points at the LIVE
+  // redeem rate, so an admin changing the redeem ratio in loyalty config takes
+  // effect immediately (rather than a hardcoded 10 paise/point).
   const directPoints = int(b.loyaltyPoints);
   let requestedPoints = Math.max(0, directPoints);
   if (directPoints <= 0) {

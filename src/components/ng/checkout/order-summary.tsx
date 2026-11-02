@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { CartItem } from "@/types/nutrigreenz";
-import { INR, type OrderTotals } from "./order-math";
+import { INR, INRExact, type OrderTotals } from "./order-math";
 
 function SummaryRow({
   label,
@@ -95,7 +95,7 @@ export function OrderSummary({
                 ? `Loyalty (${loyaltyPoints} pts)`
                 : "Loyalty points"
             }
-            value={`− ${INR(totals.loyaltyDiscount)}`}
+            value={`− ${INRExact(totals.loyaltyDiscount)}`}
             tone="discount"
           />
         ) : null}
@@ -120,7 +120,7 @@ export function OrderSummary({
           Total
         </span>
         <span className="font-display text-[28px] tabular-nums text-ng-forest-deep">
-          {INR(totals.total)}
+          {INRExact(totals.total)}
         </span>
       </div>
       {totals.taxInclusive ? (

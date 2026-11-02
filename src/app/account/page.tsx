@@ -6,7 +6,9 @@ import { AccountShell } from "@/components/ng/account/account-shell";
 import { Button } from "@/components/ng/button";
 import { Icon } from "@/components/ui/icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
+import { maxRedeemableRupees } from "@/components/ng/checkout/order-math";
 import { useAuth } from "@/lib/auth";
+import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { fetchRewards } from "@/lib/rewards-client";
 import {
   fetchMyOrders,
@@ -21,6 +23,7 @@ import {
 
 export default function AccountPage() {
   const { account, isAuthed, loading: authLoading } = useAuth();
+  const { config: loyalty } = useLoyaltyConfig();
   const firstName = isAuthed ? account?.name?.trim()?.split(" ")[0] || "there" : "there";
 
   /* The dashboard used to read `listReceipts()` — receipts the checkout wrote to
@@ -30,7 +33,7 @@ export default function AccountPage() {
      at all. It now reads the same server source as /account/orders, so the
      numbers on this page and that one can never disagree. */
   const [orders, setOrders] = useState<OrderView[]>([]);
-  const [creditRupees, setCreditRupees] = useState<number | null>(null);
+  const [points, setPoints] = useState<number | null>(null);
 
   useEffect(() => {
     if (authLoading || !isAuthed) return;
@@ -43,28 +46,24 @@ export default function AccountPage() {
     return () => controller.abort();
   }, [authLoading, isAuthed]);
 
-  // Wallet credit was hardcoded "₹0". Read the live points balance and the live
-  // points-per-rupee rate instead, so the tile agrees with /loyalty.
+  // Wallet credit was hardcoded "₹0". Read the live points balance instead and
+  // value it at the live redeem rate, floored the same way /loyalty does, so the
+  // tile agrees with that page. The rate comes from the shared config because
+  // this page's own fetch read `pointsPerRupee`, a field the endpoint has never
+  // returned, and so showed the balance as rupees, ten times too high.
   useEffect(() => {
     if (authLoading || !isAuthed) return;
     let cancelled = false;
-    void (async () => {
-      const [rewards, perRupee] = await Promise.all([
-        fetchRewards(),
-        fetch("/api/loyalty-config", { cache: "no-store" })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((j: { config?: { pointsPerRupee?: number } } | null) =>
-            Math.max(1, Math.round(j?.config?.pointsPerRupee ?? 1)),
-          )
-          .catch(() => 1),
-      ]);
-      if (!cancelled) setCreditRupees(Math.floor(rewards.balance / perRupee));
-    })();
+    void fetchRewards().then((rewards) => {
+      if (!cancelled) setPoints(rewards.balance);
+    });
     return () => {
       cancelled = true;
     };
   }, [authLoading, isAuthed]);
 
+  const creditRupees =
+    points === null ? null : maxRedeemableRupees(points, loyalty.redeemPointsPerRupee);
   const recent = orders.slice(0, 3);
   const stats = [
     {

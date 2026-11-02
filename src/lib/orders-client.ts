@@ -7,6 +7,8 @@
  * shown here are exactly what the server persisted.
  */
 
+import { INRExact } from "@/components/ng/checkout/order-math";
+
 /** Customer-facing fulfilment lifecycle (mirrors the server, forward-only),
  *  plus `cancelled`, which can end it from any stage before delivery. */
 export type OrderStatus =
@@ -106,9 +108,13 @@ export class OrdersAuthError extends Error {
 
 /* ── display helpers ──────────────────────────────────────────────────── */
 
-/** Format integer paise as a localized rupee string, e.g. 129900 → "₹1,299". */
+/**
+ * Format integer paise as a localized rupee string, e.g. 129900 → "₹1,299".
+ * Paise show only when there are any (20 → "₹0.20"): a points discount can be
+ * under a rupee, and rounding it told the customer they got "− ₹0".
+ */
 export function inrFromPaise(paise: number): string {
-  return `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+  return INRExact(paise / 100);
 }
 
 /** Total units across all lines of an order. */
