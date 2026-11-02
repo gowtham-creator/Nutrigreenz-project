@@ -1,5 +1,6 @@
 import "server-only";
 import type { OrderWithDetail } from "@/lib/orders";
+import { money } from "@/lib/invoice-ladder";
 
 /**
  * GST breakdown for an order.
@@ -10,12 +11,13 @@ import type { OrderWithDetail } from "@/lib/orders";
  *     taxable = payable / 1.05      gst = payable - taxable
  *
  * Split 2.5% CGST + 2.5% SGST when the delivery state matches the seller's
- * (Telangana), and a single 5% IGST line otherwise. An inter-state supply is
- * IGST by law, and printing CGST/SGST on it would make the invoice wrong.
+ * (Telangana), and a single 5% IGST otherwise. An inter-state supply is IGST by
+ * law, so anything that prints this split has to honour that.
  *
- * Shared deliberately: the email and the PDF must never disagree about tax. All
- * figures are integer paise, with the split rounded so the two halves always sum
- * back to the total exactly.
+ * The split is printed in one place, the line from `gstNote`, shared by the PDFs
+ * and the order email so they cannot disagree about tax. Their ladders show only
+ * what the customer pays (see invoice-ladder.ts). All figures are integer paise,
+ * with the split rounded so the two halves always sum back to the total exactly.
  *
  * ── On changing this rate ─────────────────────────────────────────────────
  *
@@ -35,8 +37,8 @@ import type { OrderWithDetail } from "@/lib/orders";
  *
  * The half-rate below is derived rather than written out, so CGST + SGST can
  * never drift from the headline rate. At 5% the halves are 2.5% each, which is
- * fractional — `halfRatePercent` is consumed for display only, while the actual
- * money split works in integer paise (see `gstFor`), so no rounding is lost.
+ * fractional — `halfRatePercent` is a label only, while the actual money split
+ * works in integer paise (see `gstFor`), so no rounding is lost.
  */
 export const GST_RATE_PERCENT = 5;
 const HALF_RATE = GST_RATE_PERCENT / 2;
@@ -77,8 +79,8 @@ export function gstFor(order: OrderWithDetail): GstBreakdown {
 
   const state = deliveryState(order);
   // Default to intra-state when the address carries no state: the seller is in
-  // Telangana and that is the common case, and CGST/SGST is the safer default to
-  // print than an IGST line that may not apply.
+  // Telangana and that is the common case, and CGST/SGST is a safer default than
+  // an IGST split that may not apply.
   const intraState = state === "" || state.toLowerCase() === SELLER_STATE;
 
   // Halve so the parts always reconstruct the whole, even on an odd paise value.
@@ -96,4 +98,27 @@ export function gstFor(order: OrderWithDetail): GstBreakdown {
     halfRatePercent: HALF_RATE,
     placeOfSupply: state || "Telangana",
   };
+}
+
+/**
+ * The GST line under the totals, on the invoice, the receipt and the order email.
+ *
+ * The amounts sit here rather than in the ladder because a tax invoice must state
+ * the tax amount, and the owner wants the totals ladder kept to what the customer
+ * pays. One small line does both, and building it only here means the documents
+ * cannot disagree.
+ *
+ * An exclusive-mode order is worded differently, with no amounts. Its tax is
+ * already a row on the ladder, so "Prices include GST" would be false, and gstFor
+ * back-computes from an inclusive total, so its figures are not that order's tax.
+ */
+export function gstNote(order: OrderWithDetail): string {
+  const gst = gstFor(order);
+  const place = `Place of supply: ${gst.placeOfSupply}.`;
+  if (order.taxPaise > 0) return `Tax is added to the prices shown above. ${place}`;
+
+  const amounts = gst.intraState
+    ? `CGST ${money(gst.cgstPaise)} + SGST ${money(gst.sgstPaise)}`
+    : `IGST ${money(gst.igstPaise)}`;
+  return `Prices include GST at ${gst.ratePercent}% (${amounts}). ${place}`;
 }

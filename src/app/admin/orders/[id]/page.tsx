@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AdminShell, Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
+import { couponSharePaise } from "@/lib/invoice-ladder";
 import { StatusStepper } from "../status-stepper";
 import {
   customerLabel,
@@ -301,10 +302,10 @@ export default function AdminOrderDetail({
           <Card title="Summary">
             <dl className="space-y-2.5 text-[13px]">
               <Row label={`Subtotal (${itemCount(order)} items)`} value={formatPaise(order.subtotalPaise)} valueClass="font-semibold text-ng-ink" />
-              {order.discountPaise > 0 ? (
+              {couponSharePaise(order) > 0 ? (
                 <Row
                   label={order.couponCode ? `Discount (${order.couponCode})` : "Discount"}
-                  value={`− ${formatPaise(order.discountPaise)}`}
+                  value={`− ${formatPaise(couponSharePaise(order))}`}
                   valueClass="font-semibold text-ng-success"
                 />
               ) : null}

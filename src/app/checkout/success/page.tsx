@@ -19,6 +19,7 @@ import {
   snapshotString,
   type OrderView,
 } from "@/lib/orders-client";
+import { couponSharePaise } from "@/lib/invoice-ladder";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import { Button } from "@/components/ng/button";
@@ -422,10 +423,10 @@ function ServerOrderSummary({ order }: { order: OrderView }) {
 
       <div className="mt-5 space-y-2.5 border-t border-ng-line-soft pt-5">
         <SummaryRow label="Subtotal" value={inrFromPaise(order.subtotalPaise)} />
-        {order.discountPaise > 0 ? (
+        {couponSharePaise(order) > 0 ? (
           <SummaryRow
             label={order.couponCode ? `Coupon (${order.couponCode})` : "Discount"}
-            value={`− ${inrFromPaise(order.discountPaise)}`}
+            value={`− ${inrFromPaise(couponSharePaise(order))}`}
             discount
           />
         ) : null}

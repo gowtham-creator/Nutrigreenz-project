@@ -10,6 +10,7 @@ import { UiIcon } from "@/components/ui/ui-icon";
 import { NoCancellationNotice } from "@/components/ng/checkout/no-cancellation";
 import { Reveal } from "@/components/ng/motion";
 import { useAuth } from "@/lib/auth";
+import { couponSharePaise } from "@/lib/invoice-ladder";
 import {
   fetchMyOrder,
   formatOrderDate,
@@ -372,8 +373,8 @@ export default function AccountOrderDetailPage({
               </h2>
               <dl className="space-y-2 text-[13px]">
                 <Row label="Subtotal" value={inrFromPaise(order.subtotalPaise)} />
-                {order.discountPaise > 0 ? (
-                  <Row label="Discount" value={`− ${inrFromPaise(order.discountPaise)}`} />
+                {couponSharePaise(order) > 0 ? (
+                  <Row label="Discount" value={`− ${inrFromPaise(couponSharePaise(order))}`} />
                 ) : null}
                 {order.couponCode ? <Row label="Coupon" value={order.couponCode} /> : null}
                 {order.loyaltyRedeemedPaise > 0 ? (
