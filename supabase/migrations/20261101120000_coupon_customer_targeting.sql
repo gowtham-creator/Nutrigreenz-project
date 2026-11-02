@@ -24,7 +24,12 @@
 -- These columns hold customers' phone numbers. `public.coupons` has RLS enabled
 -- with no policies, so only the service role can read them.
 
+-- requires_verified_phone has been read by every coupon query since July, but no
+-- migration in this repo creates it. If production lacks it, every coupon lookup
+-- fails. `if not exists` makes this line a no-op where the column is already there.
+
 alter table public.coupons
+  add column if not exists requires_verified_phone boolean not null default false,
   add column if not exists customer_phones text[],
   add column if not exists stack_loyalty boolean not null default true,
   add column if not exists description text;
