@@ -98,7 +98,7 @@ export function ComingSoon() {
             role="dialog"
             aria-modal="true"
             aria-label="Nutri Greenz is coming soon"
-            className="ng-soon-intro fixed inset-0 z-[200] overflow-hidden bg-[#FDFEF8]"
+            className="ng-soon-intro fixed inset-0 z-[200] overflow-hidden bg-[#FCFFF8]"
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7 }}
           >
@@ -139,7 +139,7 @@ export function ComingSoon() {
                       alt="Nutri Greenz cold-pressed groundnut oil"
                       fill
                       sizes="(min-width: 768px) 34vw, 62vw"
-                      className="object-contain mix-blend-multiply"
+                      className="object-contain"
                     />
                   </motion.div>
                   <div className="max-w-md text-center md:text-left">
