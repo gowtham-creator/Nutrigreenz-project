@@ -424,7 +424,9 @@ export function CaptainStoreProvider({ children }: { children: ReactNode }) {
         return "retry";
       }
       // 5xx / 503, timeouts, rate limits: transient; keep it queued.
-      if (res.status >= 500 || res.status === 408 || res.status === 429) return "retry";
+      // 404 too: the route answers 404 while the captain network is switched off,
+      // and a cash sale must survive that and go up when it is back on.
+      if (res.status >= 500 || res.status === 404 || res.status === 408 || res.status === 429) return "retry";
       // Any other 4xx will never be accepted. Take the row off the day (it was
       // never recorded, so it must not count towards the cash to settle) and
       // tell the captain, instead of letting it vanish on the next reload.

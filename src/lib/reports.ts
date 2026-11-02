@@ -143,6 +143,7 @@ interface OrderAggRow {
   payment_status: string;
   total_paise: number;
   discount_paise: number;
+  loyalty_redeemed_paise?: number | null;
   coupon_code: string | null;
   placed_at: string;
 }
@@ -252,7 +253,7 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
   //    so this keeps every order while honouring the "non-cancelled" contract).
   let orderQuery = db
     .from("orders")
-    .select("id, status, payment_status, total_paise, discount_paise, coupon_code, placed_at")
+    .select("id, status, payment_status, total_paise, discount_paise, loyalty_redeemed_paise, coupon_code, placed_at")
     .neq("status", "cancelled");
   if (from) orderQuery = orderQuery.gte("placed_at", from);
   if (to) orderQuery = orderQuery.lte("placed_at", to);
@@ -306,7 +307,8 @@ export async function buildAdminReport(input: BuildReportInput = {}): Promise<Ad
     if (code) {
       const c = couponMap.get(code) ?? { orders: 0, discountPaise: 0 };
       c.orders += 1;
-      c.discountPaise += o.discount_paise;
+      // discount_paise includes redeemed points, which are not the coupon's cost.
+      c.discountPaise += o.discount_paise - (o.loyalty_redeemed_paise ?? 0);
       couponMap.set(code, c);
     }
   }

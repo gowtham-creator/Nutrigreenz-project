@@ -360,6 +360,9 @@ export default function CheckoutPage() {
         current?.coupon.code === code
           ? {
               ...current,
+              // The draft kept the discount quoted for the old cart; the server charges
+              // this one, so the total on screen must match it.
+              discount: quote.discountPaise / 100,
               coupon: { ...current.coupon, stacksWithLoyalty: quote.stacksWithLoyalty },
             }
           : current,
