@@ -23,6 +23,7 @@ const fx = vi.hoisted(() => ({
   cart: { clear: (() => {}) as () => void },
   search: "order=NG-26-1001",
   receipt: null as unknown,
+  loyalty: {} as Record<string, unknown>,
   Pass: ({ children }: { children?: ReactNode }) => children,
 }));
 
@@ -35,6 +36,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("@/lib/cart", () => ({ useCart: () => ({ clear: fx.cart.clear }) }));
+vi.mock("@/lib/loyalty-config", () => ({
+  useLoyaltyConfig: () => ({ config: fx.loyalty }),
+}));
 vi.mock("@/components/ng/page-shell", () => ({ PageShell: fx.Pass }));
 vi.mock("@/components/ng/section", () => ({ Section: fx.Pass }));
 vi.mock("@/components/ng/motion", () => ({
@@ -119,6 +123,7 @@ beforeEach(() => {
   fx.cart.clear = m.clear;
   fx.search = "order=NG-26-1001";
   fx.receipt = null;
+  fx.loyalty = { earnEnabled: true, earnPointsPerRupee: 1, redeemPointsPerRupee: 10 };
 });
 afterEach(() => {
   cleanup();
@@ -337,5 +342,50 @@ describe("/checkout/success — empties the cart once", () => {
 
     expect(m.clear).toHaveBeenCalledTimes(1);
     expect(laterClear).not.toHaveBeenCalled();
+  });
+});
+
+describe("/checkout/success — loyalty", () => {
+  it("states the points the live rates will credit", async () => {
+    fx.loyalty = { earnEnabled: true, earnPointsPerRupee: 2, redeemPointsPerRupee: 25 };
+    fetchMock.mockResolvedValue(okOrder("cod", "pending"));
+
+    render(<CheckoutSuccessPage />);
+    await advance();
+
+    expect(screen.getByText("2480")).toBeTruthy();
+    expect(screen.getByText(/25 points = ₹1/)).toBeTruthy();
+  });
+
+  it("leaves the note out while earning is switched off", async () => {
+    fx.loyalty = { ...fx.loyalty, earnEnabled: false };
+    fetchMock.mockResolvedValue(okOrder("cod", "pending"));
+
+    render(<CheckoutSuccessPage />);
+    await advance();
+
+    expect(screen.getByText("Order confirmed")).toBeTruthy();
+    expect(screen.queryByText(/will be credited/)).toBeNull();
+  });
+
+  it("shows a discount under a rupee as what it is, not as nothing", async () => {
+    fetchMock.mockResolvedValue(
+      reply(200, {
+        ok: true,
+        order: {
+          ...serverOrder("cod", "pending"),
+          subtotalPaise: 100,
+          shippingPaise: 0,
+          totalPaise: 80,
+          loyaltyRedeemedPaise: 20,
+        },
+      }),
+    );
+
+    render(<CheckoutSuccessPage />);
+    await advance();
+
+    expect(screen.getByText("− ₹0.20")).toBeTruthy();
+    expect(screen.getAllByText("₹0.80").length).toBeGreaterThan(0);
   });
 });

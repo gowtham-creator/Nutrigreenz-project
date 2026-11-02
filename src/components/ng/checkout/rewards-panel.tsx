@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ng/button";
 import { Input } from "@/components/ng/input";
 import { cn } from "@/lib/utils";
 import type { Coupon } from "@/types/nutrigreenz";
-import { INR, POINTS_PER_RUPEE } from "./order-math";
+import {
+  INR,
+  INRExact,
+  loyaltyBlockMessage,
+  type LoyaltyQuote,
+  type LoyaltyRedeemRules,
+} from "./order-math";
 import { couponReasonMessage, validateCouponApi } from "@/lib/rewards-client";
 import {
   PHONE_VERIFIED_EVENT,
@@ -41,9 +47,10 @@ export function RewardsPanel({
   onApplyCoupon,
   onRemoveCoupon,
   loyaltyAvailable,
+  loyaltyQuote,
   loyaltyRedeemed,
   onToggleLoyalty,
-  redeemPointsPerRupee = POINTS_PER_RUPEE,
+  loyaltyRules,
   deliveryPincode,
   cartProductIds,
 }: {
@@ -53,11 +60,17 @@ export function RewardsPanel({
   onRemoveCoupon: () => void;
   /** Balance in points available to redeem. */
   loyaltyAvailable: number;
+  /**
+   * What this order can take, worked out by the page. Passed in rather than
+   * recomputed here: this panel keeping its own sum is how the switch came to
+   * be enabled for a redemption the page had already worked out as nothing.
+   */
+  loyaltyQuote: LoyaltyQuote;
   /** Points currently being redeemed (0 when off). */
   loyaltyRedeemed: number;
   onToggleLoyalty: (on: boolean) => void;
-  /** Admin-configured points→₹ ratio, so the copy matches the real discount. */
-  redeemPointsPerRupee?: number;
+  /** Admin-configured limits, for the copy around the quote. */
+  loyaltyRules: LoyaltyRedeemRules;
   /**
    * Pincode of the selected delivery address. Sent with the coupon quote so
    * area-targeted codes (specific pincodes / gated communities) resolve
@@ -78,9 +91,13 @@ export function RewardsPanel({
     almostThere: OfferedCoupon[];
   } | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const ratio = redeemPointsPerRupee > 0 ? redeemPointsPerRupee : POINTS_PER_RUPEE;
-  const loyaltyRupees = Math.floor(loyaltyAvailable / ratio);
   const loyaltyOn = loyaltyRedeemed > 0;
+  const loyaltyWhyNot = loyaltyQuote.blocked
+    ? loyaltyBlockMessage(loyaltyQuote.blocked, loyaltyAvailable, loyaltyRules)
+    : null;
+  const loyaltyWhyNotId = useId();
+  const loyaltyPointWord = loyaltyQuote.points === 1 ? "point" : "points";
+  const loyaltyAmount = INRExact(loyaltyQuote.discountPaise / 100);
 
   // A welcome / first-order code needs an OTP-verified phone before it validates.
   // When one is rejected for that reason we open the inline OTP prompt and, once
@@ -378,8 +395,9 @@ export function RewardsPanel({
         <button
           type="button"
           onClick={() => onToggleLoyalty(!loyaltyOn)}
-          disabled={loyaltyRupees <= 0}
+          disabled={loyaltyWhyNot !== null}
           aria-pressed={loyaltyOn}
+          aria-describedby={loyaltyWhyNot ? loyaltyWhyNotId : undefined}
           className={cn(
             "flex w-full items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
             loyaltyOn
@@ -393,14 +411,13 @@ export function RewardsPanel({
             </span>
             <div>
               <div className="font-display text-[15px] text-ng-forest-deep">
-                {loyaltyOn
-                  ? `Redeeming ${loyaltyRedeemed} points (− ${INR(loyaltyRupees)})`
-                  : `Redeem ${loyaltyAvailable} points (− ${INR(loyaltyRupees)})`}
+                {loyaltyWhyNot
+                  ? "Redeem points"
+                  : `${loyaltyOn ? "Redeeming" : "Redeem"} ${loyaltyQuote.points} ${loyaltyPointWord} (− ${loyaltyAmount})`}
               </div>
               <div className="text-[12px] text-ng-ink-muted">
-                {loyaltyRupees > 0
-                  ? `Available balance · ${loyaltyAvailable} pts · ${ratio} pts = ₹1`
-                  : "Earn points on every order to redeem later"}
+                Available balance · {loyaltyAvailable} pts ·{" "}
+                {loyaltyRules.redeemPointsPerRupee} pts = ₹1
               </div>
             </div>
           </div>
@@ -418,6 +435,24 @@ export function RewardsPanel({
             />
           </span>
         </button>
+
+        {/*
+          Below the switch, not inside it: the disabled state fades the whole
+          button, and the reason is the one line that has to stay readable.
+        */}
+        {loyaltyWhyNot ? (
+          <p
+            id={loyaltyWhyNotId}
+            className="mt-2 px-1 text-[12.5px] font-medium text-ng-clay-deep"
+          >
+            {loyaltyWhyNot}
+          </p>
+        ) : loyaltyQuote.points < loyaltyAvailable ? (
+          <p className="mt-2 px-1 text-[12px] text-ng-ink-muted">
+            Points can cover up to {loyaltyRules.maxRedeemPercent}% of an order. The
+            rest stay in your balance.
+          </p>
+        ) : null}
       </div>
     </div>
   );

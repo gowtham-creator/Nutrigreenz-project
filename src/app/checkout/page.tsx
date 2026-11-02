@@ -36,8 +36,9 @@ import {
 import {
   computeTotals,
   INR,
-  maxRedeemableRupees,
+  INRExact,
   pointsEarned,
+  quoteLoyalty,
 } from "@/components/ng/checkout/order-math";
 import { saveReceipt } from "@/components/ng/checkout/order-receipt";
 
@@ -375,22 +376,16 @@ export default function CheckoutPage() {
   );
 
   const couponDiscount = applied?.discount ?? 0;
-  // Loyalty redemption uses the Super-Admin-configured ratio + limits.
-  const meetsMinRedeem = loyaltyAvailable >= loyalty.minRedeemPoints;
-  const maxRedeemFromBalance = maxRedeemableRupees(
-    loyaltyAvailable,
-    loyalty.redeemPointsPerRupee,
-  );
-  const maxRedeemFromCap = Math.floor(
-    (subtotal * loyalty.maxRedeemPercent) / 100,
-  );
-  const loyaltyRupees = meetsMinRedeem
-    ? Math.min(maxRedeemFromBalance, maxRedeemFromCap)
-    : 0;
-  const loyaltyDiscount = redeemLoyalty ? loyaltyRupees : 0;
-  const loyaltyPointsUsed = redeemLoyalty
-    ? loyaltyRupees * loyalty.redeemPointsPerRupee
-    : 0;
+  // One quote feeds the rewards panel, the totals and the order POST, so what
+  // the switch offers is what the summary shows and what the server will take.
+  const loyaltyQuote = quoteLoyalty({
+    balance: loyaltyAvailable,
+    subtotalPaise: Math.round(subtotal * 100),
+    couponDiscountPaise: Math.round(couponDiscount * 100),
+    config: loyalty,
+  });
+  const loyaltyDiscount = redeemLoyalty ? loyaltyQuote.discountPaise / 100 : 0;
+  const loyaltyPointsUsed = redeemLoyalty ? loyaltyQuote.points : 0;
 
   const totals = useMemo(
     () =>
@@ -402,6 +397,7 @@ export default function CheckoutPage() {
       }),
     [subtotal, couponDiscount, loyaltyDiscount, rules],
   );
+  const pointsToEarn = pointsEarned(Math.round(totals.total * 100), loyalty);
 
   const belowMinimum = subtotal > 0 && subtotal < rules.minOrderValue;
   const canPlace =
@@ -482,7 +478,9 @@ export default function CheckoutPage() {
           })),
           couponCode: applied?.coupon.code ?? null,
           discountPaise: Math.round(couponDiscount * 100),
-          loyaltyRedeemedPaise: Math.round(loyaltyDiscount * 100),
+          // Points, not paise: the server would only divide paise back into
+          // points, and the quote already says how many it will accept.
+          loyaltyPoints: loyaltyPointsUsed,
           paymentMethod: payment?.category === "upi" ? "upi" : "cod",
           addressSnapshot: selectedAddress,
           slotSnapshot: selectedSlot,
@@ -588,7 +586,7 @@ export default function CheckoutPage() {
       payment,
       slotLabel: selectedSlot.label,
       address: selectedAddress,
-      pointsToEarn: pointsEarned(totals.total),
+      pointsToEarn,
     });
 
     if (gateway) {
@@ -777,9 +775,10 @@ export default function CheckoutPage() {
                 }
                 onRemoveCoupon={() => setApplied(null)}
                 loyaltyAvailable={loyaltyAvailable}
+                loyaltyQuote={loyaltyQuote}
                 loyaltyRedeemed={loyaltyPointsUsed}
                 onToggleLoyalty={setRedeemLoyalty}
-                redeemPointsPerRupee={loyalty.redeemPointsPerRupee}
+                loyaltyRules={loyalty}
               />
             </StaggerItem>
 
@@ -852,8 +851,8 @@ export default function CheckoutPage() {
                     {placing
                       ? "Placing order…"
                       : payment
-                        ? `Pay ${INR(totals.total)} · ${payment.label}`
-                        : `Place order · ${INR(totals.total)}`}
+                        ? `Pay ${INRExact(totals.total)} · ${payment.label}`
+                        : `Place order · ${INRExact(totals.total)}`}
                   </Button>
                 </MagneticHover>
               ) : (
@@ -867,8 +866,8 @@ export default function CheckoutPage() {
                 >
                   <Icon name="lock-keyhole-minimalistic-bold" size={18} />
                   {payment
-                    ? `Pay ${INR(totals.total)} · ${payment.label}`
-                    : `Place order · ${INR(totals.total)}`}
+                    ? `Pay ${INRExact(totals.total)} · ${payment.label}`
+                    : `Place order · ${INRExact(totals.total)}`}
                 </Button>
               )}
 
@@ -896,15 +895,15 @@ export default function CheckoutPage() {
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
                   Choose a delivery address, slot and payment method to continue.
                 </p>
-              ) : (
+              ) : pointsToEarn > 0 ? (
                 <p className="mt-3 text-center text-[12px] text-ng-ink-soft">
                   You&apos;ll earn{" "}
                   <span className="font-semibold text-ng-forest">
-                    {pointsEarned(totals.total)} points
+                    {pointsToEarn} {pointsToEarn === 1 ? "point" : "points"}
                   </span>{" "}
                   on this order.
                 </p>
-              )}
+              ) : null}
 
               <ul className="mt-6 space-y-1.5 border-t border-ng-line-soft pt-5 text-[12px] text-ng-ink-muted">
                 <li className="flex items-center gap-2">

@@ -37,6 +37,11 @@ const fx = vi.hoisted(() => {
   return {
     address,
     slot,
+    // Reset before each test; the loyalty cases change them.
+    subtotal: 1200,
+    balance: 0,
+    loyalty: {} as Record<string, unknown>,
+    realRewardsPanel: false,
     items: [
       {
         lineId: "l1",
@@ -106,22 +111,29 @@ vi.mock("@/components/ng/button", () => ({
 }));
 vi.mock("@/components/ng/checkout/address-picker", () => ({ AddressPicker: () => null }));
 vi.mock("@/components/ng/checkout/slot-picker", () => ({ SlotPicker: () => null }));
-vi.mock("@/components/ng/checkout/rewards-panel", () => ({
-  RewardsPanel: ({
-    onApplyCoupon,
-  }: {
-    onApplyCoupon: (coupon: unknown, discount: number) => void;
-  }) => (
-    <button
-      type="button"
-      onClick={() =>
-        onApplyCoupon({ code: "WELCOME50", description: "", type: "flat", value: 50 }, 50)
-      }
-    >
-      apply coupon
-    </button>
-  ),
-}));
+// Stubbed down to one button, except for the loyalty cases: the bug they guard
+// lived between this panel and the page, so those need the two of them together.
+vi.mock("@/components/ng/checkout/rewards-panel", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ng/checkout/rewards-panel")>();
+  return {
+    RewardsPanel: (props: Parameters<typeof actual.RewardsPanel>[0]) => (
+      <>
+        <button
+          type="button"
+          onClick={() =>
+            props.onApplyCoupon(
+              { code: "WELCOME50", description: "", type: "flat", value: 50, active: true },
+              50,
+            )
+          }
+        >
+          apply coupon
+        </button>
+        {fx.realRewardsPanel ? <actual.RewardsPanel {...props} /> : null}
+      </>
+    ),
+  };
+});
 vi.mock("@/components/ng/checkout/no-cancellation", () => ({ NoCancellationAck: () => null }));
 vi.mock("@/components/ng/checkout/order-summary", () => ({ OrderSummary: () => null }));
 vi.mock("@/components/ng/checkout/payment-picker", () => ({
@@ -160,7 +172,7 @@ vi.mock("@/components/ng/checkout/order-receipt", () => ({ saveReceipt: m.saveRe
 
 // Data hooks.
 vi.mock("@/lib/cart", () => ({
-  useCart: () => ({ items: fx.items, subtotal: 1200, clear: m.clear }),
+  useCart: () => ({ items: fx.items, subtotal: fx.subtotal, clear: m.clear }),
 }));
 vi.mock("@/lib/auth", () => ({
   useAuth: () => ({
@@ -174,9 +186,7 @@ vi.mock("@/lib/commerce", () => ({
   useCommerceStatus: () => ({ slotsStatus: "live", refreshRules: m.refreshRules }),
 }));
 vi.mock("@/lib/loyalty-config", () => ({
-  useLoyaltyConfig: () => ({
-    config: { minRedeemPoints: 100, redeemPointsPerRupee: 10, maxRedeemPercent: 20 },
-  }),
+  useLoyaltyConfig: () => ({ config: fx.loyalty }),
 }));
 vi.mock("@/lib/addresses", () => ({
   useAddresses: () => ({ addresses: [fx.address], defaultAddress: fx.address }),
@@ -185,7 +195,7 @@ vi.mock("@/lib/serviceability", () => ({ fetchServiceable: async () => true }));
 vi.mock("@/lib/rewards-client", async (importOriginal) => ({
   // The real coupon-reason copy, so the test pins what the customer reads.
   ...(await importOriginal<typeof import("@/lib/rewards-client")>()),
-  fetchRewards: async () => ({ balance: 0 }),
+  fetchRewards: async () => ({ balance: fx.balance }),
 }));
 
 import CheckoutPage from "./page";
@@ -208,6 +218,17 @@ const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promis
  */
 const realLocation = window.location;
 beforeEach(() => {
+  fx.subtotal = 1200;
+  fx.balance = 0;
+  // The live programme, with earning off as it is in production.
+  fx.loyalty = {
+    earnPointsPerRupee: 1,
+    redeemPointsPerRupee: 10,
+    minRedeemPoints: 100,
+    maxRedeemPercent: 20,
+    earnEnabled: false,
+  };
+  fx.realRewardsPanel = false;
   vi.stubGlobal("fetch", fetchMock);
   Object.defineProperty(window, "location", {
     configurable: true,
@@ -566,4 +587,178 @@ describe("checkout — expired session", () => {
       expect(m.navigate).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("checkout — redeeming points", () => {
+  const orderBody = () => {
+    const call = fetchMock.mock.calls.find(([input]) => String(input) === "/api/orders");
+    return JSON.parse(String(call?.[1]?.body)) as Record<string, unknown>;
+  };
+
+  async function placeCodOrder() {
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Pay / }));
+    await waitFor(() => expect(m.saveReceipt).toHaveBeenCalledTimes(1));
+  }
+
+  // The real panel also asks for coupon offers, which these cases don't care about.
+  beforeEach(() => {
+    fx.realRewardsPanel = true;
+    fetchMock.mockImplementation(async (input) =>
+      String(input) === "/api/orders"
+        ? jsonResponse(201, { ok: true, orderNumber: "NG-26-1001", payment: null })
+        : jsonResponse(200, { eligible: [], almostThere: [] }),
+    );
+  });
+
+  it("flips the switch on a ₹1 order and charges exactly what it shows", async () => {
+    fx.subtotal = 1;
+    fx.balance = 500;
+
+    render(<CheckoutPage />);
+
+    // The amount really taken, in paise, not the 500 point balance or "₹0".
+    const toggle = await screen.findByRole("button", {
+      name: /^Redeem 2 points \(− ₹0\.20\)/,
+      pressed: false,
+    });
+    expect((toggle as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(toggle);
+
+    expect(
+      await screen.findByRole("button", {
+        name: /^Redeeming 2 points \(− ₹0\.20\)/,
+        pressed: true,
+      }),
+    ).toBe(toggle);
+
+    await placeCodOrder();
+
+    // ₹1 − ₹0.20 + ₹40 shipping, which the old rounding would have called ₹41.
+    expect(screen.queryByRole("button", { name: /^Pay ₹41/ })).toBeNull();
+    expect(orderBody().loyaltyPoints).toBe(2);
+    expect(orderBody()).not.toHaveProperty("loyaltyRedeemedPaise");
+    expect(m.saveReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ loyaltyPoints: 2, loyaltyDiscount: 0.2, total: 40.8 }),
+    );
+  });
+
+  it("shows the paise on the pay button once the discount is on", async () => {
+    fx.subtotal = 1;
+    fx.balance = 500;
+    render(<CheckoutPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Redeem 2 points/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+
+    expect(await screen.findByRole("button", { name: /^Pay ₹40\.80 / })).toBeTruthy();
+  });
+
+  it("flips back off, and then sends no points", async () => {
+    fx.subtotal = 1;
+    fx.balance = 500;
+    render(<CheckoutPage />);
+    const toggle = await screen.findByRole("button", { name: /^Redeem 2 points/ });
+
+    fireEvent.click(toggle);
+    await screen.findByRole("button", { name: /^Redeeming/, pressed: true });
+    fireEvent.click(toggle);
+    await screen.findByRole("button", { name: /^Redeem 2 points/, pressed: false });
+
+    await placeCodOrder();
+
+    expect(orderBody().loyaltyPoints).toBe(0);
+  });
+
+  it("offers the capped amount, not the whole balance, and says what happens to the rest", async () => {
+    fx.balance = 5000;
+
+    render(<CheckoutPage />);
+
+    expect(
+      await screen.findByRole("button", { name: /^Redeem 2400 points \(− ₹240\)/ }),
+    ).toBeTruthy();
+    expect(screen.getByText(/rest\s+stay in your balance/)).toBeTruthy();
+  });
+
+  it.each([
+    ["the balance is under the minimum", 40, "You need 100 points to redeem. You have 40."],
+    ["there are no points", 0, "You don't have any points to redeem yet."],
+  ])("says why when %s, and the switch cannot flip", async (_label, balance, why) => {
+    fx.balance = balance;
+
+    render(<CheckoutPage />);
+
+    expect(await screen.findByText(why)).toBeTruthy();
+    const toggle = screen.getByRole("button", { name: /^Redeem points/, pressed: false });
+    expect((toggle as HTMLButtonElement).disabled).toBe(true);
+    // The reason is announced with the switch, not just printed near it.
+    expect(toggle.getAttribute("aria-describedby")).toBe(screen.getByText(why).id);
+
+    fireEvent.click(toggle);
+    await placeCodOrder();
+
+    expect(orderBody().loyaltyPoints).toBe(0);
+  });
+
+  it("says when an order is too small for even one point", async () => {
+    fx.subtotal = 1;
+    fx.balance = 500;
+    fx.loyalty = { ...fx.loyalty, redeemPointsPerRupee: 1 };
+
+    render(<CheckoutPage />);
+
+    expect(await screen.findByText(/^This order is too small to use points on\./)).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: /^Redeem points/ }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it("turns itself off when a coupon leaves nothing to redeem against", async () => {
+    fx.subtotal = 50;
+    fx.balance = 500;
+    render(<CheckoutPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Redeem 100 points \(− ₹10\)/ }));
+    await screen.findByRole("button", { name: /^Redeeming/, pressed: true });
+
+    fireEvent.click(screen.getByRole("button", { name: "apply coupon" }));
+
+    expect(await screen.findByText(/^Your coupon already covers this order/)).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: /^Redeem points/, pressed: false }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+
+    await placeCodOrder();
+
+    expect(orderBody().loyaltyPoints).toBe(0);
+  });
+});
+
+describe("checkout — points earned", () => {
+  it("promises what the live earn rate will credit", async () => {
+    fx.loyalty = { ...fx.loyalty, earnEnabled: true, earnPointsPerRupee: 2 };
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, { ok: true, orderNumber: "NG-26-1001", payment: null }),
+    );
+
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+
+    expect(await screen.findByText("2400 points")).toBeTruthy();
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Pay / }));
+    await waitFor(() =>
+      expect(m.saveReceipt).toHaveBeenCalledWith(expect.objectContaining({ pointsToEarn: 2400 })),
+    );
+  });
+
+  it("promises nothing while earning is switched off", async () => {
+    render(<CheckoutPage />);
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+    await screen.findByRole("button", { name: /^Pay / });
+
+    expect(screen.queryByText(/You.ll earn/)).toBeNull();
+  });
 });

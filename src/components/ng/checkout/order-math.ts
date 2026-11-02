@@ -5,6 +5,7 @@
  */
 
 import type { Coupon, CommerceRules, LoyaltyLedgerEntry } from "@/types/nutrigreenz";
+import type { LoyaltyConfig } from "@/lib/loyalty-config";
 
 /**
  * Default loyalty conversion: 10 points = ₹1.
@@ -22,10 +23,11 @@ export function loyaltyBalance(ledger: LoyaltyLedgerEntry[]): number {
 }
 
 /**
- * Max ₹ value redeemable from a points balance (floored to whole rupees).
+ * Rupee value of a points balance (floored to whole rupees), the figure /loyalty
+ * and the account dashboard show as wallet credit.
  *
- * `pointsPerRupee` defaults to {@link POINTS_PER_RUPEE} so existing callers keep
- * working; checkout passes the Super-Admin-configured ratio.
+ * This is what the balance is worth, not what an order can take: for that, use
+ * {@link quoteLoyalty}, which applies the redemption limits.
  */
 export function maxRedeemableRupees(
   points: number,
@@ -33,6 +35,95 @@ export function maxRedeemableRupees(
 ): number {
   const ratio = pointsPerRupee > 0 ? pointsPerRupee : POINTS_PER_RUPEE;
   return Math.floor(points / ratio);
+}
+
+/** Why no points can come off this order, or null when some can. */
+export type LoyaltyBlock =
+  | "no-balance"
+  | "below-minimum"
+  | "order-too-small"
+  | "coupon-covers-order";
+
+export interface LoyaltyQuote {
+  /** Points the order would burn: the most the limits allow, not the balance. */
+  points: number;
+  /** What those points take off, in paise. */
+  discountPaise: number;
+  blocked: LoyaltyBlock | null;
+}
+
+export type LoyaltyRedeemRules = Pick<
+  LoyaltyConfig,
+  "redeemPointsPerRupee" | "minRedeemPoints" | "maxRedeemPercent"
+>;
+
+/**
+ * What loyalty can take off this order, worked out the way the server will.
+ *
+ * Mirrors `quoteLoyaltyRedemption` in `lib/rewards.ts`, which is the authority:
+ * same paise, same floors, same order of limits. Checkout used to work this out
+ * in whole rupees, in two places. A ₹1 order floored its 20p limit to ₹0, so the
+ * rewards switch stayed enabled but clicking it changed nothing, while the
+ * server would have honoured the redemption. Everything checkout shows and sends
+ * now comes from one call to this, so the panel, the totals and the order agree.
+ *
+ * `rewards.ts` is server-only, so the rate is restated here rather than imported;
+ * `order-math.test.ts` runs both against the same cases to catch them drifting.
+ */
+export function quoteLoyalty(args: {
+  balance: number;
+  subtotalPaise: number;
+  /** Discount the coupon has already taken: loyalty only gets what it left. */
+  couponDiscountPaise: number;
+  config: LoyaltyRedeemRules;
+}): LoyaltyQuote {
+  const { balance, subtotalPaise, couponDiscountPaise, config } = args;
+  const none = (blocked: LoyaltyBlock): LoyaltyQuote => ({
+    points: 0,
+    discountPaise: 0,
+    blocked,
+  });
+
+  if (balance <= 0) return none("no-balance");
+  if (balance < config.minRedeemPoints) return none("below-minimum");
+
+  const subtotal = Math.max(0, Math.round(subtotalPaise));
+  const reserved = Math.max(0, Math.round(couponDiscountPaise));
+  const ratio =
+    config.redeemPointsPerRupee > 0 ? config.redeemPointsPerRupee : POINTS_PER_RUPEE;
+  const paisePerPoint = Math.max(1, Math.round(100 / ratio));
+  const percentCapPaise = Math.floor((subtotal * config.maxRedeemPercent) / 100);
+  const capPaise = Math.min(percentCapPaise, Math.max(0, subtotal - reserved));
+
+  const points = Math.min(balance, Math.floor(capPaise / paisePerPoint));
+  if (points <= 0) {
+    // Told apart because the customer can act on one of them: taking the coupon
+    // off frees the order up, but nothing they can remove helps a tiny order.
+    return none(
+      Math.floor(percentCapPaise / paisePerPoint) <= 0
+        ? "order-too-small"
+        : "coupon-covers-order",
+    );
+  }
+  return { points, discountPaise: points * paisePerPoint, blocked: null };
+}
+
+/** The plain sentence for a blocked redemption: a greyed-out switch alone reads as broken. */
+export function loyaltyBlockMessage(
+  block: LoyaltyBlock,
+  balance: number,
+  config: LoyaltyRedeemRules,
+): string {
+  switch (block) {
+    case "no-balance":
+      return "You don't have any points to redeem yet.";
+    case "below-minimum":
+      return `You need ${config.minRedeemPoints} points to redeem. You have ${balance}.`;
+    case "order-too-small":
+      return `This order is too small to use points on. Points can cover up to ${config.maxRedeemPercent}% of an order.`;
+    case "coupon-covers-order":
+      return "Your coupon already covers this order, so there's nothing left to use points on.";
+  }
 }
 
 export type CouponError =
@@ -176,9 +267,31 @@ export function generateOrderId(): string {
   return `NG-25-${seq}`;
 }
 
-/** Loyalty points earned on an order — 1 point per ₹10 spent (rounded down). */
-export function pointsEarned(total: number): number {
-  return Math.floor(total / 10);
+/**
+ * Loyalty points an order will earn, on the same payable total and at the same
+ * live rate as `earnPointsForOrder` in `lib/rewards.ts`. Used to be a flat "1
+ * point per ₹10", which promised points the server would never credit.
+ */
+export function pointsEarned(
+  totalPaise: number,
+  config: Pick<LoyaltyConfig, "earnEnabled" | "earnPointsPerRupee">,
+): number {
+  if (!config.earnEnabled) return 0;
+  return Math.floor((Math.max(0, Math.round(totalPaise)) * config.earnPointsPerRupee) / 100);
 }
 
 export const INR = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+/**
+ * Like {@link INR}, but keeps the paise when there are any. For checkout's money
+ * lines, where a points discount can be ₹0.20: rounded, that reads as "− ₹0" off
+ * a total that hasn't moved, which looks like the points did nothing.
+ */
+export const INRExact = (n: number) => {
+  const paise = Math.round(n * 100);
+  const digits = paise % 100 === 0 ? 0 : 2;
+  return `₹${(paise / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })}`;
+};

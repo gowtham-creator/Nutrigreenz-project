@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { useCart } from "@/lib/cart";
+import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import {
   fetchMyOrder,
   inrFromPaise,
@@ -186,8 +187,10 @@ function OrderOutcome({ orderNumber }: { orderNumber: string }) {
 
 function ConfirmedOrder({ order }: { order: OrderView }) {
   const receipt = useReceipt(order.orderNumber);
+  const { config: loyalty } = useLoyaltyConfig();
   const cod = order.paymentMethod === "cod";
   const total = inrFromPaise(order.totalPaise);
+  const pointsToEarn = pointsEarned(order.totalPaise, loyalty);
 
   const addr = order.addressSnapshot;
   const fullName = snapshotString(addr, "fullName") ?? receipt?.address?.fullName ?? null;
@@ -313,20 +316,24 @@ function ConfirmedOrder({ order }: { order: OrderView }) {
             </p>
           </StaggerItem>
 
-          {/* Loyalty credit note */}
-          <StaggerItem className="flex gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-5">
-            <Icon name="star" size={22} className="mt-0.5 shrink-0 text-ng-forest" />
-            <div>
-              <p className="font-display text-[15px] text-ng-forest-deep">
-                <span className="tabular-nums">{pointsEarned(order.totalPaise / 100)}</span>{" "}
-                loyalty points will be credited after delivery
-              </p>
-              <p className="mt-1 text-[13px] leading-relaxed text-ng-ink-muted">
-                Points land in your wallet once your order is delivered. Redeem
-                them on a future order (10 points = ₹1).
-              </p>
-            </div>
-          </StaggerItem>
+          {/* Loyalty credit note. Left out when nothing is earned: "0 loyalty
+              points will be credited" is a promise of nothing. */}
+          {pointsToEarn > 0 ? (
+            <StaggerItem className="flex gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-sage/30 p-5">
+              <Icon name="star" size={22} className="mt-0.5 shrink-0 text-ng-forest" />
+              <div>
+                <p className="font-display text-[15px] text-ng-forest-deep">
+                  <span className="tabular-nums">{pointsToEarn}</span>{" "}
+                  loyalty {pointsToEarn === 1 ? "point" : "points"} will be credited
+                  after delivery
+                </p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ng-ink-muted">
+                  Points land in your wallet once your order is delivered. Redeem
+                  them on a future order ({loyalty.redeemPointsPerRupee} points = ₹1).
+                </p>
+              </div>
+            </StaggerItem>
+          ) : null}
 
           {/* No-cancellation restated */}
           <StaggerItem>
