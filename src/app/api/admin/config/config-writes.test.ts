@@ -49,6 +49,12 @@ describe("saving the commerce rules", () => {
     expect(m.revalidateStorefront).toHaveBeenCalledTimes(1);
   });
 
+  it("ignores a currency, which is locked to INR", async () => {
+    await putCommerce(put({ minOrderPaise: 100, currency: "USD" }));
+
+    expect(m.updateCommerceRules).toHaveBeenCalledWith({ minOrderPaise: 100 });
+  });
+
   it("leaves the cache alone when the save fails", async () => {
     m.updateCommerceRules.mockRejectedValue(new Error("nope"));
     const res = await putCommerce(put({ freeDeliveryThresholdPaise: 79_900 }));

@@ -71,6 +71,14 @@ export interface PublicCommerceRules {
 
 /* ── defaults (mirror the migration's column defaults) ────────────────── */
 
+/**
+ * The only currency the shop trades in. It is not a setting: prices, the ₹ on
+ * every screen, GST and the invoices all assume it, while SBIePay takes whatever
+ * code it is given, so a typo in a free-text field would have reached the bank
+ * on real orders. The `currency` column is left in place but no longer read.
+ */
+export const STORE_CURRENCY = "INR";
+
 export const DEFAULT_COMMERCE_RULES: CommerceRulesRecord = {
   minOrderPaise: 30000,
   freeDeliveryThresholdPaise: 59900,
@@ -79,7 +87,7 @@ export const DEFAULT_COMMERCE_RULES: CommerceRulesRecord = {
   shippingSlabs: [],
   taxMode: "inclusive",
   taxRateBps: 0,
-  currency: "INR",
+  currency: STORE_CURRENCY,
   updatedAt: null,
 };
 
@@ -94,7 +102,6 @@ interface CommerceRulesRow {
   shipping_slabs: unknown;
   tax_mode: string;
   tax_rate_bps: number;
-  currency: string;
   updated_at: string;
 }
 
@@ -118,7 +125,7 @@ interface ServiceableAreaRow {
 }
 
 const RULES_COLS =
-  "id, min_order_paise, free_delivery_threshold_paise, shipping_type, shipping_flat_paise, shipping_slabs, tax_mode, tax_rate_bps, currency, updated_at";
+  "id, min_order_paise, free_delivery_threshold_paise, shipping_type, shipping_flat_paise, shipping_slabs, tax_mode, tax_rate_bps, updated_at";
 const SLOT_COLS = "id, label, window_text, sort, active, created_at, updated_at";
 const AREA_COLS = "id, pincode, area, community, active, created_at";
 
@@ -156,7 +163,7 @@ function toRules(r: CommerceRulesRow): CommerceRulesRecord {
     shippingSlabs: toSlabs(r.shipping_slabs),
     taxMode: toTaxMode(r.tax_mode),
     taxRateBps: r.tax_rate_bps,
-    currency: r.currency || "INR",
+    currency: STORE_CURRENCY,
     updatedAt: r.updated_at ?? null,
   };
 }
@@ -215,7 +222,6 @@ export interface CommerceRulesPatch {
   shippingSlabs?: ShippingSlab[];
   taxMode?: TaxMode;
   taxRateBps?: number;
-  currency?: string;
 }
 
 /**
@@ -234,7 +240,6 @@ export async function updateCommerceRules(patch: CommerceRulesPatch): Promise<Co
   if (patch.shippingSlabs !== undefined) row.shipping_slabs = toSlabs(patch.shippingSlabs);
   if (patch.taxMode !== undefined) row.tax_mode = toTaxMode(patch.taxMode);
   if (patch.taxRateBps !== undefined) row.tax_rate_bps = Math.max(0, Math.round(patch.taxRateBps));
-  if (patch.currency !== undefined) row.currency = patch.currency.trim().toUpperCase() || "INR";
 
   const { data, error } = await db
     .from("commerce_rules")

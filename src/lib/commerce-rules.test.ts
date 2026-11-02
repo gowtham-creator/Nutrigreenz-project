@@ -50,6 +50,12 @@ describe("getCommerceRules", () => {
     });
   });
 
+  it("reads as INR whatever the row holds, so a stale value cannot reach the bank", async () => {
+    rulesDb({ data: { shipping_type: "zero", currency: "USD", updated_at: "2026-10-01T00:00:00Z" } });
+
+    await expect(getCommerceRules()).resolves.toMatchObject({ currency: "INR" });
+  });
+
   it("uses the defaults when the row is missing", async () => {
     rulesDb({ data: null });
     await expect(getCommerceRules()).resolves.toEqual(DEFAULT_COMMERCE_RULES);

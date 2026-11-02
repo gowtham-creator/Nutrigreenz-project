@@ -83,9 +83,6 @@ export async function PUT(request: Request): Promise<Response> {
   }
   const slabs = parseSlabs(body.shippingSlabs);
   if (slabs !== undefined) patch.shippingSlabs = slabs;
-  if (typeof body.currency === "string" && body.currency.trim()) {
-    patch.currency = body.currency;
-  }
 
   try {
     const rules = await updateCommerceRules(patch);
