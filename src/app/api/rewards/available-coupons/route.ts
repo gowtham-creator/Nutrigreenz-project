@@ -24,7 +24,10 @@ export const dynamic = "force-dynamic";
  * reads as a broken coupon. "Add ₹150 more" is actionable; "not available in
  * your area" is not.
  *
- * Body: `{ subtotalPaise, pincode?, productIds? }`.
+ * A code limited to named customers is omitted for everyone else by that same
+ * validation, so the list can't advertise it to anyone it isn't meant for.
+ *
+ * Body: `{ subtotalPaise, pincode?, addressText?, productIds? }`.
  */
 
 interface OfferedCoupon {
@@ -67,6 +70,9 @@ export async function POST(request: Request): Promise<Response> {
 
   const subtotalPaise = Math.max(0, int(body.subtotalPaise));
   const pincode = typeof body.pincode === "string" ? body.pincode.trim() : null;
+  // Preview only, like the pincode: the create-order path re-checks community
+  // codes against the address snapshot of the order itself.
+  const addressText = typeof body.addressText === "string" ? body.addressText.slice(0, 500) : null;
   const productIds = Array.isArray(body.productIds)
     ? body.productIds.filter((id): id is string => typeof id === "string" && Boolean(id))
     : [];
@@ -95,6 +101,7 @@ export async function POST(request: Request): Promise<Response> {
 
       const check = await validateCouponServer(c.code, subtotalPaise, session.customerId, {
         pincode,
+        addressText,
         productIds,
         now,
       });
@@ -116,6 +123,7 @@ export async function POST(request: Request): Promise<Response> {
       if (check.reason === "below-min") {
         const atMin = await validateCouponServer(c.code, c.minOrderPaise, session.customerId, {
           pincode,
+          addressText,
           productIds,
           now,
         });

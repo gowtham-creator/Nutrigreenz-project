@@ -6,11 +6,21 @@
  * `value` is a whole percent, a `flat` coupon's `value` is paise. Codes are
  * stored UPPERCASE and are unique — a duplicate returns 400. Every create is
  * written to the admin activity trail.
+ *
+ * A new coupon must have a start and an end date. The check lives here rather
+ * than in `createCoupon` because this is the door operators come through; the
+ * rule is about what they may create, not about what a coupon row can be, and
+ * older coupons with no dates remain valid. Dates arrive as IST calendar days
+ * and are stored as instants, see `@/lib/coupon-dates`.
  */
 import { requireSuperAdmin, superAdminEmail } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
+import { readCouponWindow } from "@/lib/coupon-dates";
+import { withLengthValidation } from "@/lib/input-validation-guard";
+import { readCustomerPhones } from "@/lib/phone-e164";
 import { listCoupons, createCoupon, type CouponInput, type CouponKind } from "@/lib/rewards";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 
 /** A trimmed non-empty string, else undefined. */
 function str(v: unknown): string | undefined {
@@ -49,13 +59,6 @@ function nullableList(v: unknown): string[] | null | undefined {
   return out.length > 0 ? out : null;
 }
 
-/** A nullable ISO-date string: null/blank → null (open-ended); absent → undefined. */
-function nullableStr(v: unknown): string | null | undefined {
-  if (v === undefined) return undefined;
-  if (v === null || (typeof v === "string" && !v.trim())) return null;
-  return typeof v === "string" ? v.trim() : undefined;
-}
-
 /** GET — list all coupons, newest first. Super-admin only. */
 export async function GET(): Promise<Response> {
   const denied = await requireSuperAdmin();
@@ -65,7 +68,7 @@ export async function GET(): Promise<Response> {
 }
 
 /** POST — create a coupon. Super-admin only. */
-export async function POST(request: Request): Promise<Response> {
+async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -85,16 +88,29 @@ export async function POST(request: Request): Promise<Response> {
   const value = num(body.value) ?? 0;
   if (value <= 0) return Response.json({ ok: false, error: "value-required" }, { status: 400 });
 
-  const input: CouponInput = { code, kind, value };
+  const dates = readCouponWindow(body);
+  if (!dates.ok) return Response.json({ ok: false, error: "dates-invalid" }, { status: 400 });
+  if (!dates.startsAt || !dates.endsAt) {
+    return Response.json({ ok: false, error: "dates-required" }, { status: 400 });
+  }
+
+  const customers = readCustomerPhones(body.customerPhones);
+  if (!customers.ok) {
+    return Response.json({ ok: false, error: "customer-phones-invalid" }, { status: 400 });
+  }
+
+  const input: CouponInput = {
+    code,
+    kind,
+    value,
+    startsAt: dates.startsAt,
+    endsAt: dates.endsAt,
+  };
   const minOrder = num(body.minOrderPaise);
   if (minOrder !== undefined) input.minOrderPaise = minOrder;
   const cap = nullableNum(body.capPaise);
   if (cap !== undefined) input.capPaise = cap;
   if (typeof body.active === "boolean") input.active = body.active;
-  const startsAt = nullableStr(body.startsAt);
-  if (startsAt !== undefined) input.startsAt = startsAt;
-  const endsAt = nullableStr(body.endsAt);
-  if (endsAt !== undefined) input.endsAt = endsAt;
   const usageLimit = nullableNum(body.usageLimit);
   if (usageLimit !== undefined) input.usageLimit = usageLimit;
   const perCustomerLimit = nullableNum(body.perCustomerLimit);
@@ -114,6 +130,14 @@ export async function POST(request: Request): Promise<Response> {
   // product, which is the default and what almost every coupon wants.
   const productIds = nullableList(body.productIds);
   if (productIds !== undefined) input.productIds = productIds;
+  // Customer targeting — only these numbers may redeem or be sent this code.
+  if (customers.phones !== undefined) input.customerPhones = customers.phones;
+  if (typeof body.stackLoyalty === "boolean") input.stackLoyalty = body.stackLoyalty;
+  // Goes into campaign SMS and email as the offer's title, so it is held to a
+  // headline's length and cleaned like any other marketing copy.
+  if (body.description !== undefined) {
+    input.description = strictText(body.description, TEXT_LIMITS.headline, "Description") || null;
+  }
 
   try {
     const coupon = await createCoupon(input);
@@ -130,6 +154,11 @@ export async function POST(request: Request): Promise<Response> {
         pincodes: coupon.pincodes,
         productIds: coupon.productIds,
         communities: coupon.communities,
+        // The count, not the numbers: the trail shouldn't accumulate phone numbers.
+        customerCount: coupon.customerPhones?.length ?? null,
+        stackLoyalty: coupon.stackLoyalty,
+        startsAt: coupon.startsAt,
+        endsAt: coupon.endsAt,
       },
     });
     return Response.json({ ok: true, coupon }, { status: 201 });
@@ -138,3 +167,5 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+export const POST = withLengthValidation(POSTHandler);

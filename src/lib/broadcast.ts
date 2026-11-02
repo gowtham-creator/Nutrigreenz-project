@@ -44,6 +44,11 @@ export interface BroadcastInput {
    * new campaign reaches everyone again.
    */
   campaignKey: string;
+  /**
+   * E.164 numbers to limit this send to, for a code restricted to named
+   * customers. Omit for the whole base. An empty list sends to nobody.
+   */
+  phones?: readonly string[] | null;
 }
 
 export interface ChannelResult {
@@ -143,7 +148,7 @@ export async function broadcastCampaign(input: BroadcastInput): Promise<Broadcas
 
   // Throws ConsentColumnsMissing when the migration has not run — the caller
   // turns that into an explicit error rather than an empty, silent success.
-  const audience: Recipient[] = await marketingAudience();
+  const audience: Recipient[] = await marketingAudience({ phones: input.phones });
   res.audience = audience.length;
   if (audience.length === 0) return res;
 

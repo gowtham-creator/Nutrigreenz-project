@@ -8,9 +8,11 @@
  * trusted. This is the read-only quote; the authoritative charge happens again
  * inside the create-order path when the order is actually placed.
  *
- * Body: `{ code: string, subtotalPaise: number }`.
- * Reply: `{ ok, valid, discountPaise, reason, coupon }` — `valid: false` with a
- * concrete `reason` is still a 200 (the coupon simply doesn't apply).
+ * Body: `{ code: string, subtotalPaise: number, pincode?, addressText?, productIds? }`.
+ * Reply: `{ ok, valid, discountPaise, reason, coupon, stacksWithLoyalty }` —
+ * `valid: false` with a concrete `reason` is still a 200 (the coupon simply
+ * doesn't apply). `stacksWithLoyalty: false` tells checkout that this code takes
+ * points off the order; the create-order path enforces that either way.
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
@@ -48,6 +50,10 @@ export async function POST(request: Request): Promise<Response> {
   // client-supplied pincode is accepted for the preview only — the create-order
   // path re-checks against the order's real address snapshot before charging.
   const pincode = typeof body.pincode === "string" ? body.pincode.trim() : null;
+  // Delivery address as text, for community-targeted coupons. Preview only, for
+  // the same reason: the create-order path re-checks against the address snapshot
+  // of the order itself. Capped because every byte is compared per coupon.
+  const addressText = typeof body.addressText === "string" ? body.addressText.slice(0, 500) : null;
   /*
    * Product ids in the cart, for product-targeted coupons.
    *
@@ -67,6 +73,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const result = await validateCouponServer(code, subtotalPaise, session.customerId, {
     pincode,
+    addressText,
     productIds,
   });
   return Response.json({
@@ -83,5 +90,6 @@ export async function POST(request: Request): Promise<Response> {
           capPaise: result.coupon.capPaise,
         }
       : null,
+    stacksWithLoyalty: result.coupon?.stackLoyalty ?? true,
   });
 }

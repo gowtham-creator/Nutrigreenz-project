@@ -7,11 +7,18 @@
  * DELETE never hard-deletes a coupon that has ANY recorded redemption — it is
  * only DEACTIVATED so the usage history (and the audit trail it gives orders)
  * survives; a never-used coupon is removed outright. Every mutation is logged.
+ *
+ * Unlike creating, editing does not demand dates: coupons made before dates were
+ * required have none, and they must stay editable. Dates sent are still checked.
  */
 import { requireSuperAdmin, superAdminEmail } from "../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { logActivity } from "@/lib/activity-log";
+import { readCouponWindow } from "@/lib/coupon-dates";
+import { withLengthValidation } from "@/lib/input-validation-guard";
+import { readCustomerPhones } from "@/lib/phone-e164";
 import { updateCoupon, removeCoupon, type CouponPatch, type CouponKind } from "@/lib/rewards";
+import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -28,12 +35,6 @@ function nullableNum(v: unknown): number | null | undefined {
   return Number.isFinite(n) ? n : null;
 }
 
-function nullableStr(v: unknown): string | null | undefined {
-  if (v === undefined) return undefined;
-  if (v === null || (typeof v === "string" && !v.trim())) return null;
-  return typeof v === "string" ? v.trim() : undefined;
-}
-
 /** Area-targeting list: array or comma/newline string; blank → null (no restriction). */
 function nullableList(v: unknown): string[] | null | undefined {
   if (v === undefined) return undefined;
@@ -48,7 +49,7 @@ function nullableList(v: unknown): string[] | null | undefined {
 }
 
 /** PATCH — edit a coupon's terms (not its code). Super-admin only. */
-export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
+async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
   if (!isSupabaseConfigured) {
@@ -63,6 +64,14 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false }, { status: 400 });
   }
 
+  const dates = readCouponWindow(body);
+  if (!dates.ok) return Response.json({ ok: false, error: "dates-invalid" }, { status: 400 });
+
+  const customers = readCustomerPhones(body.customerPhones);
+  if (!customers.ok) {
+    return Response.json({ ok: false, error: "customer-phones-invalid" }, { status: 400 });
+  }
+
   const patch: CouponPatch = {};
   if (body.kind === "percent" || body.kind === "flat") patch.kind = body.kind as CouponKind;
   const value = num(body.value);
@@ -72,10 +81,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   const cap = nullableNum(body.capPaise);
   if (cap !== undefined) patch.capPaise = cap;
   if (typeof body.active === "boolean") patch.active = body.active;
-  const startsAt = nullableStr(body.startsAt);
-  if (startsAt !== undefined) patch.startsAt = startsAt;
-  const endsAt = nullableStr(body.endsAt);
-  if (endsAt !== undefined) patch.endsAt = endsAt;
+  if (dates.startsAt !== undefined) patch.startsAt = dates.startsAt;
+  if (dates.endsAt !== undefined) patch.endsAt = dates.endsAt;
   const usageLimit = nullableNum(body.usageLimit);
   if (usageLimit !== undefined) patch.usageLimit = usageLimit;
   const perCustomerLimit = nullableNum(body.perCustomerLimit);
@@ -89,6 +96,11 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   if (communities !== undefined) patch.communities = communities;
   const productIds = nullableList(body.productIds);
   if (productIds !== undefined) patch.productIds = productIds;
+  if (customers.phones !== undefined) patch.customerPhones = customers.phones;
+  if (typeof body.stackLoyalty === "boolean") patch.stackLoyalty = body.stackLoyalty;
+  if (body.description !== undefined) {
+    patch.description = strictText(body.description, TEXT_LIMITS.headline, "Description") || null;
+  }
 
   try {
     const coupon = await updateCoupon(id, patch);
@@ -98,7 +110,13 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
       actorRole: "superadmin",
       action: "coupon.update",
       target: coupon.code,
-      meta: { active: coupon.active, value: coupon.value, kind: coupon.kind },
+      meta: {
+        active: coupon.active,
+        value: coupon.value,
+        kind: coupon.kind,
+        customerCount: coupon.customerPhones?.length ?? null,
+        stackLoyalty: coupon.stackLoyalty,
+      },
     });
     return Response.json({ ok: true, coupon });
   } catch (err) {
@@ -106,6 +124,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
 }
+
+export const PATCH = withLengthValidation(PATCHHandler);
 
 /** DELETE — retire a coupon (deactivate if used, hard-delete if never used). */
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {

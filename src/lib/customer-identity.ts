@@ -17,6 +17,9 @@
  */
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { normalizePhoneE164 } from "@/lib/phone-e164";
+
+export { normalizePhoneE164 };
 
 export type CustomerProvider = "google" | "phone";
 
@@ -98,58 +101,6 @@ function toIdentity(r: CustomerIdentityRow): CustomerIdentity {
     verified: r.verified,
     createdAt: r.created_at,
   };
-}
-
-/**
- * Normalize a raw phone string to E.164 (`+<countrycode><number>`), or return
- * null when it can't be confidently normalized. Pure (no I/O).
- *
- * Rules (India-first, since this is an Indian store):
- *  - Strips spaces, dashes, parentheses, and a leading `00` international prefix.
- *  - `+<digits>` is kept as-is when it already looks like E.164.
- *  - A bare 10-digit Indian mobile (starting 6-9) gets the `+91` country code.
- *  - `91XXXXXXXXXX` (12 digits) is treated as India and prefixed with `+`.
- *  - Anything else that is a plausible 8–15 digit international number with a
- *    leading `+` is preserved; otherwise we return null rather than guess.
- */
-export function normalizePhoneE164(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-
-  // Keep a single leading '+', drop every other non-digit.
-  const hasPlus = trimmed.startsWith("+");
-  let digits = trimmed.replace(/[^\d]/g, "");
-
-  // Drop an international '00' prefix (e.g. 0091...) — treat like a '+'.
-  let plus = hasPlus;
-  if (!plus && digits.startsWith("00")) {
-    digits = digits.slice(2);
-    plus = true;
-  }
-
-  if (digits.length === 0) return null;
-
-  if (plus) {
-    // Already international: validate length and return canonical form.
-    if (digits.length < 8 || digits.length > 15) return null;
-    return `+${digits}`;
-  }
-
-  // No country code provided — apply India defaults.
-  if (digits.length === 10 && /^[6-9]/.test(digits)) {
-    return `+91${digits}`;
-  }
-  if (digits.length === 12 && digits.startsWith("91")) {
-    return `+${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith("0") && /^0[6-9]/.test(digits)) {
-    // Domestic trunk-prefixed Indian mobile (0XXXXXXXXXX).
-    return `+91${digits.slice(1)}`;
-  }
-
-  // Ambiguous / unsupported — caller decides what to do with a null.
-  return null;
 }
 
 const normalizeEmail = (email: string | null | undefined): string | null => {
@@ -474,6 +425,39 @@ export async function hasVerifiedPhone(customerId: string): Promise<boolean> {
   } catch {
     // Fail safe: a lookup error must NEVER be read as "has a verified phone".
     return false;
+  }
+}
+
+/**
+ * The numbers this customer has proved by OTP, as E.164.
+ *
+ * Reads `customer_identities` only, and deliberately NOT `customers.primary_phone`.
+ * {@link hasVerifiedPhone} trusts that column, but `resolvePhone` in
+ * `@/lib/google-people` fills it from the Google profile, which proves nothing:
+ * anyone can type a number into their Google account. For a code limited to named
+ * customers, trusting it would let someone claim another person's offer by adding
+ * that person's number to their profile. `verified` on an identity is only ever
+ * set by an OTP.
+ *
+ * Fail-safe like {@link hasVerifiedPhone}: never throws, and a failed lookup reads
+ * as no numbers, which refuses the code rather than granting it.
+ */
+export async function verifiedPhonesOf(customerId: string): Promise<string[]> {
+  if (!customerId) return [];
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("customer_identities")
+      .select("phone")
+      .eq("customer_id", customerId)
+      .eq("verified", true)
+      .not("phone", "is", null);
+    if (error) return [];
+    const phones = ((data as { phone: string | null }[] | null) ?? [])
+      .map((r) => normalizePhoneE164(r.phone))
+      .filter((p): p is string => Boolean(p));
+    return Array.from(new Set(phones));
+  } catch {
+    return [];
   }
 }
 

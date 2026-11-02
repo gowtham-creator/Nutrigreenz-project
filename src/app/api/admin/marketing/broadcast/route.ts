@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { broadcastCampaign } from "@/lib/broadcast";
 import { ConsentColumnsMissing } from "@/lib/marketing-audience";
 import { logActivity } from "@/lib/activity-log";
+import { couponAudiencePhones } from "@/lib/rewards";
 import type { NotifyChannel, NotifyType } from "@/lib/notification-templates";
 
 export const runtime = "nodejs";
@@ -33,6 +34,12 @@ async function superAdminEmail(): Promise<string | null> {
  * `campaignKey` (normally the coupon code) scopes deduplication: a delivered
  * recipient is never messaged twice for the same campaign, so a retry after a
  * partial failure resumes rather than re-blasting the people who already got it.
+ *
+ * A code limited to named customers goes only to those numbers. The list is read
+ * from the saved coupon here rather than taken from the request: a private code
+ * must not reach the whole base because a form left something out, had its mode
+ * switched without saving, or a future caller never knew to pass it. Codes
+ * limited by pincode, community or product still go to the whole base.
  */
 export async function POST(request: Request): Promise<Response> {
   const actor = await superAdminEmail();
@@ -67,9 +74,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "campaign-key-required" }, { status: 400 });
   }
 
+  let phones: string[] | null = null;
   let result;
   try {
-    result = await broadcastCampaign({ type, channels, vars, campaignKey });
+    // Inside the try: if the list can't be read, nothing is sent.
+    phones = await couponAudiencePhones(campaignKey);
+    result = await broadcastCampaign({ type, channels, vars, campaignKey, phones });
   } catch (err) {
     if (err instanceof ConsentColumnsMissing) {
       // Fail loudly. Without the consent columns every customer looks like
@@ -91,6 +101,8 @@ export async function POST(request: Request): Promise<Response> {
       type,
       channels,
       audience: result.audience,
+      // How many numbers the code is limited to; null = the whole base.
+      limitedToNumbers: phones?.length ?? null,
       emailSent: result.email.sent,
       smsSent: result.sms.sent,
       emailFailed: result.email.failed,

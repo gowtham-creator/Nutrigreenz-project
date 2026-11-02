@@ -692,6 +692,66 @@ describe("createOrder — loyalty points are earned when an online order is PAID
     expect(rewards.earnPointsForOrder).toHaveBeenCalledTimes(1);
     expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 87_000);
   });
+
+  it("checks the coupon against the order's own address, without the recipient's name", async () => {
+    placeDb();
+
+    await createOrder({
+      ...input,
+      paymentMethod: "cod",
+      addressSnapshot: {
+        fullName: "Green Park",
+        phone: "+919876543210",
+        line1: "Flat 402, SAS Crown",
+        line2: "Kokapet",
+        city: "Hyderabad",
+        pincode: "500075",
+      },
+    });
+
+    const [, , , opts] = vi.mocked(rewards.validateCouponServer).mock.calls[0];
+    expect(opts).toMatchObject({ pincode: "500075", addressText: "Flat 402, SAS Crown, Kokapet" });
+  });
+
+  it("gives the check no address at all when the order has none, so a community code fails closed", async () => {
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "cod" });
+
+    const [, , , opts] = vi.mocked(rewards.validateCouponServer).mock.calls[0];
+    expect(opts?.addressText).toBe("");
+  });
+
+  it("redeems no points with a coupon that doesn't stack, whatever the client asked for", async () => {
+    vi.mocked(rewards.validateCouponServer).mockResolvedValue({
+      valid: true,
+      discountPaise: 10_000,
+      reason: null,
+      coupon: { code: "HARVEST10", stackLoyalty: false },
+    } as never);
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "cod" });
+
+    expect(rewards.quoteLoyaltyRedemption).not.toHaveBeenCalled();
+    expect(rewards.redeemPoints).not.toHaveBeenCalled();
+    // Rs 1,000 less the Rs 100 coupon and nothing else.
+    expect(rewards.earnPointsForOrder).toHaveBeenCalledWith("cust-1", "ord-1", 90_000);
+  });
+
+  it("still redeems with a coupon that stacks", async () => {
+    vi.mocked(rewards.validateCouponServer).mockResolvedValue({
+      valid: true,
+      discountPaise: 10_000,
+      reason: null,
+      coupon: { code: "HARVEST10", stackLoyalty: true },
+    } as never);
+    placeDb();
+
+    await createOrder({ ...input, paymentMethod: "cod" });
+
+    expect(rewards.redeemPoints).toHaveBeenCalledTimes(1);
+  });
 });
 
 /**
