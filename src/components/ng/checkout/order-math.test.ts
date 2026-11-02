@@ -143,6 +143,39 @@ describe("quoteLoyalty — why it can't", () => {
   });
 });
 
+describe("quoteLoyalty — a coupon that doesn't stack", () => {
+  const blocked = (balance: number, subtotalPaise: number, config = LIVE, couponDiscountPaise = 1000) =>
+    quoteLoyalty({ balance, subtotalPaise, couponDiscountPaise, couponBlocksLoyalty: true, config });
+
+  it("takes nothing, as the create-order path won't", () => {
+    expect(blocked(5000, 100_000)).toEqual({ points: 0, discountPaise: 0, blocked: "coupon-no-stack" });
+  });
+
+  it("redeems as normal once the coupon stops blocking", () => {
+    expect(
+      quoteLoyalty({
+        balance: 5000,
+        subtotalPaise: 100_000,
+        couponDiscountPaise: 1000,
+        couponBlocksLoyalty: false,
+        config: LIVE,
+      }).blocked,
+    ).toBeNull();
+  });
+
+  it("names the coupon rather than the headroom when it also covers the order", () => {
+    expect(blocked(5000, 10_000, LIVE, 10_000).blocked).toBe("coupon-no-stack");
+  });
+
+  it.each([
+    ["there are no points", 0, 100_000, LIVE, "no-balance"],
+    ["the balance is under the minimum", 40, 100_000, LIVE, "below-minimum"],
+    ["the order is too small", 500, 100, { ...LIVE, redeemPointsPerRupee: 1 }, "order-too-small"],
+  ])("doesn't blame the coupon when %s: removing it wouldn't help", (_label, balance, subtotal, config, reason) => {
+    expect(blocked(balance, subtotal, config).blocked).toBe(reason);
+  });
+});
+
 describe("loyaltyBlockMessage", () => {
   it("says what is needed and what the customer has", () => {
     expect(loyaltyBlockMessage("below-minimum", 40, LIVE)).toBe(
@@ -156,9 +189,16 @@ describe("loyaltyBlockMessage", () => {
       "below-minimum",
       "order-too-small",
       "coupon-covers-order",
+      "coupon-no-stack",
     ] as const) {
       expect(loyaltyBlockMessage(block, 40, LIVE).length).toBeGreaterThan(0);
     }
+  });
+
+  it("says plainly that the coupon is what's in the way", () => {
+    expect(loyaltyBlockMessage("coupon-no-stack", 500, LIVE)).toBe(
+      "This coupon can't be combined with points. Remove it to use them.",
+    );
   });
 });
 

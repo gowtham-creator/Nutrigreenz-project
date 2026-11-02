@@ -42,7 +42,8 @@ export type LoyaltyBlock =
   | "no-balance"
   | "below-minimum"
   | "order-too-small"
-  | "coupon-covers-order";
+  | "coupon-covers-order"
+  | "coupon-no-stack";
 
 export interface LoyaltyQuote {
   /** Points the order would burn: the most the limits allow, not the balance. */
@@ -75,9 +76,15 @@ export function quoteLoyalty(args: {
   subtotalPaise: number;
   /** Discount the coupon has already taken: loyalty only gets what it left. */
   couponDiscountPaise: number;
+  /**
+   * The applied coupon doesn't stack. The create-order path redeems nothing with
+   * one whatever is asked for, so the quote has to come to nothing too, or checkout
+   * shows a total the customer won't be charged.
+   */
+  couponBlocksLoyalty?: boolean;
   config: LoyaltyRedeemRules;
 }): LoyaltyQuote {
-  const { balance, subtotalPaise, couponDiscountPaise, config } = args;
+  const { balance, subtotalPaise, couponDiscountPaise, couponBlocksLoyalty, config } = args;
   const none = (blocked: LoyaltyBlock): LoyaltyQuote => ({
     points: 0,
     discountPaise: 0,
@@ -93,17 +100,18 @@ export function quoteLoyalty(args: {
     config.redeemPointsPerRupee > 0 ? config.redeemPointsPerRupee : POINTS_PER_RUPEE;
   const paisePerPoint = Math.max(1, Math.round(100 / ratio));
   const percentCapPaise = Math.floor((subtotal * config.maxRedeemPercent) / 100);
+  const orderTooSmall = Math.floor(percentCapPaise / paisePerPoint) <= 0;
+  // Only once the balance and the order would allow points. Blaming the coupon
+  // otherwise sends the customer to remove it for nothing.
+  if (couponBlocksLoyalty && !orderTooSmall) return none("coupon-no-stack");
+
   const capPaise = Math.min(percentCapPaise, Math.max(0, subtotal - reserved));
 
   const points = Math.min(balance, Math.floor(capPaise / paisePerPoint));
   if (points <= 0) {
     // Told apart because the customer can act on one of them: taking the coupon
     // off frees the order up, but nothing they can remove helps a tiny order.
-    return none(
-      Math.floor(percentCapPaise / paisePerPoint) <= 0
-        ? "order-too-small"
-        : "coupon-covers-order",
-    );
+    return none(orderTooSmall ? "order-too-small" : "coupon-covers-order");
   }
   return { points, discountPaise: points * paisePerPoint, blocked: null };
 }
@@ -123,6 +131,8 @@ export function loyaltyBlockMessage(
       return `This order is too small to use points on. Points can cover up to ${config.maxRedeemPercent}% of an order.`;
     case "coupon-covers-order":
       return "Your coupon already covers this order, so there's nothing left to use points on.";
+    case "coupon-no-stack":
+      return "This coupon can't be combined with points. Remove it to use them.";
   }
 }
 

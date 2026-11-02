@@ -289,6 +289,12 @@ export interface Coupon {
   /** Restrict to first-time customers only. */
   firstOrderOnly?: boolean;
   active: boolean;
+  /**
+   * False when this code can't share an order with loyalty points. Set from the
+   * server's quote and kept on the coupon so it survives the checkout draft.
+   * Absent on a draft saved before it existed, which checkout asks about again.
+   */
+  stacksWithLoyalty?: boolean;
 }
 
 /** A serviceable delivery zone derived from a pincode/area. */

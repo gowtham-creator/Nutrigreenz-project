@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
@@ -16,7 +16,8 @@ import { useCommerceRules, useCommerceStatus } from "@/lib/commerce";
 import { useLoyaltyConfig } from "@/lib/loyalty-config";
 import { useAddresses } from "@/lib/addresses";
 import { fetchServiceable } from "@/lib/serviceability";
-import { couponReasonMessage, fetchRewards } from "@/lib/rewards-client";
+import { couponReasonMessage, fetchRewards, validateCouponApi } from "@/lib/rewards-client";
+import { snapshotAddressText } from "@/lib/community-label";
 import type { CartItem, Coupon } from "@/types/nutrigreenz";
 import { FloatIn, MagneticHover, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { AddressPicker } from "@/components/ng/checkout/address-picker";
@@ -72,6 +73,9 @@ function isSbiePayUrl(action: string): boolean {
   const host = url.hostname.toLowerCase();
   return SBIEPAY_HOSTS.has(host) || SBIEPAY_PARENT_DOMAINS.some((d) => host.endsWith(d));
 }
+
+/** Said when a coupon takes points off, so they don't just vanish from the total. */
+const POINTS_OFF_FOR_COUPON = "Points turned off. This coupon can't be combined with points.";
 
 /** The parts of a rejected order POST that checkout can act on. */
 async function readRejection(
@@ -240,6 +244,8 @@ export default function CheckoutPage() {
   // without an extra click; the shopper can still untick to opt out.
   const [acknowledged, setAcknowledged] = useState(true);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // Code restored from the draft and not yet re-checked with the server.
+  const restoredCouponCode = useRef<string | null>(null);
   // Guards the place-order button while the order is being persisted server-side.
   const [placing, setPlacing] = useState(false);
   // Serviceability of the selected delivery pincode (null = not yet checked).
@@ -275,6 +281,7 @@ export default function CheckoutPage() {
       if (draft.slotId !== undefined) setSlotId(draft.slotId);
       if (draft.payment !== undefined) setPayment(draft.payment ?? null);
       if (draft.applied !== undefined) setApplied(draft.applied ?? null);
+      restoredCouponCode.current = draft.applied?.coupon.code ?? null;
       if (typeof draft.redeemLoyalty === "boolean") setRedeemLoyalty(draft.redeemLoyalty);
       // `acknowledged` is intentionally NOT restored — the no-cancellation box
       // must always start checked (client request), never reopen unticked.
@@ -319,6 +326,50 @@ export default function CheckoutPage() {
     };
   }, [selectedPincode]);
   const notServiceable = serviceable === false;
+
+  // The same reader the order path runs over this same address, so a community
+  // coupon the preview accepts is one the order accepts too.
+  const selectedAddressText = selectedAddress
+    ? snapshotAddressText({ ...selectedAddress })
+    : null;
+
+  /*
+   * Ask the server about a coupon brought back from a draft.
+   *
+   * Nothing else looks at it before the order does, and the server goes by the
+   * live coupon. A draft saved before `stacksWithLoyalty` existed doesn't have the
+   * flag, and the setting can change while a draft waits; either way the page
+   * would take points off a total the server then charges in full.
+   *
+   * Waits for the draft's own address. A refusal or a failed call is left alone:
+   * the order path refuses a bad code out loud, and says what to do next.
+   */
+  useEffect(() => {
+    const code = restoredCouponCode.current;
+    if (!draftLoaded || !code || !selectedAddress || items.length === 0) return;
+    restoredCouponCode.current = null;
+    void validateCouponApi(
+      code,
+      Math.round(subtotal * 100),
+      selectedPincode,
+      items.map((i) => i.productId),
+      selectedAddressText,
+    ).then((quote) => {
+      if (!quote.valid) return;
+      setApplied((current) =>
+        current?.coupon.code === code
+          ? {
+              ...current,
+              coupon: { ...current.coupon, stacksWithLoyalty: quote.stacksWithLoyalty },
+            }
+          : current,
+      );
+      if (quote.stacksWithLoyalty === false && redeemLoyalty) {
+        setRedeemLoyalty(false);
+        toast(POINTS_OFF_FOR_COUPON);
+      }
+    });
+  }, [draftLoaded, selectedAddress, selectedPincode, selectedAddressText, items, subtotal, redeemLoyalty]);
 
   /*
    * What each step needs before the shopper may move PAST it.
@@ -389,6 +440,7 @@ export default function CheckoutPage() {
     balance: loyaltyAvailable,
     subtotalPaise: Math.round(subtotal * 100),
     couponDiscountPaise: Math.round(couponDiscount * 100),
+    couponBlocksLoyalty: applied?.coupon.stacksWithLoyalty === false,
     config: loyalty,
   });
   const loyaltyDiscount = redeemLoyalty ? loyaltyQuote.discountPaise / 100 : 0;
@@ -794,13 +846,20 @@ export default function CheckoutPage() {
               <RewardsPanel
                 subtotal={subtotal}
                 deliveryPincode={selectedPincode}
+                deliveryAddressText={selectedAddressText}
                 appliedCoupon={applied}
                 // Product-targeted coupons reject when the cart context is
                 // missing, so the quote needs the cart's product ids.
                 cartProductIds={items.map((i) => i.productId)}
-                onApplyCoupon={(coupon, discount) =>
-                  setApplied({ coupon, discount })
-                }
+                onApplyCoupon={(coupon, discount) => {
+                  setApplied({ coupon, discount });
+                  // Switched off for real, not just shown off: left on, the points
+                  // would come back by themselves when the coupon is removed.
+                  if (coupon.stacksWithLoyalty === false && redeemLoyalty) {
+                    setRedeemLoyalty(false);
+                    toast(POINTS_OFF_FOR_COUPON);
+                  }
+                }}
                 onRemoveCoupon={() => setApplied(null)}
                 loyaltyAvailable={loyaltyAvailable}
                 loyaltyQuote={loyaltyQuote}

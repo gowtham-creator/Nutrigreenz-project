@@ -19,6 +19,7 @@ export interface CheckoutDraft {
   addressId?: string | null;
   slotId?: string | null;
   payment?: PaymentSelection | null;
+  /** Keeps `coupon.stacksWithLoyalty`: points on the page depend on it. */
   applied?: { coupon: Coupon; discount: number } | null;
   redeemLoyalty?: boolean;
   acknowledged?: boolean;

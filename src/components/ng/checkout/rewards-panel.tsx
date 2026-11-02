@@ -52,6 +52,7 @@ export function RewardsPanel({
   onToggleLoyalty,
   loyaltyRules,
   deliveryPincode,
+  deliveryAddressText,
   cartProductIds,
 }: {
   subtotal: number;
@@ -77,6 +78,12 @@ export function RewardsPanel({
    * correctly in the preview; the order path re-checks it authoritatively.
    */
   deliveryPincode?: string | null;
+  /**
+   * The selected address as text, read the way the order path reads its snapshot.
+   * Community-targeted codes match on it, so without it the preview refuses a code
+   * the order would accept, and hides it from the offers.
+   */
+  deliveryAddressText?: string | null;
   /**
    * Product ids in the cart. Required for product-targeted coupons — those
    * reject rather than fall through when the cart context is missing, so
@@ -117,6 +124,7 @@ export function RewardsPanel({
         Math.round(subtotal * 100),
         deliveryPincode,
         cartProductIds,
+        deliveryAddressText,
       );
       if (!result.valid || !result.code) {
         toast.error(couponReasonMessage(result.reason));
@@ -137,6 +145,7 @@ export function RewardsPanel({
         type: "flat",
         value: discount,
         active: true,
+        stacksWithLoyalty: result.stacksWithLoyalty,
       };
       onApplyCoupon(coupon, discount);
       toast.success(`${result.code} applied, you saved ${INR(discount)}`);
@@ -169,7 +178,7 @@ export function RewardsPanel({
    *
    * Every entry has already been run through the same validator that authorises
    * the discount, so the list cannot offer something the Apply button refuses.
-   * That is why it re-runs when the subtotal, pincode or cart changes: an offer
+   * That is why it re-runs when the subtotal, address or cart changes: an offer
    * quoted against a different cart would be exactly the false promise this is
    * meant to remove.
    *
@@ -189,6 +198,7 @@ export function RewardsPanel({
           body: JSON.stringify({
             subtotalPaise: Math.round(subtotal * 100),
             pincode: deliveryPincode?.trim() || null,
+            addressText: deliveryAddressText?.trim() || null,
             productIds: pids ? pids.split(",") : [],
           }),
         });
@@ -207,7 +217,7 @@ export function RewardsPanel({
     return () => {
       alive = false;
     };
-  }, [subtotal, deliveryPincode, pids]);
+  }, [subtotal, deliveryPincode, deliveryAddressText, pids]);
 
   // Two is enough to browse; the rest are behind "See all".
   const visibleEligible = offers

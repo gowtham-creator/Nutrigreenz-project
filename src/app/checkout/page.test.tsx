@@ -20,6 +20,8 @@ const m = vi.hoisted(() => ({
   clearCheckoutDraft: vi.fn(),
   navigate: vi.fn(),
   refreshRules: vi.fn(),
+  toast: vi.fn(),
+  writeCheckoutDraft: vi.fn(),
 }));
 
 // Fixtures are hoisted with the mocks: `vi.mock` factories run before the
@@ -35,13 +37,15 @@ const fx = vi.hoisted(() => {
   };
   const slot = { id: "slot-1", label: "Tomorrow · 7–9 AM" };
   return {
-    address,
+    address: address as Record<string, unknown>,
+    baseAddress: address,
     slot,
     // Reset before each test; the loyalty cases change them.
     subtotal: 1200,
     balance: 0,
     loyalty: {} as Record<string, unknown>,
     realRewardsPanel: false,
+    draft: null as Record<string, unknown> | null,
     items: [
       {
         lineId: "l1",
@@ -76,7 +80,12 @@ vi.mock("next/link", () => ({
     <a href={href}>{children}</a>
   ),
 }));
-vi.mock("sonner", () => ({ toast: { error: m.toastError, success: vi.fn() } }));
+vi.mock("sonner", () => ({
+  toast: Object.assign((message: string) => m.toast(message), {
+    error: m.toastError,
+    success: vi.fn(),
+  }),
+}));
 
 vi.mock("@/components/ng/page-shell", () => ({ PageShell: fx.Pass }));
 vi.mock("@/components/ng/section", () => ({ Section: fx.Pass }));
@@ -164,8 +173,8 @@ vi.mock("@/components/ng/checkout/payment-picker", () => ({
   ),
 }));
 vi.mock("@/components/ng/checkout/checkout-draft", () => ({
-  readCheckoutDraft: () => null,
-  writeCheckoutDraft: vi.fn(),
+  readCheckoutDraft: () => fx.draft,
+  writeCheckoutDraft: m.writeCheckoutDraft,
   clearCheckoutDraft: m.clearCheckoutDraft,
 }));
 vi.mock("@/components/ng/checkout/order-receipt", () => ({ saveReceipt: m.saveReceipt }));
@@ -198,6 +207,7 @@ vi.mock("@/lib/rewards-client", async (importOriginal) => ({
   fetchRewards: async () => ({ balance: fx.balance }),
 }));
 
+import { snapshotAddressText } from "@/lib/community-label";
 import CheckoutPage from "./page";
 
 const GATEWAY_URL = "https://sbiepay.sbi.bank.in/secure/AggregatorHostedListener";
@@ -229,6 +239,8 @@ beforeEach(() => {
     earnEnabled: false,
   };
   fx.realRewardsPanel = false;
+  fx.draft = null;
+  fx.address = fx.baseAddress;
   vi.stubGlobal("fetch", fetchMock);
   Object.defineProperty(window, "location", {
     configurable: true,
@@ -767,6 +779,280 @@ describe("checkout — redeeming points", () => {
     await placeCodOrder();
 
     expect(orderBody().loyaltyPoints).toBe(0);
+  });
+});
+
+/** The real panel, a real quote and the order POST, with the server's replies stubbed. */
+describe("checkout — what a coupon does to points", () => {
+  const WHY = "This coupon can't be combined with points. Remove it to use them.";
+  const TOLD = "Points turned off. This coupon can't be combined with points.";
+  const SOLO = { code: "SOLO50", description: "", type: "flat", value: 50, active: true };
+
+  let quote: Response | (() => Response);
+  const noStack = () =>
+    jsonResponse(200, {
+      ok: true,
+      valid: true,
+      discountPaise: 5000,
+      reason: "ok",
+      coupon: { code: "SOLO50" },
+      stacksWithLoyalty: false,
+    });
+
+  const callsTo = (url: string) =>
+    fetchMock.mock.calls
+      .filter(([input]) => String(input) === url)
+      .map(([, init]) => JSON.parse(String(init?.body)) as Record<string, unknown>);
+  const orderBody = () => callsTo("/api/orders")[0];
+
+  beforeEach(() => {
+    fx.realRewardsPanel = true;
+    fx.balance = 500;
+    quote = noStack;
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === "/api/orders") {
+        return jsonResponse(201, { ok: true, orderNumber: "NG-26-1001", payment: null });
+      }
+      if (url === "/api/rewards/validate-coupon") {
+        return typeof quote === "function" ? quote() : quote;
+      }
+      return jsonResponse(200, { eligible: [], almostThere: [] });
+    });
+  });
+
+  async function pointsOn() {
+    fireEvent.click(await screen.findByRole("button", { name: /^Redeem 500 points \(− ₹50\)/ }));
+    await screen.findByRole("button", { name: /^Redeeming/, pressed: true });
+  }
+
+  async function applyCode() {
+    fireEvent.change(screen.getByPlaceholderText("e.g. FRESH50"), { target: { value: "SOLO50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await screen.findByRole("button", { name: "Remove" });
+  }
+
+  async function placeCodOrder() {
+    fireEvent.click(screen.getByRole("button", { name: "choose cod" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Pay / }));
+    await waitFor(() => expect(m.saveReceipt).toHaveBeenCalledTimes(1));
+  }
+
+  it("turns points off out loud, and charges what the server will", async () => {
+    render(<CheckoutPage />);
+    await pointsOn();
+
+    await applyCode();
+
+    expect(await screen.findByText(WHY)).toBeTruthy();
+    expect(m.toast).toHaveBeenCalledWith(TOLD);
+    const toggle = screen.getByRole("button", { name: /^Redeem points/, pressed: false });
+    expect((toggle as HTMLButtonElement).disabled).toBe(true);
+    expect(toggle.getAttribute("aria-describedby")).toBe(screen.getByText(WHY).id);
+
+    await placeCodOrder();
+
+    expect(orderBody()).toMatchObject({ couponCode: "SOLO50", loyaltyPoints: 0 });
+    // ₹1,200 less the ₹50 coupon and nothing else, as createOrder works it out.
+    expect(m.saveReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ couponDiscount: 50, loyaltyPoints: 0, loyaltyDiscount: 0, total: 1150 }),
+    );
+  });
+
+  it("has nothing to announce when points weren't on", async () => {
+    render(<CheckoutPage />);
+    await screen.findByRole("button", { name: /^Redeem 500 points/ });
+
+    await applyCode();
+
+    expect(await screen.findByText(WHY)).toBeTruthy();
+    expect(m.toast).not.toHaveBeenCalled();
+  });
+
+  it("gives the switch back when the coupon goes, but doesn't flip it on", async () => {
+    render(<CheckoutPage />);
+    await pointsOn();
+    await applyCode();
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    const toggle = await screen.findByRole("button", {
+      name: /^Redeem 500 points/,
+      pressed: false,
+    });
+    expect((toggle as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByText(WHY)).toBeNull();
+
+    fireEvent.click(toggle);
+    await screen.findByRole("button", { name: /^Redeeming/, pressed: true });
+    await placeCodOrder();
+
+    expect(orderBody()).toMatchObject({ couponCode: null, loyaltyPoints: 500 });
+  });
+
+  it("leaves points alone for a coupon that stacks", async () => {
+    quote = () =>
+      jsonResponse(200, {
+        ok: true,
+        valid: true,
+        discountPaise: 5000,
+        reason: "ok",
+        coupon: { code: "SOLO50" },
+        stacksWithLoyalty: true,
+      });
+    render(<CheckoutPage />);
+    await pointsOn();
+
+    await applyCode();
+
+    await screen.findByRole("button", { name: /^Redeeming 500 points/, pressed: true });
+    expect(m.toast).not.toHaveBeenCalled();
+    await placeCodOrder();
+    expect(orderBody().loyaltyPoints).toBe(500);
+  });
+
+  it("keeps the flag when the coupon comes back from a draft", async () => {
+    fx.draft = {
+      applied: { coupon: { ...SOLO, stacksWithLoyalty: false }, discount: 50 },
+      redeemLoyalty: false,
+    };
+
+    render(<CheckoutPage />);
+
+    expect(await screen.findByText(WHY)).toBeTruthy();
+    await waitFor(() => expect(callsTo("/api/rewards/validate-coupon")).toHaveLength(1));
+    await waitFor(() => {
+      const saved = m.writeCheckoutDraft.mock.lastCall?.[0] as {
+        applied: { coupon: { stacksWithLoyalty?: boolean } };
+      };
+      expect(saved.applied.coupon.stacksWithLoyalty).toBe(false);
+    });
+
+    await placeCodOrder();
+    expect(orderBody().loyaltyPoints).toBe(0);
+  });
+
+  it("asks the server about a draft saved before the flag existed", async () => {
+    fx.draft = { applied: { coupon: SOLO, discount: 50 }, redeemLoyalty: true };
+
+    render(<CheckoutPage />);
+
+    expect(await screen.findByText(WHY)).toBeTruthy();
+    expect(m.toast).toHaveBeenCalledWith(TOLD);
+    expect(callsTo("/api/rewards/validate-coupon")).toEqual([
+      {
+        code: "SOLO50",
+        subtotalPaise: 120_000,
+        pincode: "500001",
+        addressText: "12 Farm Road",
+        productIds: ["p1"],
+      },
+    ]);
+
+    await placeCodOrder();
+
+    expect(orderBody().loyaltyPoints).toBe(0);
+    expect(m.saveReceipt).toHaveBeenCalledWith(expect.objectContaining({ total: 1150 }));
+  });
+
+  it("doesn't let points creep back after that when the coupon is removed", async () => {
+    fx.draft = { applied: { coupon: SOLO, discount: 50 }, redeemLoyalty: true };
+    render(<CheckoutPage />);
+    await screen.findByText(WHY);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    await screen.findByRole("button", { name: /^Redeem 500 points/, pressed: false });
+  });
+
+  it("holds on to the saved flag when the server can't answer", async () => {
+    fx.draft = {
+      applied: { coupon: { ...SOLO, stacksWithLoyalty: false }, discount: 50 },
+      redeemLoyalty: false,
+    };
+    quote = () => jsonResponse(500, { ok: false });
+
+    render(<CheckoutPage />);
+
+    await waitFor(() => expect(callsTo("/api/rewards/validate-coupon")).toHaveLength(1));
+    // Past the reply: a dropped flag would clear this on the next render.
+    await act(async () => {});
+    expect(screen.getByText(WHY)).toBeTruthy();
+  });
+
+  it("lets a restored coupon that now stacks use points again", async () => {
+    fx.draft = {
+      applied: { coupon: { ...SOLO, stacksWithLoyalty: false }, discount: 50 },
+      redeemLoyalty: false,
+    };
+    quote = () =>
+      jsonResponse(200, {
+        ok: true,
+        valid: true,
+        discountPaise: 5000,
+        reason: "ok",
+        coupon: { code: "SOLO50" },
+        stacksWithLoyalty: true,
+      });
+
+    render(<CheckoutPage />);
+
+    const toggle = await screen.findByRole("button", { name: /^Redeem 500 points/ });
+    expect((toggle as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it.each([
+    ["the check fails", () => jsonResponse(500, { ok: false })],
+    [
+      "the code is refused",
+      () => jsonResponse(200, { ok: true, valid: false, discountPaise: 0, reason: "expired" }),
+    ],
+  ])("leaves a restored coupon alone when %s, for the order to settle", async (_label, reply) => {
+    fx.draft = { applied: { coupon: SOLO, discount: 50 }, redeemLoyalty: true };
+    quote = reply;
+
+    render(<CheckoutPage />);
+
+    await screen.findByRole("button", { name: /^Redeeming/, pressed: true });
+    await waitFor(() => expect(callsTo("/api/rewards/validate-coupon")).toHaveLength(1));
+    expect(screen.getByRole("button", { name: "Remove" })).toBeTruthy();
+    expect(m.toast).not.toHaveBeenCalled();
+  });
+
+  it("asks nothing about a coupon applied on this visit", async () => {
+    render(<CheckoutPage />);
+    await screen.findByRole("button", { name: /^Redeem 500 points/ });
+    await applyCode();
+    expect(callsTo("/api/rewards/validate-coupon")).toHaveLength(1);
+  });
+
+  it("previews with the address text the order is checked against", async () => {
+    fx.address = {
+      ...fx.baseAddress,
+      fullName: "Green Park",
+      line1: "Flat 402, SAS Crown",
+      line2: "Kokapet",
+      landmark: "Near the lake",
+      pincode: "500075",
+    };
+    const expected = "Flat 402, SAS Crown, Kokapet, Near the lake";
+
+    render(<CheckoutPage />);
+
+    await waitFor(() => expect(callsTo("/api/rewards/available-coupons").length).toBeGreaterThan(0));
+    expect(callsTo("/api/rewards/available-coupons")[0]).toMatchObject({
+      pincode: "500075",
+      addressText: expected,
+    });
+
+    await applyCode();
+    expect(callsTo("/api/rewards/validate-coupon")[0]).toMatchObject({
+      pincode: "500075",
+      addressText: expected,
+    });
+
+    await placeCodOrder();
+    expect(snapshotAddressText(orderBody().addressSnapshot as Record<string, unknown>)).toBe(expected);
   });
 });
 

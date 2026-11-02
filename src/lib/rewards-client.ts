@@ -115,6 +115,11 @@ export async function validateCouponApi(
    * reject rather than fall through when the cart context is missing.
    */
   productIds?: readonly (string | null | undefined)[],
+  /**
+   * Delivery address as text — how a community-targeted coupon is matched. Pass
+   * what the order path reads from the snapshot, so the quote and the charge agree.
+   */
+  addressText?: string | null,
 ): Promise<CouponQuote> {
   const trimmed = code.trim();
   if (!trimmed) return { valid: false, discountPaise: 0, reason: "not-found", code: null };
@@ -126,6 +131,7 @@ export async function validateCouponApi(
         code: trimmed,
         subtotalPaise: Math.max(0, Math.round(subtotalPaise)),
         pincode: pincode?.trim() || null,
+        addressText: addressText?.trim() || null,
         productIds: (productIds ?? []).filter(Boolean),
       }),
     });
