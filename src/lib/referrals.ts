@@ -288,10 +288,18 @@ export async function recordAttribution(
 
 /* ── reward ───────────────────────────────────────────────────────────── */
 
+/** Order statuses that count as confirmed. An operator can skip straight past it. */
+const CONFIRMED_STATUSES: readonly string[] = ["confirmed", "packed", "shipped", "delivered"];
+
 /**
  * Reward the referral tied to an order's customer, IF eligible. Idempotent:
  * claims the pending attribution with a conditional update before crediting, so
  * concurrent calls can never double-pay. No-op when nothing qualifies.
+ *
+ * The order must be confirmed or later and, if paid online, actually paid, so
+ * this runs on both events that can complete that: each status step and the
+ * payment settling. A closed programme pays nothing but leaves the referral
+ * pending, so a pause does not cost anyone a reward they can still earn.
  */
 export async function rewardReferralIfEligible(orderId: string): Promise<void> {
   try {
@@ -300,11 +308,20 @@ export async function rewardReferralIfEligible(orderId: string): Promise<void> {
 
     const { data: orderRow } = await db
       .from("orders")
-      .select("id, customer_id, subtotal_paise")
+      .select("id, customer_id, subtotal_paise, status, payment_method, payment_status")
       .eq("id", orderId)
       .maybeSingle();
-    const order = orderRow as { id: string; customer_id: string | null; subtotal_paise: number } | null;
+    const order = orderRow as {
+      id: string;
+      customer_id: string | null;
+      subtotal_paise: number;
+      status: string;
+      payment_method: string;
+      payment_status: string;
+    } | null;
     if (!order?.customer_id) return;
+    if (!CONFIRMED_STATUSES.includes(order.status)) return;
+    if (order.payment_method === "upi" && order.payment_status !== "paid") return;
 
     const { data: attrRow } = await db
       .from("referral_attributions")
@@ -318,6 +335,7 @@ export async function rewardReferralIfEligible(orderId: string): Promise<void> {
     if (!attr) return;
 
     const config = await getReferralConfig();
+    if (!config.enabled || !(await isFeatureEnabled("referrals"))) return;
 
     // Order must meet the qualifying minimum.
     if (Math.max(0, Math.round(order.subtotal_paise)) < config.minQualifyingOrderPaise) return;

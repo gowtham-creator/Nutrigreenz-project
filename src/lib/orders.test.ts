@@ -47,11 +47,13 @@ vi.mock("@/lib/rewards", () => {
 });
 
 import * as rewards from "@/lib/rewards";
+import { rewardReferralIfEligible } from "@/lib/referrals";
 import { getCommerceRules, isServiceable } from "@/lib/commerce-rules";
 import { getActivePromotions } from "@/lib/promotions";
 import {
   BelowMinimumOrderError,
   NotServiceableError,
+  advanceOrderStatus,
   cancelOrder,
   createOrder,
   failUnpaidOnlineOrder,
@@ -121,6 +123,33 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.mocked(isServiceable).mockResolvedValue(true);
+});
+
+describe("referral payout triggers", () => {
+  it("tries the payout on a jump past confirmed, which used to skip it for good", async () => {
+    installDb(undefined, orderRow({ status: "placed", payment_method: "cod" }));
+
+    const result = await advanceOrderStatus("ord-1", "packed", "ops@example.com");
+
+    expect(result.ok).toBe(true);
+    expect(rewardReferralIfEligible).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("tries the payout when an online payment settles after the order was confirmed", async () => {
+    installDb();
+
+    await onOnlineOrderPaid({ id: "ord-1", customerId: "cust-1", totalPaise: 87_000 });
+
+    expect(rewardReferralIfEligible).toHaveBeenCalledWith("ord-1");
+  });
+
+  it("does not try the payout for a backward move", async () => {
+    installDb(undefined, orderRow({ status: "packed", payment_method: "cod" }));
+
+    await advanceOrderStatus("ord-1", "confirmed", "ops@example.com");
+
+    expect(rewardReferralIfEligible).not.toHaveBeenCalled();
+  });
 });
 
 describe("listStalePendingPayments", () => {

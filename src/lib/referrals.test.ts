@@ -19,11 +19,13 @@ vi.mock("@/lib/feature-flags", () => ({ getFeatureFlags: vi.fn(), isFeatureEnabl
 vi.mock("@/lib/rewards", () => ({ getLoyaltyConfig: vi.fn() }));
 
 import { getFeatureFlags, isFeatureEnabled } from "@/lib/feature-flags";
+import { getLoyaltyConfig } from "@/lib/rewards";
 import {
   deviceFingerprint,
   getStorefrontFlags,
   isReferralProgrammeOpen,
   recordAttribution,
+  rewardReferralIfEligible,
 } from "@/lib/referrals";
 
 const CONFIG = {
@@ -175,5 +177,130 @@ describe("recordAttribution — same-device block", () => {
 
     await expect(recordAttribution(signup)).resolves.toMatchObject({ ok: true });
     expect(deviceCheck(ops)).toBeUndefined();
+  });
+});
+
+describe("rewardReferralIfEligible", () => {
+  const ORDER = {
+    id: "ord-1",
+    customer_id: "friend",
+    subtotal_paise: 60_000,
+    status: "confirmed",
+    payment_method: "cod",
+    payment_status: "pending",
+  };
+  const ATTRIBUTION = {
+    id: "attr-1",
+    referrer_customer_id: "referrer",
+    referee_customer_id: "friend",
+    created_at: new Date().toISOString(),
+    status: "pending",
+  };
+
+  function rewardDb(
+    order: Record<string, unknown> = ORDER,
+    config: Record<string, unknown> = CONFIG,
+    rewardedThisMonth = 0,
+  ) {
+    return installDb((op) => {
+      if (op.table === "orders") return { data: order };
+      if (op.table === "referral_attributions" && op.action === "update") return { data: { id: "attr-1" } };
+      if (op.table === "referral_attributions" && op.head) return { count: rewardedThisMonth };
+      if (op.table === "referral_attributions") return { data: ATTRIBUTION };
+      return { data: null };
+    }, config);
+  }
+
+  const ledger = (ops: FakeOp[]) =>
+    ops
+      .filter((o) => o.table === "loyalty_ledger" && o.action === "insert")
+      .map((o) => o.payload as { customer_id: string; delta_points: number; reason: string });
+  const claimed = (ops: FakeOp[]) =>
+    ops.some((o) => o.table === "referral_attributions" && o.action === "update");
+
+  beforeEach(() => {
+    vi.mocked(getLoyaltyConfig).mockResolvedValue({ redeemPointsPerRupee: 10 } as never);
+  });
+
+  it("pays both sides on a confirmed cash order", async () => {
+    const { ops } = rewardDb();
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([
+      { customer_id: "referrer", order_id: "ord-1", delta_points: 200, reason: "referral_referrer" },
+      { customer_id: "friend", order_id: "ord-1", delta_points: 1_000, reason: "referral_referee" },
+    ]);
+  });
+
+  it("pays on an order that went straight past confirmed", async () => {
+    const { ops } = rewardDb({ ...ORDER, status: "packed" });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toHaveLength(2);
+  });
+
+  it("pays nothing on an order nobody has confirmed", async () => {
+    const { ops } = rewardDb({ ...ORDER, status: "placed" });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([]);
+    expect(claimed(ops)).toBe(false);
+  });
+
+  it("pays nothing on a cancelled order", async () => {
+    const { ops } = rewardDb({ ...ORDER, status: "cancelled" });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([]);
+  });
+
+  it("pays nothing on a confirmed online order that is still unpaid", async () => {
+    const { ops } = rewardDb({ ...ORDER, payment_method: "upi", payment_status: "pending" });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([]);
+    expect(claimed(ops)).toBe(false);
+  });
+
+  it("pays once that online order is paid", async () => {
+    const { ops } = rewardDb({ ...ORDER, payment_method: "upi", payment_status: "paid" });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toHaveLength(2);
+  });
+
+  it("pays nothing while the programme toggle is off, and keeps the referral pending", async () => {
+    const { ops } = rewardDb(ORDER, { ...CONFIG, enabled: false });
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([]);
+    expect(claimed(ops)).toBe(false);
+  });
+
+  it("pays nothing while the feature flag is off, and keeps the referral pending", async () => {
+    const { ops } = rewardDb();
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false);
+
+    await rewardReferralIfEligible("ord-1");
+
+    expect(ledger(ops)).toEqual([]);
+    expect(claimed(ops)).toBe(false);
+  });
+
+  it("still holds the qualifying minimum and the monthly cap", async () => {
+    const small = rewardDb({ ...ORDER, subtotal_paise: 49_899 });
+    await rewardReferralIfEligible("ord-1");
+    expect(ledger(small.ops)).toEqual([]);
+
+    const capped = rewardDb(ORDER, CONFIG, 10);
+    await rewardReferralIfEligible("ord-1");
+    expect(ledger(capped.ops)).toEqual([]);
   });
 });

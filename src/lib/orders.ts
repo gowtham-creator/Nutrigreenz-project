@@ -980,14 +980,14 @@ export async function advanceOrderStatus(
     note: note?.trim() || null,
   });
 
-  // Referral payout: when a sale is CONFIRMED, reward the referee's referral if
-  // the order qualifies. Idempotent + best-effort — never disrupts the update.
-  if (nextStatus === "confirmed") {
-    try {
-      await rewardReferralIfEligible(current.id);
-    } catch {
-      /* best-effort */
-    }
+  // Referral payout: reward the referee's referral if the order now qualifies.
+  // On every forward step, not only "confirmed": an operator can move straight
+  // from placed to packed, which skipped the payout for good. It checks the
+  // order for itself. Idempotent + best-effort — never disrupts the update.
+  try {
+    await rewardReferralIfEligible(current.id);
+  } catch {
+    /* best-effort */
   }
 
   const order = await getOrder(current.id);
@@ -1441,6 +1441,12 @@ export async function onOnlineOrderPaid(
     await earnPointsForOrder(order.customerId, order.id, order.totalPaise);
   } catch (err) {
     console.error(`[orders] earning points failed for paid order ${order.id}:`, err);
+  }
+  // An operator may have confirmed it before the bank did. Best-effort, as above.
+  try {
+    await rewardReferralIfEligible(order.id);
+  } catch (err) {
+    console.error(`[orders] referral payout failed for paid order ${order.id}:`, err);
   }
 }
 
