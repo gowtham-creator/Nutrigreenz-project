@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/icon";
 import { Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getLoyaltyConfig, loyaltyBalance, listLoyaltyLedger } from "@/lib/rewards";
-import { getReferralConfig } from "@/lib/referrals";
+import { getReferralConfig, isReferralProgrammeOpen } from "@/lib/referrals";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { pageMeta } from "@/lib/seo";
 
@@ -73,9 +73,10 @@ export default async function LoyaltyPage() {
   const session = await getCustomerSession();
   const customerId = session?.customerId ?? null;
 
-  const [config, referralConfig, points, ledger] = await Promise.all([
+  const [config, referralConfig, referralOpen, points, ledger] = await Promise.all([
     getLoyaltyConfig(),
     getReferralConfig().catch(() => null),
+    isReferralProgrammeOpen(),
     customerId ? loyaltyBalance(customerId) : Promise.resolve(0),
     customerId ? listLoyaltyLedger(customerId, 20) : Promise.resolve([]),
   ]);
@@ -108,13 +109,15 @@ export default async function LoyaltyPage() {
   const hasActivity = ledger.length > 0;
   // Referrer is rewarded in POINTS; the referee gets a straight discount in paise.
   const referralReward =
-    referralConfig && referralConfig.enabled && referralConfig.referrerPoints > 0
+    referralOpen && referralConfig && referralConfig.referrerPoints > 0
       ? toRupees(referralConfig.referrerPoints)
       : null;
   const refereeReward =
     referralConfig && referralConfig.refereeDiscountPaise > 0
       ? Math.round(referralConfig.refereeDiscountPaise / 100)
       : null;
+
+  const earnsFrom = referralOpen ? "Every order and every referral earns" : "Every order earns";
 
   return (
     <AccountShell active="loyalty">
@@ -128,8 +131,8 @@ export default async function LoyaltyPage() {
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
           {hasActivity
-            ? `Every order and every referral earns wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`
-            : `Place your first order to start earning. Every order and every referral earns wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`}
+            ? `${earnsFrom} wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`
+            : `Place your first order to start earning. ${earnsFrom} wallet credit you can redeem on anything in the pantry. Up to ${config.maxRedeemPercent}% of an order.`}
         </p>
       </Reveal>
 
@@ -362,9 +365,11 @@ export default async function LoyaltyPage() {
                   </span>
                 </li>
               </ul>
-              <Button variant="primary" size="sm" className="mt-6 w-full" asChild>
-                <Link href="/referral">Get your referral link</Link>
-              </Button>
+              {referralOpen ? (
+                <Button variant="primary" size="sm" className="mt-6 w-full" asChild>
+                  <Link href="/referral">Get your referral link</Link>
+                </Button>
+              ) : null}
             </aside>
           </div>
         </Reveal>

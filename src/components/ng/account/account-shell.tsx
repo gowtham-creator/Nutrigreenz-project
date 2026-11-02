@@ -5,6 +5,8 @@ import { AccountIdentity, SignOutButton } from "./account-identity";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { UiIcon, type UiIconName } from "@/components/ui/ui-icon";
+import { FeatureGate } from "@/components/ng/feature-gate";
+import type { FeatureFlagKey } from "@/lib/feature-flags";
 
 type AccountSection =
   | "overview"
@@ -21,13 +23,20 @@ type AccountSection =
  * had marks in the set (`wishlist`, `customer`); the other five were traced
  * from the files supplied for exactly these rows.
  */
-const NAV: { key: AccountSection; href: string; label: string; icon: UiIconName }[] = [
+const NAV: {
+  key: AccountSection;
+  href: string;
+  label: string;
+  icon: UiIconName;
+  /** Hidden while this feature is switched off. */
+  feature?: FeatureFlagKey;
+}[] = [
   { key: "overview", href: "/account", label: "Overview", icon: "overview" },
   { key: "orders", href: "/account/orders", label: "Orders", icon: "ordersBox" },
   { key: "wishlist", href: "/wishlist", label: "Wishlist", icon: "wishlist" },
   { key: "addresses", href: "/account/addresses", label: "Addresses", icon: "location" },
   { key: "loyalty", href: "/loyalty", label: "Loyalty", icon: "wallet" },
-  { key: "referral", href: "/referral", label: "Refer & earn", icon: "refer" },
+  { key: "referral", href: "/referral", label: "Refer & earn", icon: "refer", feature: "referrals" },
   { key: "profile", href: "/account/profile", label: "Profile", icon: "customer" },
 ];
 
@@ -60,7 +69,7 @@ export function AccountShell({
             <nav className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] lg:mx-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-ng-line-soft lg:bg-ng-paper/70 lg:p-2 lg:backdrop-blur-sm lg:shadow-[var(--shadow-ng-card)] lg:[mask-image:none]">
               {NAV.map((n) => {
                 const isActive = n.key === active;
-                return (
+                const link = (
                   <Link
                     key={n.key}
                     href={n.href}
@@ -85,6 +94,13 @@ export function AccountShell({
                       <Icon name="alt-arrow-right-linear" size={15} className="ml-auto hidden text-ng-cream/70 lg:inline" />
                     ) : null}
                   </Link>
+                );
+                return n.feature ? (
+                  <FeatureGate key={n.key} feature={n.feature}>
+                    {link}
+                  </FeatureGate>
+                ) : (
+                  link
                 );
               })}
               <SignOutButton />

@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { pageMeta } from "@/lib/seo";
+import { isReferralProgrammeOpen } from "@/lib/referrals";
+
+// The gate has to run per request: built statically, it would answer once.
+export const dynamic = "force-dynamic";
 
 /*
  * /referral is a client page, so its metadata lives here.
@@ -18,6 +23,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function ReferralLayout({ children }: { children: React.ReactNode }) {
+export default async function ReferralLayout({ children }: { children: React.ReactNode }) {
+  if (!(await isReferralProgrammeOpen())) notFound();
   return children;
 }

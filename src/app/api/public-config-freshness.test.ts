@@ -10,13 +10,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
   getPublicLoyaltyConfig: vi.fn(),
-  getFeatureFlags: vi.fn(),
+  getStorefrontFlags: vi.fn(),
   isServiceable: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/rewards", () => ({ getPublicLoyaltyConfig: m.getPublicLoyaltyConfig }));
-vi.mock("@/lib/feature-flags", () => ({ getFeatureFlags: m.getFeatureFlags }));
+vi.mock("@/lib/referrals", () => ({ getStorefrontFlags: m.getStorefrontFlags }));
 vi.mock("@/lib/commerce-rules", () => ({ isServiceable: m.isServiceable }));
 
 import { GET as loyaltyConfig } from "./loyalty-config/route";
@@ -26,7 +26,7 @@ import { GET as geoPincode } from "./geo/pincode/route";
 
 beforeEach(() => {
   m.getPublicLoyaltyConfig.mockResolvedValue({ earnEnabled: false });
-  m.getFeatureFlags.mockResolvedValue({ referrals: true });
+  m.getStorefrontFlags.mockResolvedValue({ referrals: true });
   m.isServiceable.mockResolvedValue(true);
   // India Post is optional: the offline table answers when it cannot be reached.
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));

@@ -12,6 +12,7 @@
 import "server-only";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import { getLoyaltyConfig } from "@/lib/rewards";
+import { getFeatureFlags, isFeatureEnabled, type FeatureFlagMap } from "@/lib/feature-flags";
 
 const SITE =
   process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz-project.vercel.app";
@@ -95,6 +96,23 @@ export async function getReferralConfig(): Promise<ReferralConfig> {
   }
 }
 
+/**
+ * Whether the programme is running. Two switches can stop it, the `referrals`
+ * feature flag and the "Programme enabled" toggle on the referral config, and
+ * every surface has to agree, so they are read together here: a page that
+ * checked only one would go on promising rewards the other had stopped.
+ */
+export async function isReferralProgrammeOpen(): Promise<boolean> {
+  const [flag, config] = await Promise.all([isFeatureEnabled("referrals"), getReferralConfig()]);
+  return flag && config.enabled;
+}
+
+/** The flag map as the storefront should act on it: referrals means both switches. */
+export async function getStorefrontFlags(): Promise<FeatureFlagMap> {
+  const [flags, referrals] = await Promise.all([getFeatureFlags(), isReferralProgrammeOpen()]);
+  return { ...flags, referrals };
+}
+
 /* ── share codes ──────────────────────────────────────────────────────── */
 
 // Crockford-ish base32 minus ambiguous chars (no I, L, O, U) — unambiguous when
@@ -169,7 +187,9 @@ export async function recordAttribution(
   try {
     if (!isSupabaseConfigured) return { ok: false, reason: "unconfigured" };
     const config = await getReferralConfig();
-    if (!config.enabled) return { ok: false, reason: "disabled" };
+    if (!config.enabled || !(await isFeatureEnabled("referrals"))) {
+      return { ok: false, reason: "disabled" };
+    }
 
     const db = supabaseAdmin();
     const referrerId = await resolveCodeToReferrer(input.code);
