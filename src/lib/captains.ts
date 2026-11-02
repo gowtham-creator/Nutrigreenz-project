@@ -20,6 +20,7 @@ import "server-only";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
 import { findCustomerByPhone } from "@/lib/customer-identity";
 import { requireCaptain, type CaptainSessionPayload } from "@/lib/captain-session";
+import { featureOffResponse, isFeatureEnabled } from "@/lib/feature-flags";
 import type {
   Captain,
   CaptainCapture,
@@ -71,10 +72,13 @@ export function commissionPaiseFor(gmvPaise: number, commissionPercent: number):
  * {@link requireCaptain} plus a live check that the captain still exists, is
  * still active and still owns the phone the session was minted for. The signed
  * cookie alone cannot know that an admin deactivated the captain or moved the
- * number, so every data route goes through this. When the DB is unconfigured
- * the plain session result is returned and each route keeps its own degrade path.
+ * number, so every data route goes through this. It is also where the
+ * `captain_network` switch closes the API, ahead of the session so a switched-off
+ * tool answers the same to everyone. When the DB is unconfigured the plain
+ * session result is returned and each route keeps its own degrade path.
  */
 export async function requireActiveCaptain(): Promise<CaptainSessionPayload | Response> {
+  if (!(await isFeatureEnabled("captain_network"))) return featureOffResponse();
   const gate = await requireCaptain();
   if (gate instanceof Response || !isSupabaseConfigured) return gate;
   const captain = await getCaptainById(gate.captainId);
