@@ -8,13 +8,19 @@ import {
   type ShippingType,
   type TaxMode,
 } from "@/lib/commerce-rules";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** GET — the singleton commerce config. Super-admin only. */
 export async function GET(): Promise<Response> {
   const denied = await requireSuperAdmin();
   if (denied) return denied;
-  const rules = await getCommerceRules();
-  return Response.json({ ok: true, rules });
+  try {
+    const rules = await getCommerceRules();
+    return Response.json({ ok: true, rules });
+  } catch {
+    // The panel shows its retry state rather than values it could save back.
+    return Response.json({ ok: false, error: "unavailable" }, { status: 503 });
+  }
 }
 
 const SHIPPING_TYPES: readonly ShippingType[] = ["flat", "slab", "zero"];
@@ -77,12 +83,12 @@ export async function PUT(request: Request): Promise<Response> {
   }
   const slabs = parseSlabs(body.shippingSlabs);
   if (slabs !== undefined) patch.shippingSlabs = slabs;
-  if (typeof body.currency === "string" && body.currency.trim()) {
-    patch.currency = body.currency;
-  }
 
   try {
     const rules = await updateCommerceRules(patch);
+    // The free-delivery claim on the shop and product pages is cached for 60s;
+    // it should not contradict the new rule for that long.
+    revalidateStorefront();
     return Response.json({ ok: true, rules });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

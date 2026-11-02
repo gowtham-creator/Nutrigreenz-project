@@ -4,12 +4,19 @@
  * call. Scoped strictly to the caller's canonical customer via `ng_session`.
  */
 import { getCustomerSession } from "@/lib/customer-session";
-import { getCustomerReferralSummary, getReferralConfig } from "@/lib/referrals";
+import {
+  getCustomerReferralSummary,
+  getReferralConfig,
+  isReferralProgrammeOpen,
+} from "@/lib/referrals";
+import { featureOffResponse } from "@/lib/feature-flags";
 import { getLoyaltyConfig } from "@/lib/rewards";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
+  if (!(await isReferralProgrammeOpen())) return featureOffResponse();
+
   const session = await getCustomerSession();
   if (!session) {
     return Response.json({ ok: false, error: "unauthenticated" }, { status: 401 });

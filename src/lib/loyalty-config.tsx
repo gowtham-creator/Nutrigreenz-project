@@ -5,9 +5,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
+
+/** Quiet re-reads are skipped when the config was read this recently. */
+const REREAD_AFTER_MS = 30_000;
 
 /**
  * Loyalty programme configuration (client-side read model).
@@ -74,29 +79,56 @@ function normalizeConfig(value: unknown): LoyaltyConfig {
   };
 }
 
+/**
+ * Pull the live economics from the public endpoint. Read-only — edits happen in
+ * the Super Admin control center against the admin API. Null when it could not
+ * be read (offline / unconfigured), so callers keep what they already have.
+ */
+async function readLiveConfig(): Promise<LoyaltyConfig | null> {
+  try {
+    const res = await fetch("/api/loyalty-config", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ok?: boolean; config?: unknown };
+    return data.ok !== false && data.config ? normalizeConfig(data.config) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function LoyaltyConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<LoyaltyConfig>(LOYALTY_CONFIG);
+  const pathname = usePathname();
+  const lastRead = useRef(0);
 
-  // Pull the live economics from the public endpoint after mount. Read-only —
-  // edits happen in the Super Admin control center against the admin API.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/loyalty-config", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { ok?: boolean; config?: unknown };
-        if (!cancelled && data.ok !== false && data.config) {
-          setConfig(normalizeConfig(data.config));
-        }
-      } catch {
-        /* offline / unconfigured — keep the built-in defaults */
-      }
-    })();
+    lastRead.current = Date.now();
+    void readLiveConfig().then((live) => {
+      if (live && !cancelled) setConfig(live);
+    });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Re-read entering checkout and when a tab comes back, for the reason given
+  // in CommerceProvider: this mounts once per visit, and the server redeems at
+  // the live rate whatever an open tab is still showing.
+  useEffect(() => {
+    const reread = () => {
+      if (Date.now() - lastRead.current < REREAD_AFTER_MS) return;
+      lastRead.current = Date.now();
+      void readLiveConfig().then((live) => {
+        if (live) setConfig(live);
+      });
+    };
+    if (pathname === "/checkout") reread();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") reread();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [pathname]);
 
   const value = useMemo<LoyaltyConfigValue>(() => ({ config }), [config]);
 

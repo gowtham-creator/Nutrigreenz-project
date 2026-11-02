@@ -503,6 +503,40 @@ describe("checkout — Cash on Delivery", () => {
     await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
   });
 
+  it("quotes the server's minimum and re-reads the rules when the cart is under it", async () => {
+    m.refreshRules.mockResolvedValue(undefined);
+    fetchMock.mockResolvedValue(
+      jsonResponse(409, { ok: false, error: "below-minimum", minOrderPaise: 30_000 }),
+    );
+
+    const pay = await placeOrderWith("cod");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(expect.stringContaining("Minimum order value is ₹300")),
+    );
+    expect(m.refreshRules).toHaveBeenCalledTimes(1);
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    await waitFor(() => expect((pay as HTMLButtonElement).disabled).toBe(false));
+  });
+
+  it("names the pincode and keeps the cart when the area is not served", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(409, { ok: false, error: "not-serviceable", pincode: "500001" }),
+    );
+
+    await placeOrderWith("cod");
+
+    await waitFor(() =>
+      expect(m.toastError).toHaveBeenCalledWith(
+        "We don't deliver to 500001 yet. Please choose another address.",
+      ),
+    );
+    expect(m.clear).not.toHaveBeenCalled();
+    expect(m.push).not.toHaveBeenCalled();
+    expect(m.saveReceipt).not.toHaveBeenCalled();
+  });
+
   it("sends only the slot it shows, and re-reads the slots when that one has closed", async () => {
     m.refreshRules.mockResolvedValue(undefined);
     fetchMock.mockResolvedValue(jsonResponse(409, { ok: false, error: "slot-unavailable" }));

@@ -71,6 +71,14 @@ export interface PublicCommerceRules {
 
 /* ── defaults (mirror the migration's column defaults) ────────────────── */
 
+/**
+ * The only currency the shop trades in. It is not a setting: prices, the ₹ on
+ * every screen, GST and the invoices all assume it, while SBIePay takes whatever
+ * code it is given, so a typo in a free-text field would have reached the bank
+ * on real orders. The `currency` column is left in place but no longer read.
+ */
+export const STORE_CURRENCY = "INR";
+
 export const DEFAULT_COMMERCE_RULES: CommerceRulesRecord = {
   minOrderPaise: 30000,
   freeDeliveryThresholdPaise: 59900,
@@ -79,7 +87,7 @@ export const DEFAULT_COMMERCE_RULES: CommerceRulesRecord = {
   shippingSlabs: [],
   taxMode: "inclusive",
   taxRateBps: 0,
-  currency: "INR",
+  currency: STORE_CURRENCY,
   updatedAt: null,
 };
 
@@ -94,7 +102,6 @@ interface CommerceRulesRow {
   shipping_slabs: unknown;
   tax_mode: string;
   tax_rate_bps: number;
-  currency: string;
   updated_at: string;
 }
 
@@ -118,7 +125,7 @@ interface ServiceableAreaRow {
 }
 
 const RULES_COLS =
-  "id, min_order_paise, free_delivery_threshold_paise, shipping_type, shipping_flat_paise, shipping_slabs, tax_mode, tax_rate_bps, currency, updated_at";
+  "id, min_order_paise, free_delivery_threshold_paise, shipping_type, shipping_flat_paise, shipping_slabs, tax_mode, tax_rate_bps, updated_at";
 const SLOT_COLS = "id, label, window_text, sort, active, created_at, updated_at";
 const AREA_COLS = "id, pincode, area, community, active, created_at";
 
@@ -156,7 +163,7 @@ function toRules(r: CommerceRulesRow): CommerceRulesRecord {
     shippingSlabs: toSlabs(r.shipping_slabs),
     taxMode: toTaxMode(r.tax_mode),
     taxRateBps: r.tax_rate_bps,
-    currency: r.currency || "INR",
+    currency: STORE_CURRENCY,
     updatedAt: r.updated_at ?? null,
   };
 }
@@ -188,15 +195,22 @@ function toArea(r: ServiceableAreaRow): ServiceableAreaRecord {
 
 /**
  * Read the singleton commerce config. Returns sane built-in defaults when the
- * DB is unconfigured or the row is somehow missing, so callers never crash.
+ * DB is unconfigured or the row is somehow missing. Throws when the read itself
+ * fails: callers that price an order must stop, and the ones that can degrade
+ * (the public read, the free-delivery copy) catch it.
  */
 export async function getCommerceRules(): Promise<CommerceRulesRecord> {
   if (!isSupabaseConfigured) return DEFAULT_COMMERCE_RULES;
-  const { data } = await supabaseAdmin()
+  const { data, error } = await supabaseAdmin()
     .from("commerce_rules")
     .select(RULES_COLS)
     .eq("id", 1)
     .maybeSingle();
+  // A failed read must not look like a missing row. The defaults are a ₹300
+  // minimum and a ₹40 fee, so an order placed during a blip would be charged, or
+  // refused, by rules the shop is not running, and the admin panel would show
+  // them as the live values, one Save away from overwriting the real ones.
+  if (error) throw new Error(error.message);
   return data ? toRules(data as CommerceRulesRow) : DEFAULT_COMMERCE_RULES;
 }
 
@@ -208,7 +222,6 @@ export interface CommerceRulesPatch {
   shippingSlabs?: ShippingSlab[];
   taxMode?: TaxMode;
   taxRateBps?: number;
-  currency?: string;
 }
 
 /**
@@ -227,7 +240,6 @@ export async function updateCommerceRules(patch: CommerceRulesPatch): Promise<Co
   if (patch.shippingSlabs !== undefined) row.shipping_slabs = toSlabs(patch.shippingSlabs);
   if (patch.taxMode !== undefined) row.tax_mode = toTaxMode(patch.taxMode);
   if (patch.taxRateBps !== undefined) row.tax_rate_bps = Math.max(0, Math.round(patch.taxRateBps));
-  if (patch.currency !== undefined) row.currency = patch.currency.trim().toUpperCase() || "INR";
 
   const { data, error } = await db
     .from("commerce_rules")
@@ -451,26 +463,30 @@ export async function importAreas(
 /**
  * Serviceability lookup. True when an ACTIVE serviceable_areas row matches the
  * pincode. When the table is empty (no areas configured yet) it returns `true`
- * so serviceability is non-blocking until the admin curates the list.
+ * so serviceability is non-blocking until the admin curates the list. Once a
+ * list exists, a blank pincode is not on it. Throws when the lookup itself
+ * fails, so a database error is never mistaken for an answer about the area.
  */
 export async function isServiceable(pincode: string): Promise<boolean> {
   const pin = (pincode ?? "").trim();
-  if (!pin) return false;
   if (!isSupabaseConfigured) return true;
   const db = supabaseAdmin();
 
-  const { count: total } = await db
+  const { count: total, error } = await db
     .from("serviceable_areas")
     .select("id", { count: "exact", head: true })
     .eq("active", true);
+  if (error) throw new Error(error.message);
   // No active areas configured → don't block checkout.
   if (!total) return true;
+  if (!pin) return false;
 
-  const { count: match } = await db
+  const { count: match, error: matchError } = await db
     .from("serviceable_areas")
     .select("id", { count: "exact", head: true })
     .eq("active", true)
     .eq("pincode", pin);
+  if (matchError) throw new Error(matchError.message);
   return Boolean(match && match > 0);
 }
 

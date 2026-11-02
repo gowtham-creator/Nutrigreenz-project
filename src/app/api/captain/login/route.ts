@@ -4,6 +4,7 @@ import { getCaptainByPhone, toCaptainMe } from "@/lib/captains";
 import { mintCaptainSession } from "@/lib/captain-session";
 import { otpProvider } from "@/lib/otp-provider";
 import { verifyOtp, isMsg91OtpConfigured } from "@/lib/msg91-otp";
+import { featureOffResponse, isFeatureEnabled } from "@/lib/feature-flags";
 
 // firebase-admin / MSG91 need the Node runtime (not Edge).
 export const runtime = "nodejs";
@@ -30,6 +31,8 @@ export const runtime = "nodejs";
 const NOT_A_CAPTAIN = "This number isn't registered as an active captain.";
 
 export async function POST(request: Request): Promise<Response> {
+  if (!(await isFeatureEnabled("captain_network"))) return featureOffResponse();
+
   let body: { idToken?: unknown; phone?: unknown; code?: unknown };
   try {
     body = await request.json();

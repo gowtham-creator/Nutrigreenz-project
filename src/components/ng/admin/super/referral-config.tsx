@@ -102,7 +102,7 @@ const ABUSE_GUARDS: {
   {
     key: "blockSameDevice",
     label: "Same-device block",
-    desc: "Reject referred sign-ups from the referrer's own device",
+    desc: "Reject a repeat sign-up for one referrer from the same phone and network",
     icon: "smartphone-bold",
   },
   {

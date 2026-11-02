@@ -210,7 +210,6 @@ function RulesCard({
         shippingSlabs: draft.shippingSlabs,
         taxMode: draft.taxMode,
         taxRateBps: draft.taxRateBps,
-        currency: draft.currency,
       });
       onSaved({ ...DEFAULT_RULES, ...res.rules });
       toast.success("Commerce rules saved", {
@@ -307,8 +306,9 @@ function RulesCard({
             <TextField
               label="Currency"
               value={draft.currency}
-              onChange={(v) => patch("currency", v.toUpperCase())}
-              placeholder="INR"
+              onChange={() => {}}
+              readOnly
+              hint="The shop trades in rupees only"
             />
           </div>
 

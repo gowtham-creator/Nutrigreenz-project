@@ -114,6 +114,40 @@ export async function getFeatureFlags(): Promise<FeatureFlagMap> {
 }
 
 /**
+ * Is this feature on right now? The gate every store page and API asks.
+ *
+ * A missing row means the shipped default, as it does in {@link getFeatureFlags}.
+ * A FAILED read is different and fails open, even for a default-off flag: the
+ * row exists to switch a live feature off, so a blip reading it must not take a
+ * working feature down (captains are selling at a stall when it happens), and
+ * everything behind the gate needs the same database anyway.
+ */
+export async function isFeatureEnabled(key: FeatureFlagKey): Promise<boolean> {
+  if (!isSupabaseConfigured) return DEFAULT_FEATURE_FLAGS[key];
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("feature_flags")
+      .select("enabled")
+      .eq("key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const row = data as { enabled: boolean } | null;
+    return row ? row.enabled === true : DEFAULT_FEATURE_FLAGS[key];
+  } catch (err) {
+    console.warn(`[feature-flags] could not read ${key}, leaving it on: ${String(err)}`);
+    return true;
+  }
+}
+
+/** What a switched-off feature's API answers: as if it had never been there. */
+export function featureOffResponse(): Response {
+  return Response.json(
+    { ok: false, error: "not-found" },
+    { status: 404, headers: { "cache-control": "no-store" } },
+  );
+}
+
+/**
  * The admin list: every known flag with its label/description, live enabled
  * state and last-edited timestamp (null when the row has never been touched).
  */

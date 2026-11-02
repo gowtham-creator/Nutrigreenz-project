@@ -3,6 +3,8 @@ import { PageShell, PageHero } from "@/components/ng/page-shell";
 import { Section } from "@/components/ng/section";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/seo";
+import { getStorefrontFlags } from "@/lib/referrals";
+import type { FeatureFlagKey, FeatureFlagMap } from "@/lib/feature-flags";
 
 // A page of links: useful to people and to crawlers following them, but not a
 // result anyone searches for. It used to inherit the home page's title and
@@ -16,7 +18,23 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-interface Node { label: string; href?: string; children?: Node[]; note?: string }
+// Built like the other storefront pages, and busted when a flag is saved.
+export const revalidate = 60;
+
+interface Node {
+  label: string;
+  href?: string;
+  children?: Node[];
+  note?: string;
+  /** Left off the list while this feature is switched off. */
+  feature?: FeatureFlagKey;
+}
+
+function visibleNodes(nodes: Node[], flags: FeatureFlagMap): Node[] {
+  return nodes
+    .filter((n) => !n.feature || flags[n.feature])
+    .map((n) => (n.children ? { ...n, children: visibleNodes(n.children, flags) } : n));
+}
 
 const TREE: Node[] = [
   {
@@ -42,9 +60,8 @@ const TREE: Node[] = [
         href: "/account",
         children: [
           { label: "Orders", href: "/account/orders" },
-          { label: "Subscriptions", href: "/account/subscriptions" },
           { label: "Loyalty wallet", href: "/loyalty" },
-          { label: "Referral", href: "/referral" },
+          { label: "Referral", href: "/referral", feature: "referrals" },
         ],
       },
       {
@@ -74,6 +91,7 @@ const TREE: Node[] = [
   {
     label: "Captain field PWA",
     note: "Mobile-installable · for farm pickup teams",
+    feature: "captain_network",
     children: [
       { label: "Captain dashboard", href: "/captain" },
       { label: "Today's pickups", href: "/captain/pickups" },
@@ -84,6 +102,7 @@ const TREE: Node[] = [
   {
     label: "Community bundle",
     note: "Group buy · 8-12 households at member rates",
+    feature: "community_bundles",
     children: [
       { label: "Bundle landing", href: "/community/bundle" },
       { label: "Bundle inventory", href: "/community/bundle/inventory" },
@@ -123,18 +142,19 @@ function NodeBlock({ node, depth = 0 }: { node: Node; depth?: number }) {
   );
 }
 
-export default function SitemapPage() {
+export default async function SitemapPage() {
+  const flags = await getStorefrontFlags();
   return (
     <PageShell>
       <PageHero
         eyebrow="Information architecture"
         title={<>The full <em className="italic text-ng-leaf">Nutri Greenz map.</em></>}
-        description="Every route in the system. Storefront, admin, captain PWA, and community bundle. Click any node to jump to that page."
+        description="Every route in the system. Click any node to jump to that page."
       />
 
       <Section>
         <div className="grid lg:grid-cols-2 gap-10">
-          {TREE.map((root) => (
+          {visibleNodes(TREE, flags).map((root) => (
             <article key={root.label} className="rounded-3xl bg-ng-paper border border-ng-line-soft p-6 md:p-8">
               <ul className="space-y-0">
                 <NodeBlock node={root} />
@@ -148,8 +168,12 @@ export default function SitemapPage() {
           <ul className="mt-4 grid md:grid-cols-2 gap-3 text-[14px] text-ng-ink-muted">
             <li>• Customer storefront is rendered statically via Next.js App Router + ISR for product pages.</li>
             <li>• Admin portal lives behind RBAC; only ops + finance + content roles can sign in.</li>
-            <li>• Captain PWA is installable on Android. Used by 12 pickup staff across the south.</li>
-            <li>• Community bundle is gated by member code. Co-located households unlock 12-15% off list.</li>
+            {flags.captain_network ? (
+              <li>• Captain PWA is installable on Android. Used by 12 pickup staff across the south.</li>
+            ) : null}
+            {flags.community_bundles ? (
+              <li>• Community bundle is gated by member code. Co-located households unlock 12-15% off list.</li>
+            ) : null}
           </ul>
         </div>
       </Section>

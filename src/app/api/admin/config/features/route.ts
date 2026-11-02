@@ -6,6 +6,7 @@ import {
   FEATURE_FLAGS,
   type FeatureFlagPatch,
 } from "@/lib/feature-flags";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 /** GET — every storefront feature flag with its metadata. Super-admin only. */
 export async function GET(): Promise<Response> {
@@ -47,6 +48,8 @@ export async function PUT(request: Request): Promise<Response> {
 
   try {
     const flags = await updateFeatureFlags(patch);
+    // Catalogue pages (badges) and the page lists are cached for 60s.
+    revalidateStorefront();
     return Response.json({ ok: true, flags });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

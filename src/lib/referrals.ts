@@ -10,8 +10,10 @@
  * discount. All money is INTEGER PAISE. Service-role only (RLS on / no policies).
  */
 import "server-only";
+import { createHash } from "node:crypto";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import { getLoyaltyConfig } from "@/lib/rewards";
+import { getFeatureFlags, isFeatureEnabled, type FeatureFlagMap } from "@/lib/feature-flags";
 
 const SITE =
   process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz-project.vercel.app";
@@ -95,6 +97,23 @@ export async function getReferralConfig(): Promise<ReferralConfig> {
   }
 }
 
+/**
+ * Whether the programme is running. Two switches can stop it, the `referrals`
+ * feature flag and the "Programme enabled" toggle on the referral config, and
+ * every surface has to agree, so they are read together here: a page that
+ * checked only one would go on promising rewards the other had stopped.
+ */
+export async function isReferralProgrammeOpen(): Promise<boolean> {
+  const [flag, config] = await Promise.all([isFeatureEnabled("referrals"), getReferralConfig()]);
+  return flag && config.enabled;
+}
+
+/** The flag map as the storefront should act on it: referrals means both switches. */
+export async function getStorefrontFlags(): Promise<FeatureFlagMap> {
+  const [flags, referrals] = await Promise.all([getFeatureFlags(), isReferralProgrammeOpen()]);
+  return { ...flags, referrals };
+}
+
 /* ── share codes ──────────────────────────────────────────────────────── */
 
 // Crockford-ish base32 minus ambiguous chars (no I, L, O, U) — unambiguous when
@@ -158,6 +177,21 @@ export async function resolveCodeToReferrer(code: string): Promise<string | null
 /* ── attribution ──────────────────────────────────────────────────────── */
 
 /**
+ * What the same-device guard compares: the network and the browser together,
+ * hashed. The user-agent alone is not a device. Every iPhone on one iOS version
+ * sends the same string, so comparing that blocked a stranger's genuine referral
+ * as soon as anyone with the same phone had been referred. Null when either part
+ * is missing, which skips the guard rather than matching on half a fingerprint.
+ */
+export function deviceFingerprint(
+  ip: string | null | undefined,
+  userAgent: string | null | undefined,
+): string | null {
+  if (!ip || !userAgent) return null;
+  return createHash("sha256").update(`${ip}|${userAgent}`).digest("hex");
+}
+
+/**
  * Record ONE attribution (referee → referrer). Enforces: programme enabled,
  * referee not already attributed, no self-referral, and the configured
  * anti-abuse guards (mobile dedupe, same-device block). Never throws — returns
@@ -169,7 +203,9 @@ export async function recordAttribution(
   try {
     if (!isSupabaseConfigured) return { ok: false, reason: "unconfigured" };
     const config = await getReferralConfig();
-    if (!config.enabled) return { ok: false, reason: "disabled" };
+    if (!config.enabled || !(await isFeatureEnabled("referrals"))) {
+      return { ok: false, reason: "disabled" };
+    }
 
     const db = supabaseAdmin();
     const referrerId = await resolveCodeToReferrer(input.code);
@@ -210,11 +246,15 @@ export async function recordAttribution(
       }
     }
 
-    // Same-device block.
+    // Same-device block: one referrer cannot collect twice from one device.
+    // Scoped to the referrer because the attack is someone referring themselves;
+    // two households behind one router using different codes are fine. The
+    // referrer's own device is never recorded, so their first fake account passes.
     if (config.blockSameDevice && input.deviceHash) {
       const { data: dev } = await db
         .from("referral_attributions")
         .select("id")
+        .eq("referrer_customer_id", referrerId)
         .eq("signup_device_hash", input.deviceHash)
         .limit(1);
       if ((dev as { id: string }[] | null)?.length) return { ok: false, reason: "same-device" };
@@ -248,10 +288,18 @@ export async function recordAttribution(
 
 /* ── reward ───────────────────────────────────────────────────────────── */
 
+/** Order statuses that count as confirmed. An operator can skip straight past it. */
+const CONFIRMED_STATUSES: readonly string[] = ["confirmed", "packed", "shipped", "delivered"];
+
 /**
  * Reward the referral tied to an order's customer, IF eligible. Idempotent:
  * claims the pending attribution with a conditional update before crediting, so
  * concurrent calls can never double-pay. No-op when nothing qualifies.
+ *
+ * The order must be confirmed or later and, if paid online, actually paid, so
+ * this runs on both events that can complete that: each status step and the
+ * payment settling. A closed programme pays nothing but leaves the referral
+ * pending, so a pause does not cost anyone a reward they can still earn.
  */
 export async function rewardReferralIfEligible(orderId: string): Promise<void> {
   try {
@@ -260,11 +308,20 @@ export async function rewardReferralIfEligible(orderId: string): Promise<void> {
 
     const { data: orderRow } = await db
       .from("orders")
-      .select("id, customer_id, subtotal_paise")
+      .select("id, customer_id, subtotal_paise, status, payment_method, payment_status")
       .eq("id", orderId)
       .maybeSingle();
-    const order = orderRow as { id: string; customer_id: string | null; subtotal_paise: number } | null;
+    const order = orderRow as {
+      id: string;
+      customer_id: string | null;
+      subtotal_paise: number;
+      status: string;
+      payment_method: string;
+      payment_status: string;
+    } | null;
     if (!order?.customer_id) return;
+    if (!CONFIRMED_STATUSES.includes(order.status)) return;
+    if (order.payment_method === "upi" && order.payment_status !== "paid") return;
 
     const { data: attrRow } = await db
       .from("referral_attributions")
@@ -278,6 +335,7 @@ export async function rewardReferralIfEligible(orderId: string): Promise<void> {
     if (!attr) return;
 
     const config = await getReferralConfig();
+    if (!config.enabled || !(await isFeatureEnabled("referrals"))) return;
 
     // Order must meet the qualifying minimum.
     if (Math.max(0, Math.round(order.subtotal_paise)) < config.minQualifyingOrderPaise) return;

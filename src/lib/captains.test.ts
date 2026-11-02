@@ -7,8 +7,13 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase-admin", () => ({ isSupabaseConfigured: true, supabaseAdmin: () => h.db }));
 vi.mock("@/lib/customer-identity", () => ({ findCustomerByPhone: vi.fn(async () => null) }));
 vi.mock("@/lib/captain-session", () => ({ requireCaptain: vi.fn() }));
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn(),
+  featureOffResponse: () => Response.json({ ok: false, error: "not-found" }, { status: 404 }),
+}));
 
 import { requireCaptain } from "@/lib/captain-session";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import {
   addCapture,
   advancePickup,
@@ -181,7 +186,19 @@ describe("addCapture idempotency", () => {
 
 describe("requireActiveCaptain", () => {
   beforeEach(() => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
     vi.mocked(requireCaptain).mockResolvedValue({ captainId: ID, phone: "9876543210" });
+  });
+
+  it("closes every captain API when the network is switched off", async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(false);
+    withDb(() => ({ data: captainRow() }));
+
+    const res = await requireActiveCaptain();
+
+    expect(isFeatureEnabled).toHaveBeenCalledWith("captain_network");
+    expect((res as Response).status).toBe(404);
+    expect(requireCaptain).not.toHaveBeenCalled();
   });
 
   it("passes an active captain whose phone still matches", async () => {

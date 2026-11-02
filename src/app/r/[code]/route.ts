@@ -5,7 +5,7 @@
  * `getCustomerSession`), so the code never has to survive in the client.
  */
 import { NextResponse } from "next/server";
-import { getReferralConfig } from "@/lib/referrals";
+import { getReferralConfig, isReferralProgrammeOpen } from "@/lib/referrals";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,9 @@ export async function GET(
   const clean = (code || "").trim().toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 16);
   const origin = new URL(request.url).origin;
   const res = NextResponse.redirect(new URL("/", origin));
-  if (clean) {
+  // A link shared before the programme closed still lands on the shop, without
+  // a cookie that could attribute the visitor once it reopens.
+  if (clean && (await isReferralProgrammeOpen())) {
     // Cap the window at ~7 days (or the configured expiry, whichever is smaller)
     // so the cookie doesn't linger and re-trigger capture indefinitely.
     let days = 7;

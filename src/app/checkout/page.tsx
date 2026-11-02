@@ -76,7 +76,13 @@ function isSbiePayUrl(action: string): boolean {
 /** The parts of a rejected order POST that checkout can act on. */
 async function readRejection(
   res: Response,
-): Promise<{ error?: string; reason?: string; variantIds?: string[]; titles?: string[] }> {
+): Promise<{
+  error?: string;
+  reason?: string;
+  variantIds?: string[];
+  titles?: string[];
+  minOrderPaise?: number;
+}> {
   try {
     const body = (await res.json()) as unknown;
     if (typeof body !== "object" || body === null) return {};
@@ -90,6 +96,7 @@ async function readRejection(
       titles: Array.isArray(b.titles)
         ? b.titles.filter((v): v is string => typeof v === "string")
         : undefined,
+      minOrderPaise: typeof b.minOrderPaise === "number" ? b.minOrderPaise : undefined,
     };
   } catch {
     return {};
@@ -523,6 +530,27 @@ export default function CheckoutPage() {
           setSlotId(null);
           setStep(1);
           void refreshRules();
+          setPlacing(false);
+          return;
+        }
+        if (res.status === 409 && rejection.error === "below-minimum") {
+          // The page's copy of the minimum is out of date, or a sale lowered the
+          // cart. Show the server's figure and re-read the rules.
+          const minimum =
+            rejection.minOrderPaise !== undefined
+              ? rejection.minOrderPaise / 100
+              : rules.minOrderValue;
+          toast.error(`Minimum order value is ${INR(minimum)}. Please add a little more to your cart.`);
+          void refreshRules();
+          setPlacing(false);
+          return;
+        }
+        if (res.status === 409 && rejection.error === "not-serviceable") {
+          // The area was switched off while this page was open, or the check
+          // here failed open. Send the customer back to choose an address.
+          toast.error(`We don't deliver to ${selectedAddress.pincode} yet. Please choose another address.`);
+          setServiceable(false);
+          setStep(0);
           setPlacing(false);
           return;
         }

@@ -6,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import type { CommerceRules, DeliverySlot } from "@/types/nutrigreenz";
 
 /**
@@ -41,6 +43,9 @@ export const COMMERCE_RULES: CommerceRules = {
 const PUBLIC_RULES_ENDPOINT = "/api/commerce-rules";
 
 const STORAGE_KEY = "ng.commerce.v1";
+
+/** Quiet re-reads are skipped when the rules were read this recently. */
+const REREAD_AFTER_MS = 30_000;
 
 /**
  * Whether `rules.deliverySlots` is the shop's live list yet: "loading" until
@@ -167,9 +172,12 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
   const [rules, setRules] = useState<CommerceRules>(COMMERCE_RULES);
   const [hydrated, setHydrated] = useState(false);
   const [slotsStatus, setSlotsStatus] = useState<SlotsStatus>("loading");
+  const pathname = usePathname();
+  const lastRead = useRef(0);
 
   /** Fetch the LIVE Super-Admin config; resolves to whether it was applied. */
-  const fetchLive = useCallback(async (isCancelled: () => boolean = () => false) => {
+  const fetchLive = useCallback(async (isCancelled: () => boolean = () => false, quiet = false) => {
+    lastRead.current = Date.now();
     try {
       const res = await fetch(PUBLIC_RULES_ENDPOINT, { cache: "no-store" });
       if (!res.ok) throw new Error(`status ${res.status}`);
@@ -180,7 +188,7 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       setSlotsStatus("live");
     } catch {
       /* offline / unavailable — keep the cached/default rules, but say so */
-      if (!isCancelled()) setSlotsStatus("failed");
+      if (!isCancelled() && !quiet) setSlotsStatus("failed");
     }
   }, []);
 
@@ -197,6 +205,28 @@ export function CommerceProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [fetchLive]);
+
+  /*
+   * Re-read on the way into the cart or checkout, and when a tab comes back.
+   *
+   * This provider sits in the root layout, so it mounts once per visit. A tab
+   * left open kept the rules it was opened with and went on showing a delivery
+   * fee or minimum the server had stopped using, and because the server prices
+   * every order from the live rules, the customer could be charged a total
+   * they were never shown. Quiet on purpose: a failed re-read keeps what is on
+   * screen rather than flipping checkout's slot list into its error state.
+   */
+  useEffect(() => {
+    const reread = () => {
+      if (Date.now() - lastRead.current >= REREAD_AFTER_MS) void fetchLive(undefined, true);
+    };
+    if (pathname === "/cart" || pathname === "/checkout") reread();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") reread();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [pathname, fetchLive]);
 
   const refreshRules = useCallback(async () => {
     setSlotsStatus("loading");

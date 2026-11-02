@@ -186,9 +186,11 @@ export async function GET(request: Request): Promise<Response> {
   return Response.json(
     { ok: true, location, serviceable },
     {
-      // Pincode→locality does not change. Cache hard at the edge; the
-      // serviceable flag rides along and is re-derived within the minute.
-      headers: { "cache-control": "public, max-age=60, stale-while-revalidate=86400" },
+      // Pincode→locality does not change, but the serviceable flag does, and a
+      // day of stale-while-revalidate let it ride along for up to 24 hours. The
+      // process cache above already keeps India Post off the repeat lookups, so
+      // the response itself does not need caching.
+      headers: { "cache-control": "no-store" },
     },
   );
 }
