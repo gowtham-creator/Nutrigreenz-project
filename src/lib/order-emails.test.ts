@@ -98,6 +98,63 @@ describe("order email - Payment line", () => {
   });
 });
 
+describe("order email - totals", () => {
+  async function emailText(overrides: Record<string, unknown>): Promise<string> {
+    m.getOrder.mockResolvedValue({ ...ORDER, ...overrides });
+    await sendOrderPlacedEmail("ord-1");
+    const html = m.sendEmail.mock.calls[0][0].html as string;
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  }
+
+  async function ladderFor(overrides: Record<string, unknown>): Promise<string> {
+    const text = await emailText(overrides);
+    return text.slice(text.indexOf("Subtotal"), text.indexOf("Place of supply"));
+  }
+
+  it("keeps tax out of the ladder and puts the amounts in the GST note", async () => {
+    const text = await emailText({});
+    const ladder = text.slice(text.indexOf("Subtotal"), text.indexOf("Prices include GST"));
+    expect(ladder).not.toMatch(/CGST|SGST|IGST|Total excluding tax/);
+    expect(text).toContain("Prices include GST at 5% (CGST ₹52.38 + SGST ₹52.38). Place of supply: Telangana.");
+  });
+
+  it("gives the same note as the PDF outside Telangana and for tax on top", async () => {
+    const elsewhere = { addressSnapshot: { state: "Karnataka" } };
+    expect(await emailText(elsewhere)).toContain("(IGST ₹104.76). Place of supply: Karnataka.");
+
+    m.sendEmail.mockClear();
+    const onTop = { ...elsewhere, taxPaise: 11_000, totalPaise: 231_000 };
+    const text = await emailText(onTop);
+    expect(text).toContain("Tax is added to the prices shown above. Place of supply: Karnataka.");
+    expect(text).not.toContain("Prices include GST");
+  });
+
+  it("closes a paid order on Amount paid", async () => {
+    const text = await ladderFor({});
+    expect(text).toContain("Total ₹2,200.00");
+    expect(text).toContain("Amount paid ₹2,200.00");
+    expect(text).not.toContain("Amount due");
+  });
+
+  it("closes an unpaid order on Amount due", async () => {
+    const text = await ladderFor({ paymentStatus: "pending", paidAt: null });
+    expect(text).toContain("Amount due ₹2,200.00");
+    expect(text).not.toContain("Amount paid");
+  });
+
+  it("takes the points off once, matching the PDF", async () => {
+    // discount_paise carries the coupon AND the points.
+    const text = await ladderFor({
+      discountPaise: 13_000,
+      loyaltyRedeemedPaise: 3_000,
+      couponCode: "HARVEST10",
+      totalPaise: 207_000,
+    });
+    expect(text).toContain("Discount (HARVEST10) -₹100.00");
+    expect(text).toContain("Loyalty credit -₹30.00");
+  });
+});
+
 describe("order email - date", () => {
   // Production servers run in UTC; run this the same way on any machine.
   const tz = process.env.TZ;

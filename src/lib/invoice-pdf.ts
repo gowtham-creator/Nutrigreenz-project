@@ -3,7 +3,8 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { OrderWithDetail } from "@/lib/orders";
 import { NOTO_SANS_REGULAR_B64, NOTO_SANS_BOLD_B64 } from "@/lib/invoice-fonts";
-import { gstFor } from "@/lib/gst";
+import { gstNote } from "@/lib/gst";
+import { invoiceLadder, money, type DocumentKind } from "@/lib/invoice-ladder";
 import { paymentMethodLabel } from "@/lib/payment-label";
 
 /**
@@ -11,12 +12,14 @@ import { paymentMethodLabel } from "@/lib/payment-label";
  *
  * Modelled on the Stripe-style billing documents the client supplied as the
  * reference: a plain white page, one accent-free column of label/value pairs, a
- * large "amount due / amount paid" headline, a borderless line-item table and a
- * right-aligned totals ladder. No cards, no coloured banding — a billing document
- * has to read as a record, not as marketing.
+ * large headline saying where the money stands, a borderless line-item table and
+ * a right-aligned totals ladder. No cards, no coloured banding — a billing
+ * document has to read as a record, not as marketing.
  *
  * Two documents, deliberately:
- *   · INVOICE — what is owed. Issued when the order is placed.
+ *   · INVOICE — what the order came to, and what is still owed if anything. It
+ *     can be downloaded at any time, so it has to stop saying "due" once the
+ *     order is paid or cancelled.
  *   · RECEIPT — proof of payment. Carries the payment method and "amount paid",
  *     which is what a customer actually needs when claiming or reconciling.
  *
@@ -42,28 +45,28 @@ const SELLER = {
 };
 
 /**
- * The registered GSTIN, from the environment.
+ * The company's registered GSTIN.
  *
- * Deliberately not a constant in the source, and deliberately absent by
- * default. Printing a GSTIN the business does not hold is a false statutory
- * declaration on a tax document, so an unset value means the line is omitted
- * entirely — never filled with a placeholder.
- *
- * Format-checked before use: a typo'd GSTIN on an invoice is as wrong as an
- * invented one, and a customer's accountant will reject it either way.
+ * A constant because it is public, printed on every invoice, and must appear
+ * whether or not an environment is configured: a billing document from a
+ * registered business should not lose its GSTIN to a missing variable.
  */
+const SELLER_GSTIN = "36AALCN3064D1ZJ";
+
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
-function sellerGstin(): string | null {
+/**
+ * The GSTIN to print: SELLER_GSTIN from the environment when it is valid,
+ * otherwise the constant.
+ *
+ * The override is format-checked because a typo'd GSTIN on an invoice is as wrong
+ * as an invented one, and a customer's accountant will reject it either way. A
+ * bad value is ignored rather than printed.
+ */
+function sellerGstin(): string {
   const raw = process.env.SELLER_GSTIN?.trim().toUpperCase();
-  return raw && GSTIN_RE.test(raw) ? raw : null;
+  return raw && GSTIN_RE.test(raw) ? raw : SELLER_GSTIN;
 }
-
-const money = (paise: number) =>
-  `₹${(Math.round(paise) / 100).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 
 /**
  * Normalise text for the embedded font.
@@ -79,15 +82,6 @@ function safe(text: string): string {
     .replace(/[’‘]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/[^ -ÿ₹·°]/g, "");
-}
-
-function longDate(iso: string | null): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  // The server runs in UTC; the invoice carries the date in India.
-  return Number.isNaN(d.getTime())
-    ? "-"
-    : d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 function snap(src: Record<string, unknown> | null, key: string): string {
@@ -148,11 +142,10 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
-type Kind = "invoice" | "receipt";
-
 /** Shared layout for both documents — they differ only in heading and meta. */
-async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
+async function build(order: OrderWithDetail, kind: DocumentKind): Promise<Uint8Array> {
   const isReceipt = kind === "receipt";
+  const ladder = invoiceLadder(order, kind);
   const doc = await PDFDocument.create();
   // Required before embedding a custom (non-standard) font.
   doc.registerFontkit(fontkit);
@@ -230,13 +223,14 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     ? [
         ["Invoice number", order.orderNumber],
         ["Receipt number", `${order.orderNumber}-R`],
-        ["Date paid", longDate(order.paidAt ?? order.placedAt ?? order.createdAt)],
+        ["Date paid", ladder.paidOn],
         ["Payment method", paymentMethodLabel(order)],
       ]
     : [
         ["Invoice number", order.orderNumber],
-        ["Date of issue", longDate(order.placedAt ?? order.createdAt)],
-        ["Date due", longDate(order.placedAt ?? order.createdAt)],
+        ["Date of issue", ladder.issuedOn],
+        // A due date is a claim that money is owed, so it goes with the money.
+        ...(ladder.due ? ([["Date due", ladder.issuedOn]] satisfies [string, string][]) : []),
       ];
 
   for (const [label, value] of metaRows) {
@@ -273,9 +267,7 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     .filter(Boolean)
     .flatMap((l) => wrap(l, body, 8.5, colRW));
 
-  // The GSTIN belongs with the seller block, and only when we actually hold one.
-  const gstin = sellerGstin();
-  const sellerLines = [...SELLER.lines, ...(gstin ? [`GSTIN: ${gstin}`] : [])].flatMap((l) =>
+  const sellerLines = [...SELLER.lines, `GSTIN: ${sellerGstin()}`].flatMap((l) =>
     wrap(l, body, 8.5, colLW),
   );
   const rows = Math.max(sellerLines.length, buyer.length);
@@ -288,15 +280,7 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
   y -= 26;
 
   /* ── amount headline ────────────────────────────────────────────────── */
-  const when = longDate(order.placedAt ?? order.createdAt);
-  put(
-    isReceipt
-      ? `${money(order.totalPaise)} paid on ${when}`
-      : `${money(order.totalPaise)} due ${when}`,
-    M,
-    y,
-    { f: bold, size: 15 },
-  );
+  put(ladder.headline, M, y, { f: bold, size: 15, max: W - 2 * M });
   y -= 40;
 
   /* ── line items ─────────────────────────────────────────────────────── */
@@ -350,50 +334,27 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
     y -= 15;
   };
 
-  line("Subtotal", money(order.subtotalPaise));
-  if (order.discountPaise > 0) {
-    line(order.couponCode ? `Discount (${order.couponCode})` : "Discount", `-${money(order.discountPaise)}`);
-  }
-  if (order.loyaltyRedeemedPaise > 0) {
-    line("Loyalty credit", `-${money(order.loyaltyRedeemedPaise)}`);
-  }
-  line("Delivery", order.shippingPaise > 0 ? money(order.shippingPaise) : "Free");
-
   /*
-   * GST, broken out.
+   * GST as a note, not as rows.
    *
-   * The PDF used to print a single "Tax / Included" line while the order email
-   * showed a full CGST/SGST breakdown of the same order — two documents for one
-   * purchase, disagreeing about tax. The PDF is the one a customer submits for
-   * a claim, and it was the less complete of the two.
-   *
-   * Both now read from the SAME gstFor(), so they cannot drift apart. Catalogue
-   * prices are GST-inclusive, so the tax is back-computed out of the payable
-   * amount rather than added on top — "Total excluding tax" plus the components
-   * reconstructs the total exactly.
+   * This ladder used to break every order into "Total excluding tax" plus
+   * CGST/SGST or IGST rows. The owner wants the ladder kept to what is paid, but
+   * a tax invoice must still state the tax amount, so the amounts moved into the
+   * small line below, alongside the place of supply that a GST invoice also has
+   * to carry. invoiceLadder() and gstNote() are shared with the order email, so
+   * the two documents still cannot disagree.
    */
-  const gst = gstFor(order);
-  line("Total excluding tax", money(gst.taxablePaise));
-  if (gst.intraState) {
-    line(`CGST (${gst.halfRatePercent}%)`, money(gst.cgstPaise));
-    line(`SGST (${gst.halfRatePercent}%)`, money(gst.sgstPaise));
-  } else {
-    // An inter-state supply is IGST by law; printing CGST/SGST would be wrong.
-    line(`IGST (${gst.ratePercent}%)`, money(gst.igstPaise));
-  }
-  line("Total", money(order.totalPaise));
-  line(isReceipt ? "Amount paid" : "Amount due", money(order.totalPaise), true);
+  for (const r of ladder.rows) line(r.label, r.value, r.strong);
 
-  /* Place of supply is a required particular on a GST invoice. */
+  // Wrapped, never cut with `max`: a truncated tax amount is worse than a second
+  // line. All of it is reserved up front so it cannot run into the footer.
   y -= 4;
-  ensure(12);
-  put(
-    `Prices include GST at ${gst.ratePercent}%. Place of supply: ${gst.placeOfSupply}.`,
-    M,
-    y,
-    { size: 7.8, color: MUTED, max: W - 2 * M },
-  );
-  y -= 12;
+  const note = wrap(gstNote(order), body, 7.8, W - 2 * M);
+  ensure(note.length * 12);
+  for (const l of note) {
+    put(l, M, y, { size: 7.8, color: MUTED });
+    y -= 12;
+  }
 
   /* ── footer ─────────────────────────────────────────────────────────── */
   /*
@@ -403,9 +364,7 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
    * document that had silently lost its second page's worth of content.
    */
   const fy = M + 16;
-  const summary = isReceipt
-    ? `${order.orderNumber}-R - ${money(order.totalPaise)} paid on ${when}`
-    : `${order.orderNumber} - ${money(order.totalPaise)} due ${when}`;
+  const summary = `${order.orderNumber}${isReceipt ? "-R" : ""} - ${ladder.headline}`;
 
   pages.forEach((p, i) => {
     // `put`/`rule` write to the current page, so point them at this one.
@@ -418,7 +377,7 @@ async function build(order: OrderWithDetail, kind: Kind): Promise<Uint8Array> {
   return doc.save();
 }
 
-/** The invoice — what is owed. */
+/** The invoice — what the order came to, and what is still owed if anything. */
 export function buildInvoicePdf(order: OrderWithDetail): Promise<Uint8Array> {
   return build(order, "invoice");
 }

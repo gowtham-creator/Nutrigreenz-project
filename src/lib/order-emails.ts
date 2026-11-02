@@ -15,7 +15,8 @@ import { render, type NotifyType } from "@/lib/notification-templates";
 import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
 import { billingAttachments } from "@/lib/invoice-pdf";
-import { gstFor } from "@/lib/gst";
+import { gstNote } from "@/lib/gst";
+import { invoiceLadder, type LadderRow } from "@/lib/invoice-ladder";
 import { paymentMethodLabel } from "@/lib/payment-label";
 import { sendAdminOrderAlert, sendAdminOrderCancelledAlert } from "@/lib/admin-order-alerts";
 
@@ -32,10 +33,10 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://nutrigreenz.farm";
 /**
  * Money for display, always to two decimals.
  *
- * Rounding to whole rupees broke the tax ladder: the taxable value and the
- * CGST/SGST halves would each round independently and stop summing to the total,
- * and the same order rendered different figures in the email than in the PDF.
- * A tax document has to reconcile line by line.
+ * Rounding to whole rupees broke the totals ladder: each row would round
+ * independently and stop summing to the total, and the same order rendered
+ * different figures in the email than in the PDF. A billing document has to
+ * reconcile line by line.
  */
 const rupees = (paise: number) =>
   `₹${(Math.round(paise) / 100).toLocaleString("en-IN", {
@@ -270,7 +271,6 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
   const isReceipt = kind === "placed" || kind === "confirmed";
   const paid = order.paymentStatus === "paid";
   const isCod = order.paymentMethod === "cod";
-  const gst = gstFor(order);
 
   // The server runs in UTC; an order placed after midnight in India is dated
   // that day, not the day before.
@@ -296,23 +296,12 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
     )
     .join("");
 
-  /**
-   * One line of the totals ladder. `always` keeps a zero row visible: on a tax
-   * invoice a missing tax line reads as an error rather than as a saving, so the
-   * full ladder is printed even when a value is nil.
-   */
-  const row = (
-    label: string,
-    paise: number,
-    opts: { negative?: boolean; strong?: boolean; always?: boolean; zeroText?: string } = {},
-  ) => {
-    if (paise <= 0 && !opts.always) return "";
-    const value =
-      paise <= 0 && opts.zeroText ? opts.zeroText : `${opts.negative ? "-" : ""}${rupees(paise)}`;
-    const weight = opts.strong ? "font-weight:700;" : "";
-    const size = opts.strong ? "15px" : "13.5px";
+  /** One line of the totals ladder, which is the same one the PDF prints. */
+  const row = ({ label, value, strong }: LadderRow) => {
+    const weight = strong ? "font-weight:700;" : "";
+    const size = strong ? "15px" : "13.5px";
     return `<tr>
-      <td style="padding:11px 0;border-top:1px solid ${LINE};font-size:${size};color:${opts.strong ? INK : MUTED};${weight}">${label}</td>
+      <td style="padding:11px 0;border-top:1px solid ${LINE};font-size:${size};color:${strong ? INK : MUTED};${weight}">${escapeHtml(label)}</td>
       <td style="padding:11px 0;border-top:1px solid ${LINE};font-size:${size};color:${INK};text-align:right;white-space:nowrap;${weight}">${value}</td>
     </tr>`;
   };
@@ -455,18 +444,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
               ${itemRows}
               <tr><td colspan="2" style="height:14px"></td></tr>
-              ${row("Subtotal", order.subtotalPaise, { always: true })}
-              ${row(order.couponCode ? `Discount (${escapeHtml(order.couponCode)})` : "Discount", order.discountPaise, { negative: true })}
-              ${row("Loyalty credit", order.loyaltyRedeemedPaise, { negative: true })}
-              ${row("Delivery", order.shippingPaise, { always: true, zeroText: "Free" })}
-              ${row("Total excluding tax", gst.taxablePaise, { always: true })}
-              ${
-                gst.intraState
-                  ? `${row(`CGST (${gst.halfRatePercent}%)`, gst.cgstPaise, { always: true })}
-              ${row(`SGST (${gst.halfRatePercent}%)`, gst.sgstPaise, { always: true })}`
-                  : row(`IGST (${gst.ratePercent}%)`, gst.igstPaise, { always: true })
-              }
-              ${row(paid ? "Amount paid" : "Total", order.totalPaise, { always: true, strong: true })}
+              ${invoiceLadder(order, paid ? "receipt" : "invoice").rows.map(row).join("")}
             </table>
           </td>
         </tr>`
@@ -477,7 +455,7 @@ function orderEmailHtml(order: OrderWithDetail, kind: Kind): string {
           isReceipt
             ? `<tr>
           <td style="padding:10px 0 0;font-size:11.5px;color:${MUTED};line-height:1.6">
-            Prices include GST at ${gst.ratePercent}%. Place of supply: ${escapeHtml(gst.placeOfSupply)}.
+            ${escapeHtml(gstNote(order))}
           </td>
         </tr>`
             : ""
