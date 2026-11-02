@@ -23,7 +23,7 @@ import {
   resolveCustomer,
   type CustomerProvider,
 } from "@/lib/customer-identity";
-import { recordAttribution } from "@/lib/referrals";
+import { deviceFingerprint, recordAttribution } from "@/lib/referrals";
 
 /**
  * Best-effort referral attribution: when the caller carries an `ng_ref` cookie
@@ -40,7 +40,7 @@ async function maybeCaptureReferral(
   try {
     const h = await headers();
     const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-    const deviceHash = h.get("user-agent")?.slice(0, 200) ?? null;
+    const deviceHash = deviceFingerprint(ip, h.get("user-agent"));
     await recordAttribution({ refereeCustomerId: customerId, code, ip, deviceHash });
   } catch {
     /* best-effort */

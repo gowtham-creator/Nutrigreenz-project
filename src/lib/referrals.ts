@@ -10,6 +10,7 @@
  * discount. All money is INTEGER PAISE. Service-role only (RLS on / no policies).
  */
 import "server-only";
+import { createHash } from "node:crypto";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 import { getLoyaltyConfig } from "@/lib/rewards";
 import { getFeatureFlags, isFeatureEnabled, type FeatureFlagMap } from "@/lib/feature-flags";
@@ -176,6 +177,21 @@ export async function resolveCodeToReferrer(code: string): Promise<string | null
 /* ── attribution ──────────────────────────────────────────────────────── */
 
 /**
+ * What the same-device guard compares: the network and the browser together,
+ * hashed. The user-agent alone is not a device. Every iPhone on one iOS version
+ * sends the same string, so comparing that blocked a stranger's genuine referral
+ * as soon as anyone with the same phone had been referred. Null when either part
+ * is missing, which skips the guard rather than matching on half a fingerprint.
+ */
+export function deviceFingerprint(
+  ip: string | null | undefined,
+  userAgent: string | null | undefined,
+): string | null {
+  if (!ip || !userAgent) return null;
+  return createHash("sha256").update(`${ip}|${userAgent}`).digest("hex");
+}
+
+/**
  * Record ONE attribution (referee → referrer). Enforces: programme enabled,
  * referee not already attributed, no self-referral, and the configured
  * anti-abuse guards (mobile dedupe, same-device block). Never throws — returns
@@ -230,11 +246,15 @@ export async function recordAttribution(
       }
     }
 
-    // Same-device block.
+    // Same-device block: one referrer cannot collect twice from one device.
+    // Scoped to the referrer because the attack is someone referring themselves;
+    // two households behind one router using different codes are fine. The
+    // referrer's own device is never recorded, so their first fake account passes.
     if (config.blockSameDevice && input.deviceHash) {
       const { data: dev } = await db
         .from("referral_attributions")
         .select("id")
+        .eq("referrer_customer_id", referrerId)
         .eq("signup_device_hash", input.deviceHash)
         .limit(1);
       if ((dev as { id: string }[] | null)?.length) return { ok: false, reason: "same-device" };

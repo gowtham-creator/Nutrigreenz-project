@@ -26,7 +26,7 @@ export interface ReferralProgramConfig {
   expiryDays: number;
   /** Master switch for the whole referral programme. */
   enabled: boolean;
-  /** Reject referee sign-ups from the referrer's device fingerprint. */
+  /** Reject a referrer's repeat sign-ups from one device and network. */
   blockSameDevice: boolean;
   /** One reward per unique mobile number. */
   dedupeMobile: boolean;
