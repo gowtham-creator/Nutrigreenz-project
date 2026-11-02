@@ -8,11 +8,11 @@ import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-sh
 import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { CaptainAllocationModal } from "@/components/ng/admin/captain-allocation-modal";
+import { CaptainAnalyticsPanel } from "@/components/ng/admin/captains/captain-analytics-panel";
 import { CaptainModal, Switch, type CaptainDraft } from "./captain-modal";
 import type {
   Captain,
   CaptainCapture,
-  CaptainCaptureItem,
   CaptainSettlement,
   CaptainStats,
   CaptainWithStats,
@@ -93,15 +93,6 @@ function fmtDay(value: string): string {
   });
 }
 
-/** "3 items · Spinach, Kale +2" — a compact one-line summary of a capture. */
-function itemsSummary(items: CaptainCaptureItem[]): string {
-  if (items.length === 0) return "No items";
-  const qty = items.reduce((n, i) => n + (Number(i.qty) || 0), 0);
-  const titles = items.map((i) => i.title).filter(Boolean).slice(0, 3).join(", ");
-  const more = items.length > 3 ? ` +${items.length - 3}` : "";
-  return `${qty} item${qty === 1 ? "" : "s"}${titles ? ` · ${titles}${more}` : ""}`;
-}
-
 async function sendJson<T>(url: string, method: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
@@ -124,10 +115,6 @@ function draftToPayload(draft: CaptainDraft) {
     commissionPercent: commission === "" ? 0 : Number(commission),
     active: draft.active,
   };
-}
-
-function payTone(mode: CaptainCapture["payMode"]): "info" | "success" {
-  return mode === "upi" ? "success" : "info";
 }
 
 export default function AdminCaptains() {
@@ -532,6 +519,12 @@ export default function AdminCaptains() {
         </div>
       </Card>
 
+      <div className="mt-6">
+        <Card title="Sales analytics">
+          <CaptainAnalyticsPanel />
+        </Card>
+      </div>
+
       <CaptainModal
         open={modalOpen}
         captain={editing}
@@ -629,7 +622,6 @@ function CaptainDrawer({
   onAllocate: (captain: Captain) => void;
 }) {
   const c = detail?.captain ?? null;
-  const today = detail?.todayStats ?? null;
   // Escape closes the panel, like the other admin overlays.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -645,14 +637,14 @@ function CaptainDrawer({
         onClick={onClose}
         className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-sm cursor-pointer"
       />
-      <aside className="relative w-full max-w-md h-dvh bg-ng-cream border-l border-ng-line-soft overflow-y-auto shadow-2xl">
+      <aside className="relative w-full max-w-6xl h-dvh bg-ng-cream border-l border-ng-line-soft overflow-y-auto shadow-2xl">
         <header className="sticky top-0 z-10 bg-ng-cream border-b border-ng-line-soft px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-          <h2 className="font-display text-[18px] text-ng-forest-deep">Captain details</h2>
+          <h2 className="font-display text-[24px] text-ng-forest-deep">Captain details</h2>
           <div className="flex items-center gap-1.5">
             {c ? (
               <button
                 onClick={() => onAllocate(c)}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 text-[14px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
                 <UiIcon name="bag" size={13} className="text-ng-forest" />
                 Products
@@ -661,7 +653,7 @@ function CaptainDrawer({
             {c ? (
               <button
                 onClick={() => onEdit(c)}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-3 text-[12.5px] hover:bg-ng-paper transition-colors cursor-pointer"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-ng-line text-ng-ink font-medium px-4 text-[14px] hover:bg-ng-paper transition-colors cursor-pointer"
               >
                 <UiIcon name="edit" size={13} className="text-ng-forest" />
                 Edit
@@ -677,7 +669,7 @@ function CaptainDrawer({
           </div>
         </header>
 
-        <div className="px-4 sm:px-6 py-6 space-y-6">
+        <div className="px-4 sm:px-8 py-6 space-y-7">
           {loading ? (
             <div className="space-y-3">
               <div className="h-14 w-14 rounded-full bg-ng-line-soft animate-pulse" />
@@ -694,13 +686,13 @@ function CaptainDrawer({
           ) : (
             <>
               <div className="flex items-center gap-4">
-                <div className="size-14 rounded-full bg-ng-sage text-ng-forest-deep flex items-center justify-center font-display text-[22px] shrink-0">
+                <div className="size-16 rounded-full bg-ng-sage text-ng-forest-deep flex items-center justify-center font-display text-[26px] shrink-0">
                   {initials(c.name)}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-[18px] text-ng-forest-deep truncate">{c.name}</div>
+                  <div className="font-display text-[28px] leading-tight text-ng-forest-deep truncate">{c.name}</div>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className="font-mono text-[12.5px] tabular-nums font-medium text-ng-ink-muted">
+                    <span className="font-mono text-[15px] tabular-nums font-medium text-ng-ink-muted">
                       {c.phone}
                     </span>
                     <Pill tone={c.active ? "success" : "neutral"}>{c.active ? "Active" : "Inactive"}</Pill>
@@ -708,88 +700,15 @@ function CaptainDrawer({
                 </div>
               </div>
 
-              <dl className="grid grid-cols-2 gap-3">
+              <dl className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Field icon="location" label="Area" value={c.area} />
                 <Field icon="shop-bold" label="Stall" value={c.stall} />
                 <Field icon="tag-price-bold" label="Commission" value={`${c.commissionPercent}%`} />
                 <Field icon="calendar-bold" label="Joined" value={fmtDay(c.createdAt)} />
               </dl>
 
-              {today ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  <Mini label="Sales today" value={String(today.count)} />
-                  <Mini label="Takings today" value={inr(today.gmvPaise)} />
-                  <Mini label="Cash / UPI" value={`${inr(today.cashPaise)} / ${inr(today.upiPaise)}`} />
-                </div>
-              ) : null}
-
-              <Section icon="location" title="Communities">
-                {c.communities.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {c.communities.map((name) => (
-                      <CommunityChip key={name} name={name} />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyLine>No communities assigned yet.</EmptyLine>
-                )}
-              </Section>
-
-              <Section
-                icon="cart-large-2-bold"
-                title={`Recent sales (${detail?.captures.length ?? 0})`}
-              >
-                {detail && detail.captures.length > 0 ? (
-                  <ul className="space-y-2">
-                    {detail.captures.map((cap) => (
-                      <li key={cap.id} className="rounded-xl border border-ng-line-soft bg-ng-paper p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-semibold text-ng-ink truncate">
-                                {cap.customerName || "Walk-up customer"}
-                              </span>
-                              <Pill tone={payTone(cap.payMode)}>{cap.payMode}</Pill>
-                            </div>
-                            <div className="mt-0.5 font-mono text-[11.5px] tabular-nums font-medium text-ng-ink-muted">
-                              {cap.customerMobile || "-"}
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="font-mono text-[13px] tabular-nums font-semibold text-ng-forest-deep">
-                              {inr(cap.totalPaise)}
-                            </div>
-                            <div className="text-[11px] font-medium text-ng-ink-soft">
-                              {fmtDateTime(cap.capturedAt)}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between gap-3 border-t border-ng-line-soft/60 pt-2">
-                          <span className="text-[11.5px] font-medium text-ng-ink-muted truncate">
-                            {itemsSummary(cap.items)}
-                          </span>
-                          {cap.linkedCustomerId ? (
-                            <span className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider text-ng-success shrink-0">
-                              <Icon name="link-round-bold" size={12} />
-                              Linked
-                            </span>
-                          ) : (
-                            <span className="text-[10.5px] font-bold uppercase tracking-wider text-ng-ink-soft shrink-0">
-                              Guest
-                            </span>
-                          )}
-                        </div>
-                        {cap.community ? (
-                          <div className="mt-1.5 text-[11px] font-medium text-ng-ink-soft">
-                            {cap.community}
-                          </div>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <EmptyLine>No sales recorded yet.</EmptyLine>
-                )}
+              <Section icon="graph-up-bold" title="Sales">
+                <CaptainAnalyticsPanel key={c.id} captainId={c.id} />
               </Section>
 
               <Section
@@ -797,11 +716,11 @@ function CaptainDrawer({
                 title={`Recent settlements (${detail?.settlements.length ?? 0})`}
               >
                 {detail && detail.settlements.length > 0 ? (
-                  <ul className="space-y-2">
+                  <ul className="grid gap-3 lg:grid-cols-2">
                     {detail.settlements.map((s) => (
-                      <li key={s.id} className="rounded-xl border border-ng-line-soft bg-ng-paper p-3">
+                      <li key={s.id} className="rounded-2xl border border-ng-line-soft bg-ng-paper p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="text-[12.5px] font-semibold text-ng-ink">
+                          <span className="text-[15px] font-semibold text-ng-ink">
                             {fmtDay(s.settleDate)}
                           </span>
                           <VarianceValue paise={s.variancePaise} />
@@ -832,7 +751,7 @@ function CaptainDrawer({
 function VarianceValue({ paise }: { paise: number }) {
   if (paise === 0) {
     return (
-      <span className="font-mono tabular-nums text-[12px] font-semibold text-ng-ink-muted">
+      <span className="font-mono tabular-nums text-[14px] font-semibold text-ng-ink-muted">
         Balanced
       </span>
     );
@@ -841,7 +760,7 @@ function VarianceValue({ paise }: { paise: number }) {
   return (
     <span
       className={cn(
-        "font-mono tabular-nums text-[12px] font-semibold",
+        "font-mono tabular-nums text-[14px] font-semibold",
         short ? "text-ng-terracotta" : "text-ng-success",
       )}
     >
@@ -853,23 +772,12 @@ function VarianceValue({ paise }: { paise: number }) {
 
 function Field({ icon, label, value }: { icon: string; label: string; value: string | null }) {
   return (
-    <div className="rounded-xl border border-ng-line-soft bg-ng-paper p-3">
-      <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-ng-ink-muted">
-        <Icon name={icon} size={13} className="text-ng-forest" />
+    <div className="rounded-2xl border border-ng-line-soft bg-ng-paper p-4">
+      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-ng-ink-muted">
+        <Icon name={icon} size={15} className="text-ng-forest" />
         {label}
       </div>
-      <div className="mt-1 text-[13px] font-semibold text-ng-ink truncate">{value || "-"}</div>
-    </div>
-  );
-}
-
-function Mini({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-ng-line-soft bg-ng-paper p-3 text-center">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-ng-ink-muted">{label}</div>
-      <div className="mt-1 font-mono text-[13px] tabular-nums font-semibold text-ng-forest-deep truncate">
-        {value}
-      </div>
+      <div className="mt-1 text-[16px] font-semibold text-ng-ink truncate">{value || "-"}</div>
     </div>
   );
 }
@@ -877,8 +785,8 @@ function Mini({ label, value }: { label: string; value: string }) {
 function MiniRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-[11px] font-medium text-ng-ink-muted">{label}</span>
-      <span className="font-mono text-[11.5px] tabular-nums font-semibold text-ng-ink">{value}</span>
+      <span className="text-[13.5px] font-medium text-ng-ink-muted">{label}</span>
+      <span className="font-mono text-[14px] tabular-nums font-semibold text-ng-ink">{value}</span>
     </div>
   );
 }
@@ -894,8 +802,8 @@ function Section({
 }) {
   return (
     <section>
-      <h3 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted mb-2.5">
-        <Icon name={icon} size={15} className="text-ng-forest" />
+      <h3 className="flex items-center gap-2 font-display text-[20px] text-ng-forest-deep mb-3">
+        <Icon name={icon} size={18} className="text-ng-forest" />
         {title}
       </h3>
       {children}
@@ -905,7 +813,7 @@ function Section({
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[12px] font-medium text-ng-ink-muted rounded-xl border border-dashed border-ng-line-soft px-3 py-3">
+    <p className="text-[14px] font-medium text-ng-ink-muted rounded-xl border border-dashed border-ng-line-soft px-4 py-4">
       {children}
     </p>
   );

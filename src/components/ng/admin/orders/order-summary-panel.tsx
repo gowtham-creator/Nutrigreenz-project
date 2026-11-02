@@ -126,7 +126,7 @@ function SlotBreakdown({ summary }: { summary: PeriodSummary }) {
 }
 
 /** Orders per IST day: a bar each, today's in full colour, count above. */
-function DayBars({ days }: { days: PeriodSummary["daily"] }) {
+export function DayBars({ days, noun = "order" }: { days: PeriodSummary["daily"]; noun?: string }) {
   const max = Math.max(1, ...days.map((d) => d.orders));
   const many = days.length > 10;
   const label = (day: string) => {
@@ -141,7 +141,7 @@ function DayBars({ days }: { days: PeriodSummary["daily"] }) {
   return (
     <div
       role="img"
-      aria-label={days.map((d) => `${d.day}: ${d.orders} order${d.orders === 1 ? "" : "s"}`).join(", ")}
+      aria-label={days.map((d) => `${d.day}: ${d.orders} ${noun}${d.orders === 1 ? "" : "s"}`).join(", ")}
       className="flex h-44 items-stretch gap-[3px]"
     >
       {days.map((d, i) => {
@@ -153,7 +153,7 @@ function DayBars({ days }: { days: PeriodSummary["daily"] }) {
           <div key={d.day} className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <div className="relative w-full flex-1">
               <div
-                title={`${d.orders} order${d.orders === 1 ? "" : "s"} · ${formatPaise(d.bookedPaise)}`}
+                title={`${d.orders} ${noun}${d.orders === 1 ? "" : "s"} · ${formatPaise(d.bookedPaise)}`}
                 className={cn("absolute inset-x-0 bottom-0 rounded-t-[3px]", d.orders === 0 && "bg-ng-line-soft")}
                 style={{
                   height: d.orders > 0 ? `${pct}%` : "2px",
