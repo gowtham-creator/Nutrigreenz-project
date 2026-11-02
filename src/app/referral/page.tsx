@@ -109,10 +109,10 @@ export default function ReferralPage() {
     },
     {
       n: "02",
-      title: friendGets ? `They get ₹${friendGets} off` : "They get a welcome discount",
+      title: friendGets ? `They get ₹${friendGets} credit` : "They get wallet credit",
       body: t?.minOrder
-        ? `Your friend saves on their first order over ₹${t.minOrder.toLocaleString("en-IN")}.`
-        : "Your friend saves on their first order with you.",
+        ? `It lands in your friend's wallet once their first order over ₹${t.minOrder.toLocaleString("en-IN")} completes.`
+        : "It lands in your friend's wallet once their first order completes.",
       icon: "tag-price-bold",
       block: "bg-ng-clay/15 border-ng-clay/30",
       num: "text-ng-clay-deep",
@@ -129,7 +129,7 @@ export default function ReferralPage() {
     },
   ];
 
-  const shareText = `Try Nutri Greenz, farm-traceable pantry${friendGets ? `, ₹${friendGets} off your first order` : ""}: ${link}`;
+  const shareText = `Try Nutri Greenz, farm-traceable pantry${friendGets ? `, ₹${friendGets} wallet credit after your first order` : ""}: ${link}`;
 
   return (
     <AccountShell active="referral">
@@ -140,7 +140,7 @@ export default function ReferralPage() {
         </h1>
         <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-ng-ink-muted">
           {reward && friendGets
-            ? `Share your link. They get ₹${friendGets} off their first order, you get ₹${reward} in wallet credit once it completes. Both win.`
+            ? `Share your link. Once their first order completes, they get ₹${friendGets} and you get ₹${reward} in wallet credit. Both win.`
             : "Share your link with a friend. When their first order completes, you both earn."}
           {expiryDays > 0 ? ` Each invite is valid for ${expiryDays} days.` : ""}
         </p>
@@ -371,7 +371,7 @@ export default function ReferralPage() {
             <Faq
               tint="sage"
               q="Who can use my code?"
-              a="New customers only, and it can't be used on an account that already exists. Your friend applies it at checkout on their first order."
+              a="New customers only: anyone who has already ordered from us can't use it. Your friend signs up through your link, and there is no code to enter at checkout."
             />
           </div>
         </div>

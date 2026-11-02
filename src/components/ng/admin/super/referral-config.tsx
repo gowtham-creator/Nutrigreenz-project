@@ -12,7 +12,7 @@ import { NumberField, Toggle, SaveBar } from "@/components/ng/admin/super/contro
  *
  * Reward values (referrer loyalty credit + referee first-order discount), the
  * confirmed-order qualifier, monthly cap and reward expiry, plus the scope's
- * three anti-abuse guards (same-device, mobile dedupe, address-cluster).
+ * two anti-abuse guards (same-device, mobile dedupe).
  *
  * DB-backed: loads and saves the singleton config through the super-admin-gated
  * `/api/admin/config/referral` endpoint (Supabase service-role). Money is edited
@@ -94,7 +94,7 @@ function toApiPayload(c: ReferralConfig): ApiReferralConfig {
 }
 
 const ABUSE_GUARDS: {
-  key: "blockSameDevice" | "dedupeMobile" | "blockAddressCluster";
+  key: "blockSameDevice" | "dedupeMobile";
   label: string;
   desc: string;
   icon: string;
@@ -110,12 +110,6 @@ const ABUSE_GUARDS: {
     label: "One reward per mobile",
     desc: "One reward per mobile number. Recycled numbers don't qualify",
     icon: "phone-bold",
-  },
-  {
-    key: "blockAddressCluster",
-    label: "Shared address check",
-    desc: "Flag bursts of referrals sharing one delivery address",
-    icon: "location",
   },
 ];
 
@@ -308,7 +302,7 @@ export function ReferralConfigSection() {
           note={
             saving
               ? "Saving…"
-              : "Saved to the database. Rewards are given only after the friend's order is confirmed, and are not taken back."
+              : "Saved to the database. Rewards are given only after the friend's order is confirmed, and are taken back if that order is cancelled."
           }
           onSave={save}
           onReset={reset}

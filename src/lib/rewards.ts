@@ -233,7 +233,13 @@ export interface CouponRecord {
   updatedAt: string;
 }
 
-export type LoyaltyReason = "order_earn" | "order_redeem" | "adjust" | "order_cancel";
+export type LoyaltyReason =
+  | "order_earn"
+  | "order_redeem"
+  | "adjust"
+  | "order_cancel"
+  | "referral_referrer"
+  | "referral_referee";
 
 /** One append-only ledger row. Earn rows are positive, redemptions negative. */
 export interface LoyaltyLedgerRecord {
@@ -352,7 +358,13 @@ function cleanList(raw: unknown): string[] | null {
 }
 
 function toReason(raw: string | null | undefined): LoyaltyReason {
-  return raw === "order_earn" || raw === "order_redeem" || raw === "order_cancel" ? raw : "adjust";
+  return raw === "order_earn" ||
+    raw === "order_redeem" ||
+    raw === "order_cancel" ||
+    raw === "referral_referrer" ||
+    raw === "referral_referee"
+    ? raw
+    : "adjust";
 }
 
 function toCoupon(r: CouponRow): CouponRecord {

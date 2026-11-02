@@ -40,10 +40,12 @@ interface SendEmailArgs {
   attachments?: EmailAttachment[];
   /** Where customer replies should land. Defaults to REPLY_TO_EMAIL, then the sender. */
   replyTo?: string;
+  /** Plain-text part. HTML-only mail is a spam signal, so campaigns always send one. */
+  text?: string;
 }
 
 /** Send a single transactional email. Throws on misconfiguration or API error. */
-export async function sendEmail({ to, subject, html, attachments, replyTo }: SendEmailArgs): Promise<void> {
+export async function sendEmail({ to, subject, html, attachments, replyTo, text }: SendEmailArgs): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "Nutri Greenz";
@@ -78,6 +80,7 @@ export async function sendEmail({ to, subject, html, attachments, replyTo }: Sen
       replyTo: { email: replyAddress, name: senderName },
       subject,
       htmlContent: html,
+      ...(text ? { textContent: text } : {}),
       ...(attachments && attachments.length
         ? { attachment: attachments.map((a) => ({ name: a.name, content: a.content })) }
         : {}),

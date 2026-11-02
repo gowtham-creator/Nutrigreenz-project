@@ -410,6 +410,7 @@ export function CouponCampaignBuilder() {
         error?: string;
         result?: {
           audience: number;
+          noEmail?: number;
           email: { sent: number; skipped: number; failed: number; blocked?: string };
           sms: { sent: number; skipped: number; failed: number; blocked?: string };
         };
@@ -448,9 +449,12 @@ export function CouponCampaignBuilder() {
         return;
       }
 
-      toast.success(`${code} sent`, {
+      // "Accepted", not "delivered": the mail service takes it, and the inbox
+      // provider can still filter it. Customers with no email never enter the count.
+      toast.success(`${code} accepted for delivery`, {
         description:
           `${parts.join(" · ")} across ${r.audience} customers.` +
+          (r.noEmail ? ` ${r.noEmail} customers have no email on file.` : "") +
           (r.email.failed + r.sms.failed > 0
             ? ` ${r.email.failed + r.sms.failed} failed.`
             : "") +

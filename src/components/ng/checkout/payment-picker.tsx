@@ -34,18 +34,18 @@ export const COD_SELECTION: PaymentSelection = {
   categoryLabel: "Cash on Delivery",
 };
 
-/** Server's answer on whether a gateway is actually wired and fully configured. */
-async function fetchOnlineAvailable(): Promise<boolean> {
+/** Which methods the server will accept right now: gateway configured, COD switched on. */
+async function fetchMethods(): Promise<string[]> {
   try {
     const res = await fetch("/api/payments/methods", { cache: "no-store" });
-    if (!res.ok) return false;
+    if (!res.ok) return ["cod"];
     const data = (await res.json()) as { methods?: string[] };
-    return Array.isArray(data.methods) && data.methods.includes("upi");
+    return Array.isArray(data.methods) ? data.methods : ["cod"];
   } catch {
     // Treat an unreachable check as "not available". Offering UPI and failing at
     // the redirect is worse than not offering it: by then the customer has
     // entered an address and believes the order is going through.
-    return false;
+    return ["cod"];
   }
 }
 
@@ -64,13 +64,15 @@ export function PaymentPicker({
   selected: PaymentSelection | null;
   onSelect: (p: PaymentSelection) => void;
 }) {
-  const [onlineAvailable, setOnlineAvailable] = useState<boolean | null>(null);
+  const [methods, setMethods] = useState<string[] | null>(null);
+  const onlineAvailable = methods === null ? null : methods.includes("upi");
+  const codAvailable = methods === null || methods.includes("cod");
 
   useEffect(() => {
     let alive = true;
-    void fetchOnlineAvailable().then((ok) => {
+    void fetchMethods().then((list) => {
       if (!alive) return;
-      setOnlineAvailable(ok);
+      setMethods(list);
     });
     return () => {
       alive = false;
@@ -91,9 +93,14 @@ export function PaymentPicker({
    * now also displaces a stale UPI choice.
    */
   useEffect(() => {
-    if (onlineAvailable !== false) return;
-    if (!selected || selected.category === "upi") onSelect(COD_SELECTION);
-  }, [onlineAvailable, selected, onSelect]);
+    if (onlineAvailable === null) return;
+    if (!codAvailable) {
+      // The same trap in reverse: a saved COD choice must not survive the switch.
+      if (onlineAvailable && selected?.category !== "upi") onSelect(UPI_SELECTION);
+      return;
+    }
+    if (!onlineAvailable && (!selected || selected.category === "upi")) onSelect(COD_SELECTION);
+  }, [onlineAvailable, codAvailable, selected, onSelect]);
 
   const upiChosen = selected?.category === "upi";
   const codChosen = selected?.category === "cod";
@@ -135,32 +142,40 @@ export function PaymentPicker({
       </button>
 
       {/* Cash on delivery */}
-      <button
-        type="button"
-        onClick={() => onSelect(COD_SELECTION)}
-        aria-pressed={codChosen}
-        className={cn(
-          "flex w-full items-center gap-3.5 rounded-2xl border p-4 text-left transition-colors",
-          codChosen
-            ? "border-ng-forest bg-ng-sage/40 ring-1 ring-ng-forest"
-            : "border-ng-line-soft bg-ng-paper hover:border-ng-leaf",
-        )}
-      >
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-ng-cream text-ng-clay-deep">
-          <Icon name="wallet" size={20} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-[16px] leading-tight text-ng-forest-deep">
-            Cash on Delivery
+      {codAvailable ? (
+        <button
+          type="button"
+          onClick={() => onSelect(COD_SELECTION)}
+          aria-pressed={codChosen}
+          className={cn(
+            "flex w-full items-center gap-3.5 rounded-2xl border p-4 text-left transition-colors",
+            codChosen
+              ? "border-ng-forest bg-ng-sage/40 ring-1 ring-ng-forest"
+              : "border-ng-line-soft bg-ng-paper hover:border-ng-leaf",
+          )}
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-ng-cream text-ng-clay-deep">
+            <Icon name="wallet" size={20} />
           </span>
-          <span className="mt-0.5 block text-[12.5px] leading-snug text-ng-ink-muted">
-            Pay the delivery partner when your harvest arrives.
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[16px] leading-tight text-ng-forest-deep">
+              Cash on Delivery
+            </span>
+            <span className="mt-0.5 block text-[12.5px] leading-snug text-ng-ink-muted">
+              Pay the delivery partner when your harvest arrives.
+            </span>
           </span>
-        </span>
-        {codChosen ? (
-          <UiIcon name="verified" size={20} className="shrink-0 text-ng-forest" />
-        ) : null}
-      </button>
+          {codChosen ? (
+            <UiIcon name="verified" size={20} className="shrink-0 text-ng-forest" />
+          ) : null}
+        </button>
+      ) : null}
+
+      {methods !== null && methods.length === 0 ? (
+        <p className="rounded-2xl border border-ng-line-soft bg-ng-cream/50 p-4 text-[13px] text-ng-ink-muted">
+          Payments are unavailable right now. Please try again shortly.
+        </p>
+      ) : null}
     </div>
   );
 }

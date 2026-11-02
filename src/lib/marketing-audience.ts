@@ -100,6 +100,21 @@ export async function marketingAudience(
 }
 
 /**
+ * How many live customers have no email at all: phone sign-ins an email campaign
+ * cannot reach. Reporting only, so a failed count reads as zero, not as a failed
+ * send.
+ */
+export async function customersWithoutEmail(): Promise<number> {
+  if (!isSupabaseConfigured) return 0;
+  const { count, error } = await supabaseAdmin()
+    .from("customers")
+    .select("id", { count: "exact", head: true })
+    .is("merged_into", null)
+    .is("primary_email", null);
+  return error ? 0 : count ?? 0;
+}
+
+/**
  * Opt a customer out, by unsubscribe token.
  *
  * Returns false for an unknown token rather than throwing, so the public

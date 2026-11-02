@@ -8,7 +8,7 @@ import {
 } from "@/lib/notification-templates";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
-import { marketingAudience, type Recipient } from "@/lib/marketing-audience";
+import { customersWithoutEmail, marketingAudience, type Recipient } from "@/lib/marketing-audience";
 
 /**
  * Send a campaign to customers on the channels each of them allows.
@@ -64,6 +64,11 @@ export interface BroadcastResult {
   audience: number;
   email: ChannelResult;
   sms: ChannelResult;
+  /**
+   * Live customers with no email on file, in a whole-base send. They are not
+   * audience, but "sent to 8" reads as "sent to everyone" without this.
+   */
+  noEmail: number;
 }
 
 const empty = (): ChannelResult => ({ sent: 0, skipped: 0, failed: 0 });
@@ -110,14 +115,23 @@ interface SendLog {
  *
  * Best-effort and last: the messages have already left, so a logging failure
  * must not surface as a send failure. It costs idempotency on the next retry,
- * which is the lesser harm.
+ * which is the lesser harm, so it is logged rather than swallowed.
+ *
+ * supabase-js returns errors instead of throwing them, and one row that breaks
+ * the once-per-customer index fails the whole insert. A failed batch is retried
+ * row by row, so one duplicate cannot lose the record of everyone else.
  */
 async function writeLog(rows: SendLog[]): Promise<void> {
   if (rows.length === 0) return;
-  try {
-    await supabaseAdmin().from("campaign_sends").insert(rows);
-  } catch {
-    /* ignore — see above */
+  const db = supabaseAdmin();
+  const { error } = await db.from("campaign_sends").insert(rows);
+  if (!error) return;
+  console.error(`[broadcast] send log batch failed, retrying per row: ${error.message}`);
+  for (const row of rows) {
+    const { error: rowError } = await db.from("campaign_sends").insert(row);
+    if (rowError) {
+      console.error(`[broadcast] send log row failed for ${row.customer_id}: ${rowError.message}`);
+    }
   }
 }
 
@@ -144,12 +158,13 @@ function withUnsubscribe(html: string, token: string): string {
 
 export async function broadcastCampaign(input: BroadcastInput): Promise<BroadcastResult> {
   const want = new Set(input.channels);
-  const res: BroadcastResult = { audience: 0, email: empty(), sms: empty() };
+  const res: BroadcastResult = { audience: 0, email: empty(), sms: empty(), noEmail: 0 };
 
   // Throws ConsentColumnsMissing when the migration has not run — the caller
   // turns that into an explicit error rather than an empty, silent success.
   const audience: Recipient[] = await marketingAudience({ phones: input.phones });
   res.audience = audience.length;
+  if (!input.phones) res.noEmail = await customersWithoutEmail();
   if (audience.length === 0) return res;
 
   const wantEmail = want.has("email");
@@ -183,6 +198,8 @@ export async function broadcastCampaign(input: BroadcastInput): Promise<Broadcas
                 to: r.email,
                 subject: m.subject ?? "",
                 html: withUnsubscribe(m.html ?? m.body, r.unsubscribeToken),
+                // HTML-only mail is a spam signal, and this is the mail Gmail filters.
+                text: `${m.body}\n\nUnsubscribe from offers: ${unsubscribeUrl(r.unsubscribeToken)}`,
               });
               res.email.sent += 1;
               log.push({

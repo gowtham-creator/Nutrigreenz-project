@@ -295,14 +295,17 @@ function RulesCard({
               ]}
               hint={draft.taxMode === "inclusive" ? "Shown prices include tax" : "Tax added at checkout"}
             />
-            <NumberField
-              label="Tax rate"
-              value={draft.taxRateBps / 100}
-              onChange={(v) => patch("taxRateBps", Math.max(0, Math.round(v * 100)))}
-              suffix="%"
-              step={0.5}
-              hint="GST applied when mode is exclusive"
-            />
+            {/* Inclusive prices already carry the tax, so the rate changes nothing there. */}
+            {draft.taxMode === "exclusive" ? (
+              <NumberField
+                label="Tax rate"
+                value={draft.taxRateBps / 100}
+                onChange={(v) => patch("taxRateBps", Math.max(0, Math.round(v * 100)))}
+                suffix="%"
+                step={0.5}
+                hint="GST added on top of the price"
+              />
+            ) : null}
             <TextField
               label="Currency"
               value={draft.currency}

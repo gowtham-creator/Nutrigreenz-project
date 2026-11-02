@@ -22,7 +22,8 @@ export type FeatureFlagKey =
   | "referrals"
   | "community_bundles"
   | "captain_network"
-  | "auto_product_badges";
+  | "auto_product_badges"
+  | "cod";
 
 export interface FeatureFlagMeta {
   key: FeatureFlagKey;
@@ -70,6 +71,12 @@ export const FEATURE_FLAGS: readonly FeatureFlagMeta[] = [
     description: 'Show "Best Seller" and "Selling Fast" from paid order volume',
     defaultEnabled: true,
   },
+  {
+    key: "cod",
+    label: "Cash on Delivery",
+    description: "Offer Cash on Delivery at checkout",
+    defaultEnabled: true,
+  },
 ];
 
 /** A plain key → enabled map — the shape the storefront consumes. */
@@ -82,6 +89,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
   community_bundles: true,
   captain_network: false,
   auto_product_badges: true,
+  cod: true,
 };
 
 interface FeatureFlagRow {

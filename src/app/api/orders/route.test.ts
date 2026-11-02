@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
+  isFeatureEnabled: vi.fn(async (_key: string) => true),
   getCustomerSession: vi.fn(),
   getCustomerById: vi.fn(),
   createOrder: vi.fn(),
@@ -22,6 +23,7 @@ const m = vi.hoisted(() => ({
 // The real SbiepayError is imported below, so its own imports must be safe in Node.
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase-admin", () => ({ isSupabaseConfigured: true, supabaseAdmin: vi.fn() }));
+vi.mock("@/lib/feature-flags", () => ({ isFeatureEnabled: m.isFeatureEnabled }));
 vi.mock("@/lib/customer-session", () => ({ getCustomerSession: m.getCustomerSession }));
 vi.mock("@/lib/customer-identity", () => ({ getCustomerById: m.getCustomerById }));
 vi.mock("@/lib/orders", () => {
@@ -280,6 +282,17 @@ describe("POST /api/orders — online (UPI) order", () => {
     expect(consoleError).toHaveBeenCalledWith(
       "order-create-failed: Error: sbiepay-no-transaction-url",
     );
+  });
+
+  it("rejects COD while the COD switch is off, before creating anything", async () => {
+    m.isFeatureEnabled.mockResolvedValue(false);
+
+    const res = await POST(orderRequest({ paymentMethod: "cod" }));
+
+    expect(m.isFeatureEnabled).toHaveBeenCalledWith("cod");
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ ok: false, error: "payment-unavailable", method: "cod" });
+    expect(m.createOrder).not.toHaveBeenCalled();
   });
 
   it("rejects UPI with payment-unavailable when no gateway is configured, before creating anything", async () => {

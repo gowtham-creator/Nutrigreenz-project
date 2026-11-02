@@ -384,14 +384,6 @@ function LoyaltySection() {
             step={1}
             hint="Limit on points used per order"
           />
-          <NumberField
-            label="Points expiry"
-            value={draft.expiryMonths}
-            onChange={(v) => setDraft((d) => ({ ...d, expiryMonths: v }))}
-            suffix="months"
-            step={1}
-            hint="From last activity"
-          />
           <div className="flex items-center">
             <div className="w-full rounded-xl border border-ng-line-soft bg-ng-cream/50 px-4">
               <Toggle

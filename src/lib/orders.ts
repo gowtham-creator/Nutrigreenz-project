@@ -39,7 +39,7 @@ import {
   promoPercentForVariant,
   applyPromoPaise,
 } from "@/lib/promotions";
-import { rewardReferralIfEligible } from "@/lib/referrals";
+import { rewardReferralIfEligible, voidReferralForOrder } from "@/lib/referrals";
 
 /**
  * Thrown by {@link createOrder} when one or more ordered lines cannot be
@@ -1082,6 +1082,7 @@ export async function cancelOrder(
       console.error(`[orders] points revoke failed for ${current.orderNumber}:`, err);
     }
   }
+  await voidReferralForOrder(current.id);
 
   const order = await getOrder(current.id);
   return order ? { ok: true, order } : { ok: false, error: "not-found" };

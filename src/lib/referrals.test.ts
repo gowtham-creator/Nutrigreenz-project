@@ -16,16 +16,17 @@ vi.mock("@/lib/supabase-admin", () => ({
   supabaseAdmin: () => h.db,
 }));
 vi.mock("@/lib/feature-flags", () => ({ getFeatureFlags: vi.fn(), isFeatureEnabled: vi.fn() }));
-vi.mock("@/lib/rewards", () => ({ getLoyaltyConfig: vi.fn() }));
+vi.mock("@/lib/rewards", () => ({ getLoyaltyConfig: vi.fn(), loyaltyBalance: vi.fn() }));
 
 import { getFeatureFlags, isFeatureEnabled } from "@/lib/feature-flags";
-import { getLoyaltyConfig } from "@/lib/rewards";
+import { getLoyaltyConfig, loyaltyBalance } from "@/lib/rewards";
 import {
   deviceFingerprint,
   getStorefrontFlags,
   isReferralProgrammeOpen,
   recordAttribution,
   rewardReferralIfEligible,
+  voidReferralForOrder,
 } from "@/lib/referrals";
 
 const CONFIG = {
@@ -73,6 +74,7 @@ describe("isReferralProgrammeOpen", () => {
 
 describe("getStorefrontFlags", () => {
   const FLAGS = {
+    cod: true,
     subscriptions: true,
     referrals: true,
     community_bundles: false,
@@ -302,5 +304,78 @@ describe("rewardReferralIfEligible", () => {
     const capped = rewardDb(ORDER, CONFIG, 10);
     await rewardReferralIfEligible("ord-1");
     expect(ledger(capped.ops)).toEqual([]);
+  });
+});
+
+describe("recordAttribution — new customers only", () => {
+  const signup = { refereeCustomerId: "friend", code: "ABC123", deviceHash: null };
+
+  function installOrders(result: { count?: number; error?: { message: string } }) {
+    return installDb((op) => {
+      if (op.table === "customers") return { data: { id: "referrer", primary_phone: null } };
+      if (op.table === "orders") return result;
+      if (op.table === "referral_attributions" && op.action === "select") return { data: null };
+      if (op.table === "referral_attributions" && op.action === "insert") return { data: { id: "a1" } };
+      return undefined;
+    });
+  }
+
+  it("refuses a customer who has already ordered", async () => {
+    installOrders({ count: 2 });
+    await expect(recordAttribution(signup)).resolves.toEqual({ ok: false, reason: "existing-customer" });
+  });
+
+  it("counts only orders that were not cancelled", async () => {
+    const fake = installOrders({ count: 0 });
+    await expect(recordAttribution(signup)).resolves.toMatchObject({ ok: true });
+    const orders = fake.ops.find((op) => op.table === "orders");
+    expect(orders?.filters).toContainEqual({ kind: "neq", column: "status", value: "cancelled" });
+  });
+
+  it("gives no reward when the order count can't be read", async () => {
+    installOrders({ error: { message: "timeout" } });
+    await expect(recordAttribution(signup)).resolves.toEqual({ ok: false, reason: "existing-customer" });
+  });
+});
+
+describe("voidReferralForOrder", () => {
+  const ledgerInserts = (fake: ReturnType<typeof createFakeSupabase>) =>
+    fake.ops.filter((op) => op.table === "loyalty_ledger" && op.action === "insert").map((op) => op.payload);
+
+  it("takes back what the reward paid, stopping at the balance", async () => {
+    vi.mocked(loyaltyBalance).mockImplementation(async (id) => (id === "friend" ? 40 : 500));
+    const fake = installDb((op) => {
+      if (op.table === "referral_attributions") return { data: [{ id: "a1" }] };
+      if (op.table === "loyalty_ledger" && op.action === "select") {
+        return {
+          data: [
+            { customer_id: "referrer", delta_points: 200 },
+            { customer_id: "friend", delta_points: 100 },
+          ],
+        };
+      }
+      return undefined;
+    });
+
+    await voidReferralForOrder("order-1");
+
+    expect(ledgerInserts(fake)).toEqual([
+      { customer_id: "referrer", order_id: "order-1", delta_points: -200, reason: "order_cancel" },
+      { customer_id: "friend", order_id: "order-1", delta_points: -40, reason: "order_cancel" },
+    ]);
+  });
+
+  it("takes nothing on a repeat, when no rewarded referral is left to void", async () => {
+    const fake = installDb((op) => (op.table === "referral_attributions" ? { data: [] } : undefined));
+    await voidReferralForOrder("order-1");
+    expect(fake.ops.some((op) => op.table === "loyalty_ledger")).toBe(false);
+  });
+
+  it("never throws, because cancelling must not fail over this", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    installDb(() => {
+      throw new Error("db down");
+    });
+    await expect(voidReferralForOrder("order-1")).resolves.toBeUndefined();
   });
 });

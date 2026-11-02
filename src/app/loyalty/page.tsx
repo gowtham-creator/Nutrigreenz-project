@@ -56,6 +56,9 @@ function describeEntry(reason: string, orderId: string | null): { note: string; 
   }
   if (reason === "order_redeem") return { note: "Redeemed at checkout", icon: "tag-price-bold" };
   if (reason === "order_cancel") return { note: "Order cancelled", icon: "order" };
+  if (reason === "referral_referrer" || reason === "referral_referee") {
+    return { note: "Referral reward", icon: "customers" };
+  }
   return { note: "Adjustment", icon: "customers" };
 }
 
@@ -107,7 +110,7 @@ export default async function LoyaltyPage() {
   const toNext = nextTier ? Math.max(0, tier.ceil - spend) : 0;
 
   const hasActivity = ledger.length > 0;
-  // Referrer is rewarded in POINTS; the referee gets a straight discount in paise.
+  // Both are paid as wallet points after the friend's first order; nothing comes off at checkout.
   const referralReward =
     referralOpen && referralConfig && referralConfig.referrerPoints > 0
       ? toRupees(referralConfig.referrerPoints)
@@ -154,11 +157,6 @@ export default async function LoyaltyPage() {
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-ng-clay/25 px-3 py-1.5 text-[12px] font-semibold text-ng-clay">
                   <Icon name="star" size={14} />
                   {tier.name} member · {tier.rate}
-                </span>
-                <span className="text-[13px] text-ng-cream/65">
-                  {config.expiryMonths > 0
-                    ? `Credit expires ${config.expiryMonths} months after earning`
-                    : "No expiry · redeem any time"}
                 </span>
               </div>
               <p className="mt-5 max-w-sm text-[13px] leading-relaxed text-ng-cream/70">
@@ -347,7 +345,7 @@ export default async function LoyaltyPage() {
                         Refer a friend · ₹{referralReward.toLocaleString("en-IN")}
                       </span>
                       {refereeReward
-                        ? `You earn ₹${referralReward}, they get ₹${refereeReward} on their first order.`
+                        ? `You earn ₹${referralReward}, they get ₹${refereeReward} in wallet credit after their first order.`
                         : `Credited when your friend's first order is delivered.`}
                     </span>
                   </li>

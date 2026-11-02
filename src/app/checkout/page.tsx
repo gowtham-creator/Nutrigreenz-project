@@ -588,6 +588,13 @@ export default function CheckoutPage() {
           setPlacing(false);
           return;
         }
+        if (res.status === 400 && rejection.error === "payment-unavailable") {
+          // Switched off while this page was open; nothing was created.
+          toast.error("That payment option isn't available right now. Please choose another.");
+          setPayment(null);
+          setPlacing(false);
+          return;
+        }
         if (res.status === 409 && rejection.error === "below-minimum") {
           // The page's copy of the minimum is out of date, or a sale lowered the
           // cart. Show the server's figure and re-read the rules.

@@ -34,6 +34,21 @@ export default function AccountPage() {
      numbers on this page and that one can never disagree. */
   const [orders, setOrders] = useState<OrderView[]>([]);
   const [points, setPoints] = useState<number | null>(null);
+  // Subscriptions don't exist yet: this placeholder shows only while the switch is on.
+  const [subscriptionsOn, setSubscriptionsOn] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void fetch("/api/feature-flags", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { flags?: { subscriptions?: boolean } } | null) => {
+        if (alive) setSubscriptionsOn(j?.flags?.subscriptions === true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (authLoading || !isAuthed) return;
@@ -80,7 +95,9 @@ export default function AccountPage() {
       href: "/account/orders",
       tint: "leaf" as const,
     },
-    { icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const },
+    ...(subscriptionsOn
+      ? [{ icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const }]
+      : []),
   ];
 
   return (
@@ -108,7 +125,7 @@ export default function AccountPage() {
                 Your harvest, <em className="italic text-ng-leaf">at a glance.</em>
               </h1>
               <p className="mt-3 max-w-md text-[14px] leading-relaxed text-ng-cream/70">
-                Track deliveries, manage subscriptions and watch your wallet grow, all in one place.
+                Track deliveries{subscriptionsOn ? ", manage subscriptions" : ""} and watch your wallet grow, all in one place.
               </p>
 
               <Stagger className="mt-8 grid max-w-xl grid-cols-3 items-stretch gap-3 md:gap-4">
@@ -224,23 +241,25 @@ export default function AccountPage() {
         </Reveal>
 
         {/* Subscriptions */}
-        <Reveal as="section">
-          <div className="mb-5 flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
-              <Icon name="refresh-bold" size={16} />
-            </span>
-            <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>
-          </div>
-          <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-8 text-center">
-            <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-              <Icon name="refresh-linear" size={22} />
-            </span>
-            <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
-            <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
-              Subscribe to your staples and never run out. Set it once and we deliver on schedule.
-            </p>
-          </div>
-        </Reveal>
+        {subscriptionsOn ? (
+          <Reveal as="section">
+            <div className="mb-5 flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-ng-cream text-ng-forest-deep">
+                <Icon name="refresh-bold" size={16} />
+              </span>
+              <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>
+            </div>
+            <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-8 text-center">
+              <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+                <Icon name="refresh-linear" size={22} />
+              </span>
+              <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
+              <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
+                Subscribe to your staples and never run out. Set it once and we deliver on schedule.
+              </p>
+            </div>
+          </Reveal>
+        ) : null}
 
         {/* Review prompt — only once there are orders to review */}
         {orders.length > 0 ? (

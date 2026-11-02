@@ -1,4 +1,5 @@
 import { availableMethods, isOnlinePaymentAvailable } from "@/lib/payments";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 // Reads process.env for the gateway credentials — Node runtime.
 export const runtime = "nodejs";
@@ -17,8 +18,10 @@ export const dynamic = "force-dynamic";
  * would fail at the redirect.
  */
 export async function GET(): Promise<Response> {
+  const codOn = await isFeatureEnabled("cod");
+  const methods = availableMethods().filter((m) => m !== "cod" || codOn);
   return Response.json(
-    { ok: true, methods: availableMethods(), online: isOnlinePaymentAvailable() },
+    { ok: true, methods, online: isOnlinePaymentAvailable() },
     { headers: { "cache-control": "no-store" } },
   );
 }

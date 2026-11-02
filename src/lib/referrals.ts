@@ -12,7 +12,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
-import { getLoyaltyConfig } from "@/lib/rewards";
+import { getLoyaltyConfig, loyaltyBalance } from "@/lib/rewards";
 import { getFeatureFlags, isFeatureEnabled, type FeatureFlagMap } from "@/lib/feature-flags";
 
 const SITE =
@@ -220,6 +220,17 @@ export async function recordAttribution(
       .maybeSingle();
     if (existing) return { ok: false, reason: "already-attributed" };
 
+    // New customers only, as the referral page promises. A failed count stops the
+    // attribution too: a reward is the costly mistake, and this never touches an order.
+    const { count: priorOrders, error: priorOrdersError } = await db
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", input.refereeCustomerId)
+      .neq("status", "cancelled");
+    if (priorOrdersError || (priorOrders ?? 0) > 0) {
+      return { ok: false, reason: "existing-customer" };
+    }
+
     // Mobile dedupe — block when the referee's phone was already referred on a
     // different customer record.
     if (config.dedupeMobile) {
@@ -405,17 +416,44 @@ export async function rewardReferralIfEligible(orderId: string): Promise<void> {
   }
 }
 
-/** Mark a rewarded referral void when its qualifying order is cancelled/refunded. */
+/**
+ * Take a referral reward back when its qualifying order is cancelled.
+ *
+ * The status flip decides the winner, so a repeated cancel cannot claw back
+ * twice. Each take-back is clamped to the live balance, like
+ * {@link revokeEarnedPoints}: the ledger never goes negative, and credit already
+ * spent stays spent. Never throws, because cancelling must not fail over this.
+ */
 export async function voidReferralForOrder(orderId: string): Promise<void> {
   try {
     if (!orderId || !isSupabaseConfigured) return;
-    await supabaseAdmin()
+    const db = supabaseAdmin();
+    const { data: voided } = await db
       .from("referral_attributions")
       .update({ status: "void" })
       .eq("qualifying_order_id", orderId)
-      .eq("status", "rewarded");
-  } catch {
-    /* best-effort */
+      .eq("status", "rewarded")
+      .select("id");
+    if (!voided || voided.length === 0) return;
+
+    const { data: credits } = await db
+      .from("loyalty_ledger")
+      .select("customer_id, delta_points")
+      .eq("order_id", orderId)
+      .in("reason", ["referral_referrer", "referral_referee"]);
+    for (const c of (credits as { customer_id: string; delta_points: number }[] | null) ?? []) {
+      const points = Math.min(c.delta_points, Math.max(0, await loyaltyBalance(c.customer_id)));
+      if (points <= 0) continue;
+      const { error } = await db.from("loyalty_ledger").insert({
+        customer_id: c.customer_id,
+        order_id: orderId,
+        delta_points: -points,
+        reason: "order_cancel",
+      });
+      if (error) console.error(`[referrals] clawback failed for ${orderId}: ${error.message}`);
+    }
+  } catch (err) {
+    console.error(`[referrals] could not void the referral on ${orderId}:`, err);
   }
 }
 

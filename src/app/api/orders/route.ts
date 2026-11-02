@@ -11,6 +11,7 @@
  * configured — the order then stays pending and is settled as cash on delivery.
  */
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { getCustomerSession } from "@/lib/customer-session";
 import { getCustomerById } from "@/lib/customer-identity";
 import {
@@ -155,6 +156,14 @@ export async function POST(request: Request): Promise<Response> {
   if (wantsUpi && !isOnlinePaymentAvailable()) {
     return Response.json(
       { ok: false, error: "payment-unavailable", method: "upi" },
+      { status: 400 },
+    );
+  }
+  // Switched off by an operator. The picker hides it, but a page left open or a
+  // forged request still has to be refused here.
+  if (!wantsUpi && !(await isFeatureEnabled("cod"))) {
+    return Response.json(
+      { ok: false, error: "payment-unavailable", method: "cod" },
       { status: 400 },
     );
   }

@@ -29,7 +29,7 @@ vi.mock("@/lib/promotions", () => ({
   promoPercentForVariant: vi.fn(),
   applyPromoPaise: vi.fn(),
 }));
-vi.mock("@/lib/referrals", () => ({ rewardReferralIfEligible: vi.fn() }));
+vi.mock("@/lib/referrals", () => ({ voidReferralForOrder: vi.fn(), rewardReferralIfEligible: vi.fn() }));
 vi.mock("@/lib/rewards", () => {
   class CouponInvalidError extends Error {}
   return {
