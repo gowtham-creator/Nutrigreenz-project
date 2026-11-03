@@ -9,6 +9,7 @@ import { NavigationProgress } from "@/components/ng/navigation-progress";
 import { CommerceProvider } from "@/lib/commerce";
 import { LoyaltyConfigProvider } from "@/lib/loyalty-config";
 import { ComingSoon } from "@/components/ng/coming-soon";
+import { BottomTabs } from "@/components/ng/bottom-tabs";
 import { LocationProvider } from "@/lib/location";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
@@ -101,6 +102,7 @@ export default function RootLayout({
                     <AddressProvider>
                       <ComingSoon />
                       {children}
+                      <BottomTabs />
                       <LinkPhonePrompt />
                       {/* Outside the page tree on purpose: it must survive the
                           navigation it is reporting on, so it cannot live in
