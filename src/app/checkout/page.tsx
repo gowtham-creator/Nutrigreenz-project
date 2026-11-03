@@ -795,14 +795,14 @@ export default function CheckoutPage() {
         <CheckoutStepper current={step} onJump={jumpToStep} canJumpTo={canJumpTo} />
 
         <div className="relative grid gap-8 lg:grid-cols-[1fr_400px]">
-          {/* Soft background blooms behind the columns */}
+          {/* Soft background blooms behind the columns. The right one stays inside the screen: hanging past the edge made the whole page wider than a phone, so iOS zoomed out */}
           <span
             aria-hidden
             className="pointer-events-none absolute -left-24 top-10 -z-10 h-72 w-72 rounded-full bg-ng-leaf/10 blur-3xl"
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute -right-20 bottom-20 -z-10 h-72 w-72 rounded-full bg-ng-clay/10 blur-3xl"
+            className="pointer-events-none absolute right-0 bottom-20 -z-10 h-72 w-72 rounded-full bg-ng-clay/10 blur-3xl"
           />
 
           {/* Left column — selections */}

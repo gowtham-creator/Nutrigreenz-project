@@ -71,7 +71,7 @@ export default function ContactPage() {
                   <Icon name={c.icon} size={24} />
                 </div>
                 <h2 className="mt-5 text-[13px] uppercase tracking-wider text-ng-ink-muted">{c.title}</h2>
-                <p className="mt-1 font-display text-[20px] text-ng-forest-deep group-hover:text-ng-forest">{c.value}</p>
+                <p className="mt-1 font-display text-[20px] text-ng-forest-deep group-hover:text-ng-forest [overflow-wrap:anywhere]">{c.value}</p>
                 <p className="mt-2 text-[14px] text-ng-ink-muted">{c.note}</p>
               </a>
             </Reveal>

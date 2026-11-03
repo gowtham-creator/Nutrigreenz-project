@@ -162,7 +162,7 @@ export default function FaqPage() {
       <Section>
         <div className="grid lg:grid-cols-[230px_1fr] gap-12 lg:gap-16">
           {/* Category quick-nav */}
-          <aside className="lg:sticky lg:top-24 self-start">
+          <aside className="min-w-0 lg:sticky lg:top-24 self-start">
             <nav aria-label="FAQ categories" className="rounded-2xl border border-ng-line-soft bg-ng-paper p-2">
               <ul className="flex lg:flex-col gap-1 overflow-x-auto">
                 {GROUPS.map((g) => (
@@ -181,7 +181,7 @@ export default function FaqPage() {
           </aside>
 
           {/* Groups */}
-          <div className="flex flex-col gap-14">
+          <div className="flex min-w-0 flex-col gap-14">
             {GROUPS.map((g) => (
               <Reveal key={g.title} as="section" y={16}>
                 <div id={slug(g.title)} className="scroll-mt-28">
