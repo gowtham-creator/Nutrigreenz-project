@@ -125,25 +125,41 @@ function relativeTime(iso: string): string {
   return new Date(then).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+/** The activity time filters. "recent" is the latest 100, whenever they were. */
+type ActivityRange = "recent" | "24h" | "7d" | "30d";
+
+const RANGE_FILTERS: { key: ActivityRange; label: string }[] = [
+  { key: "recent", label: "Recent" },
+  { key: "24h", label: "Last 24 hours" },
+  { key: "7d", label: "Past week" },
+  { key: "30d", label: "Past month" },
+];
+
 export function RolesAndLogs() {
-  const [log, setLog] = React.useState<ActivityRow[] | null>(null);
+  const [range, setRange] = React.useState<ActivityRange>("recent");
+  const [changesOnly, setChangesOnly] = React.useState(false);
+  const query = `${range === "recent" ? "" : `range=${range}`}${changesOnly ? "&type=changes" : ""}`;
+  const [result, setResult] = React.useState<{ query: string; rows: ActivityRow[] } | null>(null);
 
   React.useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/admin/activity");
-        if (!res.ok || !alive) return;
-        const data = (await res.json()) as { activity?: ActivityRow[] };
-        if (alive) setLog(Array.isArray(data.activity) ? data.activity : []);
+        const res = await fetch(`/api/admin/activity?${query}`, { cache: "no-store" });
+        const data = res.ok ? ((await res.json()) as { activity?: ActivityRow[] }) : null;
+        if (alive) setResult({ query, rows: Array.isArray(data?.activity) ? data.activity : [] });
       } catch {
-        if (alive) setLog([]);
+        if (alive) setResult({ query, rows: [] });
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [query]);
+
+  // The previous list stays on screen while a new filter loads, dimmed.
+  const log = result?.rows ?? null;
+  const loading = result?.query !== query;
 
   return (
     <section id="access" className="mb-6 scroll-mt-32">
@@ -218,17 +234,55 @@ export function RolesAndLogs() {
               <UiIcon name="audit" size={16} className="text-ng-forest" />
               System activity
             </span>
-            <span className="text-[11.5px] font-medium text-ng-ink-soft font-mono">Recent · sign-ins &amp; admin changes</span>
+            {log ? (
+              <span className="text-[12px] font-medium text-ng-ink-soft tabular-nums">
+                {log.length} {log.length === 1 ? "event" : "events"}
+              </span>
+            ) : null}
+          </div>
+
+          <div role="group" aria-label="Filter activity" className="mb-4 flex flex-wrap items-center gap-2">
+            {RANGE_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                aria-pressed={range === f.key}
+                onClick={() => setRange(f.key)}
+                className={cn(
+                  "min-h-9 rounded-full border px-3.5 text-[13px] font-semibold transition-colors cursor-pointer",
+                  range === f.key
+                    ? "border-ng-forest bg-ng-forest text-ng-cream"
+                    : "border-ng-line bg-ng-paper text-ng-ink hover:border-ng-leaf",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+            <span aria-hidden className="mx-1 h-5 w-px bg-ng-line" />
+            <button
+              type="button"
+              aria-pressed={changesOnly}
+              onClick={() => setChangesOnly((v) => !v)}
+              className={cn(
+                "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors cursor-pointer",
+                changesOnly
+                  ? "border-ng-clay bg-ng-clay/15 text-ng-clay-deep"
+                  : "border-ng-line bg-ng-paper text-ng-ink hover:border-ng-leaf",
+              )}
+            >
+              <Icon name="settings" size={14} />
+              Admin changes
+            </button>
           </div>
 
           {log === null ? (
             <p className="py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">Loading activity…</p>
           ) : log.length === 0 ? (
             <p className="py-6 text-center text-[12.5px] font-medium text-ng-ink-soft">
-              No activity recorded yet.
+              {range === "recent" && !changesOnly ? "No activity recorded yet." : "No activity matches these filters."}
             </p>
           ) : (
-            <ol className="relative pl-1">
+            <ol className={cn("relative pl-1 transition-opacity", loading && "opacity-50")}>
               {log.map((e) => {
                 const meta = LOG_META[logKind(e.action)];
                 return (
@@ -256,7 +310,7 @@ export function RolesAndLogs() {
 
           <p className="text-[11.5px] font-medium text-ng-ink-soft mt-4 flex items-center gap-1.5">
             <Icon name="info-circle-bold" size={13} className="text-ng-forest" />
-            Live log of admin sign-ins and roster changes.
+            Live log of admin sign-ins and changes. Admin changes leaves out sign-ins.
           </p>
         </div>
       </Card>

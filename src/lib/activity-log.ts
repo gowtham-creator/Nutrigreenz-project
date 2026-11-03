@@ -78,19 +78,30 @@ function toEntry(row: ActivityRow): ActivityEntry {
   };
 }
 
+/** Optional narrowing for {@link listActivity}. */
+export interface ActivityQuery {
+  /** Only events at or after this instant (ISO). */
+  sinceIso?: string | null;
+  /** Leave out sign-ins, keeping only changes someone made. */
+  changesOnly?: boolean;
+}
+
 /**
- * Read the most recent activity events, newest first. Returns an empty list on
- * any error so the feed degrades gracefully instead of breaking the page.
+ * Read activity events, newest first, optionally from a point in time and
+ * without sign-ins. Returns an empty list on any error so the feed degrades
+ * gracefully instead of breaking the page.
+ *
+ * A time window may hold more rows than the latest-100 view, so its cap is
+ * higher: a month of a busy team must not be cut off at a hundred.
  */
-export async function listActivity(limit = 50): Promise<ActivityEntry[]> {
+export async function listActivity(limit = 50, query: ActivityQuery = {}): Promise<ActivityEntry[]> {
   if (!isSupabaseConfigured) return [];
-  const capped = Math.min(Math.max(1, limit), 200);
+  const capped = Math.min(Math.max(1, limit), query.sinceIso ? 1000 : 200);
   try {
-    const { data } = await supabaseAdmin()
-      .from("admin_activity")
-      .select(ACTIVITY_COLS)
-      .order("created_at", { ascending: false })
-      .limit(capped);
+    let q = supabaseAdmin().from("admin_activity").select(ACTIVITY_COLS);
+    if (query.sinceIso) q = q.gte("created_at", query.sinceIso);
+    if (query.changesOnly) q = q.neq("action", "admin.signin");
+    const { data } = await q.order("created_at", { ascending: false }).limit(capped);
     return ((data as ActivityRow[] | null) ?? []).map(toEntry);
   } catch {
     return [];

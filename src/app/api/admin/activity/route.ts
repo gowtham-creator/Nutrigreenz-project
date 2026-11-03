@@ -19,6 +19,13 @@ function isTruthy(v: string | null): boolean {
 
 const DEFAULT_LIMIT = 100;
 
+/** The time windows the activity filters offer, in milliseconds. */
+const RANGES: Record<string, number> = {
+  "24h": 24 * 3_600_000,
+  "7d": 7 * 86_400_000,
+  "30d": 30 * 86_400_000,
+};
+
 /**
  * GET /api/admin/activity
  *
@@ -32,6 +39,9 @@ const DEFAULT_LIMIT = 100;
  * Query params (all optional):
  *   - `limit`  — max rows to return (default 100; the data layer caps it).
  *   - `mine`   — "1"/"true"/"yes" ⇒ only the caller's own actions.
+ *   - `range`  — "24h", "7d" or "30d": only events in that window, and up to
+ *                1000 of them rather than the latest 100.
+ *   - `type`   — "changes" ⇒ leave out sign-ins.
  *   - `action` — exact action code (e.g. "announcement.create") for
  *                deep-linked / programmatic filtering. The Audit page groups
  *                actions client-side for instant filtering and so doesn't send
@@ -52,10 +62,13 @@ export async function GET(request: Request): Promise<Response> {
     Number.isFinite(limitRaw) && limitRaw > 0 ? Math.floor(limitRaw) : DEFAULT_LIMIT;
   const mine = isTruthy(params.get("mine"));
   const action = params.get("action")?.trim() || null;
+  const windowMs = RANGES[params.get("range") ?? ""];
+  const sinceIso = windowMs ? new Date(Date.now() - windowMs).toISOString() : null;
+  const changesOnly = params.get("type") === "changes";
 
   let activity: ActivityEntry[] = mine
     ? await listActivityForActor(session.email, limit)
-    : await listActivity(limit);
+    : await listActivity(sinceIso ? Math.max(limit, 1000) : limit, { sinceIso, changesOnly });
   if (action) activity = activity.filter((entry) => entry.action === action);
 
   return Response.json({
