@@ -48,17 +48,17 @@ afterEach(() => {
 const dialog = () => document.querySelector('[role="dialog"]');
 
 describe("ComingSoon", () => {
-  it("holds the page, reaches the coming-soon scene, and frees the page at 22 seconds", async () => {
+  it("holds the page, reaches the coming-soon scene, and frees the page at 14 seconds", async () => {
     render(<ComingSoon />);
     expect(document.body.style.overflow).toBe("hidden");
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(14_500);
+      await vi.advanceTimersByTimeAsync(9_000);
     });
     expect(screen.getByRole("heading", { name: "Coming soon" })).toBeTruthy();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(8_000);
+      await vi.advanceTimersByTimeAsync(5_500);
     });
     expect(document.body.style.overflow).toBe("");
     expect(sessionStorage.getItem("ng-soon-seen")).toBe("1");
@@ -69,7 +69,7 @@ describe("ComingSoon", () => {
     expect(screen.queryByText("Skip")).toBeNull();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(4_100);
+      await vi.advanceTimersByTimeAsync(2_100);
     });
     fireEvent.click(screen.getByText("Skip"));
 
