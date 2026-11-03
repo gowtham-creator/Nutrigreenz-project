@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { UiIcon } from "@/components/ui/ui-icon";
 import { CaptainAllocationModal } from "@/components/ng/admin/captain-allocation-modal";
 import { CaptainAnalyticsPanel } from "@/components/ng/admin/captains/captain-analytics-panel";
+import { CaptainConversionsPanel } from "@/components/ng/admin/captains/captain-conversions-panel";
 import { CaptainModal, Switch, type CaptainDraft } from "./captain-modal";
 import type {
   Captain,
@@ -525,6 +526,12 @@ export default function AdminCaptains() {
         </Card>
       </div>
 
+      <div className="mt-6">
+        <Card title="Conversions: offline customers who bought online">
+          <CaptainConversionsPanel captains={rows.map((c) => ({ id: c.id, name: c.name }))} />
+        </Card>
+      </div>
+
       <CaptainModal
         open={modalOpen}
         captain={editing}
@@ -709,6 +716,10 @@ function CaptainDrawer({
 
               <Section icon="graph-up-bold" title="Sales">
                 <CaptainAnalyticsPanel key={c.id} captainId={c.id} />
+              </Section>
+
+              <Section icon="link-round-bold" title="Conversions">
+                <CaptainConversionsPanel key={c.id} captainId={c.id} />
               </Section>
 
               <Section

@@ -13,6 +13,7 @@ const TABS = [
   { href: "/captain", label: "Today", icon: "home", iconLine: "home" },
   { href: "/captain/intake", label: "Intake", icon: "user-plus-bold", iconLine: "user-plus-linear" },
   { href: "/captain/pickups", label: "Pickups", icon: "order", iconLine: "order" },
+  { href: "/captain/conversions", label: "Converts", icon: "graph-up-bold", iconLine: "graph-up-bold" },
   { href: "/captain/settle", label: "Settle", icon: "wallet", iconLine: "wallet" },
 ] as const;
 
@@ -118,7 +119,7 @@ export function CaptainShell({
           aria-label="Captain sections"
           className="sticky bottom-0 z-20 border-t border-ng-line bg-ng-paper pb-[env(safe-area-inset-bottom)]"
         >
-          <div className="grid grid-cols-4 px-1">
+          <div className="grid grid-cols-5 px-1">
             {TABS.map((t) => {
               const isActive =
                 t.href === "/captain" ? pathname === "/captain" : pathname.startsWith(t.href);
