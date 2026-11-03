@@ -14,6 +14,7 @@ import {
   SegToggle,
 } from "@/components/ng/admin/super/controls";
 import { ProductPicker } from "@/components/ng/admin/product-picker";
+import { OfflineCampaignPanel } from "@/components/ng/admin/super/offline-campaign-panel";
 import { CouponCommunityField } from "@/components/ng/admin/super/coupon-community-field";
 import { CouponCustomerPhones } from "@/components/ng/admin/super/coupon-customer-phones";
 import { UiIcon } from "@/components/ui/ui-icon";
@@ -940,6 +941,21 @@ export function CouponCampaignBuilder() {
               </div>
             </div>
           </div>
+
+          {/* Offline (stall) customers, by SMS, once or repeating. Needs a saved code. */}
+          {isEditing ? (
+            <OfflineCampaignPanel
+              code={draft.code.trim().toUpperCase()}
+              endsOn={draft.endsOn}
+              vars={{
+                offerCode: draft.code.trim().toUpperCase(),
+                offerTitle: draft.description || `${draft.code.trim().toUpperCase()}, Nutri Greenz`,
+                discount: draft.type === "percent" ? `${draft.value}%` : INR(draft.value),
+                ctaUrl: typeof window === "undefined" ? "" : `${window.location.origin}/shop`,
+                validTill: draft.endsOn ? couponDayLabel(draft.endsOn, { year: true }) : "",
+              }}
+            />
+          ) : null}
 
           {/* Save row */}
           <div className="mt-5 pt-4 border-t border-ng-clay/20 flex items-center justify-between gap-4 flex-wrap">

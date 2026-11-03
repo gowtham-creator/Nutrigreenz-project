@@ -81,7 +81,7 @@ const empty = (): ChannelResult => ({ sent: 0, skipped: 0, failed: 0 });
  * down OTP login. So campaign SMS refuses to run until a promotional template
  * id is configured, rather than quietly borrowing the transactional one.
  */
-function promoTemplateId(): string | null {
+export function promoTemplateId(): string | null {
   return process.env.MSG91_PROMO_TEMPLATE_ID?.trim() || null;
 }
 
