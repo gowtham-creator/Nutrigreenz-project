@@ -34,3 +34,10 @@ export async function isSuperAdmin(): Promise<boolean> {
 export function bodyHasPrice(body: Record<string, unknown>): boolean {
   return body.pricePaise !== undefined || body.price_paise !== undefined;
 }
+
+/** Who is making this change, for the product audit log. */
+export async function inventoryActor(): Promise<{ email: string | null; role: string | null }> {
+  const c = await cookies();
+  const session = await verifyToken(c.get(ADMIN_COOKIE)?.value);
+  return { email: session?.email ?? null, role: session?.role ?? null };
+}

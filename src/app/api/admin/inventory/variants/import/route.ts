@@ -1,6 +1,7 @@
-import { isSignedInAdmin, isSuperAdmin } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../../guard";
+import { recordProductAudit, snapshotChanges, variantChange } from "@/lib/product-audit";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { importVariantsCsv, type VariantCsvRow } from "@/lib/catalog";
+import { allProducts, allVariants, importVariantsCsv, type VariantCsvRow } from "@/lib/catalog";
 import { parseCsv } from "@/lib/csv";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
@@ -107,6 +108,8 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
+  // Snapshot the variants either side of the import for the product audit log.
+  const before = await allVariants();
   const result = await importVariantsCsv(
     valid.map<VariantCsvRow>((r) => ({
       sku: r.sku,
@@ -116,6 +119,14 @@ export async function POST(request: Request): Promise<Response> {
       pricePaise: r.pricePaise,
       stock: r.stock,
     })),
+  );
+  const actor = await inventoryActor();
+  const names = new Map((await allProducts()).map((p) => [p.id, p]));
+  await recordProductAudit(
+    snapshotChanges(before, await allVariants(), (b, a) => {
+      const product = names.get(a.productId);
+      return product ? variantChange(product, b, a, actor, "import") : null;
+    }),
   );
   revalidateStorefront();
   return Response.json({ ok: true, committed: true, ...result });

@@ -1,7 +1,8 @@
-import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin, bodyHasPrice, inventoryActor } from "../../guard";
+import { recordProductAudit, variantChange } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { updateVariant, deleteVariant } from "@/lib/catalog";
+import { getProduct, getVariant, updateVariant, deleteVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { withLengthValidation } from "@/lib/input-validation-guard";
@@ -43,8 +44,12 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
     patch.imageUrl = body.imageUrl != null && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null;
 
   try {
+    const before = await getVariant(id);
     const variant = await updateVariant(id, patch);
     if (!variant) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+    const product = await getProduct(variant.productId);
+    const change = product && before ? variantChange(product, before, variant, await inventoryActor()) : null;
+    if (change) await recordProductAudit(change);
     revalidateStorefront();
     return Response.json({ ok: true, variant });
   } catch (err) {
@@ -63,7 +68,11 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
+  const before = await getVariant(id);
   await deleteVariant(id);
+  const product = before ? await getProduct(before.productId) : null;
+  const change = product && before ? variantChange(product, before, null, await inventoryActor()) : null;
+  if (change) await recordProductAudit(change);
   revalidateStorefront();
   return Response.json({ ok: true });
 }

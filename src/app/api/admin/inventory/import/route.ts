@@ -1,6 +1,7 @@
-import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../guard";
+import { productChange, recordProductAudit, snapshotChanges } from "@/lib/product-audit";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { importProductsCsv, type ProductCsvRow } from "@/lib/catalog";
+import { allProducts, importProductsCsv, type ProductCsvRow } from "@/lib/catalog";
 import { parseCsv } from "@/lib/csv";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
@@ -109,6 +110,9 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
+  // Snapshot the catalog either side of the import, so each product it adds or
+  // changes gets its own line in the product audit log.
+  const before = await allProducts();
   const result = await importProductsCsv(
     valid.map<ProductCsvRow>((r) => ({
       name: r.name,
@@ -120,6 +124,8 @@ export async function POST(request: Request): Promise<Response> {
       description: r.description,
     })),
   );
+  const actor = await inventoryActor();
+  await recordProductAudit(snapshotChanges(before, await allProducts(), (b, a) => productChange(b, a, actor, "import")));
   revalidateStorefront();
   return Response.json({ ok: true, committed: true, ...result });
 }

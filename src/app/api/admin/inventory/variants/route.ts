@@ -1,7 +1,8 @@
-import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../guard";
+import { recordProductAudit, variantChange } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { listVariants, createVariant } from "@/lib/catalog";
+import { getProduct, listVariants, createVariant } from "@/lib/catalog";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { withLengthValidation } from "@/lib/input-validation-guard";
@@ -63,6 +64,9 @@ async function POSTHandler(request: Request): Promise<Response> {
       sort: Math.round(Number(body.sort) || 0),
       imageUrl: body.imageUrl != null && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null,
     });
+    const product = await getProduct(productId);
+    const change = product ? variantChange(product, null, variant, await inventoryActor()) : null;
+    if (change) await recordProductAudit(change);
     revalidateStorefront();
     return Response.json({ ok: true, variant });
   } catch (err) {

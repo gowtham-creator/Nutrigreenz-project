@@ -1,4 +1,5 @@
-import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../guard";
+import { productChange, recordProductAudit } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictMultiline, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -110,6 +111,8 @@ async function POSTHandler(request: Request): Promise<Response> {
       status: asStatus(body.status) ?? "active",
       stock,
     });
+    const change = productChange(null, product, await inventoryActor());
+    if (change) await recordProductAudit(change);
     revalidateStorefront();
     return Response.json({ ok: true, product });
   } catch (err) {

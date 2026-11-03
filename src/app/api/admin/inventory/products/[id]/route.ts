@@ -1,4 +1,5 @@
-import { isSignedInAdmin, isSuperAdmin, bodyHasPrice } from "../../guard";
+import { isSignedInAdmin, isSuperAdmin, bodyHasPrice, inventoryActor } from "../../guard";
+import { productChange, recordProductAudit } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictMultiline, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, updateProduct, deleteProduct, type ProductStatus } from "@/lib/catalog";
@@ -64,8 +65,11 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   try {
+    const before = await getProduct(id);
     const product = await updateProduct(id, patch);
     if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+    const change = productChange(before, product, await inventoryActor());
+    if (change && before) await recordProductAudit(change);
     revalidateStorefront();
     return Response.json({ ok: true, product });
   } catch (err) {
@@ -84,7 +88,10 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   if (!isSupabaseConfigured) return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   const { id } = await ctx.params;
+  const before = await getProduct(id);
   await deleteProduct(id);
+  const change = productChange(before, null, await inventoryActor());
+  if (change) await recordProductAudit(change);
   revalidateStorefront();
   return Response.json({ ok: true });
 }

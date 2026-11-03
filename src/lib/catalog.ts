@@ -617,6 +617,39 @@ export async function updateVariant(
   return data ? toVariant(data as VariantRow) : null;
 }
 
+/** A single variant by id, or null. */
+export async function getVariant(id: string): Promise<ProductVariantRecord | null> {
+  const { data } = await supabaseAdmin().from("product_variants").select(VARIANT_COLS).eq("id", id).maybeSingle();
+  return data ? toVariant(data as VariantRow) : null;
+}
+
+/** Every product, for comparing the catalog before and after a CSV import. */
+export async function allProducts(): Promise<ProductRecord[]> {
+  const out: ProductRecord[] = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const { products, total } = await listProducts({ page, pageSize: 200 });
+    out.push(...products);
+    if (out.length >= total || products.length === 0) break;
+  }
+  return out;
+}
+
+/** Every variant, for comparing before and after a variants CSV import. */
+export async function allVariants(): Promise<ProductVariantRecord[]> {
+  const out: ProductVariantRecord[] = [];
+  for (let from = 0; from < 50_000; from += 1000) {
+    const { data } = await supabaseAdmin()
+      .from("product_variants")
+      .select(VARIANT_COLS)
+      .order("id", { ascending: true })
+      .range(from, from + 999);
+    const rows = (data as VariantRow[] | null) ?? [];
+    out.push(...rows.map(toVariant));
+    if (rows.length < 1000) break;
+  }
+  return out;
+}
+
 /** Set absolute stock (and optionally reserved) for a variant. */
 export async function setVariantStock(
   id: string,

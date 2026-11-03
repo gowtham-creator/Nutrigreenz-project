@@ -1,6 +1,7 @@
-import { isSignedInAdmin } from "../../../guard";
+import { isSignedInAdmin, inventoryActor } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { setVariantStock } from "@/lib/catalog";
+import { getProduct, getVariant, setVariantStock } from "@/lib/catalog";
+import { recordProductAudit, variantChange } from "@/lib/product-audit";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
@@ -25,8 +26,12 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
   if (!Number.isFinite(stock)) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const reserved = Number.isFinite(Number(body.reserved)) ? Number(body.reserved) : undefined;
 
+  const before = await getVariant(id);
   const variant = await setVariantStock(id, stock, reserved);
   if (!variant) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  const product = await getProduct(variant.productId);
+  const change = product && before ? variantChange(product, before, variant, await inventoryActor()) : null;
+  if (change) await recordProductAudit(change);
   revalidateStorefront();
   return Response.json({ ok: true, variant });
 }

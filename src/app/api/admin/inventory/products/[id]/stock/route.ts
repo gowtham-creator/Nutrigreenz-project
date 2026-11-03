@@ -1,6 +1,7 @@
-import { isSignedInAdmin } from "../../../guard";
+import { isSignedInAdmin, inventoryActor } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
-import { setStock, adjustStock } from "@/lib/catalog";
+import { getProduct, setStock, adjustStock } from "@/lib/catalog";
+import { productChange, recordProductAudit } from "@/lib/product-audit";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
@@ -25,8 +26,11 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
   if (!Number.isFinite(stock)) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   const reserved = Number.isFinite(Number(body.reserved)) ? Number(body.reserved) : undefined;
 
+  const before = await getProduct(id);
   const product = await setStock(id, stock, reserved);
   if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  const change = productChange(before, product, await inventoryActor());
+  if (change && before) await recordProductAudit(change);
   revalidateStorefront();
   return Response.json({ ok: true, product });
 }
@@ -49,8 +53,11 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   const delta = Number(body.delta);
   if (!Number.isFinite(delta)) return Response.json({ ok: false, error: "invalid" }, { status: 400 });
 
+  const before = await getProduct(id);
   const product = await adjustStock(id, delta);
   if (!product) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  const change = productChange(before, product, await inventoryActor());
+  if (change && before) await recordProductAudit(change);
   revalidateStorefront();
   return Response.json({ ok: true, product });
 }

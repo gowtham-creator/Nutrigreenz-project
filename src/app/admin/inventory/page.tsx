@@ -12,6 +12,7 @@ import { CategoryModal } from "./category-modal";
 import { ImportModal } from "./import-modal";
 import { VariantModal } from "./variant-modal";
 import { VariantImportModal } from "./variant-import-modal";
+import { ProductHistoryDrawer, ProductHistoryList } from "@/components/ng/admin/inventory/product-history";
 import {
   formatPaise,
   STATUS_TONE,
@@ -67,6 +68,8 @@ export default function AdminInventory() {
   // ── variant management ────────────────────────────────────────────
   const [variantProduct, setVariantProduct] = useState<Product | null>(null);
   const [variantImportOpen, setVariantImportOpen] = useState(false);
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
+  const closeHistory = useCallback(() => setHistoryProduct(null), []);
 
   // ── inline stock edit ─────────────────────────────────────────────
   const [stockEditId, setStockEditId] = useState<string | null>(null);
@@ -520,6 +523,15 @@ export default function AdminInventory() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setHistoryProduct(p)}
+                      aria-label={`History of ${p.name}`}
+                      className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-ink-muted hover:text-ng-forest transition-colors cursor-pointer"
+                    >
+                      <Icon name="history-bold" size={13} />
+                      History
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEdit(p)}
                       aria-label={`Edit ${p.name}`}
                       className="inline-flex items-center gap-1 text-[12px] font-bold text-ng-forest hover:text-ng-leaf transition-colors cursor-pointer"
@@ -548,6 +560,16 @@ export default function AdminInventory() {
         </div>
       </Card>
 
+      <div className="mt-6">
+        <Card title="Product history">
+          <p className="-mt-1 mb-4 text-[13px] text-ng-ink-muted">
+            Every change to every product: who made it, when, and what it was before.
+          </p>
+          <ProductHistoryList />
+        </Card>
+      </div>
+
+      <ProductHistoryDrawer product={historyProduct} onClose={closeHistory} />
       <ProductModal
         key={productOpen ? (editing?.id ?? "new") : "closed"}
         open={productOpen}
