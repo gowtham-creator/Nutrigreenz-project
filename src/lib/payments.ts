@@ -139,6 +139,11 @@ export function sbiepayBaseUrl(): string | null {
   return env ? SBIEPAY_HOSTS[env] : null;
 }
 
+/** The host of a named environment, whichever one is selected. */
+export function sbiepayHostOf(env: SbiepayEnv): string {
+  return SBIEPAY_HOSTS[env];
+}
+
 /** True when pointed at the bank's real, money-moving environment. */
 export function isLiveGateway(): boolean {
   return sbiepayEnv() === "live";

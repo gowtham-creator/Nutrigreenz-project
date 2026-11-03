@@ -4,6 +4,7 @@ import {
   missingSbiepayConfig,
   sbiepayEnv,
   sbiepayEncryptionKey,
+  sbiepayHostOf,
 } from "@/lib/payments";
 import { isProxyConfigured, checkProxy } from "@/lib/sbiepay-fetch";
 import { encryptPayload, decryptPayload } from "@/lib/sbiepay-crypto";
@@ -122,6 +123,7 @@ export async function GET(): Promise<Response> {
     // The token step failed: the key id / secret were refused.
     if (message.startsWith("token/access:") || /not-configured|1003|401/.test(`${code} ${message}`)) {
       checks.push({ step: "token", ok: false, detail: `rejected: ${message}` });
+      checks.push(await otherEnvironmentCheck());
       return Response.json({ ok: false, environment: sbiepayEnv(), checks });
     }
     checks.push({ step: "token", ok: true, detail: `issued for mId ${mId ?? "?"}` });
@@ -150,4 +152,33 @@ export async function GET(): Promise<Response> {
     onlinePaymentAvailable: isOnlinePaymentAvailable(),
     checks,
   });
+}
+
+/**
+ * After a refused token: does SBI's OTHER environment know these keys?
+ *
+ * SBI gives the same "not found" for wrong keys and for keys from the other
+ * environment, and owners reasonably insist their keys are right. This turns
+ * that argument into a fact: either the other host accepts them (they are the
+ * other environment's keys), or neither does (SBI has not activated them for
+ * this merchant). Shown as a pass or fail of its own so the screen says which.
+ */
+async function otherEnvironmentCheck(): Promise<Check> {
+  const env = sbiepayEnv();
+  const other = env === "live" ? "integration" : "live";
+  const label = other === "live" ? "Live" : "test (UAT)";
+  const { probeKeysOn } = await import("@/lib/sbiepay-client");
+  const probe = await probeKeysOn(sbiepayHostOf(other));
+  if (probe.accepted) {
+    return {
+      step: "other environment",
+      ok: false,
+      detail: `SBI's ${label} server accepts these keys (mId ${probe.mId ?? "?"}), so they are ${label} keys. Set SBIEPAY_ENV to "${other}" or ask SBI for ${env === "live" ? "Live" : "test"} keys.`,
+    };
+  }
+  return {
+    step: "other environment",
+    ok: false,
+    detail: `SBI's ${label} server refuses them too (${probe.message}). These keys are not active in either environment for this merchant. SBI needs to activate them.`,
+  };
 }

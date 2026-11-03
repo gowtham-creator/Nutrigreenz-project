@@ -8,15 +8,16 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ sbiepayCall: vi.fn() }));
+const m = vi.hoisted(() => ({ sbiepayCall: vi.fn(), probeKeysOn: vi.fn(), env: "integration" }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/admin-api-guard", () => ({ requireApiPermission: vi.fn(async () => null) }));
 vi.mock("@/lib/payments", () => ({
   isOnlinePaymentAvailable: () => true,
   missingSbiepayConfig: () => [],
-  sbiepayEnv: () => "integration",
+  sbiepayEnv: () => m.env,
   sbiepayEncryptionKey: () => "a2V5",
+  sbiepayHostOf: (env: string) => `https://${env}.example`,
 }));
 vi.mock("@/lib/sbiepay-fetch", () => ({
   isProxyConfigured: () => true,
@@ -30,6 +31,7 @@ vi.mock("@/lib/sbiepay-client", () => ({
   sbiepayCall: m.sbiepayCall,
   resetSbiepayToken: vi.fn(),
   currentSbiepayMerchantId: () => "1000605",
+  probeKeysOn: m.probeKeysOn,
 }));
 
 import { GET } from "./route";
@@ -50,6 +52,8 @@ async function encryptedRequestCheck() {
 
 beforeEach(() => {
   m.sbiepayCall.mockReset();
+  m.probeKeysOn.mockReset();
+  m.env = "integration";
 });
 
 describe("selftest - SBI error 905", () => {
@@ -82,5 +86,49 @@ describe("selftest - SBI error 905", () => {
 
     expect(check.ok).toBe(true);
     expect(body.ok).toBe(true);
+  });
+});
+
+describe("selftest - keys refused (1003)", () => {
+  const refused = () =>
+    m.sbiepayCall.mockRejectedValue(
+      Object.assign(new Error("token/access: API Key Id and API Key Secret was not found."), { code: "1003" }),
+    );
+
+  async function run() {
+    const body = (await (await GET()).json()) as { ok: boolean; checks: { step: string; ok: boolean; detail: string }[] };
+    return { body, other: body.checks.find((c) => c.step === "other environment") };
+  }
+
+  it("asks the test server, and says they are test keys when it accepts them", async () => {
+    m.env = "live";
+    refused();
+    m.probeKeysOn.mockResolvedValue({ accepted: true, mId: "1000605", message: "token issued" });
+
+    const { body, other } = await run();
+
+    expect(m.probeKeysOn).toHaveBeenCalledWith("https://integration.example");
+    expect(body.ok).toBe(false);
+    expect(other?.detail).toContain("test (UAT) keys");
+    expect(other?.detail).toContain('SBIEPAY_ENV to "integration"');
+  });
+
+  it("says SBI must activate the keys when neither server accepts them", async () => {
+    m.env = "live";
+    refused();
+    m.probeKeysOn.mockResolvedValue({ accepted: false, mId: null, message: "API Key Id and API Key Secret was not found." });
+
+    const { other } = await run();
+
+    expect(other?.detail).toContain("not active in either environment");
+  });
+
+  it("asks the live server when the test environment refuses them", async () => {
+    refused();
+    m.probeKeysOn.mockResolvedValue({ accepted: false, mId: null, message: "not found" });
+
+    await run();
+
+    expect(m.probeKeysOn).toHaveBeenCalledWith("https://live.example");
   });
 });

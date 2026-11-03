@@ -139,6 +139,36 @@ async function accessToken(force = false): Promise<string> {
   return value;
 }
 
+/**
+ * Ask one SBI host whether it accepts the configured key id and secret.
+ *
+ * Diagnostic only, for the self-test. SBI answers "API Key Id and API Key
+ * Secret was not found" both for wrong keys and for keys that belong to the
+ * other environment, so asking both hosts is the only way to tell "these are
+ * UAT keys" from "SBI has not activated these keys". A token request creates
+ * nothing and the token is discarded, so this is safe on the live host.
+ */
+export async function probeKeysOn(
+  baseUrl: string,
+): Promise<{ accepted: boolean; mId: string | null; message: string }> {
+  const { keyId, keySecret } = credentials();
+  try {
+    const res = await sbiepayFetch({
+      baseUrl,
+      path: `${API_PREFIX}/token/access`,
+      method: "POST",
+      headers: { "Merchant-API-Key-Id": keyId, "Merchant-API-Key-Secret": keySecret },
+      timeoutMs: 15_000,
+    });
+    const body = JSON.parse(res.body) as Envelope;
+    const value = body.data?.[0];
+    if (body.status === 1 && value) return { accepted: true, mId: merchantIdOf(value), message: "token issued" };
+    return { accepted: false, mId: null, message: body.errors?.[0]?.errorMessage ?? `HTTP ${res.status}` };
+  } catch (err) {
+    return { accepted: false, mId: null, message: err instanceof Error ? err.message : "request failed" };
+  }
+}
+
 /** The merchant id in the current token, for diagnostics. Never the token itself. */
 export function currentSbiepayMerchantId(): string | null {
   return token?.mId ?? null;

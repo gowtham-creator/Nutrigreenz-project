@@ -61,6 +61,11 @@ export interface SbiepayRequest {
    * as a blank page rather than a payment error they can act on.
    */
   timeoutMs?: number;
+  /**
+   * Send to this SBI host instead of the configured environment's. Only the
+   * self-test uses it, to ask the other environment whether it knows the keys.
+   */
+  baseUrl?: string;
 }
 
 export interface SbiepayResponse {
@@ -78,7 +83,7 @@ export interface SbiepayResponse {
  * check.
  */
 export async function sbiepayFetch(req: SbiepayRequest): Promise<SbiepayResponse> {
-  const base = sbiepayBaseUrl();
+  const base = req.baseUrl ?? sbiepayBaseUrl();
   if (!base) throw new Error("sbiepay-environment-not-set");
 
   if (!isProxyConfigured()) {
