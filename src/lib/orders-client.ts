@@ -65,6 +65,8 @@ export interface OrderView {
   currency: string;
   addressSnapshot: Record<string, unknown> | null;
   slotSnapshot: Record<string, unknown> | null;
+  /** The community delivery assigned to this order, on the single-order read. */
+  delivery?: { deliveryDate: string; windowText: string; captainName: string } | null;
   placedAt: string;
   items: OrderItemView[];
   events: OrderStatusEventView[];

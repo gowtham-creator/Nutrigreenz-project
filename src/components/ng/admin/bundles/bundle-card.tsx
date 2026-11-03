@@ -1,7 +1,8 @@
 import { Card, Pill } from "@/components/ng/admin/admin-shell";
 import { Icon } from "@/components/ui/icon";
 import { formatPaise, STATUS_LABEL, STATUS_TONE } from "@/app/admin/orders/portal-data";
-import type { BundleGroup } from "@/lib/order-bundles";
+import { BundleDelivery } from "./bundle-delivery";
+import type { BundleCaptain, BundleGroup, BundleSlot } from "@/lib/order-bundles";
 
 /**
  * One gated-community + delivery-date bundle. Informational/operational only:
@@ -25,7 +26,17 @@ export function formatDeliveryDate(iso: string | null): string {
   });
 }
 
-export function BundleCard({ group }: { group: BundleGroup }) {
+export function BundleCard({
+  group,
+  captains,
+  slots,
+  onChanged,
+}: {
+  group: BundleGroup;
+  captains: BundleCaptain[];
+  slots: BundleSlot[];
+  onChanged: () => void;
+}) {
   const single = group.orders.length === 1;
   const location = [group.area, group.pincode, group.city].filter(Boolean);
 
@@ -111,6 +122,8 @@ export function BundleCard({ group }: { group: BundleGroup }) {
           </ul>
         </div>
       </div>
+
+      <BundleDelivery group={group} captains={captains} slots={slots} onChanged={onChanged} />
 
       {/* Footer: bundle total + informational note */}
       <footer className="px-6 py-4 border-t border-ng-line-soft flex flex-wrap items-center justify-between gap-3">

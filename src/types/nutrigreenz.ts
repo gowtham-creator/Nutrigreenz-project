@@ -445,8 +445,25 @@ export interface CaptainPickup {
   address: string | null;
   status: CaptainPickupStatus;
   dueAt: string | null; // ISO
+  /** IST day and slot of an assigned community delivery. */
+  deliveryDate: string | null;
+  windowText: string | null;
+  /** The doors on this run, once it is loaded for the captain. */
+  stops?: CaptainPickupStop[];
   updatedAt: string; // ISO
   createdAt: string; // ISO
+}
+
+/** One door on a captain's community delivery run. */
+export interface CaptainPickupStop {
+  orderId: string;
+  orderNumber: string;
+  customerName: string | null;
+  phone: string | null;
+  address: string;
+  items: { title: string; qty: number }[];
+  /** Cash to collect at the door, integer paise. 0 when already paid. */
+  collectPaise: number;
 }
 
 /** Aggregate day figures for a captain. Money is INTEGER PAISE. */

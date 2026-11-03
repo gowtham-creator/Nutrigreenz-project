@@ -27,6 +27,7 @@ import type {
   CaptainCaptureItem,
   CaptainPayMode,
   CaptainPickup,
+  CaptainPickupStop,
   CaptainPickupStatus,
   CaptainSettlement,
   CaptainStats,
@@ -242,12 +243,14 @@ interface PickupRow {
   address: string | null;
   status: string;
   due_at: string | null;
+  delivery_date: string | null;
+  window_text: string | null;
   updated_at: string;
   created_at: string;
 }
 
 const PICKUP_COLS =
-  "id, captain_id, community, address, status, due_at, updated_at, created_at";
+  "id, captain_id, community, address, status, due_at, delivery_date, window_text, updated_at, created_at";
 
 function toPickup(r: PickupRow): CaptainPickup {
   const status: CaptainPickupStatus =
@@ -259,6 +262,8 @@ function toPickup(r: PickupRow): CaptainPickup {
     address: r.address,
     status,
     dueAt: r.due_at,
+    deliveryDate: r.delivery_date ?? null,
+    windowText: r.window_text ?? null,
     updatedAt: r.updated_at,
     createdAt: r.created_at,
   };
@@ -694,7 +699,62 @@ export async function listPickupsForCaptain(captainId: string): Promise<CaptainP
     .eq("captain_id", captainId)
     .order("status", { ascending: true })
     .order("updated_at", { ascending: false });
-  return ((data as PickupRow[] | null) ?? []).map(toPickup);
+  const pickups = ((data as PickupRow[] | null) ?? []).map(toPickup);
+  const stops = await stopsForPickups(pickups.map((p) => p.id));
+  return pickups.map((p) => ({ ...p, stops: stops.get(p.id) ?? [] }));
+}
+
+interface StopOrderRow {
+  id: string;
+  order_number: string;
+  pickup_id: string;
+  payment_status: string;
+  total_paise: number;
+  user_phone: string | null;
+  address_snapshot: Record<string, unknown> | null;
+}
+
+/**
+ * The doors on each run. Cancelled orders drop off, so a captain never carries an
+ * order nobody wants. A failed read leaves the list empty: the run itself still
+ * has to show.
+ */
+async function stopsForPickups(pickupIds: string[]): Promise<Map<string, CaptainPickupStop[]>> {
+  const out = new Map<string, CaptainPickupStop[]>();
+  if (pickupIds.length === 0) return out;
+  const db = supabaseAdmin();
+  const { data: orderData } = await db
+    .from("orders")
+    .select("id, order_number, pickup_id, payment_status, total_paise, user_phone, address_snapshot")
+    .in("pickup_id", pickupIds)
+    .neq("status", "cancelled");
+  const orders = (orderData as StopOrderRow[] | null) ?? [];
+  if (orders.length === 0) return out;
+
+  const { data: itemData } = await db
+    .from("order_items")
+    .select("order_id, title, qty")
+    .in("order_id", orders.map((o) => o.id));
+  const items = new Map<string, { title: string; qty: number }[]>();
+  for (const it of (itemData as { order_id: string; title: string; qty: number }[] | null) ?? []) {
+    items.set(it.order_id, [...(items.get(it.order_id) ?? []), { title: it.title, qty: it.qty }]);
+  }
+
+  for (const o of orders) {
+    const a = o.address_snapshot ?? {};
+    const part = (k: string) => (typeof a[k] === "string" ? (a[k] as string).trim() : "");
+    const stop: CaptainPickupStop = {
+      orderId: o.id,
+      orderNumber: o.order_number,
+      customerName: part("fullName") || part("name") || null,
+      phone: part("phone") || o.user_phone,
+      address: [part("line1"), part("line2"), part("city"), part("pincode")].filter(Boolean).join(", "),
+      items: items.get(o.id) ?? [],
+      collectPaise: o.payment_status === "paid" ? 0 : o.total_paise,
+    };
+    out.set(o.pickup_id, [...(out.get(o.pickup_id) ?? []), stop]);
+  }
+  return out;
 }
 
 export type AdvancePickupResult =

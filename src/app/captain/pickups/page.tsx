@@ -19,6 +19,7 @@ import {
   PickupUpdateError,
 } from "@/components/ng/captain/captain-store";
 import type { CaptainPickup, CaptainPickupStatus } from "@/types/nutrigreenz";
+import { deliveryWhenLabel } from "@/lib/community-label";
 import { UiIcon } from "@/components/ui/ui-icon";
 
 /** The natural forward transition, mirroring the server's `nextPickupStatus`. */
@@ -34,6 +35,13 @@ const NEXT_LABEL: Record<CaptainPickupStatus, string> = {
   collected: "Mark handed over",
   handed_over: "",
 };
+
+/** The assigned day and slot, or the older time-only pickup. */
+function pickupWhen(p: CaptainPickup): string {
+  return p.deliveryDate && p.windowText ? deliveryWhenLabel(p.deliveryDate, p.windowText) : formatPickupWhen(p.dueAt);
+}
+
+const rupees = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
 /** A real directions link (the old Navigate and Route buttons only showed a toast). */
 function mapsHref(p: CaptainPickup): string {
@@ -79,7 +87,7 @@ export default function CaptainPickups() {
     setPickups((prev) => prev.map((p) => (p.id === id ? { ...p, status: next } : p)));
     try {
       const updated = await advanceCaptainPickup(id, next);
-      setPickups((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      setPickups((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
       toast.success(
         next === "collected" ? `${current.community}: collected` : `${current.community}: handed over`,
       );
@@ -87,7 +95,7 @@ export default function CaptainPickups() {
       // The server holds a different status (changed elsewhere): show its row.
       if (err instanceof PickupUpdateError && err.pickup) {
         const serverRow = err.pickup;
-        setPickups((prev) => prev.map((p) => (p.id === id ? serverRow : p)));
+        setPickups((prev) => prev.map((p) => (p.id === id ? { ...p, ...serverRow } : p)));
         toast.error("This pickup was already updated", {
           description: "The list now shows its current status.",
         });
@@ -132,7 +140,7 @@ export default function CaptainPickups() {
         <CaptainHero className="p-5 mb-5">
           <div className="flex items-center justify-between gap-3 text-[13px]">
             <span className="font-semibold text-ng-leaf">Next stop</span>
-            <span className="text-ng-cream/75 tabular-nums">{formatPickupWhen(nextStop.dueAt)}</span>
+            <span className="text-ng-cream/75 tabular-nums">{pickupWhen(nextStop)}</span>
           </div>
           <div className="font-display text-[22px] text-ng-cream mt-2 leading-tight text-balance">{nextStop.community}</div>
           <div className="text-[14px] text-ng-cream/75 mt-1">{nextStop.address ?? "Community pickup"}</div>
@@ -192,11 +200,40 @@ export default function CaptainPickups() {
                   <div className="text-[14px] text-ng-ink-muted mt-0.5">{p.address ?? "Community pickup"}</div>
                   <div className="flex items-center gap-1.5 text-[13px] text-ng-ink-muted mt-1.5 tabular-nums">
                     <UiIcon name="deliveryTime" size={14} />
-                    {formatPickupWhen(p.dueAt)}
+                    {pickupWhen(p)}
                   </div>
                 </div>
                 <CaptainStatusChip status={p.status} />
               </div>
+
+              {p.stops && p.stops.length > 0 ? (
+                <details className="mt-3 rounded-xl border border-ng-line-soft bg-ng-cream/40 px-3.5 py-2.5">
+                  <summary className="min-h-8 cursor-pointer text-[14px] font-semibold text-ng-forest-deep">
+                    {p.stops.length} door{p.stops.length === 1 ? "" : "s"} to deliver
+                  </summary>
+                  <ul className="mt-2 divide-y divide-ng-line-soft">
+                    {p.stops.map((s) => (
+                      <li key={s.orderId} className="py-2.5 text-[14px]">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="font-semibold text-ng-ink">{s.customerName ?? s.orderNumber}</span>
+                          <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ng-forest-deep">
+                            {s.collectPaise > 0 ? `Collect ${rupees(s.collectPaise)}` : "Paid"}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 text-[13px] text-ng-ink-muted">{s.address || "Address not given"}</div>
+                        <div className="mt-0.5 text-[13px] text-ng-ink-muted">
+                          {s.items.map((i) => `${i.title} × ${i.qty}`).join(", ")}
+                        </div>
+                        {s.phone ? (
+                          <a href={`tel:${s.phone}`} className="mt-1 inline-block min-h-8 text-[13px] font-semibold text-ng-forest underline">
+                            Call {s.phone}
+                          </a>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
 
               <div className="mt-3.5 pt-3 border-t border-ng-line-soft flex gap-2">
                 <a
