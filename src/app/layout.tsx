@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { VisitBeacon } from "@/components/ng/visit-beacon";
 import { NgToaster } from "@/components/ng/toast";
@@ -37,30 +37,37 @@ import { JsonLd } from "@/components/ng/json-ld";
  * same voice and one webfont family leaves the bundle entirely: four families
  * become three.
  */
-const fraunces = Fraunces({
+/*
+ * The three faces are served from this repo, not fetched from Google at build
+ * time. The Google download failed intermittently on Vercel ("Cannot read
+ * properties of null" in next/font) whenever several builds ran close together,
+ * and each failure took the whole deploy down with it. The files are the same
+ * open-licensed variable fonts (Fontsource 5.3.0, latin subset, all axes), so
+ * nothing on screen changes. Licences sit next to them in ./fonts.
+ */
+const fraunces = localFont({
   variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
-  style: ["normal", "italic"],
   display: "swap",
+  src: [
+    { path: "./fonts/fraunces-latin-full-normal.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/fraunces-latin-full-italic.woff2", weight: "100 900", style: "italic" },
+  ],
 });
 
 
 // Body sans — Hanken Grotesk: a sturdier, warmer humanist grotesque that reads
 // more solid than the previous geometric sans and pairs with the slab-serif
 // display face.
-const hanken = Hanken_Grotesk({
+const hanken = localFont({
   variable: "--font-hanken",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+  src: [{ path: "./fonts/hanken-grotesk-latin-wght-normal.woff2", weight: "100 900", style: "normal" }],
 });
 
-const jetbrains = JetBrains_Mono({
+const jetbrains = localFont({
   variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
   display: "swap",
+  src: [{ path: "./fonts/jetbrains-mono-latin-wght-normal.woff2", weight: "100 800", style: "normal" }],
 });
 
 export const metadata: Metadata = {
