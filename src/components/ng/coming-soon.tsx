@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * The pre-launch "coming soon" film, shown once per visit before the store.
  *
  * The store is browsable, but customers were ordering without knowing it had not
- * opened. It plays for 14 seconds and can be skipped after two, because a page
+ * opened. It plays for 15 seconds and can be skipped after two, because a page
  * that holds people hostage loses them. A thin strip then stays on every page.
  *
  * Rendered in the server HTML rather than after mount, or the store would flash
@@ -21,8 +21,10 @@ import { cn } from "@/lib/utils";
  */
 
 const SEEN_KEY = "ng-soon-seen";
-const DURATION_MS = 14_000;
-const SCENE_STARTS_MS = [3_500, 8_500];
+const DURATION_MS = 15_000;
+const SCENE_STARTS_MS = [3_500, 9_500];
+/** Inside the bottle scene: the 1L, then the 5L and 10L dissolve over it. */
+const FAMILY_DELAY_S = 2.8;
 const SKIP_AFTER_MS = 2_000;
 /** Scenes overlap for this long, so one dissolves into the next with no cut. */
 const CROSSFADE_S = 1.2;
@@ -151,6 +153,28 @@ export function ComingSoon() {
                         priority
                         sizes="(min-width: 768px) 46vw, 100vw"
                         className="object-cover object-[50%_62%]"
+                      />
+                    </motion.div>
+                    {/* The 5L and 10L photo is wide, so it sits whole over a blurred copy of itself. */}
+                    <motion.div
+                      className="absolute inset-0"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: reduce ? 0.3 : CROSSFADE_S, delay: FAMILY_DELAY_S, ease: "easeInOut" }}
+                    >
+                      <Image
+                        src="/images/coming-soon/groundnut-5l-10l.webp"
+                        alt=""
+                        fill
+                        sizes="(min-width: 768px) 46vw, 100vw"
+                        className="scale-110 object-cover blur-2xl"
+                      />
+                      <Image
+                        src="/images/coming-soon/groundnut-5l-10l.webp"
+                        alt="Nutri Greenz cold-pressed groundnut oil, 5 and 10 litre"
+                        fill
+                        sizes="(min-width: 768px) 46vw, 100vw"
+                        className="object-contain"
                       />
                     </motion.div>
                   </div>

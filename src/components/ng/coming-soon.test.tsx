@@ -48,12 +48,12 @@ afterEach(() => {
 const dialog = () => document.querySelector('[role="dialog"]');
 
 describe("ComingSoon", () => {
-  it("holds the page, reaches the coming-soon scene, and frees the page at 14 seconds", async () => {
+  it("holds the page, reaches the coming-soon scene, and frees the page at 15 seconds", async () => {
     render(<ComingSoon />);
     expect(document.body.style.overflow).toBe("hidden");
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(9_000);
+      await vi.advanceTimersByTimeAsync(10_000);
     });
     expect(screen.getByRole("heading", { name: "Coming soon" })).toBeTruthy();
 
