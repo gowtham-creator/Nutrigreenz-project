@@ -25,6 +25,9 @@ export default function AdminResetPage() {
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  // Each field has its own eye, so either can be checked against the other.
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -178,23 +181,49 @@ export default function AdminResetPage() {
               <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4">
                 <Input
                   label="New password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   prefix={<BrandIcon name="lock" weight="solid" size={18} />}
+                  suffix={
+                    <RevealToggle
+                      shown={showPassword}
+                      onToggle={() => setShowPassword((s) => !s)}
+                      what="new password"
+                    />
+                  }
                 />
                 <Input
                   label="Confirm password"
-                  type="password"
+                  type={showConfirm ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="Re-enter your new password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   prefix={<BrandIcon name="lock" weight="solid" size={18} />}
+                  suffix={
+                    <RevealToggle
+                      shown={showConfirm}
+                      onToggle={() => setShowConfirm((s) => !s)}
+                      what="confirmed password"
+                    />
+                  }
                   error={error ?? undefined}
                 />
+                {/* Answers "do they match?" as the operator types, not only on submit. */}
+                {confirm && !error ? (
+                  <p
+                    aria-live="polite"
+                    className={`-mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold ${
+                      confirm === password ? "text-ng-forest" : "text-ng-ink-muted"
+                    }`}
+                  >
+                    <Icon name={confirm === password ? "check-circle-bold" : "close-circle-bold"} size={15} />
+                    {confirm === password ? "Passwords match" : "Passwords don't match yet"}
+                  </p>
+                ) : null}
 
                 <Button type="submit" fullWidth disabled={submitting} className="mt-1">
                   <UiIcon name="verified" size={18} />
@@ -216,5 +245,20 @@ export default function AdminResetPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+/** The eye in a passcode field, the same control as on the sign-in screen. */
+function RevealToggle({ shown, onToggle, what }: { shown: boolean; onToggle: () => void; what: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={shown ? `Hide ${what}` : `Show ${what}`}
+      aria-pressed={shown}
+      className="inline-flex items-center justify-center text-ng-ink-soft hover:text-ng-forest transition-colors"
+    >
+      <Icon name={shown ? "eye-closed-bold" : "eye-bold"} size={18} />
+    </button>
   );
 }
