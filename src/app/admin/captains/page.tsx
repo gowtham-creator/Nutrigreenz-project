@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { shortCommunity } from "@/lib/community-label";
@@ -637,14 +638,23 @@ function CaptainDrawer({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-30 flex justify-end" role="dialog" aria-modal="true" aria-label="Captain details">
+  /*
+   * Portaled to the admin root. `backdrop-filter` on the shell header makes a
+   * containing block, so a fixed panel left in place was positioned against the
+   * page: it scrolled away with it, losing its header and showing the page
+   * through the bottom. The admin root keeps the theme and the chart colours.
+   */
+  if (typeof document === "undefined") return null;
+  const host = document.querySelector<HTMLElement>(".ng-admin") ?? document.body;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Captain details">
       <button
         aria-label="Close"
         onClick={onClose}
         className="absolute inset-0 bg-ng-forest-deep/30 backdrop-blur-sm cursor-pointer"
       />
-      <aside className="relative w-full max-w-6xl h-dvh bg-ng-cream border-l border-ng-line-soft overflow-y-auto shadow-2xl">
+      <aside className="relative w-full max-w-6xl h-dvh bg-ng-cream border-l border-ng-line-soft overflow-y-auto overscroll-contain shadow-2xl">
         <header className="sticky top-0 z-10 bg-ng-cream border-b border-ng-line-soft px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <h2 className="font-display text-[24px] text-ng-forest-deep">Captain details</h2>
           <div className="flex items-center gap-1.5">
@@ -697,7 +707,7 @@ function CaptainDrawer({
                   {initials(c.name)}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-[28px] leading-tight text-ng-forest-deep truncate">{c.name}</div>
+                  <div title={c.name} className="font-display text-[28px] leading-tight text-ng-forest-deep line-clamp-2 [overflow-wrap:anywhere]">{c.name}</div>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="font-mono text-[15px] tabular-nums font-medium text-ng-ink-muted">
                       {c.phone}
@@ -755,7 +765,8 @@ function CaptainDrawer({
           )}
         </div>
       </aside>
-    </div>
+    </div>,
+    host,
   );
 }
 
@@ -788,7 +799,7 @@ function Field({ icon, label, value }: { icon: string; label: string; value: str
         <Icon name={icon} size={15} className="text-ng-forest" />
         {label}
       </div>
-      <div className="mt-1 text-[16px] font-semibold text-ng-ink truncate">{value || "-"}</div>
+      <div title={value ?? undefined} className="mt-1 text-[16px] font-semibold leading-snug text-ng-ink line-clamp-2 [overflow-wrap:anywhere]">{value || "-"}</div>
     </div>
   );
 }

@@ -277,7 +277,7 @@ export function CaptainConversionsPanel({
 
 function Tile({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className={cn("rounded-2xl border p-4", strong ? "border-ng-forest bg-ng-sage/30" : "border-ng-line-soft bg-ng-paper")}>
+    <div className={cn("rounded-2xl border p-4", strong ? "border-ng-leaf bg-ng-sage/30" : "border-ng-line-soft bg-ng-paper")}>
       <div className="text-[13px] font-semibold text-ng-ink-muted">{label}</div>
       <div className="mt-1.5 font-display text-[26px] leading-none tabular-nums text-ng-forest-deep">{value}</div>
     </div>

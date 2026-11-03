@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import type { Captain } from "@/types/nutrigreenz";
@@ -187,7 +188,11 @@ export function CaptainModal({
         ? ERROR_COPY.invalid_commission
         : null;
 
-  return (
+  // Portaled to the admin root, like the captain details panel: the shell
+  // header's backdrop-filter would otherwise pin this to the page, not the screen.
+  const host = document.querySelector<HTMLElement>(".ng-admin") ?? document.body;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ng-forest-deep/30 p-2 sm:p-4"
       role="dialog"
@@ -361,6 +366,7 @@ export function CaptainModal({
           </div>
         </footer>
       </div>
-    </div>
+    </div>,
+    host,
   );
 }

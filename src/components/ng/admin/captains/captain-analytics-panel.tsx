@@ -108,7 +108,7 @@ export function CaptainAnalyticsPanel({ captainId }: { captainId?: string }) {
               className={cn(
                 "rounded-2xl border p-4 text-left transition-colors cursor-pointer",
                 period === p.key
-                  ? "border-ng-forest bg-ng-sage/30 ring-1 ring-ng-forest"
+                  ? "border-ng-leaf bg-ng-sage/30 ring-1 ring-ng-leaf/50"
                   : "border-ng-line-soft bg-ng-paper hover:border-ng-leaf",
               )}
             >
