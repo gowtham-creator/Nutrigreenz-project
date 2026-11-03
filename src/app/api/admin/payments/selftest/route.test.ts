@@ -8,7 +8,13 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const m = vi.hoisted(() => ({ sbiepayCall: vi.fn(), probeKeysOn: vi.fn(), env: "integration" }));
+const m = vi.hoisted(() => ({
+  sbiepayCall: vi.fn(),
+  probeKeysOn: vi.fn(),
+  env: "integration",
+  keyId: "AB12cdef3456gh78",
+  secret: "s".repeat(40),
+}));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/admin-api-guard", () => ({ requireApiPermission: vi.fn(async () => null) }));
@@ -18,6 +24,8 @@ vi.mock("@/lib/payments", () => ({
   sbiepayEnv: () => m.env,
   sbiepayEncryptionKey: () => "a2V5",
   sbiepayHostOf: (env: string) => `https://${env}.example`,
+  sbiepayKeyId: () => m.keyId,
+  sbiepayKeySecret: () => m.secret,
 }));
 vi.mock("@/lib/sbiepay-fetch", () => ({
   isProxyConfigured: () => true,
@@ -54,6 +62,8 @@ beforeEach(() => {
   m.sbiepayCall.mockReset();
   m.probeKeysOn.mockReset();
   m.env = "integration";
+  m.keyId = "AB12cdef3456gh78";
+  m.secret = "s".repeat(40);
 });
 
 describe("selftest - SBI error 905", () => {
@@ -130,5 +140,31 @@ describe("selftest - keys refused (1003)", () => {
     await run();
 
     expect(m.probeKeysOn).toHaveBeenCalledWith("https://live.example");
+  });
+});
+
+describe("selftest - keys in use", () => {
+  async function line() {
+    const body = (await (await GET()).json()) as { checks: { step: string; ok: boolean; detail: string }[] };
+    return body.checks.find((c) => c.step === "keys in use")!;
+  }
+
+  it("shows the key id's ends and the lengths, never the secret", async () => {
+    m.sbiepayCall.mockResolvedValue([]);
+    const l = await line();
+    expect(l.ok).toBe(true);
+    expect(l.detail).toContain("AB12…gh78 (16 characters)");
+    expect(l.detail).toContain("secret 40 characters");
+    expect(l.detail).not.toContain("ssss");
+  });
+
+  it("flags quotes or spaces pasted into a key", async () => {
+    m.sbiepayCall.mockResolvedValue([]);
+    m.keyId = '"AB12cdef3456gh78"';
+    m.secret = "abc def";
+    const l = await line();
+    expect(l.ok).toBe(false);
+    expect(l.detail).toContain("the key id has quotes");
+    expect(l.detail).toContain("the secret has quotes");
   });
 });

@@ -5,6 +5,8 @@ import {
   sbiepayEnv,
   sbiepayEncryptionKey,
   sbiepayHostOf,
+  sbiepayKeyId,
+  sbiepayKeySecret,
 } from "@/lib/payments";
 import { isProxyConfigured, checkProxy } from "@/lib/sbiepay-fetch";
 import { encryptPayload, decryptPayload } from "@/lib/sbiepay-crypto";
@@ -57,6 +59,7 @@ export async function GET(): Promise<Response> {
   const missing = missingSbiepayConfig();
   if (missing.length > 0) return fail("configuration", missing.join("; "));
   checks.push({ step: "configuration", ok: true, detail: "all variables set" });
+  checks.push(keysInUse());
 
   // 2 · crypto round-trip, using the real key
   try {
@@ -180,5 +183,34 @@ async function otherEnvironmentCheck(): Promise<Check> {
     step: "other environment",
     ok: false,
     detail: `SBI's ${label} server refuses them too (${probe.message}). These keys are not active in either environment for this merchant. SBI needs to activate them.`,
+  };
+}
+
+/** Characters that never belong in an SBI key but slip in when copying. */
+const PASTE_DEBRIS = /["'`\s]|[^\x21-\x7e]/;
+
+/**
+ * Which keys this deployment is really using, without revealing them.
+ *
+ * Vercel never shows a stored secret again, so "the keys are right" cannot be
+ * checked from the dashboard. The key id is an identifier, not a secret: its
+ * first and last four characters, with the lengths, let an owner compare it
+ * with SBI's dashboard. The secret is only ever counted. Quotes, spaces or
+ * invisible characters from a copy are flagged, because SBI would refuse them.
+ */
+function keysInUse(): Check {
+  const id = sbiepayKeyId() ?? "";
+  const secret = sbiepayKeySecret() ?? "";
+  const show = id.length > 8 ? `${id.slice(0, 4)}…${id.slice(-4)}` : "(too short to show)";
+  const problems = [
+    PASTE_DEBRIS.test(id) ? "the key id has quotes, spaces or hidden characters" : "",
+    PASTE_DEBRIS.test(secret) ? "the secret has quotes, spaces or hidden characters" : "",
+  ].filter(Boolean);
+  return {
+    step: "keys in use",
+    ok: problems.length === 0,
+    detail:
+      `key id ${show} (${id.length} characters), secret ${secret.length} characters` +
+      (problems.length ? `. Problem: ${problems.join("; ")}. Re-paste it.` : ". Compare with SBI's dashboard."),
   };
 }
