@@ -15,6 +15,7 @@ import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-sh
 import { Icon } from "@/components/ui/icon";
 import type { WishlistReport } from "@/lib/wishlist-store";
 import { downloadCsv, type CsvRow } from "@/components/ng/admin/reports/csv";
+import { WishlistSavers } from "@/components/ng/admin/wishlists/wishlist-savers";
 import { UiIcon } from "@/components/ui/ui-icon";
 
 /** Integer paise → a whole-rupee "₹1,234" string. */
@@ -75,7 +76,7 @@ export default function AdminWishlists() {
           Wishlists <em className="italic text-ng-clay font-display">&amp; saved items</em>
         </span>
       }
-      subtitle="Products customers have saved but not bought yet. Use it to spot demand and plan restocks"
+      subtitle="What customers have saved, and who saved it. Use it to spot demand, plan restocks and follow up"
       actions={
         <button
           type="button"
@@ -161,6 +162,8 @@ export default function AdminWishlists() {
           </>
         )}
       </Card>
+
+      <WishlistSavers />
     </AdminShell>
   );
 }

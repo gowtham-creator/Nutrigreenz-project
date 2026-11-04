@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type DragEvent } from "react";
+import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { GalleryField } from "@/components/ng/admin/image-picker";
 import { PdpImagesPreview } from "@/components/ng/admin/inventory/pdp-images-preview";
@@ -48,6 +49,7 @@ export function ProductModal({
   isSuper,
   onClose,
   onSave,
+  onCategoryAdded,
 }: {
   open: boolean;
   product: Product | null;
@@ -56,8 +58,15 @@ export function ProductModal({
   isSuper: boolean;
   onClose: () => void;
   onSave: (draft: ProductDraft) => void;
+  /** A category was added from inside this form; the page reloads the list. */
+  onCategoryAdded?: () => void;
 }) {
   const [draft, setDraft] = useState<ProductDraft>(() => draftFromProduct(product));
+  // Adding a category without leaving the product: name only (icon and image
+  // can be set later under Categories), then it is selected for this product.
+  const [newCategory, setNewCategory] = useState<string | null>(null);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [extraCategories, setExtraCategories] = useState<Category[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -69,6 +78,35 @@ export function ProductModal({
     setDraft((d) => ({ ...d, [key]: value }));
 
   const canSave = draft.name.trim().length > 0 && !saving && !uploading;
+  const allCategories = [
+    ...categories,
+    ...extraCategories.filter((x) => !categories.some((c) => c.id === x.id)),
+  ];
+
+  async function addCategory() {
+    const name = (newCategory ?? "").trim();
+    if (!name) return;
+    setAddingCategory(true);
+    try {
+      const res = await fetch("/api/admin/inventory/categories", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; category?: Category; error?: string };
+      if (!res.ok || !data.ok || !data.category) throw new Error(data.error || "failed");
+      const created = data.category;
+      setExtraCategories((list) => [...list, created]);
+      set("categoryId", created.id);
+      setNewCategory(null);
+      onCategoryAdded?.();
+      toast.success("Category added", { description: `${created.name} is selected for this product.` });
+    } catch {
+      toast.error("Couldn't add the category", { description: "Check the name isn't already used, then try again." });
+    } finally {
+      setAddingCategory(false);
+    }
+  }
 
   async function uploadFile(file: File) {
     setImageError(null);
@@ -150,18 +188,67 @@ export function ProductModal({
               />
             </div>
             <div>
-              <label className={LABEL} htmlFor="np-category">Category</label>
-              <select
-                id="np-category"
-                className={FIELD}
-                value={draft.categoryId}
-                onChange={(e) => set("categoryId", e.target.value)}
-              >
-                <option value="">Uncategorised</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className={LABEL.replace(" mb-1.5", "")} htmlFor="np-category">Category</label>
+                {newCategory === null ? (
+                  <button
+                    type="button"
+                    onClick={() => setNewCategory("")}
+                    className="inline-flex items-center gap-1 text-[11.5px] font-bold text-ng-forest hover:text-ng-leaf cursor-pointer"
+                  >
+                    <Icon name="add-circle-bold" size={13} />
+                    New category
+                  </button>
+                ) : null}
+              </div>
+              {newCategory === null ? (
+                <select
+                  id="np-category"
+                  className={FIELD}
+                  value={draft.categoryId}
+                  onChange={(e) => set("categoryId", e.target.value)}
+                >
+                  <option value="">Uncategorised</option>
+                  {allCategories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    id="np-category"
+                    autoFocus
+                    className={FIELD}
+                    placeholder="New category name"
+                    value={newCategory}
+                    maxLength={80}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void addCategory();
+                      }
+                      if (e.key === "Escape") setNewCategory(null);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={addingCategory || !newCategory.trim()}
+                    onClick={() => void addCategory()}
+                    className="shrink-0 rounded-full bg-ng-forest-deep px-3.5 py-2 text-[12px] font-semibold text-ng-cream hover:bg-ng-forest disabled:opacity-50 cursor-pointer"
+                  >
+                    {addingCategory ? "Adding…" : "Add"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewCategory(null)}
+                    aria-label="Cancel new category"
+                    className="shrink-0 text-[12px] font-semibold text-ng-ink-muted hover:text-ng-ink cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

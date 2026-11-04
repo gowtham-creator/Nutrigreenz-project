@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getLoyaltyConfig, updateLoyaltyConfig, type LoyaltyConfigPatch } from "@/lib/rewards";
@@ -46,6 +47,7 @@ export async function PUT(request: Request): Promise<Response> {
 
   try {
     const config = await updateLoyaltyConfig(patch);
+    await recordAdminAction("config.loyalty_updated", null);
     return Response.json({ ok: true, config });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

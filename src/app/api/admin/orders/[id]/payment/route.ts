@@ -14,6 +14,7 @@
  * because this is the action that turns an order into revenue and so has to be
  * attributable to a person.
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
@@ -60,6 +61,7 @@ export async function POST(
   if (order.paymentStatus === "paid") {
     // Idempotent: a double-click must not move paid_at forward or write a
     // second event.
+    await recordAdminAction("order.payment_updated", id);
     return Response.json({ ok: true, alreadyPaid: true, paidAt: order.paidAt });
   }
 
@@ -81,5 +83,6 @@ export async function POST(
     note: `Cash on delivery collected, ${(order.totalPaise / 100).toFixed(2)}`,
   });
 
+  await recordAdminAction("order.payment_updated", id);
   return Response.json({ ok: true, paidAt });
 }

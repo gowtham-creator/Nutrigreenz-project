@@ -3,9 +3,11 @@
  *   PATCH  — update a farm (super-admin only).
  *   DELETE — remove a farm (super-admin only).
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertFarm, deleteFarm } from "@/lib/content";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 import { farmDraftFromBody } from "@/lib/content-input";
 import { InputTooLongError } from "@/lib/sanitize-text";
 import { requireApiPermission } from "@/lib/admin-api-guard";
@@ -49,6 +51,8 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   try {
     const farm = await upsertFarm({ ...draft, id });
+    revalidateStorefront();
+    await recordAdminAction("farm.updated", id);
     return Response.json({ ok: true, farm });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -68,5 +72,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   const { id } = await ctx.params;
   await deleteFarm(id);
+  revalidateStorefront();
+  await recordAdminAction("farm.deleted", id);
   return Response.json({ ok: true });
 }

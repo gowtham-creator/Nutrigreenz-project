@@ -56,6 +56,11 @@ type GroupKey =
   | "promotions"
   | "coupons"
   | "broadcast"
+  | "config"
+  | "catalog"
+  | "orders"
+  | "content"
+  | "captains"
   | "other";
 
 interface ActionMeta {
@@ -101,6 +106,87 @@ const ACTION_META: Record<string, ActionMeta> = {
   "promotion.delete": { group: "promotions", kind: "Promotion", icon: "tag-price-bold", tone: "terracotta" },
   // Marketing · broadcast
   "marketing.broadcast": { group: "broadcast", kind: "Broadcast", icon: "chat-round-dots-bold", tone: "forest" },
+  // Changes across the console (recorded by recordAdminAction).
+  "config.store_settings_updated": { group: "config", kind: "Settings", icon: "settings-bold", tone: "clay" },
+  "config.features_updated": { group: "config", kind: "Settings", icon: "settings-bold", tone: "clay" },
+  "config.loyalty_updated": { group: "config", kind: "Settings", icon: "settings-bold", tone: "clay" },
+  "config.referral_updated": { group: "config", kind: "Settings", icon: "settings-bold", tone: "clay" },
+  "config.area_created": { group: "config", kind: "Delivery", icon: "map-point-bold", tone: "forest" },
+  "config.area_updated": { group: "config", kind: "Delivery", icon: "map-point-bold", tone: "forest" },
+  "config.area_deleted": { group: "config", kind: "Delivery", icon: "map-point-bold", tone: "terracotta" },
+  "config.slot_created": { group: "config", kind: "Delivery", icon: "clock-circle-bold", tone: "forest" },
+  "config.slot_updated": { group: "config", kind: "Delivery", icon: "clock-circle-bold", tone: "forest" },
+  "config.slot_deleted": { group: "config", kind: "Delivery", icon: "clock-circle-bold", tone: "terracotta" },
+  "catalog.product_created": { group: "catalog", kind: "Product", icon: "box-bold", tone: "forest" },
+  "catalog.product_updated": { group: "catalog", kind: "Product", icon: "box-bold", tone: "forest" },
+  "catalog.product_deleted": { group: "catalog", kind: "Product", icon: "box-bold", tone: "terracotta" },
+  "catalog.stock_updated": { group: "catalog", kind: "Stock", icon: "box-bold", tone: "clay" },
+  "catalog.variant_created": { group: "catalog", kind: "Variant", icon: "layers-minimalistic-bold", tone: "forest" },
+  "catalog.variant_updated": { group: "catalog", kind: "Variant", icon: "layers-minimalistic-bold", tone: "forest" },
+  "catalog.variant_deleted": { group: "catalog", kind: "Variant", icon: "layers-minimalistic-bold", tone: "terracotta" },
+  "catalog.variant_stock_updated": { group: "catalog", kind: "Stock", icon: "box-bold", tone: "clay" },
+  "catalog.products_imported": { group: "catalog", kind: "Import", icon: "download-minimalistic-bold", tone: "forest" },
+  "catalog.variants_imported": { group: "catalog", kind: "Import", icon: "download-minimalistic-bold", tone: "forest" },
+  "catalog.category_created": { group: "catalog", kind: "Category", icon: "widget-5-bold", tone: "forest" },
+  "catalog.category_updated": { group: "catalog", kind: "Category", icon: "widget-5-bold", tone: "forest" },
+  "catalog.category_deleted": { group: "catalog", kind: "Category", icon: "widget-5-bold", tone: "terracotta" },
+  "order.status_changed": { group: "orders", kind: "Order", icon: "cart-large-2-bold", tone: "forest" },
+  "order.payment_updated": { group: "orders", kind: "Order", icon: "wallet-money-bold", tone: "clay" },
+  "order.cancelled": { group: "orders", kind: "Order", icon: "cart-large-2-bold", tone: "terracotta" },
+  "order.pickup_removed": { group: "orders", kind: "Pickup", icon: "cart-large-2-bold", tone: "clay" },
+  "farm.created": { group: "content", kind: "Farm", icon: "leaf-bold", tone: "forest" },
+  "farm.updated": { group: "content", kind: "Farm", icon: "leaf-bold", tone: "forest" },
+  "farm.deleted": { group: "content", kind: "Farm", icon: "leaf-bold", tone: "terracotta" },
+  "journal.created": { group: "content", kind: "Journal", icon: "document-text-bold", tone: "forest" },
+  "journal.updated": { group: "content", kind: "Journal", icon: "document-text-bold", tone: "forest" },
+  "journal.deleted": { group: "content", kind: "Journal", icon: "document-text-bold", tone: "terracotta" },
+  "captain.created": { group: "captains", kind: "Captain", icon: "users-group-rounded-bold", tone: "forest" },
+  "captain.updated": { group: "captains", kind: "Captain", icon: "users-group-rounded-bold", tone: "forest" },
+  "captain.deleted": { group: "captains", kind: "Captain", icon: "users-group-rounded-bold", tone: "terracotta" },
+  "captain.allocations_updated": { group: "captains", kind: "Captain", icon: "users-group-rounded-bold", tone: "clay" },
+  "marketing.optout_added": { group: "broadcast", kind: "Opt-out", icon: "chat-round-dots-bold", tone: "muted" },
+};
+
+/** How each console change reads in a sentence ("You changed the store settings"). */
+const PHRASES: Record<string, string> = {
+  "config.store_settings_updated": "changed the store settings",
+  "config.features_updated": "changed feature switches",
+  "config.loyalty_updated": "changed the loyalty rules",
+  "config.referral_updated": "changed the referral rules",
+  "config.area_created": "added a delivery area",
+  "config.area_updated": "updated a delivery area",
+  "config.area_deleted": "removed a delivery area",
+  "config.slot_created": "added a delivery slot",
+  "config.slot_updated": "updated a delivery slot",
+  "config.slot_deleted": "removed a delivery slot",
+  "catalog.product_created": "added a product",
+  "catalog.product_updated": "edited a product",
+  "catalog.product_deleted": "deleted a product",
+  "catalog.stock_updated": "changed product stock",
+  "catalog.variant_created": "added a product size",
+  "catalog.variant_updated": "edited a product size",
+  "catalog.variant_deleted": "deleted a product size",
+  "catalog.variant_stock_updated": "changed size stock",
+  "catalog.products_imported": "imported products from CSV",
+  "catalog.variants_imported": "imported product sizes from CSV",
+  "catalog.category_created": "added a category",
+  "catalog.category_updated": "edited a category",
+  "catalog.category_deleted": "deleted a category",
+  "order.status_changed": "changed an order’s status",
+  "order.payment_updated": "updated an order’s payment",
+  "order.cancelled": "cancelled an order",
+  "order.pickup_removed": "removed a bundle pickup",
+  "farm.created": "added a farm",
+  "farm.updated": "updated a farm",
+  "farm.deleted": "removed a farm",
+  "journal.created": "published a journal post",
+  "journal.updated": "edited a journal post",
+  "journal.deleted": "deleted a journal post",
+  "captain.created": "added a captain",
+  "captain.updated": "updated a captain",
+  "captain.deleted": "removed a captain",
+  "captain.allocations_updated": "changed a captain’s stock allocation",
+  "marketing.optout_added": "stopped SMS to a number",
 };
 
 const FALLBACK_META: ActionMeta = {
@@ -126,6 +212,11 @@ const GROUP_ORDER: GroupKey[] = [
   "promotions",
   "coupons",
   "broadcast",
+  "config",
+  "catalog",
+  "orders",
+  "content",
+  "captains",
   "other",
 ];
 
@@ -137,6 +228,11 @@ const GROUP_LABELS: Record<GroupKey, string> = {
   promotions: "Promotions",
   coupons: "Coupons",
   broadcast: "Broadcasts",
+  config: "Store settings & delivery",
+  catalog: "Products & catalogue",
+  orders: "Orders",
+  content: "Farms & journal",
+  captains: "Captains",
   other: "Other",
 };
 
@@ -279,7 +375,11 @@ function describe(entry: AuditEntry, viewerEmail: string | null): Described {
       break;
     }
     default:
-      phrase = entry.action.replace(/[._-]+/g, " ").trim() || "recorded activity";
+      phrase = PHRASES[entry.action] ?? (entry.action.replace(/[._-]+/g, " ").trim() || "recorded activity");
+      if (entry.action === "order.status_changed") {
+        const to = metaStr(entry.meta, "status");
+        detail = to ? `to ${to.replace(/_/g, " ")}` : null;
+      }
       break;
   }
 

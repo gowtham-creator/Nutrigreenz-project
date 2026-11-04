@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin, bodyHasPrice, inventoryActor } from "../../guard";
 import { productChange, recordProductAudit } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictMultiline, strictText } from "@/lib/sanitize-text";
@@ -71,6 +72,7 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
     const change = productChange(before, product, await inventoryActor());
     if (change && before) await recordProductAudit(change);
     revalidateStorefront();
+    await recordAdminAction("catalog.product_updated", id);
     return Response.json({ ok: true, product });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -93,6 +95,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   const change = productChange(before, null, await inventoryActor());
   if (change) await recordProductAudit(change);
   revalidateStorefront();
+  await recordAdminAction("catalog.product_deleted", id);
   return Response.json({ ok: true });
 }
 

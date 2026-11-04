@@ -72,6 +72,7 @@ export default function AdminFarms() {
         story: draft.story.trim() || null,
         image: draft.image.trim() || null,
         gallery: draft.gallery,
+        published: draft.published,
       };
       try {
         if (editing) {
@@ -168,7 +169,18 @@ export default function AdminFarms() {
                 )}
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="font-display text-[17px] leading-tight text-ng-forest-deep">{f.name}</h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-display text-[17px] leading-tight text-ng-forest-deep">{f.name}</h3>
+                  <span
+                    className={
+                      f.published !== false
+                        ? "shrink-0 rounded-full bg-ng-leaf/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-ng-forest"
+                        : "shrink-0 rounded-full bg-ng-line px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-ng-ink-muted"
+                    }
+                  >
+                    {f.published !== false ? "Live" : "Hidden"}
+                  </span>
+                </div>
                 <p className="mt-1 text-[12.5px] text-ng-ink-soft">
                   {f.region}
                   {f.hectares != null ? ` · ${f.hectares} ha` : ""}

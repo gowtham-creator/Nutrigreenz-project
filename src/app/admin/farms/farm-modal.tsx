@@ -17,6 +17,8 @@ export interface Farm {
   image: string | null;
   gallery: string[];
   sort: number;
+  /** Shown on the store. */
+  published: boolean;
 }
 
 export interface FarmDraft {
@@ -29,6 +31,7 @@ export interface FarmDraft {
   story: string;
   image: string;
   gallery: string[];
+  published: boolean;
 }
 
 const FIELD =
@@ -46,6 +49,8 @@ function draftFrom(f: Farm | null): FarmDraft {
     story: f?.story ?? "",
     image: f?.image ?? "",
     gallery: f?.gallery ?? [],
+    // A new farm goes live as soon as it's saved unless this is switched off.
+    published: f ? f.published !== false : true,
   };
 }
 
@@ -95,6 +100,33 @@ export function FarmModal({
 
         <div className="px-6 py-5 grid gap-4">
           <div>
+            {/* Live on website */}
+            <label
+              htmlFor="nf-published"
+              className="mb-4 flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-ng-line-soft bg-ng-cream/50 px-4 py-3"
+            >
+              <span>
+                <span className="block text-[14px] font-semibold text-ng-forest-deep">Live on website</span>
+                <span className="block text-[12.5px] text-ng-ink-muted">
+                  {draft.published
+                    ? "Customers can see this farm on the Our farms page."
+                    : "Hidden from the store. Finish it here, then switch it on."}
+                </span>
+              </span>
+              <span className="relative inline-flex shrink-0 items-center">
+                <input
+                  id="nf-published"
+                  type="checkbox"
+                  role="switch"
+                  className="peer sr-only"
+                  checked={draft.published}
+                  onChange={(e) => setDraft((d) => ({ ...d, published: e.target.checked }))}
+                />
+                <span className="h-7 w-12 rounded-full bg-ng-line transition-colors peer-checked:bg-ng-forest peer-focus-visible:ring-2 peer-focus-visible:ring-ng-leaf" />
+                <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+              </span>
+            </label>
+
             <label className={LABEL} htmlFor="nf-name">Farm name</label>
             <input
               id="nf-name"

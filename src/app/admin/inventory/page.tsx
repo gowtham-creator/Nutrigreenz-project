@@ -314,6 +314,14 @@ export default function AdminInventory() {
           </a>
           <button
             type="button"
+            onClick={() => setCategoryOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-ng-forest text-ng-forest-deep font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-sage/30 transition-colors cursor-pointer"
+          >
+            <Icon name="add-circle-bold" size={15} />
+            Add category
+          </button>
+          <button
+            type="button"
             onClick={openAdd}
             className="inline-flex items-center gap-1.5 rounded-full bg-ng-forest-deep text-ng-cream font-semibold px-4 py-2 text-[12.5px] hover:bg-ng-forest transition-colors cursor-pointer"
           >
@@ -579,11 +587,13 @@ export default function AdminInventory() {
         isSuper={isSuper}
         onClose={() => setProductOpen(false)}
         onSave={saveProduct}
+        onCategoryAdded={() => void loadCategories()}
       />
       <CategoryModal
         open={categoryOpen}
         categories={categories}
         busy={categoryBusy}
+        canEdit={isSuper}
         onClose={() => setCategoryOpen(false)}
         onCreate={createCategory}
         onRename={renameCategory}

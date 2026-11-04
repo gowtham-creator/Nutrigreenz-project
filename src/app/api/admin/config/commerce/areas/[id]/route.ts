@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../../../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -34,6 +35,7 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
 
   try {
     const area = await upsertArea(input);
+    await recordAdminAction("config.area_updated", id);
     return Response.json({ ok: true, area });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -50,6 +52,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   const { id } = await ctx.params;
   await deleteArea(id);
+  await recordAdminAction("config.area_deleted", id);
   return Response.json({ ok: true });
 }
 

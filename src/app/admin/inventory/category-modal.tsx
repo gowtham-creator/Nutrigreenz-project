@@ -32,8 +32,11 @@ export function CategoryModal({
   onCreate,
   onRename,
   onDelete,
+  canEdit = true,
 }: {
   open: boolean;
+  /** Rename and delete are super-admin only; anyone with catalog access may add. */
+  canEdit?: boolean;
   categories: readonly Category[];
   busy: boolean;
   onClose: () => void;
@@ -286,6 +289,8 @@ export function CategoryModal({
                     )}
                   </div>
                   <span className="flex-1 truncate text-[13px] font-semibold text-ng-ink">{c.name}</span>
+                  {canEdit ? (
+                  <>
                   <button
                     type="button"
                     onClick={() => startEdit(c)}
@@ -305,6 +310,8 @@ export function CategoryModal({
                     <Icon name="trash-bin-trash-bold" size={13} />
                     Delete
                   </button>
+                  </>
+                  ) : null}
                 </li>
               ))}
             </ul>

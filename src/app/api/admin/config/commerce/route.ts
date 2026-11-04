@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -89,6 +90,7 @@ export async function PUT(request: Request): Promise<Response> {
     // The free-delivery claim on the shop and product pages is cached for 60s;
     // it should not contradict the new rule for that long.
     revalidateStorefront();
+    await recordAdminAction("config.store_settings_updated", null);
     return Response.json({ ok: true, rules });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

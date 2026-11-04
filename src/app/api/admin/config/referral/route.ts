@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -55,6 +56,7 @@ export async function PUT(request: Request): Promise<Response> {
 
   try {
     const config = await updateReferralConfig(patch);
+    await recordAdminAction("config.referral_updated", null);
     return Response.json({ ok: true, config });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

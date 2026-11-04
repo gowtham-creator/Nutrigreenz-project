@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../../../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -35,6 +36,7 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   try {
     const slot = await updateSlot(id, input);
     if (!slot) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+    await recordAdminAction("config.slot_updated", id);
     return Response.json({ ok: true, slot });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -51,6 +53,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   const { id } = await ctx.params;
   await deleteSlot(id);
+  await recordAdminAction("config.slot_deleted", id);
   return Response.json({ ok: true });
 }
 

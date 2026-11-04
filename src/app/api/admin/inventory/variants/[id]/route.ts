@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin, bodyHasPrice, inventoryActor } from "../../guard";
 import { recordProductAudit, variantChange } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
@@ -51,6 +52,7 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
     const change = product && before ? variantChange(product, before, variant, await inventoryActor()) : null;
     if (change) await recordProductAudit(change);
     revalidateStorefront();
+    await recordAdminAction("catalog.variant_updated", id);
     return Response.json({ ok: true, variant });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -74,6 +76,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   const change = product && before ? variantChange(product, before, null, await inventoryActor()) : null;
   if (change) await recordProductAudit(change);
   revalidateStorefront();
+  await recordAdminAction("catalog.variant_deleted", id);
   return Response.json({ ok: true });
 }
 

@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { cookies } from "next/headers";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
@@ -122,6 +123,7 @@ async function PATCHHandler(
 
   const captain = await updateCaptain(id, patch);
   if (!captain) return Response.json({ ok: false, error: "not-found" }, { status: 404 });
+  await recordAdminAction("captain.updated", id);
   return Response.json({ ok: true, captain });
 }
 
@@ -143,6 +145,7 @@ export async function DELETE(
     return Response.json({ ok: false, error: "has_history" }, { status: 409 });
   }
   await deleteCaptain(id);
+  await recordAdminAction("captain.deleted", id);
   return Response.json({ ok: true });
 }
 

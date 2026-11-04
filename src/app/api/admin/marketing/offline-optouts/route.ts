@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin, superAdminEmail } from "../guard";
 import { optOutMobile } from "@/lib/offline-campaigns";
 
@@ -20,6 +21,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   try {
     const ok = await optOutMobile(mobile, await superAdminEmail());
+    if (ok) await recordAdminAction("marketing.optout_added", mobile.replace(/\D/g, "").slice(-4).padStart(10, "•"));
     return ok
       ? Response.json({ ok: true })
       : Response.json({ ok: false, error: "invalid-mobile" }, { status: 400 });

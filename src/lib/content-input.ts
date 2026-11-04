@@ -90,6 +90,7 @@ export function farmDraftFromBody(body: Record<string, unknown>): FarmInput {
     story: typeof body.story === "string" ? strictMultiline(body.story, 5000, "Story") : undefined,
     image,
     gallery: body.gallery !== undefined ? toStringArray(body.gallery) : undefined,
+    published: typeof body.published === "boolean" ? body.published : undefined,
     sort: nonNegativeInt(body.sort),
   };
 }

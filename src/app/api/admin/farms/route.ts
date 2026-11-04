@@ -3,12 +3,14 @@
  *   GET  — list all farms (admin, DB truth, no static fallback).
  *   POST — create a farm (super-admin only, mirroring category creation).
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin } from "./guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listFarms, upsertFarm } from "@/lib/content";
 import { farmDraftFromBody } from "@/lib/content-input";
 import { InputTooLongError } from "@/lib/sanitize-text";
 import { requireApiPermission } from "@/lib/admin-api-guard";
+import { revalidateStorefront } from "@/lib/revalidate-storefront";
 
 export const runtime = "nodejs";
 
@@ -17,7 +19,7 @@ export async function GET(): Promise<Response> {
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
   if (!isSupabaseConfigured) return Response.json({ ok: true, farms: [] });
-  const farms = await listFarms(false);
+  const farms = await listFarms(false, { includeHidden: true });
   return Response.json({ ok: true, farms });
 }
 
@@ -55,6 +57,8 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const farm = await upsertFarm(draft);
+    revalidateStorefront();
+    await recordAdminAction("farm.created", null);
     return Response.json({ ok: true, farm });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

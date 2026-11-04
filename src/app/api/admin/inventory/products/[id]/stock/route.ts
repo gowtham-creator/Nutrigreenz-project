@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, inventoryActor } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, setStock, adjustStock } from "@/lib/catalog";
@@ -32,6 +33,7 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
   const change = productChange(before, product, await inventoryActor());
   if (change && before) await recordProductAudit(change);
   revalidateStorefront();
+  await recordAdminAction("catalog.stock_updated", id);
   return Response.json({ ok: true, product });
 }
 
@@ -59,5 +61,6 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
   const change = productChange(before, product, await inventoryActor());
   if (change && before) await recordProductAudit(change);
   revalidateStorefront();
+  await recordAdminAction("catalog.stock_updated", id);
   return Response.json({ ok: true, product });
 }

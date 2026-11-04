@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -72,6 +73,7 @@ async function POSTHandler(request: Request): Promise<Response> {
     if (!csv.trim()) return Response.json({ ok: false, error: "empty" }, { status: 400 });
     const rows = parseAreaCsv(csv);
     const result = await importAreas(rows);
+    await recordAdminAction("config.area_created", null);
     return Response.json({ ok: true, imported: true, ...result });
   }
 
@@ -84,6 +86,7 @@ async function POSTHandler(request: Request): Promise<Response> {
 
   try {
     const created = await upsertArea({ pincode, area, community, active });
+    await recordAdminAction("config.area_created", null);
     return Response.json({ ok: true, area: created });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

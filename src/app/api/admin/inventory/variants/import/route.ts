@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../../guard";
 import { recordProductAudit, snapshotChanges, variantChange } from "@/lib/product-audit";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -129,5 +130,6 @@ export async function POST(request: Request): Promise<Response> {
     }),
   );
   revalidateStorefront();
+  await recordAdminAction("catalog.variants_imported", null);
   return Response.json({ ok: true, committed: true, ...result });
 }

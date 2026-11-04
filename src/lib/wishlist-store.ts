@@ -217,3 +217,95 @@ export async function aggregateWishlists(limit = 20): Promise<WishlistReport> {
     topProducts,
   };
 }
+
+
+/* ── who saved what (admin) ───────────────────────────────────────────── */
+
+/** One product a customer saved, hydrated from the catalogue. */
+export interface SavedItem {
+  slug: string;
+  title: string;
+  image: string;
+  href: string;
+  pricePaise: number;
+  savedAt: string;
+}
+
+/** A customer and everything on their wishlist, newest save first. */
+export interface WishlistSaver {
+  customerId: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  items: SavedItem[];
+  lastSavedAt: string;
+}
+
+/**
+ * Every customer with a wishlist and what is on it, most recently active first.
+ * For the admin Wishlists page, so the team can see who wants what and follow
+ * up. Contact details come from the customer record; a saved slug missing from
+ * the catalogue still shows, with its slug as the title.
+ */
+export async function listWishlistSavers(): Promise<WishlistSaver[]> {
+  const db = supabaseAdmin();
+  const rows: WishlistRow[] = [];
+  for (let from = 0; from < 20_000; from += 1000) {
+    const { data, error } = await db
+      .from("wishlists")
+      .select("customer_id, product_slug, created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    const page = (data as WishlistRow[] | null) ?? [];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  if (rows.length === 0) return [];
+
+  const ids = [...new Set(rows.map((r) => r.customer_id))];
+  const people = new Map<string, { name: string | null; email: string | null; phone: string | null }>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data } = await db
+      .from("customers")
+      .select("id, display_name, primary_email, primary_phone")
+      .in("id", ids.slice(i, i + 200));
+    for (const c of (data as
+      | { id: string; display_name: string | null; primary_email: string | null; primary_phone: string | null }[]
+      | null) ?? []) {
+      people.set(c.id, { name: c.display_name, email: c.primary_email, phone: c.primary_phone });
+    }
+  }
+
+  const catalog = await getStorefrontCatalog();
+  const bySlug = new Map<string, ProductCard>();
+  for (const p of catalog.products) bySlug.set(p.slug, p);
+
+  const savers = new Map<string, WishlistSaver>();
+  for (const r of rows) {
+    const who = people.get(r.customer_id);
+    let saver = savers.get(r.customer_id);
+    if (!saver) {
+      saver = {
+        customerId: r.customer_id,
+        name: who?.name?.trim() || null,
+        email: who?.email ?? null,
+        phone: who?.phone ?? null,
+        items: [],
+        lastSavedAt: r.created_at,
+      };
+      savers.set(r.customer_id, saver);
+    }
+    const card = bySlug.get(r.product_slug);
+    saver.items.push({
+      slug: r.product_slug,
+      title: card?.title ?? r.product_slug,
+      image: card?.image ?? "",
+      href: card?.href ?? `/products/${r.product_slug}`,
+      pricePaise: card ? priceToPaise(card.price) : 0,
+      savedAt: r.created_at,
+    });
+    if (r.created_at > saver.lastSavedAt) saver.lastSavedAt = r.created_at;
+  }
+  return [...savers.values()].sort((a, b) => b.lastSavedAt.localeCompare(a.lastSavedAt));
+}

@@ -1,4 +1,5 @@
-import { isSignedInAdmin, isSuperAdmin } from "../guard";
+import { recordAdminAction } from "@/lib/admin-action-log";
+import { isSignedInAdmin } from "../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listCategories, upsertCategory } from "@/lib/catalog";
@@ -17,14 +18,15 @@ export async function GET(): Promise<Response> {
   return Response.json({ ok: true, categories });
 }
 
-/** POST — create a category. Super-admin only. */
+/**
+ * POST — add a category. Any admin with catalog access: adding a category is
+ * additive and touches no price or stock, and admins adding products need it.
+ * Renaming and deleting stay super-admin only (see [id]/route.ts).
+ */
 async function POSTHandler(request: Request): Promise<Response> {
   const denied = await requireApiPermission("catalog");
   if (denied) return denied;
   if (!(await isSignedInAdmin())) return Response.json({ ok: false }, { status: 401 });
-  if (!(await isSuperAdmin())) {
-    return Response.json({ ok: false, error: "superadmin-required" }, { status: 403 });
-  }
   if (!isSupabaseConfigured) {
     return Response.json({ ok: false, error: "db-unavailable" }, { status: 503 });
   }
@@ -45,6 +47,7 @@ async function POSTHandler(request: Request): Promise<Response> {
   try {
     const category = await upsertCategory({ name, sort, icon, imageUrl });
     revalidateStorefront();
+    await recordAdminAction("catalog.category_created", null);
     return Response.json({ ok: true, category });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

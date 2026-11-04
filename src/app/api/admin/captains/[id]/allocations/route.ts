@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireApiPermission } from "@/lib/admin-api-guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -88,5 +89,6 @@ export async function PUT(
     return Response.json({ ok: false, error: "save-failed" }, { status: 500 });
   }
 
+  await recordAdminAction("captain.allocations_updated", id);
   return Response.json({ ok: true, items: await allocationsForCaptain(id) });
 }

@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin } from "../../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -37,6 +38,7 @@ async function PATCHHandler(request: Request, ctx: Ctx): Promise<Response> {
   try {
     const category = await upsertCategory({ id, name, sort, icon, imageUrl });
     revalidateStorefront();
+    await recordAdminAction("catalog.category_updated", id);
     return Response.json({ ok: true, category });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -58,6 +60,7 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   const { id } = await ctx.params;
   await deleteCategory(id);
   revalidateStorefront();
+  await recordAdminAction("catalog.category_deleted", id);
   return Response.json({ ok: true });
 }
 

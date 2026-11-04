@@ -10,6 +10,7 @@
  * Body: { status: OrderStatus, note?: string }. `[id]` accepts the uuid id or the
  * human order number.
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
@@ -88,5 +89,6 @@ export async function POST(
     }
   }
 
+  await recordAdminAction("order.status_changed", id, { status: nextStatus });
   return Response.json({ ok: true, order: result.order });
 }

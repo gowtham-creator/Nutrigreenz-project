@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import {
@@ -50,6 +51,7 @@ export async function PUT(request: Request): Promise<Response> {
     const flags = await updateFeatureFlags(patch);
     // Catalogue pages (badges) and the page lists are cached for 60s.
     revalidateStorefront();
+    await recordAdminAction("config.features_updated", null);
     return Response.json({ ok: true, flags });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save-failed";

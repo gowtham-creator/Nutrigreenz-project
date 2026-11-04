@@ -3,6 +3,7 @@
  *   PATCH  — update an article (super-admin only).
  *   DELETE — remove an article (super-admin only).
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin } from "../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { upsertJournal, deleteJournal } from "@/lib/content";
@@ -49,6 +50,7 @@ export async function PATCH(request: Request, ctx: Ctx): Promise<Response> {
 
   try {
     const journal = await upsertJournal({ ...draft, id });
+    await recordAdminAction("journal.updated", id);
     return Response.json({ ok: true, journal });
   } catch (err) {
     const message = err instanceof Error ? err.message : "update-failed";
@@ -68,5 +70,6 @@ export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   }
   const { id } = await ctx.params;
   await deleteJournal(id);
+  await recordAdminAction("journal.deleted", id);
   return Response.json({ ok: true });
 }

@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, inventoryActor } from "../../../guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { getProduct, getVariant, setVariantStock } from "@/lib/catalog";
@@ -33,5 +34,6 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
   const change = product && before ? variantChange(product, before, variant, await inventoryActor()) : null;
   if (change) await recordProductAudit(change);
   revalidateStorefront();
+  await recordAdminAction("catalog.variant_stock_updated", id);
   return Response.json({ ok: true, variant });
 }

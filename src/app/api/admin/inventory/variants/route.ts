@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../guard";
 import { recordProductAudit, variantChange } from "@/lib/product-audit";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
@@ -68,6 +69,7 @@ async function POSTHandler(request: Request): Promise<Response> {
     const change = product ? variantChange(product, null, variant, await inventoryActor()) : null;
     if (change) await recordProductAudit(change);
     revalidateStorefront();
+    await recordAdminAction("catalog.variant_created", null);
     return Response.json({ ok: true, variant });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

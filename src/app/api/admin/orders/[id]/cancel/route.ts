@@ -9,6 +9,7 @@
  * Body: { reason?: string } — shown to the customer in their email, so it
  * should be written for them. `[id]` accepts the uuid id or the order number.
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
 import { verifyToken } from "@/lib/admin-session";
@@ -65,5 +66,6 @@ export async function POST(
     afterResponse(`order ${oid} cancelled notification`, sendOrderCancelledEmail(oid));
   }
 
+  await recordAdminAction("order.cancelled", id);
   return Response.json({ ok: true, order: result.order });
 }

@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin, inventoryActor } from "../guard";
 import { productChange, recordProductAudit, snapshotChanges } from "@/lib/product-audit";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -127,5 +128,6 @@ export async function POST(request: Request): Promise<Response> {
   const actor = await inventoryActor();
   await recordProductAudit(snapshotChanges(before, await allProducts(), (b, a) => productChange(b, a, actor, "import")));
   revalidateStorefront();
+  await recordAdminAction("catalog.products_imported", null);
   return Response.json({ ok: true, committed: true, ...result });
 }

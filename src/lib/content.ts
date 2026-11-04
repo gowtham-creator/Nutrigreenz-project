@@ -229,6 +229,8 @@ export interface FarmRecord {
   /** Last edit (ISO), for the sitemap. Absent on samples. */
   updatedAt?: string;
   sort: number;
+  /** Shown on the store. Hidden farms stay in the admin only. */
+  published: boolean;
 }
 
 export interface FarmInput {
@@ -243,6 +245,7 @@ export interface FarmInput {
   image?: string | null;
   gallery?: string[];
   sort?: number;
+  published?: boolean;
 }
 
 interface FarmRow {
@@ -258,10 +261,15 @@ interface FarmRow {
   gallery: string[] | null;
   updated_at?: string | null;
   sort: number | null;
+  published?: boolean | null;
 }
 
-const FARM_COLS =
+const FARM_COLS_BASE =
   "id, name, region, hectares, practices, partnered_since, farmer_name, story, image_url, gallery, updated_at, sort";
+const FARM_COLS = `${FARM_COLS_BASE}, published`;
+
+/** Before the published column's migration runs, read and write without it. */
+const NO_PUBLISHED = /published.*(does not exist|schema cache)|column .*published/i;
 
 function toFarm(r: FarmRow): FarmRecord {
   return {
@@ -277,6 +285,7 @@ function toFarm(r: FarmRow): FarmRecord {
     gallery: r.gallery ?? [],
     updatedAt: r.updated_at ?? undefined,
     sort: r.sort ?? 0,
+    published: r.published !== false,
   };
 }
 
@@ -293,6 +302,7 @@ function staticFarm(f: (typeof STATIC_FARMS)[number], i: number): FarmRecord {
     image: f.image ?? null,
     gallery: [],
     sort: i,
+    published: true,
   };
 }
 
@@ -302,35 +312,47 @@ const fallbackFarms = (): FarmRecord[] => STATIC_FARMS.map(staticFarm);
  * All partner farms in display order. `fallback` behaves as in {@link listJournals}
  * — storefront on (static sample when DB empty), admin off (DB truth).
  */
-export async function listFarms(fallback = true): Promise<FarmRecord[]> {
+export async function listFarms(
+  fallback = true,
+  opts: { includeHidden?: boolean } = {},
+): Promise<FarmRecord[]> {
   if (!isSupabaseConfigured) return fallback ? fallbackFarms() : [];
   try {
-    const { data, error } = await supabaseAdmin()
-      .from("farms")
-      .select(FARM_COLS)
-      .order("sort", { ascending: true })
-      .order("partnered_since", { ascending: true, nullsFirst: false });
+    const read = (cols: string) =>
+      supabaseAdmin()
+        .from("farms")
+        .select(cols)
+        .order("sort", { ascending: true })
+        .order("partnered_since", { ascending: true, nullsFirst: false });
+    let { data, error } = await read(FARM_COLS);
+    if (error && NO_PUBLISHED.test(error.message)) ({ data, error } = await read(FARM_COLS_BASE));
     if (error) throw error;
-    const rows = (data as FarmRow[] | null) ?? [];
+    const rows = ((data as unknown as FarmRow[] | null) ?? []).map(toFarm);
     if (rows.length === 0) return fallback ? fallbackFarms() : [];
-    return rows.map(toFarm);
+    // The store shows live farms only; the admin sees every farm.
+    return opts.includeHidden ? rows : rows.filter((f) => f.published);
   } catch {
     return fallback ? fallbackFarms() : [];
   }
 }
 
 /** A single farm by id, or null when it exists nowhere. */
-export async function getFarm(id: string): Promise<FarmRecord | null> {
+export async function getFarm(
+  id: string,
+  opts: { includeHidden?: boolean } = {},
+): Promise<FarmRecord | null> {
   const fromStatic = () => fallbackFarms().find((f) => f.id === id) ?? null;
   if (!isSupabaseConfigured) return fromStatic();
   try {
-    const { data, error } = await supabaseAdmin()
-      .from("farms")
-      .select(FARM_COLS)
-      .eq("id", id)
-      .maybeSingle();
+    const read = (cols: string) => supabaseAdmin().from("farms").select(cols).eq("id", id).maybeSingle();
+    let { data, error } = await read(FARM_COLS);
+    if (error && NO_PUBLISHED.test(error.message)) ({ data, error } = await read(FARM_COLS_BASE));
     if (error) throw error;
-    if (data) return toFarm(data as FarmRow);
+    if (data) {
+      const farm = toFarm(data as unknown as FarmRow);
+      // A hidden farm is not on the store: its page answers 404.
+      return farm.published || opts.includeHidden ? farm : null;
+    }
     return fromStatic();
   } catch {
     return fromStatic();
@@ -354,26 +376,26 @@ export async function upsertFarm(input: FarmInput): Promise<FarmRecord> {
     gallery: input.gallery ?? [],
   };
   if (input.sort !== undefined) patch.sort = input.sort;
+  if (input.published !== undefined) patch.published = input.published;
 
-  if (input.id) {
-    const { data, error } = await db
-      .from("farms")
-      .update(patch)
-      .eq("id", input.id)
-      .select(FARM_COLS)
-      .single();
-    if (error || !data) throw new Error(error?.message || "Failed to update farm.");
-    return toFarm(data as FarmRow);
+  // Before the published column exists, save everything else.
+  const write = async (body: Record<string, unknown>, cols: string) =>
+    input.id
+      ? db.from("farms").update(body).eq("id", input.id).select(cols).single()
+      : db
+          .from("farms")
+          .insert({ id: (slugify(name) || `farm-${Date.now()}`).slice(0, 60), sort: 0, ...body })
+          .select(cols)
+          .single();
+
+  let { data, error } = await write(patch, FARM_COLS);
+  if (error && NO_PUBLISHED.test(error.message)) {
+    const { published: _skip, ...rest } = patch;
+    void _skip;
+    ({ data, error } = await write(rest, FARM_COLS_BASE));
   }
-
-  const id = (slugify(name) || `farm-${Date.now()}`).slice(0, 60);
-  const { data, error } = await db
-    .from("farms")
-    .insert({ id, sort: 0, ...patch })
-    .select(FARM_COLS)
-    .single();
-  if (error || !data) throw new Error(error?.message || "Failed to create farm.");
-  return toFarm(data as FarmRow);
+  if (error || !data) throw new Error(error?.message || (input.id ? "Failed to update farm." : "Failed to create farm."));
+  return toFarm(data as unknown as FarmRow);
 }
 
 export async function deleteFarm(id: string): Promise<void> {

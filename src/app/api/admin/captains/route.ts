@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { cookies } from "next/headers";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { ADMIN_COOKIE } from "@/lib/admin-auth";
@@ -102,6 +103,7 @@ async function POSTHandler(request: Request): Promise<Response> {
     active,
     createdBy: session.email,
   });
+  await recordAdminAction("captain.created", null);
   return Response.json({ ok: true, captain }, { status: 201 });
 }
 

@@ -1,3 +1,4 @@
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { requireSuperAdmin } from "../../guard";
 import { TEXT_LIMITS, strictText } from "@/lib/sanitize-text";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
@@ -35,6 +36,7 @@ async function POSTHandler(request: Request): Promise<Response> {
 
   try {
     const slot = await createSlot({ label, windowText, sort, active });
+    await recordAdminAction("config.slot_created", null);
     return Response.json({ ok: true, slot });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";

@@ -3,6 +3,7 @@
  *   GET  — list all articles (admin, DB truth, no static fallback).
  *   POST — create an article (super-admin only, mirroring category creation).
  */
+import { recordAdminAction } from "@/lib/admin-action-log";
 import { isSignedInAdmin, isSuperAdmin } from "./guard";
 import { isSupabaseConfigured } from "@/lib/supabase-admin";
 import { listJournals, upsertJournal } from "@/lib/content";
@@ -55,6 +56,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const journal = await upsertJournal(draft);
+    await recordAdminAction("journal.created", null);
     return Response.json({ ok: true, journal });
   } catch (err) {
     const message = err instanceof Error ? err.message : "create-failed";
