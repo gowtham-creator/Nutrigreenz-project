@@ -51,7 +51,7 @@ export function CaptainShell({
       <div className="w-full max-w-[460px] min-h-dvh bg-ng-paper text-ng-ink relative flex flex-col sm:my-6 sm:min-h-[calc(100dvh-3rem)] sm:rounded-[36px] sm:overflow-hidden sm:ring-1 sm:ring-ng-forest-deep/15 sm:shadow-xl">
         {/* ===== Top bar: who is signed in, where, and whether sales are saved ===== */}
         <header className="bg-ng-forest-deep text-ng-cream">
-          <div className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+          <div className="px-4 pt-3 pb-3">
             <div className="flex items-center gap-3">
               <Logo variant="full" tone="white" className="!h-[24px]" priority />
               <div className="ml-auto flex items-center gap-2">

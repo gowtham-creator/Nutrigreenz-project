@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { useScrollChrome } from "@/lib/use-scroll-chrome";
+import { useIsOperator } from "@/lib/operator-surface";
 import { cn } from "@/lib/utils";
 
 /**
@@ -46,7 +47,8 @@ export function BottomTabs() {
   const { count: saved } = useWishlist();
   const { isAuthed } = useAuth();
   const { hidden } = useScrollChrome();
-  if (HIDDEN.test(pathname)) return null;
+  const operator = useIsOperator();
+  if (HIDDEN.test(pathname) || operator) return null;
 
   const tabs = [
     { href: "/", match: "/", label: "Home", icon: "/images/tabs/home.png" },
@@ -63,11 +65,11 @@ export function BottomTabs() {
 
   return (
     <>
-      <div aria-hidden className="lg:hidden h-[calc(64px+env(safe-area-inset-bottom))]" />
+      <div aria-hidden className="ng-store-only lg:hidden h-[calc(64px+env(safe-area-inset-bottom))]" />
       <nav
         aria-label="Main"
         className={cn(
-          "lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-ng-line/70 bg-ng-paper/80 backdrop-blur-xl backdrop-saturate-150",
+          "ng-store-only lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-ng-line/70 bg-ng-paper/80 backdrop-blur-xl backdrop-saturate-150",
           "pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(16,40,24,0.35)]",
           "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           hidden ? "translate-y-full" : "translate-y-0",

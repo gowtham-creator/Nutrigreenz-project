@@ -249,7 +249,7 @@ export function ProductListing({
         <div className="grid gap-10 lg:grid-cols-[286px_1fr]">
           {/* Desktop sidebar */}
           <aside className="hidden lg:block">
-            <div className="sticky top-[120px] rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)]">
+            <div className="sticky top-[calc(120px+env(safe-area-inset-top))] rounded-3xl border border-ng-line-soft bg-ng-paper p-6 shadow-[var(--shadow-ng-card)]">
               {filterPanel}
             </div>
           </aside>

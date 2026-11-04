@@ -49,7 +49,7 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 glass-strong border-b border-ng-line"
+      className="sticky top-[env(safe-area-inset-top)] z-40 glass-strong border-b border-ng-line"
       onMouseLeave={() => setOpenMega(null)}
     >
       <div className="mx-auto max-w-7xl px-5 md:px-8 flex items-center h-[68px]">

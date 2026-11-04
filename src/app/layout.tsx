@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { VisitBeacon } from "@/components/ng/visit-beacon";
@@ -71,6 +71,28 @@ const jetbrains = localFont({
   src: [{ path: "./fonts/jetbrains-mono-latin-wght-normal.woff2", weight: "100 800", style: "normal" }],
 });
 
+/**
+ * Edge to edge on every phone and tablet. `viewport-fit=cover` lets the page
+ * reach behind the notch, Dynamic Island, punch-hole camera and home bar, and
+ * the brand green fills that space (see `.ng-safe-top` and globals.css), so
+ * the top of the screen is never a stray white strip. `themeColor` tints the
+ * Android status and address bars and older iOS Safari to match.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0A1F12",
+};
+
+/**
+ * Marks the admin and captain apps before first paint, so store-only pieces
+ * (the coming-soon strip, the bottom tab bar) never flash there. The admin app
+ * is served on admin.nutrigreenz.farm with clean paths like /orders, so the
+ * host must be checked as well as the path.
+ */
+const OPERATOR_INIT = `(function(){try{if(/^(admin|captain)[.]/.test(location.hostname)||/^[/](admin|captain)([/]|$)/.test(location.pathname))document.documentElement.dataset.operator="1"}catch(e){}})();`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Nutri Greenz · Cold-pressed oils, A2 ghee and raw honey",
@@ -91,6 +113,11 @@ export default function RootLayout({
       className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
       <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
+        <script dangerouslySetInnerHTML={{ __html: OPERATOR_INIT }} />
+        {/* Paints the status-bar area (notch, Dynamic Island, punch-hole) in the
+            brand green on phones that report a top safe area. Zero height
+            everywhere else. */}
+        <div aria-hidden className="ng-safe-top" />
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
         <AuthProvider>

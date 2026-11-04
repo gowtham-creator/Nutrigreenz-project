@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { isOperatorLocation, useIsOperator } from "@/lib/operator-surface";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ const SKIP_AFTER_MS = 2_000;
 /** Scenes overlap for this long, so one dissolves into the next with no cut. */
 const CROSSFADE_S = 1.2;
 
-const INIT = `(function(){try{var p=location.pathname,h=document.documentElement;if(/^\\/(admin|captain|unsubscribe)(\\/|$)|^\\/checkout\\/success/.test(p)){h.dataset.ngSoon="off";return}if(sessionStorage.getItem("${SEEN_KEY}")==="1")h.dataset.ngSoon="seen"}catch(e){}})()`;
+const INIT = `(function(){try{var p=location.pathname,h=document.documentElement;if(/^(admin|captain)\\./.test(location.hostname)||/^\\/(admin|captain|unsubscribe)(\\/|$)|^\\/checkout\\/success/.test(p)){h.dataset.ngSoon="off";return}if(sessionStorage.getItem("${SEEN_KEY}")==="1")h.dataset.ngSoon="seen"}catch(e){}})()`;
 
 const CSS = `html[data-ng-soon] .ng-soon-intro{display:none}html[data-ng-soon="off"] .ng-soon-strip{display:none}`;
 
@@ -41,6 +42,7 @@ export function ComingSoon() {
   const [closed, setClosed] = useState(false);
   const [launched, setLaunched] = useState(false);
   const reduce = useReducedMotion();
+  const operator = useIsOperator();
 
   const close = useCallback(() => {
     try {
@@ -65,8 +67,10 @@ export function ComingSoon() {
       .catch(() => {});
 
     // Already seen, or an operator route: the CSS has hidden it, so no film runs.
+    // The admin and captain apps are checked directly too: on the admin host a
+    // re-render can drop the attribute the early script set.
     const timers: ReturnType<typeof setTimeout>[] = [];
-    if (!document.documentElement.dataset.ngSoon) {
+    if (!document.documentElement.dataset.ngSoon && !isOperatorLocation()) {
       document.body.style.overflow = "hidden";
       SCENE_STARTS_MS.forEach((at, i) => timers.push(setTimeout(() => setScene(i + 1), at)));
       timers.push(setTimeout(() => setCanSkip(true), SKIP_AFTER_MS));
@@ -79,7 +83,7 @@ export function ComingSoon() {
     };
   }, [close]);
 
-  if (launched) return null;
+  if (launched || operator) return null;
 
   const rise = (delay = 0) => ({
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 18, filter: "blur(6px)" },

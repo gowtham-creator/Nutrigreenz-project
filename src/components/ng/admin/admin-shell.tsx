@@ -413,7 +413,7 @@ export function AdminShell({
 
       {/* Main */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 border-b border-ng-line-soft/70 bg-[color-mix(in_srgb,var(--ng-admin-ground)_86%,transparent)] backdrop-blur-xl">
+        <header className="sticky top-[env(safe-area-inset-top)] z-10 border-b border-ng-line-soft/70 bg-[color-mix(in_srgb,var(--ng-admin-ground)_86%,transparent)] backdrop-blur-xl">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             {/* Row 1 — heading (left) + operator identity, which is always pinned
                 to the top-right corner instead of being lumped in with the page
