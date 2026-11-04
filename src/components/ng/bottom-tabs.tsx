@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, useReducedMotion, useSpring, useTransform, useVelocity } from "framer-motion";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { useScrollChrome } from "@/lib/use-scroll-chrome";
@@ -9,18 +11,28 @@ import { useIsOperator } from "@/lib/operator-surface";
 import { cn } from "@/lib/utils";
 
 /**
- * App-style tab bar for phones and tablets: Home, Shop, Wishlist and Profile
- * one thumb-tap away. The cart stays in the header.
+ * App-style tab bar for phones and tablets, in the manner of iOS's Liquid Glass
+ * tab bars: a floating frosted capsule in the store's cream, with a green glass
+ * pill that slides to the selected tab.
  *
- * Slightly see-through, it slides away while scrolling down and comes back on
- * any scroll up. A press fills the tab with the brand green, so a tap feels
- * answered at once.
+ * - Tap a tab and the pill glides over, stretching with its speed and settling
+ *   like a drop of liquid.
+ * - Press and slide along the bar: the pill follows the thumb, swelling a
+ *   little like a lens, and lifting off opens the tab underneath.
+ * - The highlight is the green of the groundnut oil label (#1E4A33).
+ * - Slides away while scrolling down and returns on any scroll up.
  *
  * Hidden where the page has its own bottom bar or none belongs: product pages
  * (their Add to cart bar), the cart and checkout, sign-in, and the admin and
  * captain apps. A spacer of the same height keeps the footer clear of it.
  */
 const HIDDEN = /^\/(products|cart|checkout|auth|admin|captain|unsubscribe|r)(\/|$)/;
+
+/** The groundnut oil label green. */
+const LABEL_GREEN = "#1E4A33";
+
+/** Movement before a press becomes a slide rather than a tap. */
+const SLIDE_THRESHOLD_PX = 8;
 
 /** The owner's filled icons, used as masks so they take the tab's colour. */
 function TabIcon({ src }: { src: string }) {
@@ -42,13 +54,27 @@ function TabIcon({ src }: { src: string }) {
   );
 }
 
+interface Slot {
+  x: number;
+  w: number;
+}
+
+function buzz() {
+  try {
+    navigator.vibrate?.(6);
+  } catch {
+    /* No haptics here (iOS Safari ignores vibrate). */
+  }
+}
+
 export function BottomTabs() {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
   const { count: saved } = useWishlist();
   const { isAuthed } = useAuth();
   const { hidden } = useScrollChrome();
   const operator = useIsOperator();
-  if (HIDDEN.test(pathname) || operator) return null;
+  const reduce = useReducedMotion();
 
   const tabs = [
     { href: "/", match: "/", label: "Home", icon: "/images/tabs/home.png" },
@@ -61,54 +87,242 @@ export function BottomTabs() {
       icon: "/images/tabs/profile.png",
     },
   ];
-  const active = (m: string) => (m === "/" ? pathname === "/" : pathname === m || pathname.startsWith(`${m}/`));
+  const isActive = (m: string) => (m === "/" ? pathname === "/" : pathname === m || pathname.startsWith(`${m}/`));
+  const routeIndex = tabs.findIndex((t) => isActive(t.match));
+
+  // The tab just chosen, shown at once while the page loads; it gives way to
+  // the route as soon as the address changes.
+  const [picked, setPicked] = useState<{ index: number; from: string } | null>(null);
+  const selected = picked && picked.from === pathname ? picked.index : routeIndex;
+
+  /* ── Geometry ─────────────────────────────────────────────────────────── */
+  const listRef = useRef<HTMLUListElement>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const measure = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+    setSlots(
+      [...list.children].map((el) => {
+        const li = el as HTMLElement;
+        return { x: li.offsetLeft, w: li.offsetWidth };
+      }),
+    );
+  }, []);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  /* ── Press and slide ──────────────────────────────────────────────────── */
+  const press = useRef<{ startX: number; pointerId: number; sliding: boolean } | null>(null);
+  const swallowClick = useRef(false);
+  const [dragX, setDragX] = useState<number | null>(null);
+
+  const nearest = useCallback(
+    (x: number) => {
+      let best = 0;
+      let bestD = Infinity;
+      slots.forEach((s, i) => {
+        const d = Math.abs(s.x + s.w / 2 - x);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      return best;
+    },
+    [slots],
+  );
+  const hoverIndex = dragX !== null ? nearest(dragX) : null;
+  const lit = hoverIndex ?? selected;
+
+  /* ── The pill ─────────────────────────────────────────────────────────── */
+  const pillInset = 4;
+  const slotW = slots[0]?.w ?? 0;
+  const pillW = Math.max(0, slotW - pillInset * 2);
+  const target = (() => {
+    if (!slots.length) return null;
+    if (dragX !== null) {
+      const first = slots[0].x + pillInset;
+      const last = slots[slots.length - 1].x + pillInset;
+      return Math.min(last, Math.max(first, dragX - pillW / 2));
+    }
+    if (selected < 0) return null;
+    return slots[selected].x + pillInset;
+  })();
+
+  const spring = reduce
+    ? { stiffness: 2000, damping: 200, mass: 0.2 }
+    : dragX !== null
+      ? { stiffness: 900, damping: 55, mass: 0.35 }
+      : { stiffness: 380, damping: 30, mass: 0.9 };
+  const x = useSpring(0, spring);
+  // Liquid: the pill stretches along its path in proportion to its speed and
+  // narrows a touch, then relaxes back into shape as it settles.
+  const velocity = useVelocity(x);
+  const scaleX = useTransform(velocity, [-2400, 0, 2400], reduce ? [1, 1, 1] : [1.28, 1, 1.28]);
+  const scaleY = useTransform(velocity, [-2400, 0, 2400], reduce ? [1, 1, 1] : [0.9, 1, 0.9]);
+  const placed = useRef(false);
+  useEffect(() => {
+    if (target === null) return;
+    if (!placed.current) {
+      // First placement lands without a slide in from the left edge.
+      x.jump(target);
+      placed.current = true;
+    } else {
+      x.set(target);
+    }
+  }, [target, x]);
+
+  if (HIDDEN.test(pathname) || operator) return null;
+
+  const choose = (index: number) => {
+    if (index !== selected) buzz();
+    setPicked({ index, from: pathname });
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLUListElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    press.current = { startX: e.clientX, pointerId: e.pointerId, sliding: false };
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLUListElement>) => {
+    const p = press.current;
+    const list = listRef.current;
+    if (!p || !list) return;
+    if (!p.sliding) {
+      if (Math.abs(e.clientX - p.startX) < SLIDE_THRESHOLD_PX) return;
+      p.sliding = true;
+      try {
+        list.setPointerCapture(p.pointerId);
+      } catch {
+        /* The pointer already left; the slide still works. */
+      }
+    }
+    const left = list.getBoundingClientRect().left;
+    const next = e.clientX - left;
+    const before = dragX !== null ? nearest(dragX) : selected;
+    if (nearest(next) !== before) buzz();
+    setDragX(next);
+  };
+  const endPress = (commit: boolean) => {
+    const p = press.current;
+    press.current = null;
+    if (!p?.sliding) return;
+    // The link under the finger would also receive this as a click.
+    swallowClick.current = true;
+    window.setTimeout(() => {
+      swallowClick.current = false;
+    }, 350);
+    if (commit && dragX !== null) {
+      const index = nearest(dragX);
+      setPicked({ index, from: pathname });
+      if (index !== routeIndex) router.push(tabs[index].href);
+    }
+    setDragX(null);
+  };
 
   return (
     <>
-      <div aria-hidden className="ng-store-only lg:hidden h-[calc(64px+env(safe-area-inset-bottom))]" />
+      <div aria-hidden className="ng-store-only lg:hidden h-[calc(84px+env(safe-area-inset-bottom))]" />
       <nav
         aria-label="Main"
         className={cn(
-          "ng-store-only lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-ng-line/70 bg-ng-paper/90",
-          "pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(16,40,24,0.35)]",
+          "ng-store-only lg:hidden pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3",
+          "pb-[calc(env(safe-area-inset-bottom)+10px)]",
           "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          hidden ? "translate-y-full" : "translate-y-0",
+          hidden ? "translate-y-[calc(100%+12px)]" : "translate-y-0",
         )}
       >
-        <ul className="mx-auto grid h-16 max-w-2xl grid-cols-4 px-2">
-          {tabs.map((t) => {
-            const on = active(t.match);
-            return (
-              <li key={t.label} className="flex items-center justify-center">
-                <Link
-                  href={t.href}
-                  aria-current={on ? "page" : undefined}
-                  className={cn(
-                    "group flex h-14 w-full max-w-24 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11.5px] font-semibold",
-                    "[-webkit-tap-highlight-color:transparent] select-none transition-[background-color,color,transform] duration-150",
-                    "active:scale-[0.94] active:bg-ng-forest active:text-ng-cream",
-                    on ? "text-ng-forest-deep" : "text-ng-ink-muted",
-                  )}
-                >
-                  <span
+        {/* The glass: the store's cream, frosted, with a light catching the top
+            edge and a soft contact shadow underneath. */}
+        <div
+          className={cn(
+            "pointer-events-auto relative mx-auto h-[66px] max-w-md rounded-[33px] p-1",
+            "bg-ng-paper/80 backdrop-blur-2xl backdrop-saturate-[1.8]",
+            "border border-white/70 ring-1 ring-[rgba(30,74,51,0.08)]",
+            "shadow-[0_14px_34px_-14px_rgba(16,40,24,0.45),0_2px_6px_-2px_rgba(16,40,24,0.12),inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-1px_0_rgba(30,74,51,0.06)]",
+          )}
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+          />
+
+          <ul
+            ref={listRef}
+            className="relative grid h-full touch-none select-none grid-cols-4"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={() => endPress(true)}
+            onPointerCancel={() => endPress(false)}
+            onClickCapture={(e) => {
+              if (swallowClick.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                swallowClick.current = false;
+              }
+            }}
+          >
+            {/* The pill: label-green glass. It sits behind the tabs. */}
+            {target !== null && pillW > 0 ? (
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 z-0"
+                style={{ x, width: pillW, scaleX, scaleY }}
+              >
+                <motion.span
+                  className="block h-full w-full rounded-[28px]"
+                  initial={false}
+                  animate={{ scale: dragX !== null ? 1.08 : 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  style={{
+                    background:
+                      dragX !== null
+                        ? `linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(30,74,51,0.16) 100%)`
+                        : `linear-gradient(180deg, rgba(30,74,51,0.22) 0%, rgba(30,74,51,0.13) 100%)`,
+                    border: `1px solid rgba(30,74,51,${dragX !== null ? 0.28 : 0.2})`,
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 2px rgba(30,74,51,0.14), 0 6px 14px -8px rgba(30,74,51,0.55)",
+                  }}
+                />
+              </motion.span>
+            ) : null}
+
+            {tabs.map((t, i) => {
+              const on = i === lit;
+              return (
+                <li key={t.label} className="relative z-10 flex">
+                  <Link
+                    href={t.href}
+                    aria-current={i === routeIndex ? "page" : undefined}
+                    onClick={() => choose(i)}
+                    draggable={false}
                     className={cn(
-                      "relative grid h-8 w-12 place-items-center rounded-full transition-colors duration-150",
-                      on ? "bg-ng-sage/70" : "group-active:bg-transparent",
+                      "flex w-full flex-col items-center justify-center gap-0.5 rounded-[28px] text-[11.5px] font-semibold",
+                      "[-webkit-tap-highlight-color:transparent] outline-none transition-colors duration-200",
+                      "focus-visible:ring-2 focus-visible:ring-[rgba(30,74,51,0.45)]",
+                      !on && "text-ng-ink-muted",
                     )}
+                    style={on ? { color: LABEL_GREEN } : undefined}
                   >
-                    <TabIcon src={t.icon} />
-                    {t.badge ? (
-                      <span className="absolute -top-0.5 right-1 min-w-4 h-4 px-1 rounded-full bg-ng-clay-deep text-ng-paper text-[10px] font-semibold inline-flex items-center justify-center">
-                        {t.badge > 99 ? "99+" : t.badge}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span>{t.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                    <span className="relative grid h-7 w-10 place-items-center">
+                      <TabIcon src={t.icon} />
+                      {t.badge ? (
+                        <span className="absolute -top-1 right-0 min-w-4 h-4 px-1 rounded-full bg-ng-clay-deep text-ng-paper text-[10px] font-semibold inline-flex items-center justify-center">
+                          {t.badge > 99 ? "99+" : t.badge}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span>{t.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
     </>
   );
