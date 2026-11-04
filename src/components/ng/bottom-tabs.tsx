@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useMotionValueEvent, useReducedMotion, useSpring, useTransform, useVelocity } from "framer-motion";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { useScrollChrome } from "@/lib/use-scroll-chrome";
@@ -12,17 +11,18 @@ import { cn } from "@/lib/utils";
 
 /**
  * App-style tab bar for phones and tablets, in the manner of iOS's Liquid Glass
- * tab bars: a floating frosted capsule in the store's cream, with a green glass
- * pill that slides to the selected tab.
+ * tab bars: a floating frosted capsule in the store's cream, with a pill in the
+ * deep green of the groundnut oil label (#1E4A33) that slides to the chosen tab.
  *
- * - Touch a tab and the pill moves at once, stretching with its speed and
- *   settling like a drop of liquid; each icon turns cream as the pill passes
- *   under it, so the highlight never runs ahead of the pill.
- * - Press and slide along the bar: the pill follows the thumb, swelling a
- *   little like a lens, and lifting off opens the tab underneath.
- * - The pill is the deep green of the groundnut oil label (#1E4A33) with cream
- *   on it, like the label itself.
- * - Slides away while scrolling down and returns on any scroll up.
+ * - Touch a tab and the pill sets off at once: a spring-like glide with a small
+ *   overshoot and a brief liquid stretch, while the icons cross-fade to cream.
+ * - Press and slide along the bar: the pill follows the thumb like a lens, and
+ *   lifting off opens the tab underneath.
+ * - Slides away while scrolling down and returns on scrolling up.
+ *
+ * Smoothness: the pill moves with CSS transforms, which the browser runs on the
+ * compositor. A JavaScript-driven spring stalled while the next page was being
+ * built after a tap; this keeps gliding regardless.
  *
  * Hidden where the page has its own bottom bar or none belongs: product pages
  * (their Add to cart bar), the cart and checkout, sign-in, and the admin and
@@ -76,7 +76,6 @@ export function BottomTabs() {
   const { isAuthed } = useAuth();
   const { hidden } = useScrollChrome();
   const operator = useIsOperator();
-  const reduce = useReducedMotion();
 
   const tabs = [
     { href: "/", match: "/", label: "Home", icon: "/images/tabs/home.png" },
@@ -104,10 +103,12 @@ export function BottomTabs() {
     const list = listRef.current;
     if (!list) return;
     setSlots(
-      [...list.children].map((el) => {
-        const li = el as HTMLElement;
-        return { x: li.offsetLeft, w: li.offsetWidth };
-      }),
+      [...list.children]
+        .filter((el) => el.tagName === "LI")
+        .map((el) => {
+          const li = el as HTMLElement;
+          return { x: li.offsetLeft, w: li.offsetWidth };
+        }),
     );
   }, []);
   useLayoutEffect(() => {
@@ -144,53 +145,28 @@ export function BottomTabs() {
 
   /* ── The pill ─────────────────────────────────────────────────────────── */
   const pillInset = 4;
-  const slotW = slots[0]?.w ?? 0;
-  const pillW = Math.max(0, slotW - pillInset * 2);
-  const target = (() => {
+  const pillW = Math.max(0, (slots[0]?.w ?? 0) - pillInset * 2);
+  const restIndex = pressIndex ?? selected;
+  const dragging = dragX !== null;
+  const pillX = (() => {
     if (!slots.length) return null;
-    if (dragX !== null) {
+    if (dragging) {
       const first = slots[0].x + pillInset;
       const last = slots[slots.length - 1].x + pillInset;
       return Math.min(last, Math.max(first, dragX - pillW / 2));
     }
-    const at = pressIndex ?? selected;
-    if (at < 0) return null;
-    return slots[at].x + pillInset;
+    return restIndex >= 0 ? slots[restIndex].x + pillInset : null;
   })();
+  const litIndex = dragging ? nearest(dragX) : restIndex;
 
-  // Quick and a touch springy, so it feels like it answers the finger; while
-  // sliding it tracks the thumb almost exactly.
-  const spring = reduce
-    ? { stiffness: 2000, damping: 200, mass: 0.2 }
-    : dragX !== null
-      ? { stiffness: 1400, damping: 70, mass: 0.25 }
-      : { stiffness: 560, damping: 38, mass: 0.55 };
-  const x = useSpring(0, spring);
-  // Liquid: the pill stretches along its path in proportion to its speed and
-  // narrows a touch, then relaxes back into shape as it settles.
-  const velocity = useVelocity(x);
-  const scaleX = useTransform(velocity, [-3200, 0, 3200], reduce ? [1, 1, 1] : [1.22, 1, 1.22], { clamp: true });
-  const scaleY = useTransform(velocity, [-3200, 0, 3200], reduce ? [1, 1, 1] : [0.92, 1, 0.92], { clamp: true });
+  // Each time the pill sets off for a new tab, restart its liquid stretch.
+  const [moves, setMoves] = useState({ index: restIndex, count: 0 });
+  if (!dragging && restIndex !== moves.index) setMoves({ index: restIndex, count: moves.count + 1 });
 
-  // Which tab the pill is over right now, read from where it actually is.
-  const [over, setOver] = useState<number | null>(null);
-  useMotionValueEvent(x, "change", (v) => {
-    if (!slots.length) return;
-    const i = nearest(v + pillW / 2);
-    setOver((prev) => (prev === i ? prev : i));
-  });
-  const lit = target === null ? -1 : (over ?? (pressIndex ?? selected));
-  const placed = useRef(false);
-  useEffect(() => {
-    if (target === null) return;
-    if (!placed.current) {
-      // First placement lands without a slide in from the left edge.
-      x.jump(target);
-      placed.current = true;
-    } else {
-      x.set(target);
-    }
-  }, [target, x]);
+  // The first placement lands without a glide in from the left edge.
+  const [placed, setPlaced] = useState(false);
+  if (pillX !== null && !placed) setPlaced(true);
+  const firstFrame = pillX !== null && !placed;
 
   if (HIDDEN.test(pathname) || operator) return null;
 
@@ -221,10 +197,8 @@ export function BottomTabs() {
         /* The pointer already left; the slide still works. */
       }
     }
-    const left = list.getBoundingClientRect().left;
-    const next = e.clientX - left;
-    const before = dragX !== null ? nearest(dragX) : selected;
-    if (nearest(next) !== before) buzz();
+    const next = e.clientX - list.getBoundingClientRect().left;
+    if (dragX !== null && nearest(next) !== nearest(dragX)) buzz();
     setDragX(next);
   };
   const endPress = (commit: boolean) => {
@@ -233,8 +207,8 @@ export function BottomTabs() {
     if (!p?.sliding) {
       // A tap: the link's click (which fires next) records the choice. If the
       // finger lifted somewhere else, the pill goes home.
-      window.setTimeout(() => setPressIndex(null), 400);
       if (!commit) setPressIndex(null);
+      else window.setTimeout(() => setPressIndex(null), 400);
       return;
     }
     // The link under the finger would also receive this as a click.
@@ -259,7 +233,7 @@ export function BottomTabs() {
         className={cn(
           "ng-store-only lg:hidden pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3",
           "pb-[calc(env(safe-area-inset-bottom)+10px)]",
-          "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none",
           hidden ? "translate-y-[calc(100%+12px)]" : "translate-y-0",
         )}
       >
@@ -293,35 +267,30 @@ export function BottomTabs() {
               }
             }}
           >
-            {/* The pill: label-green glass. It sits behind the tabs. */}
-            {target !== null && pillW > 0 ? (
-              <motion.span
+            {/* The pill: deep label-green glass behind the tabs. The outer
+                layer glides (compositor transform); the inner layer stretches
+                and presses. */}
+            {pillX !== null && pillW > 0 ? (
+              <span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 left-0 z-0"
-                style={{ x, width: pillW, scaleX, scaleY }}
+                className="ng-pill-track pointer-events-none absolute inset-y-0 left-0 z-0 will-change-transform"
+                style={{
+                  width: pillW,
+                  transform: `translate3d(${pillX}px,0,0)`,
+                  transition: dragging || firstFrame ? "none" : undefined,
+                }}
               >
-                <motion.span
-                  className="block h-full w-full rounded-[28px]"
-                  initial={false}
-                  animate={{ scale: dragX !== null ? 1.08 : pressIndex !== null ? 0.97 : 1 }}
-                  transition={{ type: "spring", stiffness: 700, damping: 32 }}
-                  style={{
-                    // Deep label green, a little clearer while it is being
-                    // slid, like a lens lifted off the glass.
-                    background:
-                      dragX !== null
-                        ? "linear-gradient(180deg, rgba(46,104,73,0.82) 0%, rgba(30,74,51,0.86) 100%)"
-                        : "linear-gradient(180deg, #2A5E42 0%, #1E4A33 55%, #17402B 100%)",
-                    border: "1px solid rgba(23,64,43,0.9)",
-                    boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -2px 4px rgba(0,0,0,0.18), 0 8px 18px -8px rgba(23,64,43,0.7)",
-                  }}
+                <span
+                  key={moves.count}
+                  className={cn("ng-pill block h-full w-full", moves.count > 0 && !dragging && "ng-pill-stretch")}
+                  data-lens={dragging ? "" : undefined}
+                  data-pressed={pressIndex !== null && !dragging ? "" : undefined}
                 />
-              </motion.span>
+              </span>
             ) : null}
 
             {tabs.map((t, i) => {
-              const on = i === lit;
+              const on = i === litIndex;
               return (
                 <li key={t.label} className="relative z-10 flex">
                   <Link
@@ -331,7 +300,8 @@ export function BottomTabs() {
                     draggable={false}
                     className={cn(
                       "flex w-full flex-col items-center justify-center gap-0.5 rounded-[28px] text-[11.5px] font-semibold",
-                      "[-webkit-tap-highlight-color:transparent] outline-none transition-colors duration-150",
+                      "[-webkit-tap-highlight-color:transparent] outline-none",
+                      "transition-[color] duration-300 ease-out motion-reduce:transition-none",
                       "focus-visible:ring-2 focus-visible:ring-[rgba(30,74,51,0.45)]",
                       !on && "text-ng-ink-muted",
                     )}

@@ -87,11 +87,12 @@ export const viewport: Viewport = {
 
 /**
  * Marks the admin and captain apps before first paint, so store-only pieces
- * (the coming-soon strip, the bottom tab bar) never flash there. The admin app
+ * (the coming-soon strip, the bottom tab bar) never flash there, and marks
+ * iPhones, which need the cream bottom-edge strip (see .ng-safe-bottom). The admin app
  * is served on admin.nutrigreenz.farm with clean paths like /orders, so the
  * host must be checked as well as the path.
  */
-const OPERATOR_INIT = `(function(){try{if(/^(admin|captain)[.]/.test(location.hostname)||/^[/](admin|captain)([/]|$)/.test(location.pathname))document.documentElement.dataset.operator="1"}catch(e){}})();`;
+const OPERATOR_INIT = `(function(){try{var h=document.documentElement;if(/^(admin|captain)[.]/.test(location.hostname)||/^[/](admin|captain)([/]|$)/.test(location.pathname))h.dataset.operator="1";if(/iPhone|iPod/.test(navigator.userAgent))h.dataset.iphone="1"}catch(e){}})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
