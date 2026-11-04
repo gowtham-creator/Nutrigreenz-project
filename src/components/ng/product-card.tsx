@@ -14,6 +14,12 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
 
+/** The phone and tablet ADD button on the card picture; fills on press. */
+const MOBILE_ADD =
+  "inline-flex h-9 items-center gap-1.5 rounded-xl bg-ng-forest-deep px-3.5 text-[13px] font-bold tracking-wide text-ng-cream " +
+  "shadow-[0_6px_16px_-6px_rgba(16,40,24,0.55)] transition-[transform,background-color] duration-150 " +
+  "[-webkit-tap-highlight-color:transparent] active:scale-95 active:bg-ng-forest";
+
 interface Props {
   product: ProductCardType;
   variant?: "default" | "compact" | "hero";
@@ -112,6 +118,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         className,
       )}
     >
+      <div className="relative">
       <Link href={href} className="block">
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-ng-cream to-ng-cream-deep">
           {/* Cycles this product's PDP gallery while hovered. Falls back to the
@@ -143,6 +150,50 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         </div>
       </Link>
 
+      {/* Phones and tablets: an app-style ADD on the picture, like a shopping
+          app, so adding never needs a scroll down the card. It becomes a
+          − qty + stepper once the item is in the bag. */}
+      <div className="absolute bottom-2.5 right-2.5 z-10 lg:hidden">
+        {hasChoices ? (
+          <Link
+            href={href}
+            className={MOBILE_ADD}
+            aria-label={`Choose a size of ${product.title}`}
+          >
+            ADD
+            <UiIcon name="bag" size={14} />
+          </Link>
+        ) : qty === 0 ? (
+          <button type="button" onClick={handleAddToBag} className={MOBILE_ADD} aria-label={`Add ${product.title} to bag`}>
+            ADD
+            <UiIcon name="bag" size={14} />
+          </button>
+        ) : (
+          <div className="flex h-9 items-center rounded-xl bg-ng-forest-deep text-ng-cream shadow-[0_6px_16px_-6px_rgba(16,40,24,0.55)]">
+            <button
+              type="button"
+              onClick={decQty}
+              aria-label={`Decrease quantity of ${product.title}`}
+              className="grid h-9 w-8 place-items-center rounded-l-xl text-[18px] font-bold [-webkit-tap-highlight-color:transparent] active:bg-ng-forest"
+            >
+              −
+            </button>
+            <span className="min-w-6 text-center text-[13px] font-bold tabular-nums" aria-live="polite">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={incQty}
+              aria-label={`Increase quantity of ${product.title}`}
+              className="grid h-9 w-8 place-items-center rounded-r-xl text-[18px] font-bold [-webkit-tap-highlight-color:transparent] active:bg-ng-forest"
+            >
+              +
+            </button>
+          </div>
+        )}
+      </div>
+      </div>
+
       <button
         type="button"
         onClick={handleToggleWishlist}
@@ -158,10 +209,10 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         <Icon name={saved ? "heart-bold" : "heart-linear"} size={18} />
       </button>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4">
         <Stars rating={product.rating} reviewCount={product.reviewCount} size="sm" />
         <Link href={href}>
-          <h3 className="font-display text-[17px] leading-tight text-ng-ink line-clamp-2 group-hover:text-ng-forest transition-colors">
+          <h3 className="font-display text-[15px] leading-tight text-ng-ink line-clamp-2 group-hover:text-ng-forest transition-colors sm:text-[17px]">
             {product.title}
           </h3>
         </Link>
@@ -197,7 +248,7 @@ export function ProductCard({ product, variant = "default", className }: Props) 
             {product.priceFrom ? (
               <span className="shrink-0 text-[12px] font-medium text-ng-ink-soft">from</span>
             ) : null}
-            <span className="font-display text-[19px] font-semibold tabular-nums text-ng-forest-deep sm:text-[21px]">
+            <span className="font-display text-[18px] font-semibold tabular-nums text-ng-forest-deep sm:text-[21px]">
               ₹{product.price.toLocaleString("en-IN")}
             </span>
             {product.mrp && product.mrp > product.price ? (
@@ -224,19 +275,19 @@ export function ProductCard({ product, variant = "default", className }: Props) 
         </div>
 
         {hasChoices ? (
-          <Button asChild variant="secondary" size="sm" fullWidth className="mt-2.5">
+          <Button asChild variant="secondary" size="sm" fullWidth className="mt-2.5 hidden lg:inline-flex">
             <Link href={href}>
               <UiIcon name="bag" size={16} />
               Select options
             </Link>
           </Button>
         ) : qty === 0 ? (
-          <Button variant="secondary" size="sm" fullWidth className="mt-2.5" onClick={handleAddToBag}>
+          <Button variant="secondary" size="sm" fullWidth className="mt-2.5 hidden lg:inline-flex" onClick={handleAddToBag}>
             <UiIcon name="bag" size={16} />
             Add to bag
           </Button>
         ) : (
-          <div className="mt-2.5 flex h-11 w-full items-center justify-between rounded-full bg-ng-forest px-1.5 text-ng-cream shadow-[0_4px_14px_rgba(31,77,46,0.25)] lg:h-9">
+          <div className="mt-2.5 hidden h-11 w-full items-center justify-between rounded-full bg-ng-forest px-1.5 lg:flex text-ng-cream shadow-[0_4px_14px_rgba(31,77,46,0.25)] lg:h-9">
             <button
               type="button"
               onClick={decQty}

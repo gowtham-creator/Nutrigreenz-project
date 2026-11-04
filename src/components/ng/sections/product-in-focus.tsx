@@ -7,6 +7,7 @@ import { Section } from "../section";
 import { ProductCard } from "../product-card";
 import { PRODUCE_ICONS, type ProduceIconName } from "../produce-icons";
 import { Stagger, StaggerItem, Reveal } from "../motion";
+import { ScrollProgress } from "../scroll-progress";
 import { cn } from "@/lib/utils";
 import type { ProductCard as ProductCardType } from "@/types/nutrigreenz";
 
@@ -335,11 +336,11 @@ export function ProductInFocus({
           className="mt-8 -mx-5 overflow-x-auto scroll-px-5 px-5 pb-4 snap-x scrollbar-none md:mt-9 md:-mx-8 md:scroll-px-8 md:px-8"
           style={{ scrollbarWidth: "none" }}
         >
-          <Stagger key={active} className="flex items-stretch gap-4 md:gap-5">
+          <Stagger key={active} className="flex items-stretch gap-3 md:gap-5">
             {shown.map((p) => (
               <StaggerItem
                 key={p.id}
-                className="w-[260px] shrink-0 snap-start sm:w-[270px] md:w-[280px]"
+                className="w-[calc((100vw-52px)/2)] shrink-0 snap-start sm:w-[calc((100vw-64px)/3)] md:w-[calc((100vw-104px)/3)] lg:w-[280px]"
               >
                 <ProductCard product={p} className="h-full" />
               </StaggerItem>
@@ -348,7 +349,8 @@ export function ProductInFocus({
         </div>
 
         {/* ── See All pill (right-aligned) ─────────────────────────────── */}
-        <div className="mt-7 flex justify-center md:justify-end">
+        <div className="mt-5 flex items-center justify-between gap-4 md:mt-7 md:justify-end">
+          <ScrollProgress target={scrollRef} className="md:hidden" />
           <Link
             href={ctaHref}
             className="group inline-flex items-center gap-2 rounded-full border border-ng-line bg-ng-paper px-5 py-2.5 text-sm font-semibold text-ng-forest transition-colors hover:border-ng-leaf-soft hover:bg-ng-sage/30"

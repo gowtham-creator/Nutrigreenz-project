@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Section } from "../section";
 import { ProductCard } from "../product-card";
 import { PRODUCE_ICONS } from "../produce-icons";
 import { Stagger, StaggerItem } from "../motion";
+import { ScrollProgress } from "../scroll-progress";
 import { SLUG_TO_TAGS } from "../shop/types";
 import { cn } from "@/lib/utils";
 import type { Category, ProductCard as ProductCardType } from "@/types/nutrigreenz";
@@ -109,6 +110,7 @@ export function ShopByCategory({ categories, products, className }: Props) {
   );
 
   const [active, setActive] = useState<string>("all");
+  const rowRef = useRef<HTMLDivElement>(null);
 
   const shown = useMemo<ProductCardType[]>(
     () => (active === "all" ? bestsellers(products) : productsForSlug(products, active)),
@@ -213,19 +215,27 @@ export function ShopByCategory({ categories, products, className }: Props) {
       {/* Keyed on `active` so the Stagger remounts and fades the new set in.
           Stagger animates on mount → products are ALWAYS visible (no whileInView
           stuck-hidden state). */}
-      <Stagger
-        key={active}
-        className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-5 [&>*:nth-child(5)]:hidden sm:[&>*:nth-child(5)]:block"
+      {/* Phones and tablets swipe through the row, two or three cards at a
+          time, like a shopping app; desktop keeps the five-across grid. */}
+      <div
+        ref={rowRef}
+        className="mt-8 -mx-5 overflow-x-auto scroll-px-5 px-5 pb-2 snap-x snap-mandatory scrollbar-none md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:mt-9 lg:overflow-visible lg:px-0 lg:pb-0"
       >
-        {shown.map((p) => (
-          <StaggerItem key={p.id} className="h-full">
-            <ProductCard product={p} className="h-full" />
-          </StaggerItem>
-        ))}
-      </Stagger>
+        <Stagger key={active} className="flex items-stretch gap-3 md:gap-5 lg:grid lg:grid-cols-5">
+          {shown.map((p) => (
+            <StaggerItem
+              key={p.id}
+              className="h-full w-[calc((100vw-52px)/2)] shrink-0 snap-start sm:w-[calc((100vw-64px)/3)] md:w-[calc((100vw-104px)/3)] lg:w-auto"
+            >
+              <ProductCard product={p} className="h-full" />
+            </StaggerItem>
+          ))}
+        </Stagger>
+      </div>
 
       {/* ── View-all link ───────────────────────────────────────────────── */}
-      <div className="mt-9 flex justify-center">
+      <div className="mt-5 flex items-center justify-between gap-4 lg:mt-9 lg:justify-center">
+        <ScrollProgress target={rowRef} className="lg:hidden" />
         <Link
           href={activeTab.href}
           className="group inline-flex items-center gap-2 rounded-full border border-ng-line bg-ng-paper px-5 py-2.5 text-sm font-semibold text-ng-forest transition-colors hover:border-ng-leaf-soft hover:bg-ng-sage/30"
