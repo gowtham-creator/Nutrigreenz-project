@@ -52,14 +52,27 @@ export function Header() {
       className="sticky top-[env(safe-area-inset-top)] z-40 glass-strong border-b border-ng-line"
       onMouseLeave={() => setOpenMega(null)}
     >
-      <div className="mx-auto max-w-7xl px-5 md:px-8 lg:max-xl:px-6 flex items-center h-[68px]">
-        {/* Logo + delivery location */}
-        <div className="flex items-center gap-3">
+      <div className="relative mx-auto max-w-7xl px-3 sm:px-5 md:px-8 lg:max-xl:px-6 flex items-center h-[64px] lg:h-[68px]">
+        {/* Phones and tablets, app-style: menu on the left, the logo centred,
+            search and cart on the right. */}
+        <button
+          type="button"
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+          className="lg:hidden inline-flex shrink-0 h-11 w-11 items-center justify-center rounded-full text-ng-ink hover:bg-ng-forest/[0.06] active:bg-ng-forest/[0.1] [-webkit-tap-highlight-color:transparent]"
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+          </svg>
+        </button>
+
+        {/* Logo + delivery location (the location gets its own row below lg) */}
+        <div className="flex items-center gap-3 max-lg:absolute max-lg:left-1/2 max-lg:-translate-x-1/2">
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
-            <Logo variant="mark" className="h-8 md:hidden" priority />
-            <Logo className="hidden h-10 md:block" priority />
+            <Logo className="h-[26px] min-[375px]:h-[28px] min-[400px]:h-[32px] min-[430px]:h-[34px] md:h-10" priority />
           </Link>
-          <LocationPill className={cn("hidden md:inline-flex lg:max-[1099px]:max-w-[170px]", !atTop && "max-lg:!hidden")} />
+          <LocationPill className="hidden lg:inline-flex lg:max-[1099px]:max-w-[170px]" />
         </div>
 
         {/* Desktop nav — every laptop and desktop width (1024px up), centred
@@ -121,7 +134,7 @@ export function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-0.5 ml-auto sm:gap-1 lg:gap-2">
           {/* Was a bare <button> with no handler — it drew a magnifier and did
               nothing — and `hidden xl:inline-flex`, so below 1280px there was no
               search control at all, phones included. */}
@@ -157,22 +170,13 @@ export function Header() {
           <Button variant="primary" size="sm" className="hidden xl:inline-flex ml-1 whitespace-nowrap shrink-0" asChild>
             <Link href={shopHref}>Shop now</Link>
           </Button>
-          <button
-            aria-label="Open menu"
-            className="lg:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] text-ng-ink"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </div>
       </div>
 
       {/* Mobile delivery-location row */}
       <div
         className={cn(
-          "md:hidden grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none",
+          "lg:hidden grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none",
           atTop ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
         aria-hidden={!atTop}

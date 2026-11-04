@@ -53,7 +53,7 @@ export function BottomTabs() {
   const tabs = [
     { href: "/", match: "/", label: "Home", icon: "/images/tabs/home.png" },
     { href: isAuthed ? "/shop" : "/auth?next=/shop", match: "/shop", label: "Shop", icon: "/images/tabs/shop.png" },
-    { href: "/wishlist", match: "/wishlist", label: "Wishlist", icon: "/images/tabs/heart.png", badge: saved },
+    { href: "/wishlist", match: "/wishlist", label: "Wishlist", icon: "/icons/ui/wishlist.svg", badge: saved },
     {
       href: isAuthed ? "/account" : "/auth?next=/account",
       match: "/account",

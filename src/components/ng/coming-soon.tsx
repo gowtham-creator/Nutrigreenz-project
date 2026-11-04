@@ -140,10 +140,10 @@ export function ComingSoon() {
             aria-label="Nutri Greenz is coming soon"
             className={cn(
               // iOS 26 Safari paints its top and bottom bars with this layer's
-              // colour, so it follows the scene: cream for the logo, the brand
-              // green for the dark scenes. A fixed cream base left white bands.
-              "ng-soon-intro fixed inset-0 z-[200] overflow-hidden transition-colors duration-700",
-              scene === 0 ? "bg-[#FCFFF8]" : "bg-ng-forest-deep",
+              // colour. Brand green from the first frame, like the store's top
+              // bar, so the status bar is filled in every scene (a cream base
+              // left white bands above the photo scenes).
+              "ng-soon-intro fixed inset-0 z-[200] overflow-hidden bg-ng-forest-deep",
             )}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.9, ease: "easeInOut" }}
