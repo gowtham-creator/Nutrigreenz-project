@@ -67,7 +67,12 @@ export function Header() {
           </svg>
         </button>
 
-        {/* Logo + delivery location (the location gets its own row below lg) */}
+        {/* Tablets: the delivery location sits in the header beside the menu,
+            keeping the header to one clean row as on Anveshan. Phones get it
+            on its own row below. */}
+        <LocationPill className="hidden md:max-lg:inline-flex ml-2 max-w-[180px]" />
+
+        {/* Logo + delivery location (desktop) */}
         <div className="flex items-center gap-3 max-lg:absolute max-lg:left-1/2 max-lg:-translate-x-1/2">
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
             <Logo className="h-[26px] min-[375px]:h-[28px] min-[400px]:h-[32px] min-[430px]:h-[34px] md:h-10" priority />
@@ -139,8 +144,10 @@ export function Header() {
               nothing — and `hidden xl:inline-flex`, so below 1280px there was no
               search control at all, phones included. */}
           <SiteSearch />
-          {/* Phones and tablets reach Profile and Wishlist from the bottom tab bar. */}
-          <div className="hidden lg:block shrink-0">
+          {/* Profile shows from tablets up (search, profile, cart, as on Anveshan);
+              phones reach it from the bottom tab bar. Wishlist is desktop-only
+              here and in the bottom bar below that. */}
+          <div className="hidden md:block shrink-0">
             <ProfileMenu />
           </div>
           <Link
@@ -176,7 +183,7 @@ export function Header() {
       {/* Mobile delivery-location row */}
       <div
         className={cn(
-          "lg:hidden grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none",
+          "md:hidden grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none",
           atTop ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
         aria-hidden={!atTop}
