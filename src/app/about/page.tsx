@@ -11,7 +11,7 @@ import { AnswerBlock } from "@/components/ng/answer-block";
 
 export const metadata: Metadata = pageMeta({
   title: "Our story · Nutri Greenz",
-  description: "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, ghee and raw honey direct from partner farms. Meet the founders and read how we began.",
+  description: "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, ghee and raw honey direct from partner farms. Meet the team and read how we began.",
   path: "/about",
 });
 
@@ -31,21 +31,6 @@ const VISION_PILLARS: Array<
   { kind: "icon", icon: "farmhouse", label: "Sustainable farming" },
   { kind: "icon", icon: "customers", label: "Healthy customers" },
   { kind: "flag", label: "Healthy nation" },
-];
-
-const FOUNDERS = [
-  {
-    name: "RamaKrishna Katakam",
-    role: "Founder",
-    initials: "RK",
-    body: "I've been working as a technocrat for roughly 20 years now. I come from a very humble family whose primary background was farming. I worked as a farmer and worked hard to study to become who I am today. I've been very passionate about farming since my childhood and I know the various challenges faced by today's farmers. At the bottom of my heart, I'm still that young farmer who's striving to take farming to the next level. Nutri Greenz Farm Technologies Pvt. Ltd is a brand looking forward to providing the farmer's produce directly to the customers, eliminating the middleman. Our vision is to change a food industry where today's food is produced using many chemicals that harm us and lead to various diseases. Organic food plays a big part in keeping us healthy.",
-  },
-  {
-    name: "Surendra Madivada",
-    role: "Founder · Natural & organic farming",
-    initials: "SM",
-    body: "Born and brought up in Hyderabad, Surendra completed his BTech in Hyderabad, pursued a Master of Science in the United Kingdom, and was a former student of the United Nations University in Tokyo. With over 8 years of experience in natural organic farming and a farming family background, he initiated natural organic farming in a village and motivated numerous farmers across Andhra Pradesh, Telangana and Karnataka to adopt the practice. Specializing in indigenous paddy varieties, he advises farmers on the right varieties for their soil, land and area. He is also a government-certified beekeeper and talks to farmers about how much pollination depends on bees. Guided by the spirit of “Jai Jawan, Jai Kisan”.",
-  },
 ];
 
 const TEAM = [
@@ -172,26 +157,6 @@ export default function AboutPage() {
             }
           </p>
         </Reveal>
-      </Section>
-
-      {/* Founders */}
-      <Section className="bg-ng-cream/50" eyebrow="Our founders" heading="The people who started it">
-        <div className="grid md:grid-cols-2 gap-6">
-          {FOUNDERS.map((f, i) => (
-            <Reveal key={f.name} delay={i * 0.06} className="flex h-full flex-col rounded-3xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="flex items-center gap-4">
-                <span className="h-14 w-14 shrink-0 rounded-full bg-ng-forest text-ng-cream inline-flex items-center justify-center font-display text-[18px]">
-                  {f.initials}
-                </span>
-                <div>
-                  <h3 className="font-display text-[20px] text-ng-forest-deep leading-snug">{f.name}</h3>
-                  <p className="text-[13px] uppercase tracking-wider text-ng-ink-muted">{f.role}</p>
-                </div>
-              </div>
-              <p className="mt-5 text-[15px] leading-relaxed text-ng-ink-muted">{f.body}</p>
-            </Reveal>
-          ))}
-        </div>
       </Section>
 
       {/* Team */}

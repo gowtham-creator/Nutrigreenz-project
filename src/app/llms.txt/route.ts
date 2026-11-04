@@ -18,7 +18,7 @@ import { getStorefrontCatalog } from "@/lib/storefront-catalog";
 export const revalidate = 3600;
 
 const PAGES: [string, string, string][] = [
-  ["About Nutri Greenz", "/about", "Who we are, the founders and the company behind the brand"],
+  ["About Nutri Greenz", "/about", "Who we are, the team and the company behind the brand"],
   ["Partner farms", "/farms", "The named farms and dairies we buy from"],
   ["Quality lab", "/lab", "What every lot is tested for before it ships"],
   ["Traceability", "/traceability", "How a pack is traced back to its farm and harvest"],
