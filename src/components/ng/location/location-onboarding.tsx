@@ -47,6 +47,8 @@ export function LocationOnboarding() {
     if (!hydrated || decided.current) return;
     decided.current = true;
     if (hasOnboardedLocation() || zone) return;
+    // Never interrupt paying for, or coming back from paying for, an order.
+    if (/^\/(checkout|orders|auth)(\/|$)/.test(window.location.pathname)) return;
     const t = window.setTimeout(() => setOpen(true), 600);
     return () => window.clearTimeout(t);
   }, [hydrated, zone]);

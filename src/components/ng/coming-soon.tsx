@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { isOperatorLocation, useIsOperator } from "@/lib/operator-surface";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -30,7 +31,25 @@ const SKIP_AFTER_MS = 2_000;
 /** Scenes overlap for this long, so one dissolves into the next with no cut. */
 const CROSSFADE_S = 1.2;
 
-const INIT = `(function(){try{var p=location.pathname,h=document.documentElement;if(/^(admin|captain)\\./.test(location.hostname)||/^\\/(admin|captain|unsubscribe)(\\/|$)|^\\/checkout\\/success/.test(p)){h.dataset.ngSoon="off";return}if(sessionStorage.getItem("${SEEN_KEY}")==="1")h.dataset.ngSoon="seen"}catch(e){}})()`;
+/** Remembered on the device, so a payment that comes back in a new tab (UPI
+ *  apps often do this) doesn't replay the film. */
+const SEEN_AT_KEY = "ng-soon-seen-at";
+const SEEN_FOR_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Pages where the film never plays and the strip is hidden: placing, paying
+ * for and tracking an order (including the bank's return to /checkout/failed),
+ * sign-in, and the admin and captain apps. The cart, account and wishlist keep
+ * the strip but never play the film.
+ *
+ * Written without backslashes: this string is a template literal, which would
+ * drop them and break the regex in the browser.
+ */
+const INIT = `(function(){try{var p=location.pathname,h=document.documentElement;if(/^(admin|captain)[.]/.test(location.hostname)||/^[/](admin|captain|unsubscribe|checkout|orders|auth|api|r)([/]|$)/.test(p)){h.dataset.ngSoon="off";return}var seen=false;try{seen=sessionStorage.getItem("${SEEN_KEY}")==="1"}catch(e){}try{var t=Number(localStorage.getItem("${SEEN_AT_KEY}"));if(t&&Date.now()-t<${SEEN_FOR_MS})seen=true}catch(e){}if(seen||/^[/](cart|account|wishlist)([/]|$)/.test(p))h.dataset.ngSoon="seen"}catch(e){}})();`;
+
+/** Same rule for client-side navigation (e.g. checkout → order placed), where
+ *  the early script doesn't run again. */
+const NO_STRIP = /^\/(checkout|orders|auth)(\/|$)/;
 
 const CSS = `html[data-ng-soon] .ng-soon-intro{display:none}html[data-ng-soon="off"] .ng-soon-strip{display:none}`;
 
@@ -43,10 +62,12 @@ export function ComingSoon() {
   const [launched, setLaunched] = useState(false);
   const reduce = useReducedMotion();
   const operator = useIsOperator();
+  const pathname = usePathname() ?? "/";
 
   const close = useCallback(() => {
     try {
       sessionStorage.setItem(SEEN_KEY, "1");
+      localStorage.setItem(SEEN_AT_KEY, String(Date.now()));
     } catch {
       /* Private mode: it just plays again on the next page. */
     }
@@ -103,7 +124,7 @@ export function ComingSoon() {
       <script dangerouslySetInnerHTML={{ __html: INIT }} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="ng-soon-strip bg-ng-forest-deep px-4 py-3 text-center text-[17px] font-bold text-ng-cream sm:text-[20px]">
+      <div className={cn("ng-soon-strip bg-ng-forest-deep px-4 py-3 text-center text-[17px] font-bold text-ng-cream sm:text-[20px]", NO_STRIP.test(pathname) && "hidden")}>
         Coming soon. Nutri Greenz opens shortly.
       </div>
 
