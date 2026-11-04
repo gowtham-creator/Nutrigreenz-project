@@ -113,7 +113,7 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
     >
-      <body className="bg-ng-forest-deep text-ng-ink antialiased min-h-screen">
+      <body className="bg-ng-paper text-ng-ink antialiased min-h-screen">
         <script dangerouslySetInnerHTML={{ __html: OPERATOR_INIT }} />
         {/* Paints the status-bar area (notch, Dynamic Island, punch-hole) in the
             brand green on phones that report a top safe area. Zero height
@@ -132,12 +132,7 @@ export default function RootLayout({
                   <WishlistProvider>
                     <AddressProvider>
                       <ComingSoon />
-                      {/* The page sits on its own cream layer. Behind it, the
-                          body is the brand green, which iOS 26 Safari copies
-                          into its status and toolbar areas, so the top of the
-                          screen matches the green strip instead of showing a
-                          white band. */}
-                      <div className="ng-page min-h-dvh bg-ng-paper">{children}</div>
+                      {children}
                       <BottomTabs />
                       <LinkPhonePrompt />
                       {/* Outside the page tree on purpose: it must survive the

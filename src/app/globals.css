@@ -205,9 +205,10 @@
 
 @layer base {
   * { border-color: var(--border); }
-  /* The brand green shows behind the notch, the status bar and any
-     overscroll bounce, so the edges of the screen are filled, never white. */
-  html { font-family: var(--font-sans); scroll-behavior: smooth; background-color: var(--ng-forest-deep); }
+  /* The page base is the store's cream, as it always was: iOS 26 Safari
+     paints its bottom toolbar from it. The green status bar comes from the
+     fixed .ng-safe-top band instead (see below). */
+  html { font-family: var(--font-sans); scroll-behavior: smooth; background-color: var(--ng-paper); }
   body {
     /* With viewport-fit=cover the page reaches every edge; these keep content
        clear of the notch, Dynamic Island and camera cut-outs (zero on screens
@@ -215,8 +216,7 @@
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    /* Brand green behind the page (see .ng-page in the root layout). */
-    background: var(--ng-forest-deep);
+    background: var(--ng-paper);
     color: var(--ng-ink);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv01", "cv11";
@@ -1374,7 +1374,10 @@ html[data-navigating] * {
 }
 
 /* Status-bar filler: the space above the page on phones with a notch, Dynamic
-   Island or punch-hole camera, in the brand green. */
+   Island or punch-hole camera, in the brand green. On iPhones it also has a
+   few pixels of real height: iOS 26 Safari colours its status bar from a solid
+   fixed layer at the top edge, and ignores a zero-height one. The band blends
+   into the green status bar above it. */
 .ng-safe-top {
   position: fixed;
   inset: 0 0 auto 0;
@@ -1451,3 +1454,5 @@ html[data-iphone] .ng-safe-bottom {
   .ng-pill-track { transition: transform 120ms linear; }
   .ng-pill-stretch { animation: none; }
 }
+
+html[data-iphone] .ng-safe-top { height: calc(env(safe-area-inset-top) + 6px); }
