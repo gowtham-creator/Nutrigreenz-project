@@ -215,7 +215,8 @@
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    background: var(--ng-paper);
+    /* Brand green behind the page (see .ng-page in the root layout). */
+    background: var(--ng-forest-deep);
     color: var(--ng-ink);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv01", "cv11";

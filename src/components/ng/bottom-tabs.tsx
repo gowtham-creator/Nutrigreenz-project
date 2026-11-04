@@ -69,7 +69,7 @@ export function BottomTabs() {
       <nav
         aria-label="Main"
         className={cn(
-          "ng-store-only lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-ng-line/70 bg-ng-paper/80 backdrop-blur-xl backdrop-saturate-150",
+          "ng-store-only lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-ng-line/70 bg-ng-paper/90",
           "pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_-14px_rgba(16,40,24,0.35)]",
           "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           hidden ? "translate-y-full" : "translate-y-0",

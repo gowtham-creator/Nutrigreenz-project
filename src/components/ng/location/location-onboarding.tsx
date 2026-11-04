@@ -49,8 +49,20 @@ export function LocationOnboarding() {
     if (hasOnboardedLocation() || zone) return;
     // Never interrupt paying for, or coming back from paying for, an order.
     if (/^\/(checkout|orders|auth)(\/|$)/.test(window.location.pathname)) return;
-    const t = window.setTimeout(() => setOpen(true), 600);
-    return () => window.clearTimeout(t);
+    let t = 0;
+    const show = () => {
+      t = window.setTimeout(() => setOpen(true), 600);
+    };
+    // While the coming-soon film plays, wait for it to finish; opening under
+    // it showed the prompt faintly through the film.
+    const filmPlaying =
+      !document.documentElement.dataset.ngSoon && document.querySelector(".ng-soon-intro") !== null;
+    if (filmPlaying) window.addEventListener("ng-soon-closed", show, { once: true });
+    else show();
+    return () => {
+      window.removeEventListener("ng-soon-closed", show);
+      window.clearTimeout(t);
+    };
   }, [hydrated, zone]);
 
   function dismiss() {

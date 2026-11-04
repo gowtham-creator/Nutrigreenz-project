@@ -72,6 +72,9 @@ export function ComingSoon() {
       /* Private mode: it just plays again on the next page. */
     }
     document.body.style.overflow = "";
+    document.documentElement.dataset.ngSoon = "seen";
+    // Anything waiting for the film (the first-visit location prompt) goes now.
+    window.dispatchEvent(new Event("ng-soon-closed"));
     setClosed(true);
   }, []);
 
@@ -135,7 +138,13 @@ export function ComingSoon() {
             role="dialog"
             aria-modal="true"
             aria-label="Nutri Greenz is coming soon"
-            className="ng-soon-intro fixed inset-0 z-[200] overflow-hidden bg-[#FCFFF8]"
+            className={cn(
+              // iOS 26 Safari paints its top and bottom bars with this layer's
+              // colour, so it follows the scene: cream for the logo, the brand
+              // green for the dark scenes. A fixed cream base left white bands.
+              "ng-soon-intro fixed inset-0 z-[200] overflow-hidden transition-colors duration-700",
+              scene === 0 ? "bg-[#FCFFF8]" : "bg-ng-forest-deep",
+            )}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.9, ease: "easeInOut" }}
           >
