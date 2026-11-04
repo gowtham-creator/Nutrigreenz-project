@@ -1389,3 +1389,18 @@ html[data-navigating] * {
 html[data-operator] .ng-store-only,
 html[data-operator] .ng-soon-strip,
 html[data-operator] .ng-soon-intro { display: none !important; }
+
+/* Bottom-edge filler: a solid cream strip the height of the bottom safe area
+   (zero on screens without one). iOS 26 Safari takes its bottom toolbar colour
+   from a solid fixed layer at the edge, so this keeps that toolbar cream while
+   the green body colours the top. Hidden while the coming-soon film plays,
+   so the film's own green reaches the bottom. */
+.ng-safe-bottom {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: env(safe-area-inset-bottom);
+  background-color: var(--ng-paper);
+  z-index: 39;
+  pointer-events: none;
+}
+html:not([data-ng-soon]):has(.ng-soon-intro) .ng-safe-bottom { display: none; }

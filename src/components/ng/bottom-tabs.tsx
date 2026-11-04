@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useReducedMotion, useSpring, useTransform, useVelocity } from "framer-motion";
+import { motion, useMotionValueEvent, useReducedMotion, useSpring, useTransform, useVelocity } from "framer-motion";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { useScrollChrome } from "@/lib/use-scroll-chrome";
@@ -15,11 +15,13 @@ import { cn } from "@/lib/utils";
  * tab bars: a floating frosted capsule in the store's cream, with a green glass
  * pill that slides to the selected tab.
  *
- * - Tap a tab and the pill glides over, stretching with its speed and settling
- *   like a drop of liquid.
+ * - Touch a tab and the pill moves at once, stretching with its speed and
+ *   settling like a drop of liquid; each icon turns cream as the pill passes
+ *   under it, so the highlight never runs ahead of the pill.
  * - Press and slide along the bar: the pill follows the thumb, swelling a
  *   little like a lens, and lifting off opens the tab underneath.
- * - The highlight is the green of the groundnut oil label (#1E4A33).
+ * - The pill is the deep green of the groundnut oil label (#1E4A33) with cream
+ *   on it, like the label itself.
  * - Slides away while scrolling down and returns on any scroll up.
  *
  * Hidden where the page has its own bottom bar or none belongs: product pages
@@ -28,8 +30,8 @@ import { cn } from "@/lib/utils";
  */
 const HIDDEN = /^\/(products|cart|checkout|auth|admin|captain|unsubscribe|r)(\/|$)/;
 
-/** The groundnut oil label green. */
-const LABEL_GREEN = "#1E4A33";
+/** Cream on the label-green pill. */
+const ON_PILL = "#F5F1E6";
 
 /** Movement before a press becomes a slide rather than a tap. */
 const SLIDE_THRESHOLD_PX = 8;
@@ -120,6 +122,9 @@ export function BottomTabs() {
   const press = useRef<{ startX: number; pointerId: number; sliding: boolean } | null>(null);
   const swallowClick = useRef(false);
   const [dragX, setDragX] = useState<number | null>(null);
+  // The tab under a finger that has just touched down: the pill heads there
+  // straight away instead of waiting for the finger to lift.
+  const [pressIndex, setPressIndex] = useState<number | null>(null);
 
   const nearest = useCallback(
     (x: number) => {
@@ -136,8 +141,6 @@ export function BottomTabs() {
     },
     [slots],
   );
-  const hoverIndex = dragX !== null ? nearest(dragX) : null;
-  const lit = hoverIndex ?? selected;
 
   /* ── The pill ─────────────────────────────────────────────────────────── */
   const pillInset = 4;
@@ -150,21 +153,33 @@ export function BottomTabs() {
       const last = slots[slots.length - 1].x + pillInset;
       return Math.min(last, Math.max(first, dragX - pillW / 2));
     }
-    if (selected < 0) return null;
-    return slots[selected].x + pillInset;
+    const at = pressIndex ?? selected;
+    if (at < 0) return null;
+    return slots[at].x + pillInset;
   })();
 
+  // Quick and a touch springy, so it feels like it answers the finger; while
+  // sliding it tracks the thumb almost exactly.
   const spring = reduce
     ? { stiffness: 2000, damping: 200, mass: 0.2 }
     : dragX !== null
-      ? { stiffness: 900, damping: 55, mass: 0.35 }
-      : { stiffness: 380, damping: 30, mass: 0.9 };
+      ? { stiffness: 1400, damping: 70, mass: 0.25 }
+      : { stiffness: 560, damping: 38, mass: 0.55 };
   const x = useSpring(0, spring);
   // Liquid: the pill stretches along its path in proportion to its speed and
   // narrows a touch, then relaxes back into shape as it settles.
   const velocity = useVelocity(x);
-  const scaleX = useTransform(velocity, [-2400, 0, 2400], reduce ? [1, 1, 1] : [1.28, 1, 1.28]);
-  const scaleY = useTransform(velocity, [-2400, 0, 2400], reduce ? [1, 1, 1] : [0.9, 1, 0.9]);
+  const scaleX = useTransform(velocity, [-3200, 0, 3200], reduce ? [1, 1, 1] : [1.22, 1, 1.22], { clamp: true });
+  const scaleY = useTransform(velocity, [-3200, 0, 3200], reduce ? [1, 1, 1] : [0.92, 1, 0.92], { clamp: true });
+
+  // Which tab the pill is over right now, read from where it actually is.
+  const [over, setOver] = useState<number | null>(null);
+  useMotionValueEvent(x, "change", (v) => {
+    if (!slots.length) return;
+    const i = nearest(v + pillW / 2);
+    setOver((prev) => (prev === i ? prev : i));
+  });
+  const lit = target === null ? -1 : (over ?? (pressIndex ?? selected));
   const placed = useRef(false);
   useEffect(() => {
     if (target === null) return;
@@ -180,13 +195,18 @@ export function BottomTabs() {
   if (HIDDEN.test(pathname) || operator) return null;
 
   const choose = (index: number) => {
-    if (index !== selected) buzz();
     setPicked({ index, from: pathname });
+    setPressIndex(null);
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLUListElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     press.current = { startX: e.clientX, pointerId: e.pointerId, sliding: false };
+    const list = listRef.current;
+    if (!list || !slots.length) return;
+    const index = nearest(e.clientX - list.getBoundingClientRect().left);
+    if (index !== selected) buzz();
+    setPressIndex(index);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLUListElement>) => {
     const p = press.current;
@@ -210,7 +230,13 @@ export function BottomTabs() {
   const endPress = (commit: boolean) => {
     const p = press.current;
     press.current = null;
-    if (!p?.sliding) return;
+    if (!p?.sliding) {
+      // A tap: the link's click (which fires next) records the choice. If the
+      // finger lifted somewhere else, the pill goes home.
+      window.setTimeout(() => setPressIndex(null), 400);
+      if (!commit) setPressIndex(null);
+      return;
+    }
     // The link under the finger would also receive this as a click.
     swallowClick.current = true;
     window.setTimeout(() => {
@@ -221,6 +247,7 @@ export function BottomTabs() {
       setPicked({ index, from: pathname });
       if (index !== routeIndex) router.push(tabs[index].href);
     }
+    setPressIndex(null);
     setDragX(null);
   };
 
@@ -276,16 +303,18 @@ export function BottomTabs() {
                 <motion.span
                   className="block h-full w-full rounded-[28px]"
                   initial={false}
-                  animate={{ scale: dragX !== null ? 1.08 : 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  animate={{ scale: dragX !== null ? 1.08 : pressIndex !== null ? 0.97 : 1 }}
+                  transition={{ type: "spring", stiffness: 700, damping: 32 }}
                   style={{
+                    // Deep label green, a little clearer while it is being
+                    // slid, like a lens lifted off the glass.
                     background:
                       dragX !== null
-                        ? `linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(30,74,51,0.16) 100%)`
-                        : `linear-gradient(180deg, rgba(30,74,51,0.22) 0%, rgba(30,74,51,0.13) 100%)`,
-                    border: `1px solid rgba(30,74,51,${dragX !== null ? 0.28 : 0.2})`,
+                        ? "linear-gradient(180deg, rgba(46,104,73,0.82) 0%, rgba(30,74,51,0.86) 100%)"
+                        : "linear-gradient(180deg, #2A5E42 0%, #1E4A33 55%, #17402B 100%)",
+                    border: "1px solid rgba(23,64,43,0.9)",
                     boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 2px rgba(30,74,51,0.14), 0 6px 14px -8px rgba(30,74,51,0.55)",
+                      "inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -2px 4px rgba(0,0,0,0.18), 0 8px 18px -8px rgba(23,64,43,0.7)",
                   }}
                 />
               </motion.span>
@@ -302,11 +331,11 @@ export function BottomTabs() {
                     draggable={false}
                     className={cn(
                       "flex w-full flex-col items-center justify-center gap-0.5 rounded-[28px] text-[11.5px] font-semibold",
-                      "[-webkit-tap-highlight-color:transparent] outline-none transition-colors duration-200",
+                      "[-webkit-tap-highlight-color:transparent] outline-none transition-colors duration-150",
                       "focus-visible:ring-2 focus-visible:ring-[rgba(30,74,51,0.45)]",
                       !on && "text-ng-ink-muted",
                     )}
-                    style={on ? { color: LABEL_GREEN } : undefined}
+                    style={on ? { color: ON_PILL } : undefined}
                   >
                     <span className="relative grid h-7 w-10 place-items-center">
                       <TabIcon src={t.icon} />

@@ -118,6 +118,9 @@ export default function RootLayout({
             brand green on phones that report a top safe area. Zero height
             everywhere else. */}
         <div aria-hidden className="ng-safe-top" />
+        {/* Cream along the bottom edge, so iOS 26 Safari keeps its bottom
+            toolbar cream as before while the top stays green. */}
+        <div aria-hidden className="ng-safe-bottom" />
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
         <AuthProvider>

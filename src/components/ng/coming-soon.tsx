@@ -152,7 +152,7 @@ export function ComingSoon() {
               {scene === 0 ? (
                 <motion.div
                   key="logo"
-                  className="absolute inset-0 grid place-items-center bg-[#FCFFF8] px-6"
+                  className="absolute inset-0 grid place-items-center bg-ng-forest-deep px-6"
                   exit={dissolve.exit}
                   transition={dissolve.transition}
                 >
@@ -162,7 +162,7 @@ export function ComingSoon() {
                     transition={{ duration: reduce ? 0.3 : 1.4, ease: SCENE_EASE }}
                     className="relative aspect-[500/275] w-[min(72vw,460px)]"
                   >
-                    <Image src="/brand/logo-stacked.png" alt="Nutri Greenz" fill priority sizes="460px" className="object-contain" />
+                    <Image src="/brand/logo-stacked-light.png" alt="Nutri Greenz" fill priority sizes="460px" className="object-contain" />
                   </motion.div>
                 </motion.div>
               ) : null}
@@ -275,7 +275,7 @@ export function ComingSoon() {
                 onClick={close}
                 className={cn(
                   "absolute right-5 top-5 min-h-11 rounded-full px-4 text-[13px] font-semibold underline underline-offset-4 cursor-pointer",
-                  scene === 0 ? "text-ng-ink-muted" : "bg-ng-forest-deep/60 text-ng-cream",
+                  scene === 0 ? "text-ng-cream/85" : "bg-ng-forest-deep/60 text-ng-cream",
                 )}
               >
                 Skip
