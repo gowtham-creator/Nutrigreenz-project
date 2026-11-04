@@ -62,10 +62,11 @@ export function Header() {
           <LocationPill className={cn("hidden md:inline-flex lg:max-[1099px]:max-w-[170px]", !atTop && "max-lg:!hidden")} />
         </div>
 
-        {/* Desktop nav — every laptop and desktop width (1024px up). Between
-            1024 and 1280 the links and location pill tighten up to fit;
-            narrower screens use the hamburger and the bottom tab bar. */}
-        <nav className="hidden lg:flex items-center gap-0.5 ml-3 xl:gap-1 xl:ml-8">
+        {/* Desktop nav — every laptop and desktop width (1024px up), centred
+            between the location pill and the icons so the space either side is
+            equal. Between 1024 and 1280 the links tighten up to fit; narrower
+            screens use the hamburger and the bottom tab bar. */}
+        <nav className="hidden lg:flex flex-1 items-center justify-center gap-1 mx-4 xl:gap-2 xl:mx-6">
           {NAV.map((item) => (
             <div
               key={item.label}
@@ -76,7 +77,7 @@ export function Header() {
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={cn(
-                  "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-2 text-[13.5px] font-medium transition-colors duration-200 xl:px-4 xl:text-[14px]",
+                  "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-2 text-[13.5px] font-medium transition-colors duration-200 min-[1180px]:px-3.5 xl:px-4 xl:text-[14px]",
                   isActive(item.href)
                     ? "bg-gradient-to-b from-ng-forest to-ng-forest-deep text-ng-cream shadow-[0_2px_10px_-4px_rgba(20,51,31,0.55)] ring-1 ring-inset ring-ng-leaf/15"
                     : openMega === item.label
@@ -120,7 +121,7 @@ export function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1.5 ml-auto xl:gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           {/* Was a bare <button> with no handler — it drew a magnifier and did
               nothing — and `hidden xl:inline-flex`, so below 1280px there was no
               search control at all, phones included. */}
