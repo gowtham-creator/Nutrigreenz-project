@@ -52,19 +52,20 @@ export function Header() {
       className="sticky top-[env(safe-area-inset-top)] z-40 glass-strong border-b border-ng-line"
       onMouseLeave={() => setOpenMega(null)}
     >
-      <div className="mx-auto max-w-7xl px-5 md:px-8 flex items-center h-[68px]">
+      <div className="mx-auto max-w-7xl px-5 md:px-8 lg:max-xl:px-6 flex items-center h-[68px]">
         {/* Logo + delivery location */}
         <div className="flex items-center gap-3">
           <Link href="/" aria-label="Nutri Greenz home" className="shrink-0">
             <Logo variant="mark" className="h-8 md:hidden" priority />
             <Logo className="hidden h-10 md:block" priority />
           </Link>
-          <LocationPill className={cn("hidden md:inline-flex", !atTop && "max-lg:!hidden")} />
+          <LocationPill className={cn("hidden md:inline-flex lg:max-[1099px]:max-w-[170px]", !atTop && "max-lg:!hidden")} />
         </div>
 
-        {/* Desktop nav — shows from ~1152px, where there's room beside the logo,
-            location pill and actions; narrower widths use the hamburger. */}
-        <nav className="hidden min-[1152px]:flex items-center gap-1 ml-8">
+        {/* Desktop nav — every laptop and desktop width (1024px up). Between
+            1024 and 1280 the links and location pill tighten up to fit;
+            narrower screens use the hamburger and the bottom tab bar. */}
+        <nav className="hidden lg:flex items-center gap-0.5 ml-3 xl:gap-1 xl:ml-8">
           {NAV.map((item) => (
             <div
               key={item.label}
@@ -75,7 +76,7 @@ export function Header() {
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={cn(
-                  "inline-flex items-center rounded-full px-4 py-2 text-[14px] font-medium transition-colors duration-200",
+                  "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-2 text-[13.5px] font-medium transition-colors duration-200 xl:px-4 xl:text-[14px]",
                   isActive(item.href)
                     ? "bg-gradient-to-b from-ng-forest to-ng-forest-deep text-ng-cream shadow-[0_2px_10px_-4px_rgba(20,51,31,0.55)] ring-1 ring-inset ring-ng-leaf/15"
                     : openMega === item.label
@@ -119,7 +120,7 @@ export function Header() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-1.5 ml-auto xl:gap-2">
           {/* Was a bare <button> with no handler — it drew a magnifier and did
               nothing — and `hidden xl:inline-flex`, so below 1280px there was no
               search control at all, phones included. */}
@@ -157,7 +158,7 @@ export function Header() {
           </Button>
           <button
             aria-label="Open menu"
-            className="min-[1152px]:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] text-ng-ink"
+            className="lg:hidden inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] text-ng-ink"
             onClick={() => setMobileOpen((v) => !v)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -189,7 +190,7 @@ export function Header() {
       {/* Mobile drawer */}
       <div
         className={cn(
-          "min-[1152px]:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
+          "lg:hidden overflow-hidden border-t border-ng-line-soft transition-[max-height] duration-500",
           mobileOpen ? "max-h-[60vh]" : "max-h-0",
         )}
       >
