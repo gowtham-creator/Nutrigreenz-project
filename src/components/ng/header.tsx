@@ -15,6 +15,7 @@ import { useAuth } from "@/lib/auth";
 import { ProfileMenu } from "./profile-menu";
 import { SiteSearch } from "./search/site-search";
 import { cn } from "@/lib/utils";
+import { useScrollChrome } from "@/lib/use-scroll-chrome";
 
 const NAV: Array<{ label: string; href: string; mega?: Array<{ label: string; href: string; description?: string }> }> = [
   {
@@ -39,6 +40,8 @@ export function Header() {
   const { count: wishlistCount } = useWishlist();
   const { isAuthed } = useAuth();
   const pathname = usePathname();
+  // Phones and tablets: the delivery location shows only at the very top.
+  const { atTop } = useScrollChrome();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
@@ -56,7 +59,7 @@ export function Header() {
             <Logo variant="mark" className="h-8 md:hidden" priority />
             <Logo className="hidden h-10 md:block" priority />
           </Link>
-          <LocationPill className="hidden md:inline-flex" />
+          <LocationPill className={cn("hidden md:inline-flex", !atTop && "max-lg:!hidden")} />
         </div>
 
         {/* Desktop nav — shows from ~1152px, where there's room beside the logo,
@@ -121,13 +124,14 @@ export function Header() {
               nothing — and `hidden xl:inline-flex`, so below 1280px there was no
               search control at all, phones included. */}
           <SiteSearch />
-          <div className="shrink-0">
+          {/* Phones and tablets reach Profile and Wishlist from the bottom tab bar. */}
+          <div className="hidden lg:block shrink-0">
             <ProfileMenu />
           </div>
           <Link
             href="/wishlist"
             aria-label="Wishlist"
-            className="relative inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
+            className="relative hidden lg:inline-flex shrink-0 h-11 w-11 md:h-10 md:w-10 items-center justify-center rounded-full hover:bg-ng-forest/[0.06] transition-colors text-ng-ink"
           >
             <UiIcon name="wishlist" size={20} />
             {wishlistCount > 0 ? (
@@ -164,8 +168,19 @@ export function Header() {
       </div>
 
       {/* Mobile delivery-location row */}
-      <div className="md:hidden border-t border-ng-line-soft">
-        <LocationPill variant="compact" />
+      <div
+        className={cn(
+          "md:hidden grid transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none",
+          atTop ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+        aria-hidden={!atTop}
+        inert={!atTop}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-ng-line-soft">
+            <LocationPill variant="compact" />
+          </div>
+        </div>
       </div>
 
       {/* First-visit location prompt (mounted once, header is on every page) */}
