@@ -40,6 +40,7 @@ import {
   applyPromoPaise,
 } from "@/lib/promotions";
 import { rewardReferralIfEligible, voidReferralForOrder } from "@/lib/referrals";
+import { applySubscriberDiscountPaise } from "@/lib/subscriptions-core";
 
 /**
  * Thrown by {@link createOrder} when one or more ordered lines cannot be
@@ -421,6 +422,14 @@ export interface CreateOrderInput {
    * a method that cannot actually collect money.
    */
   paymentMethod?: PaymentMethod;
+  /**
+   * Set only for an order that delivers a subscription. Its lines are marked
+   * down by `subscriberDiscountBps` (basis points, 800 = 8%) AFTER any live
+   * promotion, from the subscription row the server loaded, never from the
+   * client. The order row is linked to the subscription.
+   */
+  subscriptionId?: string | null;
+  subscriberDiscountBps?: number;
 }
 
 /**
@@ -638,7 +647,15 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
   if (unpriced.length > 0) {
     throw new UnpricedItemsError(unpriced.map((p) => p.line.title));
   }
-  const promoPriced = await applyPromotionsToPricedLines(priced);
+  const salePriced = await applyPromotionsToPricedLines(priced);
+  const subscriberBps = input.subscriptionId ? input.subscriberDiscountBps ?? 0 : 0;
+  const promoPriced =
+    subscriberBps > 0
+      ? salePriced.map(({ line, unitPricePaise }) => ({
+          line,
+          unitPricePaise: applySubscriberDiscountPaise(unitPricePaise, subscriberBps),
+        }))
+      : salePriced;
   const lineTotals = promoPriced.map(({ line, unitPricePaise }) => ({
     line,
     unitPricePaise,
@@ -755,6 +772,8 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderWithDet
       currency: rules.currency || "INR",
       address_snapshot: input.addressSnapshot ?? null,
       slot_snapshot: input.slotSnapshot ?? null,
+      // Only written when set, so ordinary checkout never depends on the column.
+      ...(input.subscriptionId ? { subscription_id: input.subscriptionId } : {}),
     })
     .select(ORDER_COLS)
     .single();

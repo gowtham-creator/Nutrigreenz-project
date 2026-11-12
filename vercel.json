@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/offline-campaigns",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/subscriptions",
+      "schedule": "30 0 * * *"
     }
   ]
 }

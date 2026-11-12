@@ -12,6 +12,9 @@ import { useCart, type CartVariantInput } from "@/lib/cart";
 import type { ProductCard } from "@/types/nutrigreenz";
 import { VariantSelector, type PdpVariant } from "./variant-selector";
 import { usePdpVariant } from "./variant-context";
+import Link from "next/link";
+import { useFeatureFlag } from "@/components/ng/feature-gate";
+import { SUBSCRIBER_DISCOUNT_BPS, applySubscriberDiscountPaise } from "@/lib/subscriptions-core";
 
 interface BuyPanelProps {
   product: ProductCard;
@@ -44,6 +47,7 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
   const variantIdx = shared ? shared.index : localIdx;
   const setVariantIdx = shared ? shared.setIndex : setLocalIdx;
   const [qty, setQty] = useState(1);
+  const subscriptionsOn = useFeatureFlag("subscriptions");
 
   const variant = vlist[variantIdx] ?? vlist[0];
   const lineTotal = variant.price * qty;
@@ -272,6 +276,35 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
               <span className="min-w-0 truncate font-display tracking-wide">Buy now</span>
             </Button>
           </div>
+
+          {/* Subscribe & save: only for a real catalogue variant, and only while
+              the feature is on. The setup page re-reads the product itself. */}
+          {subscriptionsOn && variant.id ? (
+            <Link
+              href={`/subscribe?product=${encodeURIComponent(product.slug)}&variant=${encodeURIComponent(variant.id)}&qty=${qty}`}
+              className="group flex items-center justify-between gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-leaf/[0.07] px-4 py-3 transition-colors hover:border-ng-leaf hover:bg-ng-leaf/[0.12]"
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ng-paper text-ng-forest">
+                  <Icon name="refresh-bold" size={18} />
+                </span>
+                <span>
+                  <span className="block text-[14px] font-semibold text-ng-forest-deep">
+                    Subscribe &amp; save {SUBSCRIBER_DISCOUNT_BPS / 100}% · ₹
+                    {(
+                      applySubscriberDiscountPaise(Math.round(variant.price * 100), SUBSCRIBER_DISCOUNT_BPS) / 100
+                    ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="block text-[12px] text-ng-ink-muted">
+                    Weekly, fortnightly or monthly · skip or cancel anytime
+                  </span>
+                </span>
+              </span>
+              <span aria-hidden className="text-ng-forest transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
+            </Link>
+          ) : null}
         </div>
       )}
     </div>

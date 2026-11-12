@@ -11,6 +11,7 @@ import type { FeatureFlagKey } from "@/lib/feature-flags";
 type AccountSection =
   | "overview"
   | "orders"
+  | "subscriptions"
   | "wishlist"
   | "addresses"
   | "loyalty"
@@ -33,6 +34,13 @@ const NAV: {
 }[] = [
   { key: "overview", href: "/account", label: "Overview", icon: "overview" },
   { key: "orders", href: "/account/orders", label: "Orders", icon: "ordersBox" },
+  {
+    key: "subscriptions",
+    href: "/account/subscriptions",
+    label: "Subscriptions",
+    icon: "deliveryTime",
+    feature: "subscriptions",
+  },
   { key: "wishlist", href: "/wishlist", label: "Wishlist", icon: "wishlist" },
   { key: "addresses", href: "/account/addresses", label: "Addresses", icon: "location" },
   { key: "loyalty", href: "/loyalty", label: "Loyalty", icon: "wallet" },
