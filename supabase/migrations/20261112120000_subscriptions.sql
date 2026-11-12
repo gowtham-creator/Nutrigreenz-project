@@ -24,9 +24,12 @@
 
 create extension if not exists pgcrypto;
 
+-- Identical to every earlier copy, including the pinned search_path, so
+-- re-declaring it changes nothing on a database that already has it.
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path to ''
 as $$
 begin
   new.updated_at = now();
