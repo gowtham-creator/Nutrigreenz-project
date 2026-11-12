@@ -13,6 +13,7 @@ const NAV_GROUPS = [
       { label: "Cold-Pressed Oils", href: "/shop/oils" },
       { label: "Ghee", href: "/shop/ghee" },
       { label: "Honey", href: "/shop/honey" },
+      { label: "Subscribe & save", href: "/subscriptions" },
     ],
   },
   {

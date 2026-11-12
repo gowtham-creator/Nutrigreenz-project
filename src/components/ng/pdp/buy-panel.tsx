@@ -14,6 +14,7 @@ import { VariantSelector, type PdpVariant } from "./variant-selector";
 import { usePdpVariant } from "./variant-context";
 import Link from "next/link";
 import { useFeatureFlag } from "@/components/ng/feature-gate";
+import { cn } from "@/lib/utils";
 import { SUBSCRIBER_DISCOUNT_BPS, applySubscriberDiscountPaise } from "@/lib/subscriptions-core";
 
 interface BuyPanelProps {
@@ -48,8 +49,14 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
   const setVariantIdx = shared ? shared.setIndex : setLocalIdx;
   const [qty, setQty] = useState(1);
   const subscriptionsOn = useFeatureFlag("subscriptions");
+  const [purchase, setPurchase] = useState<"once" | "subscribe">("once");
 
   const variant = vlist[variantIdx] ?? vlist[0];
+  const canSubscribe = subscriptionsOn && Boolean(variant.id);
+  const subscribing = canSubscribe && purchase === "subscribe";
+  const subscribePercent = SUBSCRIBER_DISCOUNT_BPS / 100;
+  const subscriberUnit =
+    applySubscriberDiscountPaise(Math.round(variant.price * 100), SUBSCRIBER_DISCOUNT_BPS) / 100;
   const lineTotal = variant.price * qty;
   const discount = variant.mrp && variant.mrp > variant.price ? Math.round((1 - variant.price / variant.mrp) * 100) : 0;
 
@@ -210,6 +217,66 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             is larger, always legible, and updates as the stepper moves, so the
             customer sees what they are about to pay before choosing HOW to pay.
           */}
+          {/* One-time or Subscribe & save. Shown only for a real catalogue
+              variant while the feature is on; the setup page re-reads the
+              product and prices everything on the server. */}
+          {canSubscribe ? (
+            <div role="radiogroup" aria-label="Purchase option" className="grid gap-2.5">
+              {(
+                [
+                  { key: "once", title: "One-time purchase", price: variant.price, note: null },
+                  {
+                    key: "subscribe",
+                    title: `Subscribe & save ${subscribePercent}%`,
+                    price: subscriberUnit,
+                    note: "Weekly, fortnightly or monthly · skip or cancel anytime",
+                  },
+                ] as const
+              ).map((o) => {
+                const on = purchase === o.key;
+                return (
+                  <button
+                    key={o.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setPurchase(o.key)}
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
+                      on ? "border-ng-forest bg-ng-leaf/[0.08] ring-1 ring-ng-forest" : "border-ng-line hover:border-ng-leaf-soft",
+                    )}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2",
+                          on ? "border-ng-forest" : "border-ng-line",
+                        )}
+                      >
+                        {on ? <span className="h-2.5 w-2.5 rounded-full bg-ng-forest" /> : null}
+                      </span>
+                      <span>
+                        <span className="flex flex-wrap items-center gap-2 text-[14px] font-semibold text-ng-forest-deep">
+                          {o.title}
+                          {o.key === "subscribe" ? (
+                            <span className="rounded-full bg-ng-forest px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ng-cream">
+                              Best value
+                            </span>
+                          ) : null}
+                        </span>
+                        {o.note ? <span className="block text-[12px] text-ng-ink-muted">{o.note}</span> : null}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-display text-[18px] tabular-nums text-ng-forest-deep">
+                      ₹{o.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1 rounded-full border border-ng-line bg-ng-cream/50 p-1">
               <button
@@ -235,10 +302,10 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             </div>
             <div className="min-w-0 text-right">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-ng-ink-soft">
-                Subtotal
+                {subscribing ? "Per delivery" : "Subtotal"}
               </div>
               <div className="font-display text-[22px] leading-tight tabular-nums text-ng-forest-deep">
-                ₹{lineTotal.toLocaleString("en-IN")}
+                ₹{(subscribing ? subscriberUnit * qty : lineTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -254,6 +321,16 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
             treatment would make the customer stop and read, which is exactly
             the pause a buy row should not create.
           */}
+          {subscribing ? (
+            <Button size="lg" fullWidth className="cursor-pointer" asChild>
+              <Link
+                href={`/subscribe?product=${encodeURIComponent(product.slug)}&variant=${encodeURIComponent(variant.id ?? "")}&qty=${qty}`}
+              >
+                <Icon name="refresh-bold" size={18} />
+                Set up subscription
+              </Link>
+            </Button>
+          ) : (
           <div className="flex items-stretch gap-3">
             <Button
               onClick={add}
@@ -276,35 +353,8 @@ export function BuyPanel({ product, categoryTitle, credentials, variants, initia
               <span className="min-w-0 truncate font-display tracking-wide">Buy now</span>
             </Button>
           </div>
+          )}
 
-          {/* Subscribe & save: only for a real catalogue variant, and only while
-              the feature is on. The setup page re-reads the product itself. */}
-          {subscriptionsOn && variant.id ? (
-            <Link
-              href={`/subscribe?product=${encodeURIComponent(product.slug)}&variant=${encodeURIComponent(variant.id)}&qty=${qty}`}
-              className="group flex items-center justify-between gap-3 rounded-2xl border border-ng-leaf/40 bg-ng-leaf/[0.07] px-4 py-3 transition-colors hover:border-ng-leaf hover:bg-ng-leaf/[0.12]"
-            >
-              <span className="flex items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ng-paper text-ng-forest">
-                  <Icon name="refresh-bold" size={18} />
-                </span>
-                <span>
-                  <span className="block text-[14px] font-semibold text-ng-forest-deep">
-                    Subscribe &amp; save {SUBSCRIBER_DISCOUNT_BPS / 100}% · ₹
-                    {(
-                      applySubscriberDiscountPaise(Math.round(variant.price * 100), SUBSCRIBER_DISCOUNT_BPS) / 100
-                    ).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-                  </span>
-                  <span className="block text-[12px] text-ng-ink-muted">
-                    Weekly, fortnightly or monthly · skip or cancel anytime
-                  </span>
-                </span>
-              </span>
-              <span aria-hidden className="text-ng-forest transition-transform group-hover:translate-x-0.5">
-                →
-              </span>
-            </Link>
-          ) : null}
         </div>
       )}
     </div>

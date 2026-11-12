@@ -31,6 +31,7 @@ import { NoCancellationNotice } from "@/components/ng/checkout/no-cancellation";
 import { pointsEarned } from "@/components/ng/checkout/order-math";
 import { clearCheckoutDraft } from "@/components/ng/checkout/checkout-draft";
 import { SUBSCRIPTION_PAY_KEY } from "@/lib/subscriptions-client";
+import { SubscribeNudge } from "@/components/ng/subscriptions/subscribe-nudge";
 import {
   loadReceipt,
   type OrderReceipt,
@@ -375,6 +376,13 @@ function ConfirmedOrder({ order }: { order: OrderView }) {
                 </Link>
               </Button>
             </div>
+
+            {order.slotSnapshot?.subscription ? null : (
+              <SubscribeNudge
+                title="Get this on repeat"
+                body="Subscribe to your staples and we'll deliver them weekly, fortnightly or monthly for less."
+              />
+            )}
           </StaggerItem>
         </Stagger>
 
