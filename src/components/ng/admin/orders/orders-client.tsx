@@ -6,7 +6,14 @@ import { AdminShell, Card, Pill, StatTile } from "@/components/ng/admin/admin-sh
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { useLiveRefresh } from "@/hooks/use-live-refresh";
-import { PERIOD_LABEL, periodRangeLabel, periodWindows, type SummaryPeriod } from "@/lib/order-periods";
+import {
+  PERIOD_LABEL,
+  istDay,
+  istDayWindow,
+  periodRangeLabel,
+  periodWindows,
+  type SummaryPeriod,
+} from "@/lib/order-periods";
 import type { OrderSummary } from "@/lib/order-summary";
 import { OrderSummaryPanel } from "@/components/ng/admin/orders/order-summary-panel";
 import {
@@ -34,10 +41,14 @@ export interface OrdersInitialData {
   total: number;
 }
 
-/** Which orders the list and the summary cover: one IST period, or all of them. */
-type Period = SummaryPeriod | "all";
+/**
+ * Which orders the list and the summary cover: one IST period, one chosen
+ * calendar day ("day", stepped with the arrows or picked), or all of them.
+ */
+type Period = SummaryPeriod | "all" | "day";
 const PERIODS: { key: Period; label: string }[] = [
   { key: "today", label: PERIOD_LABEL.today },
+  { key: "yesterday", label: PERIOD_LABEL.yesterday },
   { key: "week", label: PERIOD_LABEL.week },
   { key: "month", label: PERIOD_LABEL.month },
   { key: "all", label: "All time" },
@@ -87,6 +98,10 @@ export function OrdersClient({
   const [total, setTotal] = useState(initialData?.total ?? 0);
   const [loading, setLoading] = useState(initialData == null);
   const [period, setPeriod] = useState<Period>("today");
+  /** The day shown when period is "day" (YYYY-MM-DD, IST). */
+  const [pickedDay, setPickedDay] = useState<string>("");
+  // Read once when the page opens; Refresh or a reload picks up a new day.
+  const [today] = useState(() => istDay(Date.now()));
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [summary, setSummary] = useState<OrderSummary | null>(initialSummary);
@@ -105,7 +120,11 @@ export function OrdersClient({
     if (statusFilter === "paid") params.set("paymentStatus", "paid");
     else if (statusFilter !== "all") params.set("status", statusFilter);
     if (search.trim()) params.set("search", search.trim());
-    else if (period !== "all") {
+    else if (period === "day") {
+      const w = istDayWindow(pickedDay);
+      params.set("from", w.from);
+      params.set("to", w.to);
+    } else if (period !== "all") {
       const w = periodWindows(new Date())[period];
       params.set("from", w.from);
       params.set("to", w.to);
@@ -121,7 +140,7 @@ export function OrdersClient({
       setOrders(data.orders ?? []);
       setTotal(data.total ?? 0);
     }
-  }, [statusFilter, search, period]);
+  }, [statusFilter, search, period, pickedDay]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -180,8 +199,44 @@ export function OrdersClient({
     };
   }, [orders, summary]);
 
-  const periodSummary = period !== "all" ? summary?.periods[period] ?? null : null;
-  const periodNoun = period === "today" ? "today" : period === "week" ? "this week" : period === "month" ? "this month" : "";
+  const periodSummary = period !== "all" && period !== "day" ? summary?.periods[period] ?? null : null;
+  const pickedLabel = pickedDay
+    ? new Date(`${pickedDay}T00:00:00Z`).toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })
+    : "";
+  const periodNoun =
+    period === "today"
+      ? "today"
+      : period === "yesterday"
+        ? "yesterday"
+        : period === "week"
+          ? "this week"
+          : period === "month"
+            ? "this month"
+            : period === "day"
+              ? `on ${pickedLabel}`
+              : "";
+
+  // Day-by-day stepping. Today and yesterday keep their own tabs (and their
+  // figures panel); anything earlier is a single chosen day.
+  const shiftDay = (day: string, n: number) =>
+    new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+  const yesterday = shiftDay(today, -1);
+  const currentDay =
+    period === "today" ? today : period === "yesterday" ? yesterday : period === "day" ? pickedDay : null;
+  const showDay = (day: string) => {
+    if (!day || day > today) return;
+    if (day === today) setPeriod("today");
+    else if (day === yesterday) setPeriod("yesterday");
+    else {
+      setPickedDay(day);
+      setPeriod("day");
+    }
+  };
 
   return (
     <AdminShell
@@ -247,6 +302,39 @@ export function OrdersClient({
             </button>
           ))}
         </div>
+
+        {/* Step back and forward one day at a time, or jump to any date. */}
+        <div className="inline-flex items-center gap-1 rounded-full border border-ng-line-soft bg-ng-paper p-1">
+          <button
+            type="button"
+            aria-label="Previous day"
+            onClick={() => showDay(shiftDay(currentDay ?? today, -1))}
+            className="grid h-8 w-8 place-items-center rounded-full text-[15px] font-semibold text-ng-ink-muted transition-colors hover:bg-ng-cream"
+          >
+            ‹
+          </button>
+          <input
+            type="date"
+            aria-label="Show orders placed on"
+            max={today}
+            value={currentDay ?? ""}
+            onChange={(e) => showDay(e.target.value)}
+            className={cn(
+              "rounded-full bg-transparent px-2 py-1 text-[12.5px] font-medium outline-none [color-scheme:light_dark]",
+              period === "day" ? "text-ng-ink font-semibold" : "text-ng-ink-muted",
+            )}
+          />
+          <button
+            type="button"
+            aria-label="Next day"
+            disabled={!currentDay || currentDay >= today}
+            onClick={() => currentDay && showDay(shiftDay(currentDay, 1))}
+            className="grid h-8 w-8 place-items-center rounded-full text-[15px] font-semibold text-ng-ink-muted transition-colors hover:bg-ng-cream disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            ›
+          </button>
+        </div>
+
         {periodSummary ? (
           <span className="text-[12.5px] font-semibold text-ng-ink-muted">{periodRangeLabel(periodSummary)}</span>
         ) : null}
@@ -256,7 +344,7 @@ export function OrdersClient({
         <div className="mb-7">
           <OrderSummaryPanel summary={periodSummary} />
         </div>
-      ) : period !== "all" && !summary ? (
+      ) : period !== "all" && period !== "day" && !summary ? (
         <p className="mb-7 rounded-xl bg-ng-line-soft/50 px-5 py-4 text-[13px] font-medium text-ng-ink-muted">
           The {periodNoun} figures could not be loaded. Press Refresh to try again.
         </p>
@@ -318,7 +406,7 @@ export function OrdersClient({
           <div className="px-5 py-14 text-center text-[13px] font-medium text-ng-ink-muted">
             {searching || statusFilter !== "all" || period === "all"
               ? "No orders match this filter or search."
-              : `No orders ${periodNoun} yet.`}
+              : period === "yesterday" || period === "day" ? `No orders ${periodNoun}.` : `No orders ${periodNoun} yet.`}
           </div>
         ) : (
           <ul>

@@ -3,7 +3,7 @@
  * calendar months, whatever time zone the server runs in.
  */
 import { describe, expect, it } from "vitest";
-import { istDay, periodRangeLabel, periodWindows } from "./order-periods";
+import { istDay, istDayWindow, periodRangeLabel, periodWindows } from "./order-periods";
 
 // Tuesday 27 Oct 2026, 7:00 PM IST.
 const TUE_EVENING = new Date("2026-10-27T13:30:00Z");
@@ -16,6 +16,23 @@ describe("periodWindows", () => {
     expect(w.previousFrom).toBe("2026-10-25T18:30:00.000Z");
     expect(w.previousTo).toBe("2026-10-26T18:30:00.000Z");
     expect(w.days).toEqual(["2026-10-27"]);
+  });
+
+  it("makes yesterday the whole previous IST day, compared with the day before", () => {
+    const w = periodWindows(TUE_EVENING).yesterday;
+    expect(w.from).toBe("2026-10-25T18:30:00.000Z");
+    expect(w.to).toBe("2026-10-26T18:30:00.000Z");
+    expect(w.previousFrom).toBe("2026-10-24T18:30:00.000Z");
+    expect(w.previousTo).toBe("2026-10-25T18:30:00.000Z");
+    expect(w.days).toEqual(["2026-10-26"]);
+    expect(periodRangeLabel(w)).toMatch(/Mon.*26 Oct/);
+  });
+
+  it("turns any picked date into its IST day window", () => {
+    expect(istDayWindow("2026-10-20")).toEqual({
+      from: "2026-10-19T18:30:00.000Z",
+      to: "2026-10-20T18:30:00.000Z",
+    });
   });
 
   it("treats 12:10 AM IST as the new day while it is still the previous day in UTC", () => {

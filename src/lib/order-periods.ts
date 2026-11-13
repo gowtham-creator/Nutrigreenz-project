@@ -1,12 +1,12 @@
 /**
- * The Orders portal's periods (today, this week, this month) as IST calendar
+ * The Orders portal's periods (today, yesterday, this week, this month) as IST calendar
  * windows. Pure and dependency-free so the server summary and the browser's
  * list filter cut the day at the same instant: midnight in India, not UTC.
  * Weeks start on Monday.
  */
 
-export type SummaryPeriod = "today" | "week" | "month";
-export const SUMMARY_PERIODS: readonly SummaryPeriod[] = ["today", "week", "month"];
+export type SummaryPeriod = "today" | "yesterday" | "week" | "month";
+export const SUMMARY_PERIODS: readonly SummaryPeriod[] = ["today", "yesterday", "week", "month"];
 
 const IST_OFFSET_MS = 330 * 60 * 1000;
 const DAY_MS = 86_400_000;
@@ -78,6 +78,14 @@ export function periodWindows(now: Date): Record<SummaryPeriod, PeriodWindow> {
       previousTo: iso(dayFrom),
       days: [today],
     },
+    yesterday: {
+      key: "yesterday",
+      from: iso(dayFrom - DAY_MS),
+      to: iso(dayFrom),
+      previousFrom: iso(dayFrom - 2 * DAY_MS),
+      previousTo: iso(dayFrom - DAY_MS),
+      days: [addDays(today, -1)],
+    },
     week: {
       key: "week",
       from: iso(weekFrom),
@@ -100,12 +108,14 @@ export function periodWindows(now: Date): Record<SummaryPeriod, PeriodWindow> {
 /** How the portal names each period's comparison ("vs 4 by this time yesterday"). */
 export const PERIOD_COMPARISON: Record<SummaryPeriod, string> = {
   today: "by this time yesterday",
+  yesterday: "the day before",
   week: "at this point last week",
   month: "at this point last month",
 };
 
 export const PERIOD_LABEL: Record<SummaryPeriod, string> = {
   today: "Today",
+  yesterday: "Yesterday",
   week: "This week",
   month: "This month",
 };
@@ -115,7 +125,7 @@ const IST = "Asia/Kolkata";
 /** "Tue, 27 Oct" · "26 Oct – 1 Nov" · "October 2026", in IST. */
 export function periodRangeLabel(w: Pick<PeriodWindow, "key" | "from" | "to">): string {
   const from = new Date(w.from);
-  if (w.key === "today") {
+  if (w.key === "today" || w.key === "yesterday") {
     return from.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: IST });
   }
   if (w.key === "month") {
@@ -124,4 +134,10 @@ export function periodRangeLabel(w: Pick<PeriodWindow, "key" | "from" | "to">): 
   const last = new Date(Date.parse(w.to) - DAY_MS);
   const short = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: IST });
   return `${short(from)} – ${short(last)}`;
+}
+
+/** One IST calendar day (YYYY-MM-DD) as an inclusive-start, exclusive-end window. */
+export function istDayWindow(day: string): { from: string; to: string } {
+  const from = istMidnight(day);
+  return { from: new Date(from).toISOString(), to: new Date(from + DAY_MS).toISOString() };
 }
