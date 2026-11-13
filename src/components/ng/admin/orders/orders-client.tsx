@@ -352,7 +352,8 @@ export function OrdersClient({
               <li
                 className={cn(
                   COLS,
-                  "hidden lg:grid px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors",
+                  // `relative` anchors the row-wide link below, so the whole row opens the order.
+                  "relative cursor-pointer hidden lg:grid px-5 py-3 items-center text-[13px] border-b border-ng-line-soft last:border-0 hover:bg-ng-cream/40 transition-colors",
                 )}
               >
                 <div className="min-w-0">
@@ -389,9 +390,13 @@ export function OrdersClient({
                     {PAYMENT_LABEL[o.paymentStatus]}
                   </Pill>
                 </span>
+                {/* Its ::after covers the whole row, so a click anywhere on the row
+                    opens the order, even when this column is scrolled out of view
+                    on a narrow window. */}
                 <Link
                   href={`/admin/orders/${o.orderNumber}`}
-                  className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors"
+                  aria-label={`Open order ${o.orderNumber}`}
+                  className="text-[12px] text-ng-forest font-bold hover:text-ng-leaf transition-colors after:absolute after:inset-0 after:content-['']"
                 >
                   Open →
                 </Link>
