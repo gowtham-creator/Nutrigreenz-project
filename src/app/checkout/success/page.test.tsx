@@ -51,6 +51,9 @@ vi.mock("@/components/ng/button", () => ({ Button: fx.Pass }));
 vi.mock("@/components/ui/icon", () => ({ Icon: () => null }));
 vi.mock("@/components/ui/ui-icon", () => ({ UiIcon: () => null }));
 vi.mock("@/components/ng/checkout/no-cancellation", () => ({ NoCancellationNotice: () => null }));
+// Decorative, and it reads the feature switch with its own fetch, which would
+// otherwise be counted as an order poll below.
+vi.mock("@/components/ng/subscriptions/subscribe-nudge", () => ({ SubscribeNudge: () => null }));
 vi.mock("@/components/ng/checkout/order-receipt", () => ({ loadReceipt: () => fx.receipt }));
 vi.mock("@/components/ng/checkout/checkout-draft", () => ({
   clearCheckoutDraft: m.clearCheckoutDraft,

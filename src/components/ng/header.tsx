@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useFeatureFlag } from "@/components/ng/feature-gate";
+import type { FeatureFlagKey } from "@/lib/feature-flags";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "./logo";
@@ -17,7 +19,13 @@ import { SiteSearch } from "./search/site-search";
 import { cn } from "@/lib/utils";
 import { useScrollChrome } from "@/lib/use-scroll-chrome";
 
-const NAV: Array<{ label: string; href: string; mega?: Array<{ label: string; href: string; description?: string }> }> = [
+const NAV: Array<{
+  label: string;
+  href: string;
+  /** Hidden while this feature is switched off. */
+  feature?: FeatureFlagKey;
+  mega?: Array<{ label: string; href: string; description?: string }>;
+}> = [
   {
     label: "Shop",
     href: "/shop",
@@ -27,6 +35,7 @@ const NAV: Array<{ label: string; href: string; mega?: Array<{ label: string; hr
       { label: "Honey", href: "/shop/honey", description: "Raw, unprocessed honey" },
     ],
   },
+  { label: "Subscribe & save", href: "/subscriptions", feature: "subscriptions" },
   { label: "Our farms", href: "/farms" },
   { label: "Traceability", href: "/traceability" },
   { label: "Journal", href: "/journal" },
@@ -37,6 +46,8 @@ export function Header() {
   const [openMega, setOpenMega] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
+  const subscriptionsOn = useFeatureFlag("subscriptions");
+  const nav = NAV.filter((item) => !item.feature || subscriptionsOn);
   const { count: wishlistCount } = useWishlist();
   const { isAuthed } = useAuth();
   const pathname = usePathname();
@@ -85,7 +96,7 @@ export function Header() {
             equal. Between 1024 and 1280 the links tighten up to fit; narrower
             screens use the hamburger and the bottom tab bar. */}
         <nav className="hidden lg:flex flex-1 items-center justify-center gap-1 mx-4 xl:gap-2 xl:mx-6">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <div
               key={item.label}
               className="relative"
@@ -207,7 +218,7 @@ export function Header() {
         )}
       >
         <nav className="px-5 py-4 flex flex-col gap-1">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <div key={item.label} className="flex flex-col gap-1">
               <Link
                 href={item.href}

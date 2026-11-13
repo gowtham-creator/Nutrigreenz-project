@@ -30,6 +30,8 @@ import { FloatIn, Reveal, Stagger, StaggerItem } from "@/components/ng/motion";
 import { NoCancellationNotice } from "@/components/ng/checkout/no-cancellation";
 import { pointsEarned } from "@/components/ng/checkout/order-math";
 import { clearCheckoutDraft } from "@/components/ng/checkout/checkout-draft";
+import { SUBSCRIPTION_PAY_KEY } from "@/lib/subscriptions-client";
+import { SubscribeNudge } from "@/components/ng/subscriptions/subscribe-nudge";
 import {
   loadReceipt,
   type OrderReceipt,
@@ -175,9 +177,19 @@ function OrderOutcome({ orderNumber }: { orderNumber: string }) {
   useEffect(() => {
     if (phase !== "confirmed" || cleared.current) return;
     cleared.current = true;
+    // A subscription delivery paid from My subscriptions never touched the
+    // bag, so the bag and checkout draft stay as they were.
+    try {
+      if (sessionStorage.getItem(SUBSCRIPTION_PAY_KEY) === orderNumber) {
+        sessionStorage.removeItem(SUBSCRIPTION_PAY_KEY);
+        return;
+      }
+    } catch {
+      /* storage blocked: fall through to the normal clear */
+    }
     clear();
     clearCheckoutDraft();
-  }, [phase, clear]);
+  }, [phase, clear, orderNumber]);
 
   if (phase === "confirmed") return order ? <ConfirmedOrder order={order} /> : null;
   return <OutcomeNotice phase={phase} orderNumber={orderNumber} order={order} />;
@@ -364,6 +376,13 @@ function ConfirmedOrder({ order }: { order: OrderView }) {
                 </Link>
               </Button>
             </div>
+
+            {order.slotSnapshot?.subscription ? null : (
+              <SubscribeNudge
+                title="Get this on repeat"
+                body="Subscribe to your staples and we'll deliver them weekly, fortnightly or monthly for less."
+              />
+            )}
           </StaggerItem>
         </Stagger>
 

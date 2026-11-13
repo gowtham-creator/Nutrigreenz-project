@@ -20,6 +20,8 @@ import {
   statusTone,
   type OrderView,
 } from "@/lib/orders-client";
+import { fetchMySubscriptions, type SubscriptionRecord } from "@/lib/subscriptions-client";
+import { formatDeliveryDate, frequencyLabel } from "@/lib/subscriptions-core";
 
 export default function AccountPage() {
   const { account, isAuthed, loading: authLoading } = useAuth();
@@ -34,8 +36,9 @@ export default function AccountPage() {
      numbers on this page and that one can never disagree. */
   const [orders, setOrders] = useState<OrderView[]>([]);
   const [points, setPoints] = useState<number | null>(null);
-  // Subscriptions don't exist yet: this placeholder shows only while the switch is on.
+  // Shown only while the switch is on.
   const [subscriptionsOn, setSubscriptionsOn] = useState(false);
+  const [subs, setSubs] = useState<SubscriptionRecord[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -60,6 +63,22 @@ export default function AccountPage() {
       });
     return () => controller.abort();
   }, [authLoading, isAuthed]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthed || !subscriptionsOn) return;
+    let alive = true;
+    fetchMySubscriptions()
+      .then(({ subscriptions }) => {
+        if (alive) setSubs(subscriptions);
+      })
+      .catch(() => {
+        /* the card keeps its empty state */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [authLoading, isAuthed, subscriptionsOn]);
+  const liveSubs = (subs ?? []).filter((s) => s.status !== "cancelled");
 
   // Wallet credit was hardcoded "₹0". Read the live points balance instead and
   // value it at the live redeem rate, floored the same way /loyalty does, so the
@@ -96,7 +115,15 @@ export default function AccountPage() {
       tint: "leaf" as const,
     },
     ...(subscriptionsOn
-      ? [{ icon: "refresh-bold", number: "0", label: "Subscriptions", href: undefined, tint: "blue" as const }]
+      ? [
+          {
+            icon: "refresh-bold",
+            number: subs === null ? "—" : String(liveSubs.length),
+            label: "Subscriptions",
+            href: "/account/subscriptions",
+            tint: "blue" as const,
+          },
+        ]
       : []),
   ];
 
@@ -249,15 +276,40 @@ export default function AccountPage() {
               </span>
               <h2 className="font-display text-[26px] leading-none text-ng-forest-deep">Active subscriptions</h2>
             </div>
-            <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-8 text-center">
-              <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-                <Icon name="refresh-linear" size={22} />
-              </span>
-              <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
-              <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
-                Subscribe to your staples and never run out. Set it once and we deliver on schedule.
-              </p>
-            </div>
+            {liveSubs.length > 0 ? (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {liveSubs.slice(0, 4).map((s) => (
+                  <li key={s.id}>
+                    <Link
+                      href="/account/subscriptions"
+                      className="flex h-full flex-col gap-1 rounded-3xl border border-ng-line-soft bg-ng-paper p-5 shadow-[var(--shadow-ng-card)] transition-shadow hover:shadow-[var(--shadow-ng-float)]"
+                    >
+                      <span className="text-[12px] font-semibold uppercase tracking-wider text-ng-ink-muted">
+                        {s.status === "paused" ? "Paused" : frequencyLabel(s.frequencyDays)}
+                      </span>
+                      <span className="font-display text-[17px] leading-snug text-ng-forest-deep">
+                        {s.items.map((i) => `${i.qty} × ${i.title}`).join(", ")}
+                      </span>
+                      {s.status === "active" ? (
+                        <span className="text-[13px] text-ng-ink-muted">
+                          Next delivery {formatDeliveryDate(s.nextDeliveryOn)}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-ng-line bg-ng-sage/20 p-8 text-center">
+                <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-ng-paper text-ng-forest shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
+                  <Icon name="refresh-linear" size={22} />
+                </span>
+                <p className="font-display text-[18px] text-ng-forest-deep">No active subscriptions</p>
+                <p className="mx-auto mt-1.5 max-w-sm text-[13px] text-ng-ink-muted">
+                  Subscribe to your staples and never run out. Open any product and choose Subscribe &amp; save.
+                </p>
+              </div>
+            )}
           </Reveal>
         ) : null}
 

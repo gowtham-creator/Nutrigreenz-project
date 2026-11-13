@@ -11,6 +11,8 @@ import { CartLineItem } from "./cart-line-item";
 import { CartEmpty } from "./cart-empty";
 import { OrderSummary } from "./order-summary";
 import { freeDeliveryOver } from "@/lib/free-delivery-copy";
+import { SubscribeNudge } from "@/components/ng/subscriptions/subscribe-nudge";
+import { SUBSCRIBER_DISCOUNT_BPS } from "@/lib/subscriptions-core";
 
 /** Cart page body — empty state, or line items + order summary. */
 export function CartView() {
@@ -60,6 +62,12 @@ export function CartView() {
               </StaggerItem>
             ))}
           </Stagger>
+
+          <SubscribeNudge
+            title="Buy these every month?"
+            body={`Subscribe instead and save ${SUBSCRIBER_DISCOUNT_BPS / 100}% on every delivery. Skip or cancel any time.`}
+            savingRupees={items.reduce((sum, i) => sum + i.price * i.qty, 0) * (SUBSCRIBER_DISCOUNT_BPS / 10000)}
+          />
 
           {/* Trust strip + keep-shopping link */}
           <div className="flex flex-col gap-4 rounded-2xl border border-ng-line-soft bg-ng-cream/40 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
