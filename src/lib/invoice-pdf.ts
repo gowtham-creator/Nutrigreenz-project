@@ -4,6 +4,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { OrderWithDetail } from "@/lib/orders";
 import { NOTO_SANS_REGULAR_B64, NOTO_SANS_BOLD_B64 } from "@/lib/invoice-fonts";
 import { gstNote } from "@/lib/gst";
+import { BRAND } from "@/lib/seo";
 import { invoiceLadder, money, type DocumentKind } from "@/lib/invoice-ladder";
 import { paymentMethodLabel } from "@/lib/payment-label";
 
@@ -51,7 +52,7 @@ const SELLER = {
  * whether or not an environment is configured: a billing document from a
  * registered business should not lose its GSTIN to a missing variable.
  */
-const SELLER_GSTIN = "36AALCN3064D1ZJ";
+const SELLER_GSTIN = BRAND.gstin;
 
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 

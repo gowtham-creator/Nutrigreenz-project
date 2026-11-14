@@ -115,6 +115,7 @@ export default function AboutPage() {
             { label: "Brand", value: "Nutri Greenz (also written NutriGreenz)" },
             { label: "Company", value: BRAND.legalName },
             { label: "CIN", value: BRAND.cin },
+            { label: "GSTIN", value: BRAND.gstin },
             ...(BRAND.fssai ? [{ label: "FSSAI licence", value: BRAND.fssai }] : []),
             { label: "We sell", value: "Cold-pressed oils, A2 and bilona ghee, raw honey", href: "/shop" },
             { label: "Office", value: "Prashanth Nagar, Kukatpally, Hyderabad, Telangana 500072" },

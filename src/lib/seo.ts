@@ -59,6 +59,8 @@ export const BRAND = {
   legalName: "Nutri Greenz Farm Technologies Private Limited",
   /** Corporate Identification Number, Ministry of Corporate Affairs. */
   cin: "U46305TS2026PTC210934",
+  /** GST registration (Telangana). Also printed on every invoice. */
+  gstin: "36AALCN3064D1ZJ",
   fssai: FSSAI_LICENCE,
   telephone: "+91 94918 93370",
   email: "customersupport@nutrigreenz.farm",
@@ -110,8 +112,10 @@ export const organizationJsonLd = {
     email: BRAND.email,
     areaServed: "IN",
   },
+  taxID: BRAND.gstin,
   identifier: [
     { "@type": "PropertyValue", propertyID: "CIN", value: BRAND.cin },
+    { "@type": "PropertyValue", propertyID: "GSTIN", value: BRAND.gstin },
     ...(BRAND.fssai ? [{ "@type": "PropertyValue", propertyID: "FSSAI licence", value: BRAND.fssai }] : []),
   ],
   ...(SOCIAL_PROFILES.length > 0 ? { sameAs: SOCIAL_PROFILES.map((s) => s.href) } : {}),
