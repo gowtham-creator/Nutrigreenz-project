@@ -24,7 +24,13 @@ const NAV: Array<{
   href: string;
   /** Hidden while this feature is switched off. */
   feature?: FeatureFlagKey;
-  mega?: Array<{ label: string; href: string; description?: string }>;
+  /**
+   * Phone/tablet menu only. The desktop bar stops growing at 1280px and has
+   * no room for a sixth link beside the delivery-location pill, so on laptops
+   * and desktops this lives in the Shop dropdown instead.
+   */
+  drawerOnly?: boolean;
+  mega?: Array<{ label: string; href: string; description?: string; feature?: FeatureFlagKey }>;
 }> = [
   {
     label: "Shop",
@@ -33,9 +39,15 @@ const NAV: Array<{
       { label: "Cold-Pressed Oils", href: "/shop/oils", description: "Groundnut, sesame, safflower, olive, mustard, coconut" },
       { label: "Ghee", href: "/shop/ghee", description: "Pure, traditional ghee" },
       { label: "Honey", href: "/shop/honey", description: "Raw, unprocessed honey" },
+      {
+        label: "Subscribe & save",
+        href: "/subscriptions",
+        description: "Weekly, fortnightly or monthly delivery, 8% off",
+        feature: "subscriptions",
+      },
     ],
   },
-  { label: "Subscribe & save", href: "/subscriptions", feature: "subscriptions" },
+  { label: "Subscribe & save", href: "/subscriptions", feature: "subscriptions", drawerOnly: true },
   { label: "Our farms", href: "/farms" },
   { label: "Traceability", href: "/traceability" },
   { label: "Journal", href: "/journal" },
@@ -47,7 +59,10 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count } = useCart();
   const subscriptionsOn = useFeatureFlag("subscriptions");
-  const nav = NAV.filter((item) => !item.feature || subscriptionsOn);
+  const nav = NAV.filter((item) => !item.feature || subscriptionsOn).map((item) => ({
+    ...item,
+    mega: item.mega?.filter((m) => !m.feature || subscriptionsOn),
+  }));
   const { count: wishlistCount } = useWishlist();
   const { isAuthed } = useAuth();
   const pathname = usePathname();
@@ -99,7 +114,7 @@ export function Header() {
           {nav.map((item) => (
             <div
               key={item.label}
-              className="relative"
+              className={cn("relative", item.drawerOnly && "hidden")}
               onMouseEnter={() => setOpenMega(item.mega ? item.label : null)}
             >
               <Link
@@ -235,7 +250,8 @@ export function Header() {
               </Link>
               {item.mega ? (
                 <div className="ml-3 flex flex-col gap-1 border-l border-ng-line-soft pl-3">
-                  {item.mega.map((m) => (
+                  {/* Subscribe & save already has its own row in this menu. */}
+                  {item.mega.filter((m) => !m.feature).map((m) => (
                     <Link
                       key={m.href}
                       href={m.href}

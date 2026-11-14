@@ -11,7 +11,7 @@ import { AnswerBlock } from "@/components/ng/answer-block";
 
 export const metadata: Metadata = pageMeta({
   title: "Our story · Nutri Greenz",
-  description: "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, ghee and raw honey direct from partner farms. Meet the team and read how we began.",
+  description: "Nutri Greenz is a Hyderabad brand selling cold-pressed oils, ghee and raw honey direct from partner farms. Read how we began, how we make and test every lot, and what we promise.",
   path: "/about",
 });
 
@@ -33,19 +33,52 @@ const VISION_PILLARS: Array<
   { kind: "flag", label: "Healthy nation" },
 ];
 
-const TEAM = [
+/** At a glance: every figure here is stated elsewhere on the site. */
+const GLANCE = [
+  { value: "8+ years", label: "farming chemical-free" },
+  { value: "3", label: "ranges: oils, ghee, honey" },
+  { value: "Every lot", label: "lab-tested before it ships" },
+  { value: "Hyderabad", label: "delivered to your door" },
+];
+
+const RANGES: { title: string; body: string; href: string; cta: string; icon: UiIconName }[] = [
   {
-    name: "Akhil Panja",
-    role: "Agri-export & corporate farming",
-    initials: "AP",
-    body: "Panja Narayana Akhil, from Tadepalligudem, West Godavari district, Andhra Pradesh, holds a B.Tech in Computer Science and Engineering from Bangalore. For the past three years he has been actively involved in the agri-export business, with his forefathers having a long-standing history of agri-trading. He is particularly passionate about agriculture and practises corporate farming in an organic manner.",
+    title: "Cold-pressed oils",
+    body: "Groundnut, sesame, safflower, mustard, coconut and more, pressed slowly from whole seed. Never refined, bleached or hexane-extracted.",
+    href: "/shop/oils",
+    cta: "Shop oils",
+    icon: "leaf",
   },
   {
-    name: "Sudhakar Manchala",
-    role: "Packaging & supply chain",
-    initials: "SM",
-    body: "Venkata Sudhakar Manchala, from Kakinada, East Godavari district, Andhra Pradesh, holds a Post Graduate degree in Polymer Engineering and an MBA in Marketing. After seven years in multinational corporations, he ventured into entrepreneurship in 2001, building his own plastic engineering and packaging business. He is a board member of the Indian Institute of Packaging and treasurer of the Indian Plastic Institute's Hyderabad chapter, and brings his passion for agriculture and the food supply chain to Nutri Greenz.",
+    title: "A2 & bilona ghee",
+    body: "Churned from curd the traditional bilona way, from desi cow milk. No skimming, no foreign fats, no preservatives.",
+    href: "/shop/ghee",
+    cta: "Shop ghee",
+    icon: "farmhouse",
   },
+  {
+    title: "Raw honey",
+    body: "Unprocessed honey from partner beekeepers, bottled as it comes from the hive. Not heated, not blended, not sweetened.",
+    href: "/shop/honey",
+    cta: "Shop honey",
+    icon: "bee",
+  },
+];
+
+/** Farm to door, in the order it happens. */
+const JOURNEY: { step: string; title: string; body: string; href?: string; cta?: string }[] = [
+  { step: "01", title: "Grown by partner farmers", body: "Chemical-free farmers we buy from directly, at a fair price, with no traders in between." },
+  { step: "02", title: "Pressed and churned in small batches", body: "Oils are cold-pressed and ghee is bilona-churned in small runs, so nothing sits in a warehouse for months." },
+  { step: "03", title: "Tested, lot by lot", body: "Every lot is checked for purity, pesticide residue and heavy metals. If a check fails, the lot does not ship.", href: "/lab", cta: "See the lab reports" },
+  { step: "04", title: "Traceable to the farm", body: "Each bottle carries a lot code. Enter it to see the farm, the harvest, the pressing and the lab results behind it.", href: "/traceability", cta: "Trace a lot" },
+  { step: "05", title: "Delivered to your door", body: "Packed fresh and delivered across Hyderabad in the slot you choose, or on a schedule with Subscribe & save.", href: "/shop", cta: "Shop now" },
+];
+
+const PROMISES: { title: string; body: string; icon: UiIconName }[] = [
+  { icon: "verified", title: "Nothing added, nothing removed", body: "No adulteration, no preservatives, no refining. What the farm grew is what you get." },
+  { icon: "customers", title: "A fair price for farmers", body: "Buying direct means more of what you pay reaches the people who grew it." },
+  { icon: "certificate", title: "Proof, not promises", body: "Lab reports and lot codes are public, so you can check every claim on this page yourself." },
+  { icon: "shipping", title: "Licensed and accountable", body: "An FSSAI-licensed company you can reach by phone, email or at our Hyderabad office." },
 ];
 
 export default function AboutPage() {
@@ -91,6 +124,18 @@ export default function AboutPage() {
         />
       </Section>
 
+      {/* At a glance */}
+      <Section className="!pb-0">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-ng-line-soft bg-ng-line-soft md:grid-cols-4">
+          {GLANCE.map((g, i) => (
+            <Reveal key={g.label} delay={i * 0.05} className="flex flex-col gap-1 bg-ng-paper px-5 py-7 text-center sm:px-6">
+              <span className="font-display text-[clamp(24px,3.2vw,34px)] leading-none text-ng-forest-deep">{g.value}</span>
+              <span className="text-[13px] leading-snug text-ng-ink-muted">{g.label}</span>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
       {/* Our story */}
       <Section eyebrow="Our story" heading="How Nutri Greenz began">
         <Reveal className="max-w-3xl flex flex-col gap-4 text-[16.5px] leading-relaxed text-ng-ink-muted">
@@ -105,6 +150,49 @@ export default function AboutPage() {
             }
           </p>
         </Reveal>
+      </Section>
+
+      {/* What we make */}
+      <Section eyebrow="What we make" heading="Three things, done properly">
+        <div className="grid gap-5 md:grid-cols-3">
+          {RANGES.map((r, i) => (
+            <Reveal key={r.title} delay={i * 0.06} className="h-full">
+              <Link
+                href={r.href}
+                className="group flex h-full flex-col rounded-3xl border border-ng-line-soft bg-ng-paper p-7 shadow-[var(--shadow-ng-card)] transition-shadow hover:shadow-[var(--shadow-ng-float)]"
+              >
+                <UiIcon name={r.icon} size={36} className="text-ng-forest-deep" />
+                <h3 className="mt-5 font-display text-[22px] leading-snug text-ng-forest-deep">{r.title}</h3>
+                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-ng-ink-muted">{r.body}</p>
+                <span className="mt-5 text-[13.5px] font-semibold text-ng-forest transition-colors group-hover:text-ng-forest-deep">
+                  {r.cta} →
+                </span>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
+      {/* Farm to door */}
+      <Section
+        className="bg-ng-forest-deep text-ng-cream"
+        eyebrow="How it reaches you"
+        heading={<span className="text-ng-cream">From the farm to your kitchen</span>}
+      >
+        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {JOURNEY.map((j, i) => (
+            <Reveal as="li" key={j.step} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-cream/12 bg-ng-cream/[0.04] p-6">
+              <span className="font-mono text-[12px] font-semibold tracking-widest text-ng-leaf">{j.step}</span>
+              <h3 className="mt-3 font-display text-[19px] leading-snug text-ng-cream">{j.title}</h3>
+              <p className="mt-2 flex-1 text-[14px] leading-relaxed text-ng-cream/70">{j.body}</p>
+              {j.href ? (
+                <Link href={j.href} className="mt-4 text-[13px] font-semibold text-ng-leaf transition-colors hover:text-ng-cream">
+                  {j.cta} →
+                </Link>
+              ) : null}
+            </Reveal>
+          ))}
+        </ol>
       </Section>
 
       {/* Our vision */}
@@ -159,21 +247,18 @@ export default function AboutPage() {
         </Reveal>
       </Section>
 
-      {/* Team */}
-      <Section eyebrow="Our team" heading="The hands behind the harvest">
-        <div className="grid md:grid-cols-2 gap-6">
-          {TEAM.map((t, i) => (
-            <Reveal key={t.name} delay={i * 0.06} className="flex h-full flex-col rounded-3xl border border-ng-line-soft bg-ng-paper p-7">
-              <div className="flex items-center gap-4">
-                <span className="h-14 w-14 shrink-0 rounded-full bg-ng-leaf/20 text-ng-forest-deep inline-flex items-center justify-center font-display text-[18px]">
-                  {t.initials}
-                </span>
-                <div>
-                  <h3 className="font-display text-[20px] text-ng-forest-deep leading-snug">{t.name}</h3>
-                  <p className="text-[13px] uppercase tracking-wider text-ng-ink-muted">{t.role}</p>
-                </div>
+      {/* Promises */}
+      <Section className="bg-ng-sage/25" eyebrow="Our promises" heading="What you can hold us to">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {PROMISES.map((p, i) => (
+            <Reveal key={p.title} delay={i * 0.05} className="flex gap-4 rounded-3xl border border-ng-line-soft bg-ng-paper p-6">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ng-cream text-ng-forest-deep">
+                <UiIcon name={p.icon} size={24} />
+              </span>
+              <div>
+                <h3 className="font-display text-[19px] leading-snug text-ng-forest-deep">{p.title}</h3>
+                <p className="mt-1.5 text-[14.5px] leading-relaxed text-ng-ink-muted">{p.body}</p>
               </div>
-              <p className="mt-5 text-[15px] leading-relaxed text-ng-ink-muted">{t.body}</p>
             </Reveal>
           ))}
         </div>
