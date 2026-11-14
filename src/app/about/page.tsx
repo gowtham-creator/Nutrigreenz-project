@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/ng/page-shell";
@@ -176,13 +177,28 @@ export default function AboutPage() {
 
       {/* Farm to door */}
       <Section
-        className="bg-ng-forest-deep text-ng-cream"
+        // `isolate` keeps the photo layer (-z-10) above the section's own
+        // background but under the heading and cards.
+        className="isolate overflow-hidden bg-ng-forest-deep text-ng-cream"
         eyebrow="How it reaches you"
         heading={<span className="text-ng-cream">From the farm to your kitchen</span>}
       >
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <Image
+            src="/images/farms/farms-hero.webp"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover object-[center_35%] opacity-70"
+          />
+          {/* Darkest behind the heading and the cards' text, letting the
+              golden field show through at the top right. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-ng-forest-deep via-ng-forest-deep/75 to-ng-forest-deep/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ng-forest-deep/85 via-ng-forest-deep/30 to-transparent" />
+        </div>
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {JOURNEY.map((j, i) => (
-            <Reveal as="li" key={j.step} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-cream/12 bg-ng-cream/[0.04] p-6">
+            <Reveal as="li" key={j.step} delay={i * 0.05} className="flex h-full flex-col rounded-2xl border border-ng-cream/15 bg-ng-forest-deep/55 p-6 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.6)] backdrop-blur-md">
               <span className="font-mono text-[12px] font-semibold tracking-widest text-ng-leaf">{j.step}</span>
               <h3 className="mt-3 font-display text-[19px] leading-snug text-ng-cream">{j.title}</h3>
               <p className="mt-2 flex-1 text-[14px] leading-relaxed text-ng-cream/70">{j.body}</p>
